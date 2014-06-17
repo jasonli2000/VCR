@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #399 -- BILL/CLAIMS FILE                                                                                                                                                                                 JUL 23,2014@23:15:37  PAGE 1
-STORED IN ^DGCR(399,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                           (VERSION 2.0)   
+STANDARD DATA DICTIONARY #399 -- BILL/CLAIMS FILE                                                                                                                                                                                  NOV 6,2014@13:35:07  PAGE 1
+STORED IN ^DGCR(399,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                             (VERSION 2.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -1417,12 +1417,14 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
                                 '0' FOR NO FORCED PRINT; 
                                 '1' FOR FORCE LOCAL PRINT; 
-                                '2' FOR FORCE CLEARINGHOUSE PRINT; 
-              LAST EDITED:      OCT 15, 1999 
-              HELP-PROMPT:      Enter a 1 if you always want to print this bill locally or 2 to force print at clearinghouse 
+                                '2' FOR *FORCE CLEARINGHOUSE PRINT; 
+              LAST EDITED:      MAR 14, 2014 
+              HELP-PROMPT:      Enter 0 to transmit the claim electronically to the payer.  Enter 1 to print the claim locally. 
               DESCRIPTION:
-                                If this field is set to 1 or 2, the claim will be printed either locally (1) or at the clearinghouse (2).  If flag is set to 0, bill can be transmitted electronically to the payer.  
+                                This field determines whether a claim is transmitted electronically (0) or printed locally (1).  
 
+              SCREEN:           S DIC("S")="I Y'=2"
+              EXPLANATION:      Print to Clearinghouse is no longer an available option.
               NOTES:            TRIGGERED by the CURRENT BILL PAYER SEQUENCE field of the BILL/CLAIMS File 
                                 TRIGGERED by the PRIMARY INSURANCE CARRIER field of the BILL/CLAIMS File 
                                 TRIGGERED by the SECONDARY INSURANCE CARRIER field of the BILL/CLAIMS File 
@@ -1714,9 +1716,9 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
 399.042,.03     UNITS OF SERVICE       0;3 NUMBER (Required)
 
-                INPUT TRANSFORM:  K:X'?1.N X I $D(X) S:X=0 X=1
-                LAST EDITED:      DEC 11, 1998 
-                HELP-PROMPT:      Enter the number of units of service (accommodation days, miles, treatments, etc.) rendered to or for this patient for this revenue code. 
+                INPUT TRANSFORM:  K:X'?1.3N X I $D(X) S:X=0 X=1 I X>800 K X
+                LAST EDITED:      MAY 05, 2014 
+                HELP-PROMPT:      Enter the number of units of service (accommodation days, miles, treatments, etc.) rendered to or for this patient for this revenue code. Cannot be greater than 800. 
                 DESCRIPTION:
                                   This is the number of day of inpatient care or the number of outpatient visits for this revenue code.  It will be multiplied by the CHARGES field to determine the TOTAL charges for this revenue code.  
 
@@ -4361,19 +4363,19 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
                                 '0' FOR NO; 
                                 '1' FOR YES; 
-              LAST EDITED:      SEP 21, 2006 
+              LAST EDITED:      JAN 29, 2014 
               HELP-PROMPT:      Enter yes if patient was homebound for purchased labs. 
               DESCRIPTION:
-                                This is the indicator to tell the CMS-1500 to print the homebound statement in box 19.  Refer to the MEDICARE regulations on when to fill in this field.  
+                                This is to indicate that the patient is homebound or institutionalized. Refer to MEDICARE regulations on when to use this field.  
 
 
 399,237       DATE LAST SEEN         U2;15 DATE
 
               INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
-              LAST EDITED:      SEP 21, 2006 
+              LAST EDITED:      JAN 29, 2014 
               HELP-PROMPT:      Enter the last date the patient was seen if care was provided by an outside provider of PT/OT or routine foot care. 
               DESCRIPTION:
-                                This data will print in box 19 of the CMS-1500 for printed claims.  Refer to the MEDICARE regulations on when to fill in this field.  
+                                This is the date a patient was last seen. Refer to MEDICARE regulations on when to use this field.  
 
 
 399,238       SPECIAL PROGRAM INDICATOR U2;16 SET
@@ -4385,10 +4387,10 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
                                 '07' FOR Induced Abortion - Danger to Life; 
                                 '08' FOR Induced Abortion - Rape or Incest; 
                                 '09' FOR 2nd Opinion/Surgery; 
-              LAST EDITED:      OCT 26, 2010 
+              LAST EDITED:      JAN 29, 2014 
               HELP-PROMPT:      Enter the code indicating the Special Program under which the patient services were rendered. 
               DESCRIPTION:
-                                This is an indicator to tell the CMS-1500 to print the statement associated with the special program in box 19.  Refer to the MEDICARE regulations on when to fill in this field.  
+                                This is the Special Program with which a claim is associated. Refer to MEDICARE regulations to decide when to use this field.  
 
 
 399,239       PRIMARY EMC ID CARE UNIT U2;17 FREE TEXT
@@ -4592,11 +4594,13 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
 399,261       PROPERTY/CASUALTY CLAIM NUMBER U4;2 FREE TEXT
 
-              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
-              LAST EDITED:      AUG 10, 2010 
-              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1)!($TR(X," ")="") X
+              LAST EDITED:      APR 27, 2014 
+              HELP-PROMPT:      Answer must be 1-30 characters in length and not all spaces. 
               DESCRIPTION:
                                 This is a payer-assigned claim number for a property and casualty claim. 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
 
 399,262       PROP/CAS DATE OF 1ST CONTACT U4;3 DATE
@@ -5268,8 +5272,9 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
 399.0304,19     PURCHASED COST         0;19 NUMBER
 
+                Purchased Cost                                                                                                 
                   INPUT TRANSFORM:S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
-                  LAST EDITED:    SEP 24, 2010 
+                  LAST EDITED:    MAR 19, 2014 
                   HELP-PROMPT:    Type a dollar amount between 0 and 9999999.99, 2 decimal digits. 
                   DESCRIPTION:
                                   This is the actual amount the VA paid for a service provided to a VA patient at a NON-VA facility or provider.  
@@ -5327,11 +5332,12 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
 399.0304,50.03  ATTENDING NOT HOSPICE EMPLOYEE AUX;3 SET
 
+                Attending not Hospice Employee                                                                                 
                                   '1' FOR  ATTENDING PHYSICIAN IS NOT A HOSPICE EMPLOYEE; 
-                  LAST EDITED:    SEP 08, 2006 
+                  LAST EDITED:    MAR 25, 2014 
                   HELP-PROMPT:    Enter a 1 if billing for hospice care and the attending physician is not employed by the hospice. 
                   DESCRIPTION:
-                                  This is the flag that indicates that an attending physician for hospice care charges was not employed by the hospice.  For printed claims, this data will print on the CMS-1500 in box 19 
+                                  This is the flag that indicates that an attending physician for hospice care charges was not employed by the hospice.  
 
 
 399.0304,50.04  *LEVEL OF SUBLUXATION  AUX;4 FREE TEXT
@@ -5363,8 +5369,9 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
 399.0304,50.07  EPSDT FLAG             AUX;7 SET
 
+                EPSDT Flag                                                                                                     
                                   '1' FOR YES; 
-                  LAST EDITED:    SEP 08, 2006 
+                  LAST EDITED:    MAR 19, 2014 
                   HELP-PROMPT:    Enter a 1 if the item being billed is EPSDT related 
                   DESCRIPTION:
                                   This is the field to indicate a service is EPSDT related (Early and Periodic Screen for Diagnosis and Treatment of children).  For printed claims, this data will print in CMS-1500 box 24H.  
@@ -5372,8 +5379,9 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
 399.0304,50.08  SERVICE LINE COMMENT   AUX;8 FREE TEXT
 
+                Service Line Comment                                                                                           
                   INPUT TRANSFORM:K:$L(X)>59!($L(X)<1) X
-                  LAST EDITED:    AUG 29, 2006 
+                  LAST EDITED:    MAR 19, 2014 
                   HELP-PROMPT:    Answer must be 1-59 characters in length 
                   DESCRIPTION:    Enter a free text comment as supplemental information associated with this procedure.  This text will print up to 59 characters across the shaded line of Box 24 of the CMS-1500 form.  
                                    
@@ -5384,8 +5392,9 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
 399.0304,50.09  SERVICE LINE COMMENT QUALIFIER AUX;9 FREE TEXT
 
+                Service Line Comment Qualifier                                                                                 
                   INPUT TRANSFORM:K:$L(X)>7!($L(X)<1) X
-                  LAST EDITED:    AUG 29, 2006 
+                  LAST EDITED:    MAR 19, 2014 
                   HELP-PROMPT:    Answer must be 1-7 characters in length 
                   DESCRIPTION:    Enter an optional free text Qualifier.  
                                    
@@ -5820,27 +5829,17 @@ INDEXED BY:    DEFAULT DIVISION & NON-VA FACILITY & BILL PAYER POLICY & FORM TYP
 
 399,459       FORM LOC 19-UNSPECIFIED DATA UF31;3 FREE TEXT
 
+              CMS-1500 Box 19                                                                                                  
               INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
-              LAST EDITED:      SEP 08, 2006 
-              HELP-PROMPT:      Answer must be 1-80 characters in length. 
-              DESCRIPTION:      This is the text that will be printed in box 19 of the CMS-1500 form when there is no other place to enter the data.  This field only applies to printed claims.  Electronic claims information must be entered into the 
-                                appropriate data fields.  For print claims, this data is derived from a combination of different data throughout the system and is limited to 80 characters.  The hierarchy for including data is as follows (until 80
-                                characters have been used): 
-                                   
-                                   DATE LAST SEEN and REFERRING PHYSICIAN ID# (physical therapy) 
-                                   X-RAY DATE (chiropractic) 
-                                   HOMEBOUND INDICATOR (independent lab renders an EKG or obtains specimen 
-                                                        from a homebound patient) 
-                                   NO ASSIGNMENT OF BENEFITS (if no assignment of benefits indicated) 
-                                   Hearing aid testing (if applicable) 
-                                   DENTAL SURGERY (if applicable) 
-                                   ATTENDING PHYSICIAN NOT HOSPICE EMPLOYEE (if applicable) 
-                                   LOW OSMOLAR CONTRAST MATERIAL (if applicable) 
-                                   SHARED POST-OP CARE TRANSITION DATE (if applicable) 
-                                   COMMENTS IN BOX 19 DATA FIELD 
-                                 
-                                You will need to use the Medicare manual to determine when these data elements are needed and specifically what data is to be reported.  If the individual data elements cannot be entered into VistA in unique fields, you
-                                will need to enter the corresponding text into the free text box 19 
+              LAST EDITED:      FEB 25, 2014 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. Only 71 Characters will print. 
+              DESCRIPTION:      This is an 71 character free text field that will print in Box 19 of the CMS-1500.  Use this field to enter additional Payer required IDs in the format of: Qualifier<no space>ID number<3 spaces>Qualifier<no space>ID
+                                number.  
+
+              TECHNICAL DESCR:  This returns the Paperwork Attachment 
+                                    Information in the following format: 
+                                   PWKNNFX12348907CHEY<3 Spaces>Next set if more than one on claim PWK is the qualifier for data, followed by the appropriate Report Type Code, the appropriate Transmission Type Code, then the Attachment Control Number. 
+                                Do not enter spaces between qualifiers and data.  
 
 
 399,460       ECME NUMBER            M1;8 FREE TEXT
@@ -6075,8 +6074,8 @@ IB REVCODE EDIT               SEP 17, 1992@10:08  USER #0
 IB SCREEN1                    JUL 26, 2010@14:48  USER #0    ^IBXS1 
      Enter/Edit billing screen 1, demographic information.
 IB SCREEN10                   SEP 01, 2010@20:16  USER #0    ^IBXSA 
-IB SCREEN102                  NOV 11, 2010@17:21  USER #0    ^IBXSA2 
-IB SCREEN10H                  NOV 11, 2010@17:36  USER #0    ^IBXSAH 
+IB SCREEN102                  NOV 07, 2012@15:55  USER #0    ^IBXSA2 
+IB SCREEN10H                  MAR 13, 2014@09:57  USER #0    ^IBXSAH 
 IB SCREEN2                    MAR 08, 1994@16:06  USER #10882^IBXS2 
 IB SCREEN3                    APR 10, 2006@14:53  USER #0    ^IBXS3 
 IB SCREEN4                    MAR 28, 2007@15:20  USER #0    ^IBXS4 
@@ -6084,7 +6083,7 @@ IB SCREEN4                    MAR 28, 2007@15:20  USER #0    ^IBXS4
 IB SCREEN5                    MAY 09, 2011@14:50  USER #0    ^IBXS5 
 IB SCREEN6                    OCT 19, 2011@15:16  USER #0    ^IBXS6 
 IB SCREEN7                    JUL 18, 2011@10:52  USER #0    ^IBXS7 
-IB SCREEN8                    JUL 18, 2011@11:00  USER #0    ^IBXS8 
+IB SCREEN8                    MAR 13, 2014@09:53  USER #0    ^IBXS8 
 IB SCREEN9                    AUG 01, 2011@14:47  USER #0    ^IBXS9 
      Ambulance Information
 IB STATUS                     JUN 08, 2004@15:54  USER #0    ^IBXST 

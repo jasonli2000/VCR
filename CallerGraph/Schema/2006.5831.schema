@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #2006.5831 -- DICOM HEALTHCARE PROVIDER SERVICE FILE                                                                                                                                                     JUL 23,2014@23:14:11  PAGE 1
-STORED IN ^MAG(2006.5831,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                      (VERSION 3.0)   
+STANDARD DATA DICTIONARY #2006.5831 -- CLINICAL SPECIALTY DICOM & HL7 FILE                                                                                                                                                         NOV 6,2014@13:33:52  PAGE 1
+STORED IN ^MAG(2006.5831,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                        
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -21,9 +21,7 @@ ELEMENT       TITLE                 LOCATION      TYPE
  |                                                               |
  +---------------------------------------------------------------+
  
-The purpose of this file is to link groups of requests for services (stored in file ^GMR(123.5,...) to entities that are related to DICOM WorkList requests.  
- 
-The DICOM WorkList Classes are defined and maintained by the sites.  These are stored in ^MAG(2006.5832,... 
+This contains the parameters that are used to interface CPRS Consult Request Tracking to DICOM Modality Worklist and HL7.  
 
 
               DD ACCESS: @
@@ -32,51 +30,90 @@ The DICOM WorkList Classes are defined and maintained by the sites.  These are s
              DEL ACCESS: @
            LAYGO ACCESS: @
            AUDIT ACCESS: @
+IDENTIFIED BY: PROCEDURE (#2)
+
+CROSS
+REFERENCED BY: REQUEST SERVICE(B)
+
+INDEXED BY:    REQUEST SERVICE & PROCEDURE (C)
 
 
-2006.5831,.01 REQUESTED SERVICE      0;1 POINTER TO REQUEST SERVICES FILE (#123.5) (Required)
+2006.5831,.01 REQUEST SERVICE        0;1 POINTER TO REQUEST SERVICES FILE (#123.5) (Required)
 
-              INPUT TRANSFORM:  S DINUM=X
-              LAST EDITED:      MAR 04, 2010 
+              LAST EDITED:      APR 16, 2012 
               HELP-PROMPT:      Enter the name of the service being requested 
               DESCRIPTION:
-                                The name of the CONSULT service or specialty to be added to the TeleReader unread list.  Example:  Hematology.  
+                                The name of the Consult or Procedure request service or specialty to be added to the DICOM Modality Worklist and the HL7 Subscriber List.  Example:  Hematology.  
 
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+              CROSS-REFERENCE:  2006.5831^B 
+                                1)= S ^MAG(2006.5831,"B",$E(X,1,30),DA)=""
+                                2)= K ^MAG(2006.5831,"B",$E(X,1,30),DA)
 
+              RECORD INDEXES:   C (#761)
 
-2006.5831,2   SERVICE GROUP          0;2 POINTER TO IMAGE INDEX FOR SPECIALTY/SUBSPECIALTY FILE (#2005.84) (Required)
+2006.5831,2   PROCEDURE              0;2 POINTER TO GMRC PROCEDURE FILE (#123.3)
 
-              LAST EDITED:      JAN 22, 2010 
-              HELP-PROMPT:      Enter the name of the WorkList Class. 
+              LAST EDITED:      APR 16, 2012 
+              HELP-PROMPT:      Enter the clinical specialty procedure, if applicable. 
               DESCRIPTION:
-                                Specialty/Subspecialty for the unread list items associated with a given service.  Example: Hematology, Lab 
+                                A specific clinical specialty procedure associated with a given service.  Example: Bone Marrow Biopsy.  
 
-              TECHNICAL DESCR:  Image Types are groups of services that are being treated the same as far as DICOM WorkList requests are concerned.  
-                                 
-                                Service Requests are described in file 123.5, and (sub)specialties are described in file 2005.84.  
+              RECORD INDEXES:   C (#761)
 
+2006.5831,3   SPECIALTY INDEX        0;3 POINTER TO IMAGE INDEX FOR SPECIALTY/SUBSPECIALTY FILE (#2005.84) (Required)
 
-2006.5831,3   SERVICE INSTITUTION    0;3 POINTER TO INSTITUTION FILE (#4)
-
-              LAST EDITED:      MAR 03, 2010 
-              HELP-PROMPT:      Identify the institution where these consults are executed 
-              DESCRIPTION:      VistA institution that takes the images associated 
-                                 with a consult and captures them into the VistA Imaging system.  
+              LAST EDITED:      MAR 13, 2012 
+              HELP-PROMPT:      Enter the specialty index. 
+              DESCRIPTION:
+                                Specialty/Subspecialty for the request.  
 
 
-2006.5831,4   LOCATION               1;0 POINTER Multiple #2006.58314 (Add New Entry without Asking)
+2006.5831,4   PROCEDURE INDEX        0;4 POINTER TO IMAGE INDEX FOR PROCEDURE/EVENT FILE (#2005.85)
 
-              LAST EDITED:      FEB 26, 2010 
+              LAST EDITED:      MAR 13, 2012 
+              HELP-PROMPT:      Enter the name of the procedure/event for the request, if applicable. 
+              DESCRIPTION:
+                                Procedure/event for the request, if applicable.  
 
-2006.58314,.01  LOCATION               0;1 POINTER TO HOSPITAL LOCATION FILE (#44) (Multiply asked)
 
-                LAST EDITED:      FEB 26, 2010 
-                HELP-PROMPT:      Identify the location where this service may take place. 
-                DESCRIPTION:      If this field is populated, appointment information from the VA Scheduling package will be added to Modality Worklist for a given procedure after it is scheduled.  The consult request and the appointment must have the
-                                  same associated location in order for the appointment information to get added to Modality Worklist.  In most cases a CLINIC type location will be used.  Multiple values are allowed.  
+2006.5831,5   ACQUISITION SITE       0;5 POINTER TO INSTITUTION FILE (#4) (Required)
 
-                CROSS-REFERENCE:  2006.58314^B 
+              LAST EDITED:      APR 06, 2012 
+              HELP-PROMPT:      Enter the institution where the images are acquired. 
+              DESCRIPTION:
+                                VistA institution that acquires the images that are associated with a consult or procedure request.  
+
+
+2006.5831,6   CPT CODE               0;6 POINTER TO CPT FILE (#81)
+
+              LAST EDITED:      MAR 13, 2012 
+              HELP-PROMPT:      Enter the CPT CODE for the consult or procedure request. 
+              DESCRIPTION:
+                                The CPT CODE for the consult or procedure request.  
+
+
+2006.5831,7   HL7 HLO SUBSCRIBER LIST 0;7 POINTER TO HLO SUBSCRIPTION REGISTRY FILE (#779.4)
+
+              LAST EDITED:      MAR 13, 2012 
+              HELP-PROMPT:      Enter the HL7 Subscriber List for the consult or procedure request. 
+              DESCRIPTION:
+                                The HLO Subscriber List defines the receivers of the HL7 message that is generated for the consult or procedure request.  
+
+
+2006.5831,100 CLINIC                 1;0 POINTER Multiple #2006.58311
+
+              DESCRIPTION:
+                                These are the clinics where the patient may be seen.  These had been used to associate a consult or procedure request with an appointment, but this has been superseded by the enhancement Scheduling Patch SD*5.3*478.  
+
+
+2006.58311,.01  CLINIC                 0;1 POINTER TO HOSPITAL LOCATION FILE (#44) (Multiply asked)
+
+                LAST EDITED:      MAR 13, 2012 
+                HELP-PROMPT:      Enter the clinic where the patient may be seen. 
+                DESCRIPTION:
+                                  This is a clinic where the patient may be seen for this consult or procedure request 
+
+                CROSS-REFERENCE:  2006.58311^B 
                                   1)= S ^MAG(2006.5831,DA(1),1,"B",$E(X,1,30),DA)=""
                                   2)= K ^MAG(2006.5831,DA(1),1,"B",$E(X,1,30),DA)
 
@@ -86,15 +123,37 @@ The DICOM WorkList Classes are defined and maintained by the sites.  These are s
 
       FILES POINTED TO                      FIELDS
 
-HOSPITAL LOCATION (#44)           LOCATION:LOCATION (#.01)
+CPT (#81)                         CPT CODE (#6)
+
+GMRC PROCEDURE (#123.3)           PROCEDURE (#2)
+
+HLO SUBSCRIPTION REGISTRY 
+                   (#779.4)       HL7 HLO SUBSCRIBER LIST (#7)
+
+HOSPITAL LOCATION (#44)           CLINIC:CLINIC (#.01)
+
+IMAGE INDEX FOR PROCEDURE/EVEN 
+                   (#2005.85)     PROCEDURE INDEX (#4)
 
 IMAGE INDEX FOR SPECIALTY/SUBS 
-                   (#2005.84)     SERVICE GROUP (#2)
+                   (#2005.84)     SPECIALTY INDEX (#3)
 
-INSTITUTION (#4)                  SERVICE INSTITUTION (#3)
+INSTITUTION (#4)                  ACQUISITION SITE (#5)
 
-REQUEST SERVICES (#123.5)         REQUESTED SERVICE (#.01)
+REQUEST SERVICES (#123.5)         REQUEST SERVICE (#.01)
 
+
+File #2006.5831
+
+  Record Indexes:
+
+  C (#761)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Cross reference on Service and Procedure.
+        Set Logic:  S ^MAG(2006.5831,"C",X(1),X(2),DA)=""
+       Kill Logic:  K ^MAG(2006.5831,"C",X(1),X(2),DA)
+       Whole Kill:  K ^MAG(2006.5831,"C")
+             X(1):  REQUEST SERVICE  (2006.5831,.01)  (Subscr 1)  (forwards)
+             X(2):  PROCEDURE  (2006.5831,2)  (Subscr 2)  (forwards)
 
 
 INPUT TEMPLATE(S):

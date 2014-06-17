@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #27.17 -- CATASTROPHIC DISABILITY REASONS FILE                                                                                                                                                           JUL 23,2014@23:20:27  PAGE 1
-STORED IN ^DGEN(27.17,  (49 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                                       (VERSION 5.3)   
+STANDARD DATA DICTIONARY #27.17 -- CATASTROPHIC DISABILITY REASONS FILE                                                                                                                                                            NOV 6,2014@13:39:30  PAGE 1
+STORED IN ^DGEN(27.17,  (187 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                        (VERSION 5.3)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -7,7 +7,7 @@ ELEMENT       TITLE                 LOCATION      TYPE
 THIS FILE SHOULD NOT BE MODIFIED BY USERS! Per the Enrollment Phase II SRS (section 6.8.1.2), this file has been added to store the acceptable reasons why a veteran may be classified as catastrophically disabled.  
 
 
-IDENTIFIED BY: CODE NUMBER (#3), HL7 TRANSMISSION VALUE (#8)[R]
+IDENTIFIED BY: ICD OR CPT CODE (#3), HL7 TRANSMISSION VALUE (#8)[R]
 
 POINTED TO BY: CD STATUS DIAGNOSES field (#.01) of the CD STATUS DIAGNOSES sub-field (#2.396) of the PATIENT File (#2) 
                CD STATUS PROCEDURES field (#.01) of the CD STATUS PROCEDURES sub-field (#2.397) of the PATIENT File (#2) 
@@ -33,22 +33,51 @@ REFERENCED BY: NAME(B), HL7 TRANSMISSION VALUE(C)
                                 'P' FOR PROCEDURE; 
                                 'D' FOR DIAGNOSIS; 
                                 'C' FOR CONDITION; 
-              LAST EDITED:      MAY 17, 1999 
+              LAST EDITED:      JAN 25, 2012 
+              HELP-PROMPT:      Enter the correct type. 
               DESCRIPTION:
                                 This field contains the type of CATASTROPHIC DISABILITY REASON.  The PATIENT file uses this set of codes to screen out Diagnoses, Procedures and Conditions in its fields .396, .397, and .398 
 
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the ICD OR CPT CODE field of the CATASTROPHIC DISABILITY REASONS File 
 
-27.17,3       CODE NUMBER            0;3          VARIABLE POINTER
+
+27.17,3       ICD OR CPT CODE        0;3          VARIABLE POINTER
 
               FILE  ORDER  PREFIX    LAYGO  MESSAGE
-                 80   10   ICD9         n   ICD9 Diagnostic Codes 
-                 80.1 20   ICDOP        n   ICD Operations/Procedures 
+                 80   10   ICDDI        n   ICD Diagnostic Code 
+                 80.1 20   ICDOP        n   ICD Operation/Procedure 
                  81   30   ICPT         n   CPT Procedure 
                                          
-              LAST EDITED:      MAY 13, 1999 
+              LAST EDITED:      JAN 30, 2012 
               HELP-PROMPT:      Select an appropriate Diagnostic/Procedure code, if applicable. 
-              DESCRIPTION:
-                                If the type is "PROCEDURE" then this must be a CPT Code or an ICD DIAGNOSIS/Procedure.  If the type is "Operation" then this must be an ICD Diagnosis.  If the type is "CONDITION" then this field must be blank.  
+              DESCRIPTION:      If the type is "PROCEDURE" then this must be a CPT Code or an ICD Operation/Procedure.  If the type is "DIAGNOSIS" then this must be an ICD Diagnosis.  If the type is "CONDITION" then this field must be blank.  
+                                 
+                                If this field contains an ICD Diagnosis or Procedure code then the ICD VERSION field (#9) must point to the correct ICD VERSION.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^27.17^1 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGEN(27.17,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y X ^DD(27.17,3,1,1,1.1) S DIH=$G(^DGEN(27.17,DIV(0),0)),DIV=X S $P(^(0),U,2)=DIV,DIH=27.17,DIG=1 D ^DICR
+                                1.1)= S X=DIV N DGP S DGP=$P($P(^DGEN(27.17,DA,0),U,3),";",2) S X=$S(DGP="ICD9(":"D",DGP="ICD0(":"P",DGP="ICPT(":"P",1:"")
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGEN(27.17,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X="" S DIH=$G(^DGEN(27.17,DIV(0),0)),DIV=X S $P(^(0),U,2)=DIV,DIH=27.17,DIG=1 D ^DICR
+                                3)= Do not Delete.
+                                CREATE VALUE)= N DGP S DGP=$P($P(^DGEN(27.17,DA,0),U,3),";",2) S X=$S(DGP="ICD9(":"D",DGP="ICD0(":"P",DGP="ICPT(":"P",1:"")
+                                DELETE VALUE)= @
+                                FIELD)= TYPE
+                                This trigger populates the TYPE field to the correct value for any Diagnosis or Procedure code entered.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^27.17^9 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGEN(27.17,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y X ^DD(27.17,3,1,2,1.1) S DIH=$G(^DGEN(27.17,DIV(0),0)),DIV=X S $P(^(0),U,9)=DIV,DIH=27.17,DIG=9 D ^DICR
+                                1.1)= S X=DIV N DGP,DGIEN S DGP=$P($P(^DGEN(27.17,DA,0),U,3),";",2),DGIEN=+$P(^DGEN(27.17,DA,0),U,3) S X=$S(DGP="ICD9(":$$CSI^ICDEX(80,DGIEN),DGP="ICD0(":$$CSI^ICDEX(80.1,DGIEN),1:"")
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGEN(27.17,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X="" S DIH=$G(^DGEN(27.17,DIV(0),0)),DIV=X S $P(^(0),U,9)=DIV,DIH=27.17,DIG=9 D ^DICR
+                                3)= Do Not Delete
+                                CREATE VALUE)= N DGP,DGIEN S DGP=$P($P(^DGEN(27.17,DA,0),U,3),";",2),DGIEN=+$P(^DGEN(27.17,DA,0),U,3) S X=$S(DGP="ICD9(":$$CSI^ICDEX(80,DGIEN),DGP="ICD0(":$$CSI^ICDEX(80.1,DGIEN),1:"")
+                                DELETE VALUE)= @
+                                FIELD)= ICD VERSION
+                                This trigger updates the ICD VERSION field to the correct value.  
+
 
 
 27.17,4       AFFECTED LIMB          1;0 SET Multiple #27.174 (Add New Entry without Asking)
@@ -63,7 +92,9 @@ REFERENCED BY: NAME(B), HL7 TRANSMISSION VALUE(C)
                                   'RLE' FOR Right Lower Extremity; 
                                   'LUE' FOR Left Upper Extremity; 
                                   'LLE' FOR Left Lower Extremity; 
-                LAST EDITED:      MAY 14, 1999 
+                                  'BLE' FOR Bilateral Lower Extremity; 
+                                  'BUE' FOR Bilateral Upper Extremity; 
+                LAST EDITED:      JAN 03, 2012 
                 DESCRIPTION:      For ICD Procedure Codes and CPT Codes, this field is used to define the acceptable extremities to which the code could apply.  This field will also be used for V codes in the future.  The field is not used for ICD
                                   Diagnostic codes.  
 
@@ -115,14 +146,41 @@ REFERENCED BY: NAME(B), HL7 TRANSMISSION VALUE(C)
 
 
 
+27.17,9       ICD VERSION            0;9 POINTER TO ICD CODING SYSTEMS FILE (#80.4)
+
+              LAST EDITED:      JAN 25, 2012 
+              HELP-PROMPT:      Select the appropriate coding system for this entry. 
+              DESCRIPTION:      Indicate the correct version of the ICD code for this entry.  
+                                 
+                                If the type "PROCEDURE" then indicate the correct version of ICD Operation/Procedure 
+                                 
+                                If the type is "DIAGNOSIS" then indicate the correct version of ICD Diagnosis.  
+                                 
+                                If the type is "CONDITION" then this field must be blank 
+
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the ICD OR CPT CODE field of the CATASTROPHIC DISABILITY REASONS File 
+
+
+27.17,10      LONG DESCRIPTION       5;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>130!($L(X)<3) X
+              LAST EDITED:      DEC 14, 2011 
+              HELP-PROMPT:      Answer must be 3-130 characters in length. 
+              DESCRIPTION:
+                                Enter the long description to be used for Diagnosis or Procedure codes.  
+
+
 
       FILES POINTED TO                      FIELDS
 
-CPT (#81)                         CODE NUMBER (#3)
+CPT (#81)                         ICD OR CPT CODE (#3)
 
-ICD DIAGNOSIS (#80)               CODE NUMBER (#3)
+ICD CODING SYSTEMS (#80.4)        ICD VERSION (#9)
 
-ICD OPERATION/PROCEDURE (#80.1)   CODE NUMBER (#3)
+ICD DIAGNOSIS (#80)               ICD OR CPT CODE (#3)
+
+ICD OPERATION/PROCEDURE (#80.1)   ICD OR CPT CODE (#3)
 
 
 

@@ -1,27 +1,32 @@
-STANDARD DATA DICTIONARY #811.2 -- REMINDER TAXONOMY FILE                                                                                                                                                                         JUL 23,2014@23:10:38  PAGE 1
-STORED IN ^PXD(811.2,  (86 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                                        (VERSION 2.0)   
+STANDARD DATA DICTIONARY #811.2 -- REMINDER TAXONOMY FILE                                                                                                                                                                          NOV 6,2014@13:31:15  PAGE 1
+STORED IN ^PXD(811.2,  (110 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                         (VERSION 2.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-This file stores the Clinical Reminder taxonomies. A taxonomy is a way to give a name to a set of codes. The codes that can be used in a taxonomy are ICD Diagnosis (ICD 9), ICD Operation/Procedure (ICD 0), and CPT.  
+This file stores the Clinical Reminders taxonomies. Taxonomies are used as Clinical Reminders findings and provide a way to define a set of codes as a single finding. Taxonomies are structured so that any of the coding systems defined in Lexicon's Coding
+System (file #757.03) can be used. However, in order for a coding system to be used in Clinical Reminders, there must be a source in VistA where the coded patient data is stored. Examples are V POV (file #9000010.07) which stores ICD diagnosis codes and
+PTF (file #45) which stores ICD diagnosis and procedure codes. The coding systems that meet this criteria are listed for selection in the taxonomy editor.  
  
-This file contains a combination of nationally distributed and local entries. Nationally distributed entries have their name prefixed with VA- and their Class is National. Local entry names cannot start with VA- or have a National Class.  
+This file contains a combination of nationally distributed and local entries. Nationally distributed entries have their names prefixed with VA- and their Class is National. Local entry names cannot start with VA- or have a National Class.  
+ 
 
 
+FILE SCREEN (SCR-node) : I $$WHFSCR^PXRMSCR(100,1)
               DD ACCESS: @
               RD ACCESS: 
               WR ACCESS: @
              DEL ACCESS: @
            LAYGO ACCESS: @
            AUDIT ACCESS: @
-IDENTIFIED BY: BRIEF DESCRIPTION (#.02), CLASS (#100)[R]
+IDENTIFIED BY: CLASS (#100)[R]
 
 PRIMARY KEY:        A (#45)
-  Uniqueness Index: B (#755)
+  Uniqueness Index: B (#1159)
        File, Field: 1) NAME (811.2,.01)
 
 POINTED TO BY: FINDING ITEM field (#15) of the REMINDER DIALOG File (#801.41) 
+               ADDITIONAL FINDINGS field (#.01) of the ADDITIONAL FINDINGS sub-field (#801.4118) of the REMINDER DIALOG File (#801.41) 
                FINDING ITEM field (#.04) of the EXTRACT FINDINGS sub-field (#810.31) of the REMINDER EXTRACT SUMMARY File (#810.3) 
                FINDING ITEM field (#.01) of the LREPI FINDING TOTALS sub-field (#810.32) of the REMINDER EXTRACT SUMMARY File (#810.3) 
                EXPANDED TAXONOMY field (#.01) of the EXPANDED TAXONOMIES File (#811.3) 
@@ -36,14 +41,16 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
 811.2,.01     NAME                   0;1 FREE TEXT (Required) (Key field)
 
               INPUT TRANSFORM:  K:$L(X)>64!($L(X)<3)!'(X'?1P.E)!('$$VNAME^PXRMINTR(.X)) X
-              LAST EDITED:      MAY 29, 2009 
+              LAST EDITED:      JUL 16, 2013 
               HELP-PROMPT:      Answer must be 3-64 characters in length. 
               DESCRIPTION:
                                 This is the name of the taxonomy. It must be unique.  
 
+              DELETE TEST:      1,0)= I $$INUSE^PXRMTAXD(DA,"DEL")
+
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
-              FIELD INDEX:      B (#755)    REGULAR    IR    LOOKUP & SORTING
+              FIELD INDEX:      B (#1159)    REGULAR    IR    LOOKUP & SORTING
                    Unique for:  Key A (#45), File #811.2
                   Short Descr:  New style B cross-reference
                     Set Logic:  S ^PXD(811.2,"B",$E(X,1,64),DA)=""
@@ -82,22 +89,28 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
                                 This flag controls whether or not taxonomies may be selected as a Clinical Reminder finding.  
 
 
+811.2,2       DESCRIPTION            1;0   WORD-PROCESSING #811.22   (IGNORE "|")
+
+              DESCRIPTION:      The DESCRIPTION is used to describe the purpose and usage of the taxonomy.  
+                                 
+
+
 811.2,4       PATIENT DATA SOURCE    0;4 FREE TEXT
 
               INPUT TRANSFORM:  S X=$$UP^XLFSTR(X) K:($L(X)>40)!($L(X)<1)!('$$VPDS^PXRMPDS(X)) X
-              LAST EDITED:      JUN 24, 2003 
+              LAST EDITED:      MAY 28, 2013 
               HELP-PROMPT:      Answer must be 1-40 characters in length. 
-              DESCRIPTION:
-                                PATIENT DATA SOURCE refines the taxonomy search by specifying which patient data sources are searched for matching codes.  
+              DESCRIPTION:      PATIENT DATA SOURCE refines the taxonomy search by specifying which patient data sources are searched for matching codes.  
+                                 
 
               EXECUTABLE HELP:  D PDSXHELP^PXRMPDS
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
-              FIELD INDEX:      APDS (#754)    MUMPS    IR    ACTION
-                  Short Descr:  When PDS is edited rebuild the PDS fields in 811.3
-                    Set Logic:  D SPDS^PXRMPDS(.X,.X1,.X2,.DA)
-                   Kill Logic:  D KPDS^PXRMPDS(.X,.X1,.X2,.DA)
-                         X(1):  PATIENT DATA SOURCE  (811.2,4)  (Subscr 1)  (forwards)
+              FIELD INDEX:      APDS (#1158)    MUMPS    IR    ACTION
+                  Short Descr:  Build the list of patient data source (PDS) nodes.
+                    Set Logic:  D SPDS^PXRMPDS(DA,X2)
+                   Kill Logic:  D SPDS^PXRMPDS(DA,X2)
+                         X(1):  PATIENT DATA SOURCE  (811.2,4)  (forwards)
 
 
 811.2,10      USE INACTIVE PROBLEMS  0;9 SET
@@ -107,6 +120,188 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
               HELP-PROMPT:      Enter YES if you want to use both active and inactive problems. 
               DESCRIPTION:      USE INACTIVE PROBLEMS applies only to searches in Problem List. Normally, inactive problems are not used. However, when this field is set to YES, then both active and inactive problems are used. This field works just like
                                 the field with the same name that can be specified for a reminder definition finding or a reminder term finding. The order of precedence is taxonomy > term > definition.  
+
+
+811.2,15      PRIORITY LIST          15;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1)!('$$VPRIOL^PXRMINTR(.X)) X
+              LAST EDITED:      JUL 24, 2012 
+              HELP-PROMPT:      Answer must be 1-3 characters in length. 
+              DESCRIPTION:      This field applies only to Problem List searches. It can be used to limit the problems that are included to those with the listed priorities. The possible values are: 
+                                 A - acute 
+                                 C - chronic 
+                                 U - undefined 
+                                 
+                                Any combination of these letters can be used. For example, 'A' would limit the search to acute problems. 'CU' would include chronic problems and those whose priority is undefined. If this field is left blank then all
+                                priorities will be included.  
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+811.2,20      SELECTED CODES         20;0 Multiple #811.23 (Add New Entry without Asking)
+
+              LAST EDITED:      MAR 21, 2012 
+              DESCRIPTION:      The SELECTED CODES multiple stores the codes selected by the user to be in the taxonomy. The storage hierarchy is: 
+                                 Term/Code 
+                                  Coding system 
+                                   Code 
+                                 
+                                Term/Code and coding system are passed to Lexicon, which returns a list of matching codes. The user selects the codes to be included in the taxonomy from the list.  
+                                 
+
+
+              PRIMARY KEY:      A (#46)
+              Uniqueness Index: B (#1173)
+                   File, Field: 1) TERM/CODE (811.23,.01)
+
+              INDEXED BY:       CODE (AE), CODING SYSTEM (ATC), CODE & USE IN DIALOG (ATCC), CODE & USE IN DIALOG (AUID), TERM/CODE (B)
+
+811.23,.01      TERM/CODE              0;1 FREE TEXT (Key field)
+
+                INPUT TRANSFORM:  K:$L(X)>240!($L(X)<2) X
+                LAST EDITED:      DEC 19, 2013 
+                HELP-PROMPT:      Answer must be 2-240 characters in length. 
+                DESCRIPTION:      TERM/CODE along with a Coding System are passed to the Lexicon search utility, which returns a list of codes based on the user's search criteria. Terms are descriptions for a concept and the code is a unique identifier
+                                  assigned to that description. A concept can have one or more descriptions to express the concept. An example of this in SNOMED is the concept code 271807003 that has a fully specified name of "Eruption of Skin", a
+                                  preferred name of "Eruption" and several synonyms: "Rash", "Skin Eruption", "Skin Rash". For more information, see the Lexicon Utility User Manual.  
+                                   
+                                  Note the Lexicon search utility does not accept '?' or '*' as wildcards.  
+                                   
+
+                FIELD INDEX:      B (#1173)    REGULAR    IR    LOOKUP & SORTING
+                     Unique for:  Key A (#46), File #811.23
+                    Short Descr:  "B" index for TERM/CODE
+                      Set Logic:  S ^PXD(811.2,DA(1),20,"B",$E(X,1,240),DA)=""
+                     Kill Logic:  K ^PXD(811.2,DA(1),20,"B",$E(X,1,240),DA)
+                     Whole Kill:  K ^PXD(811.2,DA(1),20,"B")
+                           X(1):  TERM/CODE  (811.23,.01)  (Subscr 1)  (Len 240)  (forwards)
+
+
+811.23,1        CODING SYSTEM          1;0 Multiple #811.231 (Add New Entry without Asking)
+
+                DESCRIPTION:      These are the coding systems selected by the user.  
+                                   
+
+
+811.231,.01       CODING SYSTEM          0;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>7!($L(X)<3) X
+                  LAST EDITED:      AUG 01, 2012 
+                  HELP-PROMPT:      Answer must be 3-7 characters in length. 
+                  DESCRIPTION:      Each coding system selected by the user, is stored as one of the standard three-character abbreviations as defined in the Lexicon Coding Systems file #757.03.  
+                                     
+
+                  FIELD INDEX:      ATC (#1170)    MUMPS    IR    ACTION    WHOLE FILE (#811.23)
+                      Short Descr:  Term/Code and coding system index.
+                      Description:  This index is used to facilitate display and editing of codes in a taxonomy.  
+                                     
+                                     
+                                    
+                        Set Logic:  D STC^PXRMTAXD(.DA,.X)
+                       Kill Logic:  D KTC^PXRMTAXD(.DA,.X)
+                       Whole Kill:  K ^PXD(811.2,DA(2),20,"ATC")
+                             X(1):  CODING SYSTEM  (811.231,.01)  (Subscr 1)  (forwards)
+
+
+811.231,1         NUMBER OF CODES SELECTED 0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      MAR 21, 2012 
+                  HELP-PROMPT:      Do not edit; this field is set automatically. 
+                  DESCRIPTION:      This is the number of codes that were selected; it is set automatically by the taxonomy editor.  
+                                     
+
+
+811.231,2         CODE LIST              1;0 Multiple #811.2312 (Add New Entry without Asking)
+
+                  DESCRIPTION:      These are the lists of codes that were selected to be included in the taxonomy.  
+                                     
+
+
+811.2312,.01        CODE                   0;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                    LAST EDITED:      JUL 25, 2013 
+                    HELP-PROMPT:      Enter a code, 1-40 characters. 
+                    DESCRIPTION:      This is a code such as ICD-9, CPT, SNOMED CT, etc.  
+                                       
+
+                    FIELD INDEX:      AE (#1169)    MUMPS    IR    ACTION    WHOLE FILE (#811.23)
+                        Short Descr:  Coding system and code index.
+                        Description:  This index is used for taxonomy evaluation. It has the form: ^PXD(811.2,IEN,20,"AE",CODING SYSTEM,CODE)=code or code pointer where coding system is one of the standard three-character abbreviations as defined in the
+                                      Coding Systems file, #757.03. Code pointer is used for the coding systems CPT, ICD, and ICP, so it is compatible with the previously stored values in the Clinical Reminders Index. Code is used for all other coding
+                                      systems.  
+                                       
+                                       
+                                      
+                          Set Logic:  D SENODE^PXRMTAXD(.DA,.X)
+                         Kill Logic:  D KENODE^PXRMTAXD(.DA,.X)
+                         Whole Kill:  K ^PXD(811.2,DA(3),20,"AE")
+                               X(1):  CODE  (811.2312,.01)  (forwards)
+
+                    RECORD INDEXES:   ATCC (#1171) (WHOLE FILE #811.23), AUID (#1172) (WHOLE FILE #811.23)
+
+811.2312,1          USE IN DIALOG          0;2 SET
+
+                                      '0' FOR NO; 
+                                      '1' FOR YES; 
+                    LAST EDITED:      JUL 25, 2013 
+                    HELP-PROMPT:      Enter YES if the selected code is to be used in a dialog. 
+                    DESCRIPTION:      If the selected code is to be used in a reminder dialog, then USE IN DIALOG should be set to YES.  
+                                       
+
+                    RECORD INDEXES:   ATCC (#1171) (WHOLE FILE #811.23), AUID (#1172) (WHOLE FILE #811.23)
+
+
+
+811.231,3         NUMBER OF CODES MARKED AS UID 0;3 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      MAR 28, 2013 
+                    HELP-PROMPT:      Do not edit; this field is set automatically. 
+                    DESCRIPTION:      This is the number of codes that were marked as Use in Dialog; it is set automatically by the taxonomy editor.  
+                                       
+
+
+
+
+
+
+811.2,30      USE IN DIALOG CODES    30;0 Multiple #811.24 (Add New Entry without Asking)
+
+              DESCRIPTION:      This multiple stores all the codes in the SELECTED CODES multiple that have been marked as Use In Dialog. Its purpose is to provide a multiple for the ScreenMan form PXRM DIALOG TAXONOMY EDIT.  
+                                 
+                                It is automatically synchronized with the SELECTED CODES MULTIPLE 
+                                 
+
+
+              INDEXED BY:       CODE & CODING SYSTEM (AUIDC)
+
+811.24,.01      CODE                   0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3)!('$$CDINPTR^PXRMTAXD(X)) X
+                LAST EDITED:      JUL 25, 2013 
+                HELP-PROMPT:      Answer must be 3-40 characters in length. 
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  811.24^B 
+                                  1)= S ^PXD(811.2,DA(1),30,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXD(811.2,DA(1),30,"B",$E(X,1,30),DA)
+
+                RECORD INDEXES:   AUIDC (#1174)
+
+811.24,1        CODING SYSTEM          0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                OUTPUT TRANSFORM: S Y=$$CSYSOPTR^PXRMTAXD(Y)
+                LAST EDITED:      JUL 25, 2013 
+                HELP-PROMPT:      This field is set automatically, do not edit. 
+                DESCRIPTION:      CODING SYSTEM is set automatically by determining which coding system the code belongs to.  
+                                   
+
+                RECORD INDEXES:   AUIDC (#1174)
+
 
 
 811.2,100     CLASS                  100;1 SET (Required)
@@ -140,10 +335,11 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
                                 Reminders Review Date Report.  
 
 
-811.2,110     EDIT HISTORY           110;0 DATE Multiple #811.21
+811.2,110     CHANGE LOG             110;0 DATE Multiple #811.21
 
-              DESCRIPTION:
-                                This multiple is used to record a history of changes made to the taxonomy.  
+              LAST EDITED:      MAR 14, 2013 
+              DESCRIPTION:      This multiple is used to record a log of changes made to the taxonomy.  
+                                 
 
 
 811.21,.01      EDIT DATE              0;1 DATE
@@ -199,13 +395,13 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
                                   1)= S ^PXD(811.2,DA(1),80,"B",$E(X,1,30),DA)=""
                                   2)= K ^PXD(811.2,DA(1),80,"B",$E(X,1,30),DA)
 
-                FIELD INDEX:      AICD9P (#758)    MUMPS    IR    ACTION
+                FIELD INDEX:      AICD9P (#1162)    MUMPS    IR    ACTION
                     Short Descr:  Populate the ICD9 ADJACENT LOWER CODE FIELD
                       Set Logic:  S $P(^PXD(811.2,DA(1),80,DA,0),U,3)=$$PREV^ICDAPIU(X)
                      Kill Logic:  S $P(^PXD(811.2,DA(1),80,DA,0),U,3)=""
                            X(1):  ICD9 LOW CODE  (811.22102,.01)  (Subscr 1)  (forwards)
 
-                RECORD INDEXES:   AD (#756)
+                RECORD INDEXES:   AD (#1160)
 
 811.22102,1     ICD9 HIGH CODE         0;2 FREE TEXT
 
@@ -217,13 +413,13 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
 
                 NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
-                FIELD INDEX:      AICD9N (#757)    MUMPS    IR    ACTION
+                FIELD INDEX:      AICD9N (#1161)    MUMPS    IR    ACTION
                     Short Descr:  Populate the ICD9 ADJACENT HIGHER CODE field
                       Set Logic:  S $P(^PXD(811.2,DA(1),80,DA,0),U,4)=$$NEXT^ICDAPIU(X)
                      Kill Logic:  S $P(^PXD(811.2,DA(1),80,DA,0),U,4)=""
                            X(1):  ICD9 HIGH CODE  (811.22102,1)  (Subscr 1)  (forwards)
 
-                RECORD INDEXES:   AD (#756)
+                RECORD INDEXES:   AD (#1160)
 
 811.22102,2     ICD9 ADJACENT LOWER CODE 0;3 FREE TEXT
 
@@ -269,13 +465,13 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
                                   1)= S ^PXD(811.2,DA(1),80.1,"B",$E(X,1,30),DA)=""
                                   2)= K ^PXD(811.2,DA(1),80.1,"B",$E(X,1,30),DA)
 
-                FIELD INDEX:      AICD0P (#761)    MUMPS    IR    ACTION
+                FIELD INDEX:      AICD0P (#1165)    MUMPS    IR    ACTION
                     Short Descr:  Populate the ICD0 ADJACENT LOWER CODE field
                       Set Logic:  S $P(^PXD(811.2,DA(1),80.1,DA,0),U,3)=$$PREV^ICDAPIU(X)
                      Kill Logic:  S $P(^PXD(811.2,DA(1),80.1,DA,0),U,3)=""
                            X(1):  ICDO LOW CODE  (811.22103,.01)  (Subscr 1)  (forwards)
 
-                RECORD INDEXES:   AC (#759)
+                RECORD INDEXES:   AC (#1163)
 
 811.22103,1     ICD0 HIGH CODE         0;2 FREE TEXT
 
@@ -287,13 +483,13 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
 
                 NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
-                FIELD INDEX:      AICD0N (#760)    MUMPS    IR    ACTION
+                FIELD INDEX:      AICD0N (#1164)    MUMPS    IR    ACTION
                     Short Descr:  Populate the ICD0 ADJACENT HIGHER CODE field
                       Set Logic:  S $P(^PXD(811.2,DA(1),80.1,DA,0),U,4)=$$NEXT^ICDAPIU(X)
                      Kill Logic:  S $P(^PXD(811.2,DA(1),80.1,DA,0),U,4)=""
                            X(1):  ICD0 HIGH CODE  (811.22103,1)  (Subscr 1)  (forwards)
 
-                RECORD INDEXES:   AC (#759)
+                RECORD INDEXES:   AC (#1163)
 
 811.22103,2     ICD0 ADJACENT LOWER CODE 0;3 FREE TEXT
 
@@ -339,13 +535,13 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
                                   1)= S ^PXD(811.2,DA(1),81,"B",$E(X,1,30),DA)=""
                                   2)= K ^PXD(811.2,DA(1),81,"B",$E(X,1,30),DA)
 
-                FIELD INDEX:      ACPTP (#763)    MUMPS    IR    ACTION
+                FIELD INDEX:      ACPTP (#1167)    MUMPS    IR    ACTION
                     Short Descr:  Populate the CPT ADJACENT LOWER CODE field
                       Set Logic:  S $P(^PXD(811.2,DA(1),81,DA,0),U,3)=$$PREV^ICPTAPIU(X)
                      Kill Logic:  S $P(^PXD(811.2,DA(1),81,DA,0),U,3)=""
                            X(1):  CPT LOW CODE  (811.22104,.01)  (Subscr 1)  (forwards)
 
-                RECORD INDEXES:   AE (#764)
+                RECORD INDEXES:   AE (#1168)
 
 811.22104,1     CPT HIGH CODE          0;2 FREE TEXT
 
@@ -357,13 +553,13 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
 
                 NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
-                FIELD INDEX:      ACPTN (#762)    MUMPS    IR    ACTION
+                FIELD INDEX:      ACPTN (#1166)    MUMPS    IR    ACTION
                     Short Descr:  Populate the CPT ADJACENT HIGHER CODE field
                       Set Logic:  S $P(^PXD(811.2,DA(1),81,DA,0),U,4)=$$NEXT^ICPTAPIU(X)
                      Kill Logic:  S $P(^PXD(811.2,DA(1),81,DA,0),U,4)=""
                            X(1):  CPT HIGH CODE  (811.22104,1)  (Subscr 1)  (forwards)
 
-                RECORD INDEXES:   AE (#764)
+                RECORD INDEXES:   AE (#1168)
 
 811.22104,2     CPT ADJACENT LOWER CODE 0;3 FREE TEXT
 
@@ -446,10 +642,10 @@ INDEXED BY:    PATIENT DATA SOURCE (APDS), NAME (B)
 811.23104,1     DISPLAY TEXT           0;2 FREE TEXT
 
                 INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
-                LAST EDITED:      OCT 25, 1999 
+                LAST EDITED:      NOV 04, 2013 
                 HELP-PROMPT:      Answer must be 1-40 characters in length. 
-                DESCRIPTION:
-                                  This is the description of the procedure code that will appear in the taxonomy dialog in CPRS. The field is optional - the standard standard code name is the default.  
+                DESCRIPTION:      This is the description of the procedure code that will appear in the taxonomy dialog in CPRS. The field is optional - the standard code name is the default.  
+                                   
 
 
 811.23104,2     DISABLED               0;3 SET
@@ -537,7 +733,7 @@ CPT (#81)                         SELECTABLE PROCEDURE:SELECTABLE PROCEDURE (#.0
 
 ICD DIAGNOSIS (#80)               SELECTABLE DIAGNOSIS:SELECTABLE DIAGNOSIS (#.01)
 
-NEW PERSON (#200)                 EDIT HISTORY:EDIT BY (#1)
+NEW PERSON (#200)                 CHANGE LOG:EDIT BY (#1)
 
 REMINDER SPONSOR (#811.6)         SPONSOR (#101)
 
@@ -546,7 +742,7 @@ Subfile #811.22102
 
   Record Indexes:
 
-  AD (#756)    RECORD    MUMPS    IR    ACTION
+  AD (#1160)    RECORD    MUMPS    IR    ACTION
       Short Descr:  Whenever ICD9 entries are edited, rebuild expanded taxonomy
         Set Logic:  D TAXEDIT^PXRMTAXD(DA(1),"")
        Kill Logic:  D TAXEDIT^PXRMTAXD(DA(1),DA)
@@ -559,7 +755,7 @@ Subfile #811.22103
 
   Record Indexes:
 
-  AC (#759)    RECORD    MUMPS    IR    ACTION
+  AC (#1163)    RECORD    MUMPS    IR    ACTION
       Short Descr:  Whenever ICD0 entries are changed, rebuild the expanded taxonomy
         Set Logic:  D TAXEDIT^PXRMTAXD(DA(1),"")
        Kill Logic:  D TAXEDIT^PXRMTAXD(DA(1),DA)
@@ -572,7 +768,7 @@ Subfile #811.22104
 
   Record Indexes:
 
-  AE (#764)    RECORD    MUMPS    IR    ACTION
+  AE (#1168)    RECORD    MUMPS    IR    ACTION
       Short Descr:  Whenever CPT entries are changed, rebuild the expanded taxonomy
         Set Logic:  D TAXEDIT^PXRMTAXD(DA(1),"")
        Kill Logic:  D TAXEDIT^PXRMTAXD(DA(1),DA)
@@ -580,6 +776,48 @@ Subfile #811.22104
        Whole Kill:  D TAXKILL^PXRMTAXD(DA(1))
              X(1):  CPT LOW CODE  (811.22104,.01)  (forwards)
              X(2):  CPT HIGH CODE  (811.22104,1)  (forwards)
+
+Subfile #811.2312
+
+  Record Indexes:
+
+  ATCC (#1171)    RECORD    MUMPS    IR    ACTION    WHOLE FILE (#811.23)
+      Short Descr:  Term/code, coding system, and code index
+      Description:  This index is used to facilitate display and editing of codes in a taxonomy.  
+                     
+                    
+        Set Logic:  D STCC^PXRMTAXD(.DA,.X)
+       Kill Logic:  D KTCC^PXRMTAXD(.DA,.X)
+       Whole Kill:  K ^PXD(811.2,DA(3),20,"ATCC")
+             X(1):  CODE  (811.2312,.01)  (forwards)
+             X(2):  USE IN DIALOG  (811.2312,1)  (forwards)
+
+  AUID (#1172)    RECORD    MUMPS    IR    ACTION    WHOLE FILE (#811.23)
+      Short Descr:  Use in Dialog index.
+      Description:  This index is used for reminder dialog processing. It has the form: ^PXD(811.2,IEN,20,"AUID",CODING SYSTEM,CODE,ACTIVATION DATE,INACTIVATION DATE)=CODE POINTER^SHORT DESCRIPTION where coding system is one of the standard
+                    three-character abbreviations as defined in the Coding Systems file, #757.03. If there is no Inactivation Date, then "DT" is used instead.  
+                     
+                     
+                    
+        Set Logic:  D SUID^PXRMTAXD(.DA,.X)
+       Kill Logic:  D KUID^PXRMTAXD(.DA,.X)
+             X(1):  CODE  (811.2312,.01)  (Subscr 1)  (forwards)
+             X(2):  USE IN DIALOG  (811.2312,1)  (Subscr 2)  (forwards)
+
+Subfile #811.24
+
+  Record Indexes:
+
+  AUIDC (#1174)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  Synchronize the USE IN DIALOGS CODES multiple with the SELECTED CODES multiple.
+      Description:  This cross-reference is used to automatically synchronize the USE IN DIALOG CODES multiple with the SELECTED CODES multiple. If a code is added to the USE IN DIALOG CODES multiple and it already exists in the SELECTED CODES multiple
+                    the code is marked as Use In Dialog. If it does not already exist, a new entry is created in the SELECTED CODES multiple where the TERM/CODE field is set to the code.  
+                     
+                    
+        Set Logic:  D SUIDC^PXRMTAXD(.DA,.X)
+       Kill Logic:  D KUIDC^PXRMTAXD(.DA,.X)
+             X(1):  CODE  (811.24,.01)  (Subscr 1)  (forwards)
+             X(2):  CODING SYSTEM  (811.24,1)  (Subscr 2)  (forwards)
 
 
 INPUT TEMPLATE(S):
@@ -592,4 +830,17 @@ PXRM TAXONOMY LIST HEADER     DEC 20, 1999@12:38  USER #0                       
 
 SORT TEMPLATE(S):
 
-FORM(S)/BLOCK(S):
+FORM(S)/BLOCK(S):
+PXRM DIALOG TAXONOMY EDIT     JUL 11, 2013@10:45  USER #0
+  PXRM DIALOG TAXONOMY MAIN     DD #811.2
+  PXRM DIALOG TAXONOMY CODES    DD #811.24
+
+PXRM TAXONOMY CHANGE LOG      OCT 05, 2012@13:18  USER #0
+  PXRM TAXONOMY CHANGE LOG      DD #811.21
+
+PXRM TAXONOMY EDIT            FEB 28, 2012@11:34  USER #0
+  PXRM TAXONOMY MAIN BLOCK      DD #811.2
+  PXRM TAXONOMY LEXICON         DD #811.23
+  PXRM LEX SELECT               DD #811.2
+  PXRM TAXONOMY CODE LIST       DD #811.232
+

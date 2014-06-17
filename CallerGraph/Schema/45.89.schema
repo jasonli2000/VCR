@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #45.89 -- PTF EXPANDED CODE FILE                                                                                                                                                                         JUL 23,2014@23:20:54  PAGE 1
-STORED IN ^DIC(45.89,  (572 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                                       (VERSION 5.3)   
+STANDARD DATA DICTIONARY #45.89 -- PTF EXPANDED CODE FILE                                                                                                                                                                          NOV 6,2014@13:39:51  PAGE 1
+STORED IN ^DIC(45.89,  (1990 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                        (VERSION 5.3)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -16,13 +16,13 @@ CODE CATEGORY FILE (45.88).
 IDENTIFIED BY: DIAGNOSIS/PROCEDURE CODE (#.02)
 
 CROSS
-REFERENCED BY: DIAGNOSIS/PROCEDURE CODE(ASPL), CATEGORY(B)
+REFERENCED BY: DIAGNOSIS/PROCEDURE CODE(ACODE), DIAGNOSIS/PROCEDURE CODE(ASPL), CATEGORY(B)
 
 45.89,.01     CATEGORY               0;1 POINTER TO PTF EXPANDED CODE CATEGORY FILE (#45.88) (Required)
 
-              LAST EDITED:      MAR 11, 1993 
+              LAST EDITED:      JAN 30, 2012 
               DESCRIPTION:
-                                This fields points to PTF Expanded Code Category File.  Here the flags can be fould that indicate which additional questions should be asked.  
+                                This fields points to PTF Expanded Code Category File.  Here the flags can be found that indicate which additional questions should be asked.  
 
                                 UNEDITABLE
               CROSS-REFERENCE:  45.89^B 
@@ -36,14 +36,33 @@ REFERENCED BY: DIAGNOSIS/PROCEDURE CODE(ASPL), CATEGORY(B)
                  80   1    D            n   DIAGNOSIS 
                  80.1 2    P            n   PROCEDURE 
                                          
-              LAST EDITED:      MAR 11, 1993 
+              LAST EDITED:      NOV 07, 2012 
               DESCRIPTION:
-                                This field contains the ICD code that requires additional processing.  
+                                This field contains the ICD Diagnosis or Procedure code that requires additional processing.  
 
                                 UNEDITABLE
               CROSS-REFERENCE:  45.89^ASPL 
                                 1)= S ^DIC(45.89,"ASPL",$E(X,1,30),DA)=""
                                 2)= K ^DIC(45.89,"ASPL",$E(X,1,30),DA)
+                                The "ASPL" cross reference is used in PTF routines DGPTSC01 and DGPTSCAN to find ICD codes that require additional questions to be asked for the PTF record.  The additional data is stored in the 300 node of the 701 and 501
+                                movements.  The specific fields to be asked are retrieved from file 45.88.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^45.89^.05 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DIC(45.89,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y X ^DD(45.89,.02,1,2,1.1) S DIH=$G(^DIC(45.89,DIV(0),0)),DIV=X S $P(^(0),U,5)=DIV,DIH=45.89,DIG=.05 D ^DICR
+                                1.1)= S X=DIV N DGP,DGIEN S DGP=$P($P(^DIC(45.89,DA,0),U,2),";",2),DGIEN=+$P(^DIC(45.89,DA,0),U,2) S X=$S(DGP="ICD9(":$$CSI^ICDEX(80,DGIEN),DGP="ICD0(":$$CSI^ICDEX(80.1,DGIEN),1:"")
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DIC(45.89,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X="" S DIH=$G(^DIC(45.89,DIV(0),0)),DIV=X S $P(^(0),U,5)=DIV,DIH=45.89,DIG=.05 D ^DICR
+                                CREATE VALUE)= N DGP,DGIEN S DGP=$P($P(^DIC(45.89,DA,0),U,2),";",2),DGIEN=+$P(^DIC(45.89,DA,0),U,2) S X=$S(DGP="ICD9(":$$CSI^ICDEX(80,DGIEN),DGP="ICD0(":$$CSI^ICDEX(80.1,DGIEN),1:"")
+                                DELETE VALUE)= @
+                                FIELD)= ICD VERSION
+                                This trigger updates the ICD VERSION field to the correct value.  
+
+
+              CROSS-REFERENCE:  45.89^ACODE^MUMPS 
+                                1)= S:+X>0 ^DIC(45.89,"ACODE",@("^"_$P(X,";",2)_+X_",0)"),DA)=""
+                                2)= K:+X>0 ^DIC(45.89,"ACODE",@("^"_$P(X,";",2)_+X_",0)"),DA)
+                                For lookup by code 
+
 
 
 45.89,.03     INACTIVE DATE          0;3 DATE
@@ -63,16 +82,30 @@ REFERENCED BY: DIAGNOSIS/PROCEDURE CODE(ASPL), CATEGORY(B)
 
                                 UNEDITABLE
 
+45.89,.05     ICD VERSION            0;5 POINTER TO ICD CODING SYSTEMS FILE (#80.4)
+
+              LAST EDITED:      JAN 27, 2012 
+              HELP-PROMPT:      Select the appropriate coding system for this entry. 
+              DESCRIPTION:
+                                This field contains the version of the ICD Diagnosis or ICD Procedure contained in DIAGNOSIS/PROCEDURE CODE field (.02).  
+
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the DIAGNOSIS/PROCEDURE CODE field of the PTF EXPANDED CODE File 
+
+
 45.89,200     NAME                    ;  COMPUTED
 
-              MUMPS CODE:       S X=$P(^DIC(45.89,D0,0),U,2),X=$S($D(@("^"_$P(X,$C(59),2)_+X_",0)")):$P(^(0),U,$S($P(X,$C(59),2)["ICD9":3,1:4)),1:"")
-              ALGORITHM:        S X=$P(^DIC(45.89,D0,0),U,2),X=$S($D(@("^"_$P(X,$C(59),2)_+X_",0)")):$P(^(0),U,$S($P(X,$C(59),2)["ICD9":3,1:4)),1:"")
+              MUMPS CODE:       S X="" I $T(ICDNAME^DGPTIC10)'="" S X=$$ICDNAME^DGPTIC10()
+              ALGORITHM:        S X="" I $T(ICDNAME^DGPTIC10)'="" S X=$$ICDNAME^DGPTIC10()
+              LAST EDITED:      AUG 17, 2012 
               DESCRIPTION:
-                                This field will contain the name of the diagnosis.  
+                                This field computes the name of the diagnosis.  
 
 
 
       FILES POINTED TO                      FIELDS
+
+ICD CODING SYSTEMS (#80.4)        ICD VERSION (#.05)
 
 ICD DIAGNOSIS (#80)               DIAGNOSIS/PROCEDURE CODE (#.02)
 
@@ -88,12 +121,23 @@ PTF EXPANDED CODE CATEGORY
 INPUT TEMPLATE(S):
 
 PRINT TEMPLATE(S):
-DGPT EXPANDED CODE LIST       JUL 18, 1991@15:38  USER #0                                                                                                                                                                               PTF EXPANDED CODE LIST
+DGPT EXPANDED CODE LIST       AUG 17, 2012@12:44  USER #0                                                                                                                                                                               PTF EXPANDED CODE LIST
+DGPT EXPANDED CODE LIST-10    AUG 17, 2012@12:32  USER #0                                                                                                                                                                               PTF EXPANDED CODE LIST
 
 SORT TEMPLATE(S):
 DGPT EXPANDED CODE SORT       JUL 10, 1991@09:54  USER #0    
 SORT BY: @CATEGORY;"Category"//    (User is asked range)
   WITHIN CATEGORY, SORT BY: @DIAGNOSIS/PROCEDURE CODE_" ";"DIAGNOSIS/PROCEDURE CODE"//    (User is asked range)
+
+DGPT EXPANDED CODE SORT ICD-10JAN 11, 2012@14:05  USER #0    
+SORT BY: @ICD VERSION// (ICD VERSION from ICD-10-CM to ICD-10-PCS)
+  WITHIN ICD VERSION, SORT BY: @CATEGORY//    (User is asked range)
+    WITHIN CATEGORY, SORT BY: DIAGNOSIS/PROCEDURE CODE//    (User is asked range)
+
+DGPT EXPANDED CODE SORT ICD-9 JAN 11, 2012@14:02  USER #0    
+SORT BY: @ICD VERSION// (ICD VERSION from ICD-9 PROC to ICD-9-CM)
+  WITHIN ICD VERSION, SORT BY: @CATEGORY//    (User is asked range)
+    WITHIN CATEGORY, SORT BY: DIAGNOSIS/PROCEDURE CODE//    (User is asked range)
 
 
 FORM(S)/BLOCK(S):

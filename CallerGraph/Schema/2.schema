@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #2 -- PATIENT FILE                                                                                                                                                                                       JUL 23,2014@23:20:20  PAGE 1
-STORED IN ^DPT(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                                (VERSION 5.3)   
+STANDARD DATA DICTIONARY #2 -- PATIENT FILE                                                                                                                                                                                        NOV 6,2014@13:39:23  PAGE 1
+STORED IN ^DPT(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                  (VERSION 5.3)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -95,6 +95,7 @@ POINTED TO BY: PATIENT MERGED TO field (#.082) of the PATIENT File (#2)
                VA PATIENT NUMBER field (#.06) of the LRDFN sub-field (#69.3) of the USER REQUEST LIST sub-field (#69.28) of the LAB SECTION PRINT File (#69.2) 
                NAME field (#.01) of the RAD/NUC MED PATIENT File (#70) 
                PATIENT field (#.01) of the NUC MED EXAM DATA File (#70.2) 
+               PATIENT field (#.01) of the RADIATION ABSORBED DOSE File (#70.3) 
                PATIENT NAME field (#2) of the RAD/NUC MED REPORTS File (#74) 
                NAME field (#.01) of the RAD/NUC MED ORDERS File (#75.1) 
                PATIENT field (#.03) of the HL7 Message Exceptions File File (#79.3) 
@@ -169,7 +170,7 @@ POINTED TO BY: PATIENT MERGED TO field (#.082) of the PATIENT File (#2)
                PATIENT NAME field (#.01) of the BILLING PATIENT File (#354) 
                PATIENT field (#.01) of the IB PATIENT COPAY ACCOUNT File (#354.7) 
                INDIVIDUAL POLICY PATIENT field (#.1) of the GROUP INSURANCE PLAN File (#355.3) 
-               PATIENT NAME field (#60.01) of the INSURANCE BUFFER File (#355.33) 
+               PATIENT NAME field (#60.01) of the INSURANCE VERIFICATION PROCESSOR File (#355.33) 
                PATIENT field (#.02) of the INSURANCE CLAIMS YEAR TO DATE File (#355.5) 
                PATIENT field (#.02) of the PERSONAL POLICY File (#355.7) 
                SPONSOR field (#.01) of the SPONSOR File (#355.8) 
@@ -6106,6 +6107,31 @@ INDEXED BY:    SERVICE SEPARATION DATE [LAST] & COMBAT TO DATE & YUGOSLAVIA TO D
 
 
 
+2.312,8.01      REQUESTED SERVICE DATE 8;1 DATE
+
+                SERVICE DATE                                                                                                   
+                INPUT TRANSFORM:S %DT="E" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:    SEP 12, 2013 
+                HELP-PROMPT:    Enter the Service Date of the Response. 
+                DESCRIPTION:
+                                This is the Eligibility/Service Date that is received on the eIV Response message.  If it is not present on the Response message then this is the Eligibility Date that was sent on the Inquiry message.  
+
+                TECHNICAL DESCR:The Service Date associated with the Eligibility Benefits when the Eligibility Benefits are saved from the Insurance Buffer to the Patient's Policy. This is the Service Date the Payer responded to at the top of the 
+                                Eligibility Benefit section above the Insurance Status.  
+
+
+2.312,8.02      REQUESTED SERVICE TYPE 8;2 POINTER TO X12 271 SERVICE TYPE FILE (#365.013)
+
+                SERVICE TYPE                                                                                                   
+                LAST EDITED:    SEP 12, 2013 
+                HELP-PROMPT:    Enter the Service Type of the Response 
+                DESCRIPTION:
+                                This is the Service Type that is received on the Response message.  
+
+                TECHNICAL DESCR:The Service Type that was inquired about when the Eligibility Benefits are saved from the Insurance Buffer to the Patient's Policy. This is the Service Type inquired about at the top of the Eligibility Benefit section 
+                                above the Insurance Status.  
+
+
 2.312,9         GROUP REFERENCE INFORMATION 9;0 Multiple #2.3129
 
                 DESCRIPTION:
@@ -11697,14 +11723,17 @@ INDEXED BY:    SERVICE SEPARATION DATE [LAST] & COMBAT TO DATE & YUGOSLAVIA TO D
 
 2.396,.01       CD STATUS DIAGNOSES    0;1 POINTER TO CATASTROPHIC DISABILITY REASONS FILE (#27.17) (Multiply asked)
 
-                INPUT TRANSFORM:  S DIC("S")="I $$TYPE^DGENA5(Y)=""D""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
-                LAST EDITED:      JUN 17, 1999 
-                HELP-PROMPT:      The specified CD REASON must be a diagnosis. 
+                INPUT TRANSFORM:  S DIC("S")="I $$TYPE^DGENA5(Y)=""D""&($P(^DGEN(27.17,+Y,0),U,9)=$$ICDVER^DGENA5(""D""))" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+                OUTPUT TRANSFORM: S Y=$$DISP^DGENLCD1(Y)
+                LAST EDITED:      AUG 28, 2013 
+                HELP-PROMPT:      Select a CD diagnosis. 
                 DESCRIPTION:
-                                  Veterans having one of the following diagnoses shall be determined catastrophically disabled.  
+                                  This is a diagnosis which determines that the veteran is catastrophically disabled.  
 
-                SCREEN:           S DIC("S")="I $$TYPE^DGENA5(Y)=""D"""
-                EXPLANATION:      Must specify a CD REASON that is a diagnosis.
+                SCREEN:           S DIC("S")="I $$TYPE^DGENA5(Y)=""D""&($P(^DGEN(27.17,+Y,0),U,9)=$$ICDVER^DGENA5(""D""))"
+                EXPLANATION:      Must specify a CD REASON that is a diagnosis and the diagnosis coding system must match the value stored in the CD Reasons file. 
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
                 CROSS-REFERENCE:  2.396^B 
                                   1)= S ^DPT(DA(1),.396,"B",$E(X,1,30),DA)=""
                                   2)= K ^DPT(DA(1),.396,"B",$E(X,1,30),DA)
@@ -11721,18 +11750,25 @@ INDEXED BY:    SERVICE SEPARATION DATE [LAST] & COMBAT TO DATE & YUGOSLAVIA TO D
 
 2,.397        CD STATUS PROCEDURES   .397;0 POINTER Multiple #2.397
 
+              DESCRIPTION:
+                                The status procedure must be a valid procedure in the CD Reasons File (#27.17).  
+
               SCREEN:           S DIC("S")="I $P(^DGEN(27.17,Y,0),U,2)=""P"""
               EXPLANATION:      Must select a CD REASON that is a valid procedure.
 
 2.397,.01       CD STATUS PROCEDURES   0;1 POINTER TO CATASTROPHIC DISABILITY REASONS FILE (#27.17) (Multiply asked)
 
-                INPUT TRANSFORM:  S DIC("S")="I $$TYPE^DGENA5(Y)=""P""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
-                LAST EDITED:      JUN 17, 1999 
-                DESCRIPTION:      The veteran shall be determined Catastrophically Disabled if he/she has two of the following procedures (ICD-9 Procedure Codes 84.03 through 84.19) and/or certain CPT Codes provided the two procedures were not on the
-                                  same limb.  
+                INPUT TRANSFORM:  S DIC("S")="I $$TYPE^DGENA5(Y)=""P"" I ($P(^DGEN(27.17,+Y,0),U,3)[""ICPT"")!($P(^DGEN(27.17,+Y,0),U,9)=$$ICDVER^DGENA5(""P""))" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+                OUTPUT TRANSFORM: S Y=$$DISP^DGENLCD1(Y)
+                LAST EDITED:      AUG 28, 2013 
+                HELP-PROMPT:      The status procedure must be a valid procedure in the CD Reasons File (#27.17). 
+                DESCRIPTION:
+                                  This is for storage of either CPT procedure or ICD procedure codes.  ICD codes must be for the correct coding system, as determined by procedure date and stored in file 27.17 piece 9.  
 
-                SCREEN:           S DIC("S")="I $$TYPE^DGENA5(Y)=""P"""
-                EXPLANATION:      Must specify a CD REASON that is a procedure.
+                SCREEN:           S DIC("S")="I $$TYPE^DGENA5(Y)=""P"" I ($P(^DGEN(27.17,+Y,0),U,3)[""ICPT"")!($P(^DGEN(27.17,+Y,0),U,9)=$$ICDVER^DGENA5(""P""))"
+                EXPLANATION:      Must specify a CD REASON that is a procedure. The code must be a CPT code or the procedure coding system must match the value stored in the CD Reasons file.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
                 CROSS-REFERENCE:  2.397^B 
                                   1)= S ^DPT(DA(1),.397,"B",$E(X,1,30),DA)=""
                                   2)= K ^DPT(DA(1),.397,"B",$E(X,1,30),DA)
@@ -11751,7 +11787,13 @@ INDEXED BY:    SERVICE SEPARATION DATE [LAST] & COMBAT TO DATE & YUGOSLAVIA TO D
                                   'LUE' FOR Left Upper Extremity; 
                                   'RLE' FOR Right Lower Extremity; 
                                   'LLE' FOR Left Lower Extremity; 
-                LAST EDITED:      MAY 26, 1999 
+                                  'BLE' FOR Bilateral Lower Extremity; 
+                                  'BUE' FOR Bilateral Upper Extremity; 
+                LAST EDITED:      AUG 28, 2013 
+                HELP-PROMPT:      Choose the affected extremity. 
+                DESCRIPTION:
+                                  This is the affected extremity for this procedure.  
+
                 SCREEN:           S DIC("S")="I $$LSCREEN^DGENA5(Y)"
                 EXPLANATION:      Must select an affected extremity that is valid for the procedure.
                 CROSS-REFERENCE:  2.397^AENR1^MUMPS 
@@ -11934,9 +11976,12 @@ INDEXED BY:    SERVICE SEPARATION DATE [LAST] & COMBAT TO DATE & YUGOSLAVIA TO D
                                     'LUE' FOR LEFT UPPER EXTREMITY; 
                                     'RLE' FOR RIGHT LOWER EXTREMITY; 
                                     'LLE' FOR LEFT LOWER EXTREMITY; 
-                  LAST EDITED:      MAY 24, 1999 
+                                    'BLE' FOR Bilateral Lower Extremity; 
+                                    'BLU' FOR Bilateral Upper Extremity; 
+                  LAST EDITED:      AUG 28, 2013 
+                  HELP-PROMPT:      Choose the affected extremity. 
                   DESCRIPTION:
-                                    Stores the historical value of the AFFECTED EXTREMITY sub-field (#1) in the CD STATUS PROCEDURES (#.397) of the PATIENT file (#2).  
+                                    This is the extremity affected by the CD.  
 
 
 2.409,2           SCORE                  0;3 NUMBER
@@ -15265,7 +15310,8 @@ X12 271 REFERENCE IDENTIFICATI
                                   ELIGIBILITY/BENEFIT:REFERENCE ID QUALIFIER (#5.03)
                                   SUBSCRIBER REFERENCE ID:REFERENCE ID QUALIFIER (#.03)
 
-X12 271 SERVICE TYPE (#365.013)   ELIGIBILITY/BENEFIT:*SERVICE TYPE (#.04)
+X12 271 SERVICE TYPE (#365.013)   INSURANCE TYPE:REQUESTED SERVICE TYPE (#8.02)
+                                  ELIGIBILITY/BENEFIT:*SERVICE TYPE (#.04)
                                   SERVICE TYPES:SERVICE TYPES (#.01)
 
 X12 271 TIME PERIOD QUALIFIER 

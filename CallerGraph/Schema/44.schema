@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #44 -- HOSPITAL LOCATION FILE                                                                                                                                                                            JUL 23,2014@23:21:27  PAGE 1
-STORED IN ^SC(  (2 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                                                (VERSION 5.3)   
+STANDARD DATA DICTIONARY #44 -- HOSPITAL LOCATION FILE                                                                                                                                                                             NOV 6,2014@13:40:19  PAGE 1
+STORED IN ^SC(  (2 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                                  (VERSION 5.3)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -194,7 +194,7 @@ POINTED TO BY: ENROLLMENT CLINIC field (#.01) of the ENROLLMENT CLINIC sub-field
                IMPORTER ORDER LOCATION field (#117) of the DICOM GATEWAY PARAMETER File (#2006.563) 
                HOSPITAL LOCATION IEN field (#8) of the DICOM RADIOLOGY PROCEDURES File (#2006.5758) 
                HOSPITAL LOCATION field (#3) of the OUTSIDE IMAGING LOCATION File (#2006.5759) 
-               LOCATION field (#.01) of the LOCATION sub-field (#2006.58314) of the DICOM HEALTHCARE PROVIDER SERVICE File (#2006.5831) 
+               CLINIC field (#.01) of the CLINIC sub-field (#2006.58311) of the CLINICAL SPECIALTY DICOM & HL7 File (#2006.5831) 
                HOSPITAL LOCATION field (#1205) of the TIU DOCUMENT File (#8925) 
                VISIT LOCATION field (#1211) of the TIU DOCUMENT File (#8925) 
                INITIAL VISIT LOCATION field (#1.07) of the TIU AUDIT TRAIL File (#8925.5) 
@@ -212,8 +212,8 @@ POINTED TO BY: ENROLLMENT CLINIC field (#.01) of the ENROLLMENT CLINIC sub-field
                
 
 CROSS
-REFERENCED BY: TYPE EXTENSION(AC), NAME(AD), DEFAULT DIAGNOSIS(ADDX), DEFAULT PROVIDER(ADPR), ADMINISTER INPATIENT MEDS?(AE), CONSULT LINK(AHST1), APPT. CANCELLATION LETTER(ALTA), CLINIC CANCELLATION LETTER(ALTC), NO SHOW LETTER(ALTN), 
-               PRE-APPOINTMENT LETTER(ALTP), OCCASION OF SERVICE CLINIC?(AOOS), PRIOR X-RAY RESULTS TO CLINIC?(ARAD), CLINIC GROUP (REPORTS)(ASCRPW), NAME(ATEAM), CONSULT LINK(AWAS1), NAME(B), ABBREVIATION(C), TEAM(D)
+REFERENCED BY: TYPE EXTENSION(AC), NAME(AD), DEFAULT PROVIDER(ADPR), ADMINISTER INPATIENT MEDS?(AE), CONSULT LINK(AHST1), APPT. CANCELLATION LETTER(ALTA), CLINIC CANCELLATION LETTER(ALTC), NO SHOW LETTER(ALTN), PRE-APPOINTMENT LETTER(ALTP), 
+               OCCASION OF SERVICE CLINIC?(AOOS), PRIOR X-RAY RESULTS TO CLINIC?(ARAD), CLINIC GROUP (REPORTS)(ASCRPW), NAME(ATEAM), CONSULT LINK(AWAS1), NAME(B), ABBREVIATION(C), TEAM(D)
 
 INDEXED BY:    CREDIT STOP CODE (ACST), STOP CODE NUMBER (AST)
 
@@ -1997,19 +1997,25 @@ INDEXED BY:    CREDIT STOP CODE (ACST), STOP CODE NUMBER (AST)
 
 44,2700       DIAGNOSIS              DX;0 POINTER Multiple #44.11
 
-              DESCRIPTION:      Enter in this field the diagnoses associated with this clinic.  These diagnoses will then be displayed when updating the diagnosis through Appointment Management or Check Out to assist the user in entering the correct
-                                diagnosis.  
+              DESCRIPTION:
+                                These are the diagnoses associated with this clinic.  These diagnoses will be displayed when updating the diagnosis through Appointment Management or Check Out to assist the user in entering the correct diagnosis.  
 
 
 44.11,.01       DIAGNOSIS              0;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Multiply asked)
 
-                INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,9)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
-                LAST EDITED:      JAN 29, 1993 
-                DESCRIPTION:      Enter in this field the diagnoses associated with this clinic.  These diagnoses will then be displayed when updating the diagnosis through Appointment Management or Check Out to assist the user in entering the correct
-                                  diagnosis.  
+                INPUT TRANSFORM:  S DIC("S")="I $$F44SCRN1^SDAMICD(Y)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUN 04, 2013 
+                HELP-PROMPT:      Enter an active ICD code. 
+                DESCRIPTION:
+                                  This is a diagnosis associated with this clinic.  This diagnosis will be displayed when updating the diagnosis through Appointment Management or Check Out to assist the user in entering the correct diagnosis.  
 
-                SCREEN:           S DIC("S")="I '$P(^(0),U,9)"
+                TECHNICAL DESCR:
+                                  The Screen on this field allows active ICD codes.  
+
+                SCREEN:           S DIC("S")="I $$F44SCRN1^SDAMICD(Y)"
                 EXPLANATION:      Diagnosis must be active.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
                 CROSS-REFERENCE:  44.11^B 
                                   1)= S ^SC(DA(1),"DX","B",$E(X,1,30),DA)=""
                                   2)= K ^SC(DA(1),"DX","B",$E(X,1,30),DA)
@@ -2019,14 +2025,15 @@ INDEXED BY:    CREDIT STOP CODE (ACST), STOP CODE NUMBER (AST)
 
                                   '0' FOR NO; 
                                   '1' FOR YES; 
-                INPUT TRANSFORM:  I X,$D(^SC("ADDX",DA(1))),'$D(^(DA(1),DA)) W !?5,"A default diagnosis has already been assigned for this clinic." K X
-                LAST EDITED:      MAR 26, 1993 
+                INPUT TRANSFORM:  I X,$$F44SCRN2^SDAMICD(DA(1),DA) D EN^DDIOL("A default diagnosis ("_$$DEFLTICD^SDAMICD(DA(1),DA)_") has already been assigned to this clinic for this ICD version.","","!?5") K X
+                LAST EDITED:      MAR 20, 2012 
+                HELP-PROMPT:      Is this the default diagnosis? 
                 DESCRIPTION:
-                                  Enter 'YES' in this field if the diagnosis is the default for this clinic.  Otherwise, enter 'NO'.  
+                                  This field indicates whether or not this ICD code is this clinic's default diagnosis for an ICD version. Only one ICD code for an ICD version may be the default code for a clinic.  
 
                 NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
-                CROSS-REFERENCE:  44^ADDX^MUMPS 
+                CROSS-REFERENCE:  44.11^ADDX^MUMPS 
                                   1)= S:X ^SC("ADDX",DA(1),DA)=""
                                   2)= K ^SC("ADDX",DA(1),DA)
 
@@ -2181,7 +2188,7 @@ WARD LOCATION (#42)               NAME (#.01)
 
 INPUT TEMPLATE(S):
 SD IMO                        APR 18, 2003@13:41  USER #0    
-SDB                           APR 24, 2003@13:53  USER #0    ^SDBT 
+SDB                           JUN 04, 2013@13:38  USER #0    ^SDBT 
       
 
 PRINT TEMPLATE(S):

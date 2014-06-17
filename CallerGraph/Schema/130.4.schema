@@ -1,0 +1,153 @@
+STANDARD DATA DICTIONARY #130.4 -- ICD SEARCH API FILE                                                                                                                                                                             NOV 6,2014@13:40:30  PAGE 1
+STORED IN ^DIC(130.4,  (6 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                           (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used as a repository of ICD search (lookup) functionality to support an application's need for different user interface calls across multiple versions of ICD Diagnosis and Procedure coding.  
+ 
+Each entry is associated with a specific version of ICD Diagnosis or Procedure coding, an application, and executable M code.  The executable M code can be invoked from within the input transform of a field that points to the ICD DIAGNOSIS file (80) or
+the ICD OPERATION/ PROCEDURE file (80.1) to achieve the correct search functionality specific to the ICD version.  
+ 
+This file was developed during the ICD-10 Remediation project with the intent that it will support ICD-11 and beyond.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: CODING SYSTEM (#.02)
+
+PRIMARY KEY:        A (#48)
+  Uniqueness Index: C (#757)
+       File, Field: 1) APPLICATION NAME (130.4,.01)  2) TYPE (130.4,.04)  3) CODING SYSTEM (130.4,.02)
+
+CROSS
+REFERENCED BY: CODING SYSTEM(AC), APPLICATION NAME(B)
+
+INDEXED BY:    APPLICATION NAME & TYPE & CODING SYSTEM (C)
+
+
+130.4,.001    NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 12, 2012 
+              HELP-PROMPT:      Type a number between 1 and 999, 0 decimal digits. 
+              DESCRIPTION:
+                                This is the internal entry number for this field.  
+
+
+130.4,.01     APPLICATION NAME       0;1 FREE TEXT (Required) (Key field)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      FEB 27, 2012 
+              HELP-PROMPT:      Enter the name of the application that this API will be used by.  Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is the name of the application that this API will be used by.  A package may have more than one application name if it is required.  
+
+              TECHNICAL DESCR:  This field will be used by applications to enter a name.  Some applications may need more than one name, for example in ADT an entry might be created for PTF and another for RUG if they needed different API calls.  
+                                 
+                                The value in this field will be used in the API to retrieve the correct entry.  For example, in Surgery, this field might contain SURG.  The input transform for a top level field might read D
+                                GETAPI^SROICDGT("SURG,"DIAG",DA) 
+                                 
+
+              CROSS-REFERENCE:  130.4^B 
+                                1)= S ^DIC(130.4,"B",$E(X,1,30),DA)=""
+                                2)= K ^DIC(130.4,"B",$E(X,1,30),DA)
+                                This is the regular 'B' cross reference for this file.  
+
+
+              RECORD INDEXES:   C (#757)
+
+130.4,.02     CODING SYSTEM          0;2 POINTER TO ICD CODING SYSTEMS FILE (#80.4) (Key field)
+
+              ICD CODING SYSTEM                                                                                                
+              LAST EDITED:      FEB 27, 2012 
+              HELP-PROMPT:      Select the correct coding system for this entry. 
+              DESCRIPTION:
+                                This is the version that this API will be used to retrieve data for.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^130.4^.04 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DIC(130.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(130.4,.02,1,1,1.1) S DIH=$G(^DIC(130.4,DIV(0),0)),DIV=X S $P(^(0),U,4)=DIV,DIH=130.4,DIG=.04 D ^DICR
+                                1.1)= S X=DIV N SINFO S SINFO=$$SINFO^ICDEX($P(^DIC(130.4,DA,0),U,2)) S X=$S($P(SINFO,U,4)=80:"DIAG",$P(SINFO,U,4)=80.1:"PROC",1:"")
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DIC(130.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" S DIH=$G(^DIC(130.4,DIV(0),0)),DIV=X S $P(^(0),U,4)=DIV,DIH=130.4,DIG=.04 D ^DICR
+                                CREATE VALUE)= N SINFO S SINFO=$$SINFO^ICDEX($P(^DIC(130.4,DA,0),U,2)) S X=$S($P(SINFO,U,4)=80:"DIAG",$P(SINFO,U,4)=80.1:"PROC",1:"")
+                                DELETE VALUE)= @
+                                FIELD)= TYPE
+                                This trigger automatically sets the TYPE field to the correct value.  
+
+
+              CROSS-REFERENCE:  130.4^AC 
+                                1)= S ^DIC(130.4,"AC",$E(X,1,30),DA)=""
+                                2)= K ^DIC(130.4,"AC",$E(X,1,30),DA)
+
+              RECORD INDEXES:   C (#757)
+
+130.4,.04     TYPE                   0;4 SET (Key field)
+
+                                'DIAG' FOR DIAGNOSIS; 
+                                'PROC' FOR PROCEDURE; 
+              LAST EDITED:      AUG 08, 2013 
+              HELP-PROMPT:      Select either Diagnosis or Procedure. 
+              DESCRIPTION:
+                                This is the Type of ICD search API that will be executed for this entry.  Current choices are Diagnosis or Procedure.  
+
+              TECHNICAL DESCR:  The value stored in the Database (either DIAG or PROC) is used in calls to retrieve the correct API.  For example, in the Surgery file the input transform would be 'D GETAPI^SROICDGT("SURG","DIAG",DA) for a top level
+                                field.  
+                                 
+                                This value may also be used for calls to other ICD API's.  For example s x=$$ICDDX^ICDEX(CODE,...  
+
+              NOTES:            TRIGGERED by the CODING SYSTEM field of the ICD SEARCH API File 
+
+              RECORD INDEXES:   C (#757)
+
+130.4,.05     OWNER PACKAGE          0;5 POINTER TO PACKAGE FILE (#9.4) (Required)
+
+              LAST EDITED:      FEB 16, 2012 
+              HELP-PROMPT:      Enter the package that is responsible for this entry. 
+              DESCRIPTION:
+                                This is the package that is responsible for this entry. 
+
+
+130.4,1       MUMPS CODE TO EXECUTE  1;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      FEB 12, 2012 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:
+                                Enter the MUMPS code to execute the correct search user interface for this coding system.  
+
+              WRITE AUTHORITY:  @
+
+
+      FILES POINTED TO                      FIELDS
+
+ICD CODING SYSTEMS (#80.4)        CODING SYSTEM (#.02)
+
+PACKAGE (#9.4)                    OWNER PACKAGE (#.05)
+
+
+File #130.4
+
+  Record Indexes:
+
+  C (#757)    RECORD    REGULAR    IR    LOOKUP & SORTING
+       Unique for:  Key A (#48), File #130.4
+      Short Descr:  Uniqueness Index for Key 'A' of File #130.4
+        Set Logic:  S ^DIC(130.4,"C",X(1),X(2),X(3),DA)=""
+       Kill Logic:  K ^DIC(130.4,"C",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^DIC(130.4,"C")
+             X(1):  APPLICATION NAME  (130.4,.01)  (Subscr 1)
+             X(2):  TYPE  (130.4,.04)  (Subscr 2)
+             X(3):  CODING SYSTEM  (130.4,.02)  (Subscr 3)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
