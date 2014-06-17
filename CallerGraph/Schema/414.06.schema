@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #414.06 -- IFCAP/ECMS TRANSACTION FILE                                                                                                                                                                   MAY 20,2014@15:33:59  PAGE 1
-STORED IN ^PRCV(414.06,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 5.1)   
+STANDARD DATA DICTIONARY #414.06 -- IFCAP/ECMS TRANSACTION FILE                                                                                                                                                                    APR 3,2014@10:25:20  PAGE 1
+STORED IN ^PRCV(414.06,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                          (VERSION 5.1)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -12,13 +12,13 @@ activity to assure that communication with the eCMS vendor portal is timely and 
 CROSS
 REFERENCED BY: EVENT DATE(AED), SUB-STATION(ASB), STATION(ASN), EVENT TYPE(ATY), IFCAP REFERENCE NUMBER(B)
 
-INDEXED BY:    ECMS EMAIL (ACONTACT), IFCAP REFERENCE NUMBER (ACP)
+INDEXED BY:    ECMS EMAIL (ACONTACT), IFCAP REFERENCE NUMBER (ACP), ECMS EMAIL (AUNQEC), IFCAP REFERENCE NUMBER (AUNQFCP)
 
 
 414.06,.01    IFCAP REFERENCE NUMBER 0;1 FREE TEXT (Required)
 
               INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
-              LAST EDITED:      JUL 26, 2012 
+              LAST EDITED:      JUN 20, 2013 
               HELP-PROMPT:      Answer must be 3-30 characters in length. 
               DESCRIPTION:      The unique IFCAP reference number for this transaction.  For transactions involving purchase requests (2237) this will be the text value of the Control Point Activity Transaction Number needed by the Electronic Contract
                                 Management System (eCMS).  
@@ -33,6 +33,16 @@ INDEXED BY:    ECMS EMAIL (ACONTACT), IFCAP REFERENCE NUMBER (ACP)
                     Set Logic:  S ^PRCV(414.06,"ACP",$E(X,1,30),DA)=""
                    Kill Logic:  K ^PRCV(414.06,"ACP",$E(X,1,30),DA)
                    Whole Kill:  K ^PRCV(414.06,"ACP")
+                         X(1):  IFCAP REFERENCE NUMBER  (414.06,.01)  (Subscr 1)  (Len 30)  (forwards)
+                                  Transform (Storage):  S X=$P(X,"-",4)
+
+              FIELD INDEX:      AUNQFCP (#1118)    REGULAR    IR    SORTING ONLY
+                  Short Descr:  List of all unique FCPs.
+                  Description:  Index uses only the fund control point portion of the reference number.  The Set Condition ensures that only one instance of any fund control point is in the index.  
+                    Set Logic:  S ^PRCV(414.06,"AUNQFCP",$E(X,1,30),DA)=""
+                     Set Cond:  S X=$D(^PRCV(414.06,"AUNQFCP",X))'=10
+                   Kill Logic:  K ^PRCV(414.06,"AUNQFCP",$E(X,1,30),DA)
+                   Whole Kill:  K ^PRCV(414.06,"AUNQFCP")
                          X(1):  IFCAP REFERENCE NUMBER  (414.06,.01)  (Subscr 1)  (Len 30)  (forwards)
                                   Transform (Storage):  S X=$P(X,"-",4)
 
@@ -88,20 +98,10 @@ INDEXED BY:    ECMS EMAIL (ACONTACT), IFCAP REFERENCE NUMBER (ACP)
 
 
 
-414.061,.02     EVENT TYPE             0;2 SET (Required)
+414.061,.02     EVENT TYPE             0;2 POINTER TO IFCAP/ECMS EVENT TYPE FILE (#414.07) (Required)
 
-                                  '1' FOR 2237 SENT; 
-                                  '2' FOR 2237 ACKNOWLEDGED; 
-                                  '3' FOR 2237 APPLICATION ERROR; 
-                                  '4' FOR 2237 RESENT; 
-                                  '6' FOR RETURN TO ACCOUNTABLE OFFICER; 
-                                  '7' FOR RETURN TO AO ACK; 
-                                  '8' FOR RETURN TO CONTROL POINT; 
-                                  '9' FOR RETURN TO CP ACK; 
-                                  '10' FOR 2237 CANCELED; 
-                                  '11' FOR 2237 CANCEL ACK; 
-                LAST EDITED:      JUN 15, 2012 
-                HELP-PROMPT:      Enter the event type. 
+                LAST EDITED:      FEB 20, 2013 
+                HELP-PROMPT:      Select the event type. 
                 DESCRIPTION:
                                   The type of message associated with this transaction event.  
 
@@ -171,7 +171,7 @@ INDEXED BY:    ECMS EMAIL (ACONTACT), IFCAP REFERENCE NUMBER (ACP)
 414.061,6       ECMS EMAIL             1;6 FREE TEXT
 
                 INPUT TRANSFORM:  K:$L(X)>60!($L(X)<2) X
-                LAST EDITED:      AUG 08, 2012 
+                LAST EDITED:      APR 09, 2013 
                 HELP-PROMPT:      Answer must be 2-60 characters in length. 
                 DESCRIPTION:
                                   The email address for the eCMS user associated with this transaction event.  
@@ -184,6 +184,17 @@ INDEXED BY:    ECMS EMAIL (ACONTACT), IFCAP REFERENCE NUMBER (ACP)
                      Whole Kill:  K ^PRCV(414.06,"ACONTACT")
                            X(1):  ECMS EMAIL  (414.061,6)  (Subscr 1)  (Len 60)  (forwards)
                                     Transform (Storage):  S X=$$CONTACT^PRCHJTA(X)
+
+                FIELD INDEX:      AUNQEC (#1117)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#414.06)
+                    Short Descr:  Unique eCMS Contact
+                    Description:  This index provides a list of unique eCMS email addresses in a format compatible with end user selection.  The Set Condition ensures that only one instance of any ECMS EMAIL is in the index.  The Storage Transform
+                                  converts the email address into a format that parses it into a form more suitable for sorting.  
+                      Set Logic:  S ^PRCV(414.06,"AUNQEC",$E(X,1,90),DA(1),DA)=""
+                       Set Cond:  S X=$D(^PRCV(414.06,"AUNQEC",X))'=10
+                     Kill Logic:  K ^PRCV(414.06,"AUNQEC",$E(X,1,90),DA(1),DA)
+                     Whole Kill:  K ^PRCV(414.06,"AUNQEC")
+                           X(1):  ECMS EMAIL  (414.061,6)  (Subscr 1)  (Len 90)  (forwards)
+                                    Transform (Storage):  S X=$$CONTACT^PRCHJTA(X)_"  "_X
 
 
 414.061,7       RETURN/CANCEL DATE/TIME 1;7 DATE
@@ -240,6 +251,8 @@ INDEXED BY:    ECMS EMAIL (ACONTACT), IFCAP REFERENCE NUMBER (ACP)
       FILES POINTED TO                      FIELDS
 
 CONTROL POINT ACTIVITY (#410)     REQUEST RECORD (#1)
+
+IFCAP/ECMS EVENT TYPE (#414.07)   EVENT:EVENT TYPE (#.02)
 
 NEW PERSON (#200)                 EVENT:IFCAP USER (#3)
 

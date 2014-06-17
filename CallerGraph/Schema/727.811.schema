@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #727.811 -- SURGERY EXTRACT FILE                                                                                                                                                                         MAY 20,2014@15:31:53  PAGE 1
-STORED IN ^ECX(727.811,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 3.0)   
+STANDARD DATA DICTIONARY #727.811 -- SURGERY EXTRACT FILE                                                                                                                                                                          APR 3,2014@10:22:50  PAGE 1
+STORED IN ^ECX(727.811,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                          (VERSION 3.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -813,8 +813,11 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               TECHNICAL DESCR:  Using the patient pointer (DFN) stored in the PATIENT NO. - DFN field (#4), RACE 1 is derived from the PTF VALUE field (#5) of the RACE file (#10) pointed to by the RACE INFORMATION field (#.01) of the RACE INFORMATION
                                 subfile (#2.02) of the PATIENT file (#2).  
                                  
-                                Only those RACE INFORMATION values in the RACE INFORMATION subfile (#2.02) where the METHOD OF COLLECTION field (#.02) is set to 1 (SELF-IDENTIFICATION), will be included in the RACE 1 field.  If any of the RACE
-                                INFORMATION values returned is "C" (DECLINED TO ANSWER), that will be the only value included in the RACE1 field.  
+                                Only those RACE INFORMATION values in the RACE INFORMATION subfile (#2.03) where the METHOD OF COLLECTION field (#.02) is set to 1 (SELF-IDENTIFICATION), will be included in the RACE 1 field. Up to 6 race entries can be
+                                included. If any of the RACE INFORMATION values returned is "C" (DECLINED TO ANSWER), that will be the only value included in the RACE1 field.  
+                                 
+                                If the RACE 1 field is null after checking the RACE INFORMATION values then the patient's historical RACE data will be checked to see if it contains one of the twenty six non-standard race values that are convertible to
+                                standard race values.  If so, the race value will be converted to the standard value and stored in the RACE 1 field.  
 
 
 727.811,61    NEW QUANTITY           1;25 NUMBER
@@ -1350,12 +1353,12 @@ REFERENCED BY: EXTRACT NUMBER(AC)
                                 'Y' FOR YES; 
                                 'N' FOR NO; 
               LAST EDITED:      MAY 12, 2008 
-              HELP-PROMPT:      Encounter Service Connected - Y/N 
+              HELP-PROMPT:      Is this Encounter Service Connected? 
               DESCRIPTION:
-                                Indicates if treatment provided during this patient encounter is Service Connected.  Values: Y=YES, N=NO 
+                                Indicates if treatment provided during this patient encounter is Service Connected.  
 
-              TECHNICAL DESCR:
-                                Using a pointer to the VISIT file (#9000010) a call to the PCE API, ENCEVENT^PXAPI, is made. This call returns visit data, including the SERVICE CONNECTED field (#80001) in the VISIT file (#9000010).  
+              TECHNICAL DESCR:  Using a pointer to the VISIT file (#9000010) a call is made to API VISIT^ECXSCX1 which in turn calls ENCEVENT^PXAPI. This call returns visit data, including the SERVICE CONNECTED field (#80001) in the VISIT file 
+                                (#9000010).  
 
 
 727.811,101   AGENT ORANGE STATUS    2;28 SET
@@ -1642,13 +1645,140 @@ REFERENCED BY: EXTRACT NUMBER(AC)
 
               INPUT TRANSFORM:  K:$L(X)>8!($L(X)<8) X
               OUTPUT TRANSFORM: S Y=$$ECXDATEX^ECXUTL(Y)
-              LAST EDITED:      JUN 20, 2011 
-              HELP-PROMPT:      Answer must be 8 characters (YYYYMMDD) in length. 
+              LAST EDITED:      FEB 06, 2013 
+              HELP-PROMPT:      Answer must be 8 characters in length. 
               DESCRIPTION:
                                 Patient's date of birth.  
 
-              TECHNICAL DESCR:  The data is derived by using the Patient No. - DFN (#4) field of this file to retrieve the DATE OF BIRTH (#.03) field from the PATIENT (#2) file.  If Date of Birth cannot be determined, then January 1, 1942, is used as 
-                                default.  
+              TECHNICAL DESCR:  Data source: 
+                                 
+                                SURGERY file (#130); PATIENT field (#.01) then to PATIENT file (#2); DATE OF BIRTH field (#.03) 
+                                 
+                                Date of Birth is returned through the supported call DEM^VADPT. It is then represented by an 8-character numeric string in the YYYYMMDD format.  
+
+
+727.811,122   VIETNAM                3;16 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      MAR 09, 2013 
+              HELP-PROMPT:      Select the appropriate Vietnam service status for this patient. 
+              DESCRIPTION:
+                                Indicates if patient is a Vietnam era veteran.  
+
+              TECHNICAL DESCR:
+                                Using the patient pointer (DFN) stored in the PATIENT NO. - DFN field (#4) in the SURGERY EXTRACT file (#727.811), VIETNAM data is derived from the VIETNAM SERVICE INDICATED? field (#.32101) in the PATIENT file (#2).  
+
+
+727.811,123   CAMP LEJEUNE STATUS    3;17 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      MAR 09, 2013 
+              HELP-PROMPT:      Indicate Camp Lejeune status for the patient. 
+              DESCRIPTION:
+                                Indicates if patient was exposed to contaminated water while stationed at Camp Lejeune, NC between January 1, 1957 and December 31, 1987.  
+
+              TECHNICAL DESCR:
+                                Using the patient's DFN, a call is made to PAT^ECXUTL3, which in turn calls SVC^VADPT. This call returns all service related information for a patient, including their Camp Lejeune status.  
+
+
+727.811,124   ENCOUNTER CAMP LEJEUNE 3;18 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      MAR 09, 2013 
+              HELP-PROMPT:      Indicate if this encounter is related to exposure at Camp Lejeune. 
+              DESCRIPTION:
+                                Indicates if episode of care is related to exposure to contaminated water while stationed at Camp Lejeune, NC between January 1, 1957 and December 31, 1987.  
+
+              TECHNICAL DESCR:
+                                Using a pointer to the VISIT file (#9000010) a call is made to API VISIT^ECXSCX1 which in turn calls ENCEVENT^PXAPI. The ENCEVENT^PXAPI returns the encounter Camp Lejeune data from the VISIT file (#9000010).  
+
+
+727.811,125   CONCURRENT CASE        3;19 SET
+
+                                'C' FOR CONCURRENT CASE; 
+              LAST EDITED:      APR 12, 2013 
+              HELP-PROMPT:      Indicate if this record has a Concurrent Case. 
+              DESCRIPTION:      An additional operative procedure performed by a different surgical team (i.e., a different specialty/service) under the same anesthetic which has a CPT code different from that of the Principle Operative Procedure (e.g., 
+                                fixation of a femur fracture in a patient undergoing a laparotomy for trauma).  
+
+              TECHNICAL DESCR:
+                                This field is determined by using the CONCURRENT CASE field (#35) of the SURGERY file (#130). If there is a value in that field, this field is set to "C" to indicate a concurrent case exists.  
+
+
+727.811,126   PRINCIPLE POSTOP ICD-10 CODE 3;20 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      MAR 09, 2013 
+              HELP-PROMPT:      Answer must be 1-8 characters in length. 
+              DESCRIPTION:
+                                The post-op diagnosis for the Principle Procedure.  
+
+              TECHNICAL DESCR:  Once available, the ICD10 data will be retrieved from the supported API and stored in this field.  This field is added in anticipation of the release of ICD10 and the file will be updated at the time the software is 
+                                updated to retrieve the ICD10 information.  
+
+
+727.811,127   OTHER POSTOP ICD-10 CODE #1 3;21 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      MAR 09, 2013 
+              HELP-PROMPT:      Answer must be 1-8 characters in length. 
+              DESCRIPTION:
+                                The first associated diagnosis for the Principle Procedure.  
+
+              TECHNICAL DESCR:  Once available, the ICD10 data will be retrieved from the supported API and stored in this field.  This field is added in anticipation of the release of ICD10 and the file will be updated at the time the software is 
+                                updated to retrieve the ICD10 information.  
+
+
+727.811,128   OTHER POSTOP ICD-10 CODE #2 3;22 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      MAR 09, 2013 
+              HELP-PROMPT:      Answer must be 1-8 characters in length. 
+              DESCRIPTION:
+                                The second associated diagnosis for the Principle Procedure.  
+
+              TECHNICAL DESCR:  Once available, the ICD10 data will be retrieved from the supported API and stored in this field.  This field is added in anticipation of the release of ICD10 and the file will be updated at the time the software is 
+                                updated to retrieve the ICD10 information.  
+
+
+727.811,129   OTHER POSTOP ICD-10 CODE #3 3;23 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      MAR 10, 2013 
+              HELP-PROMPT:      Answer must be 1-8 characters in length. 
+              DESCRIPTION:
+                                The third associated diagnosis for the Principle Procedure.  
+
+              TECHNICAL DESCR:  Once available, the ICD10 data will be retrieved from the supported API and stored in this field.  This field is added in anticipation of the release of ICD10 and the file will be updated at the time the software is 
+                                updated to retrieve the ICD10 information.  
+
+
+727.811,130   OTHER POSTOP ICD-10 CODE #4 3;24 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      MAR 10, 2013 
+              HELP-PROMPT:      Answer must be 1-8 characters in length. 
+              DESCRIPTION:
+                                The fourth associated diagnosis for the Principle Procedure.  
+
+              TECHNICAL DESCR:  Once available, the ICD10 data will be retrieved from the supported API and stored in this field.  This field is added in anticipation of the release of ICD10 and the file will be updated at the time the software is 
+                                updated to retrieve the ICD10 information.  
+
+
+727.811,131   OTHER POSTOP ICD-10 CODE #5 3;25 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      MAR 10, 2013 
+              HELP-PROMPT:      Answer must be 1-8 characters in length. 
+              DESCRIPTION:
+                                The fifth associated diagnosis for the Principle Procedure.  
+
+              TECHNICAL DESCR:  Once available, the ICD10 data will be retrieved from the supported API and stored in this field.  This field is added in anticipation of the release of ICD10 and the file will be updated at the time the software is 
+                                updated to retrieve the ICD10 information.  
 
 
 

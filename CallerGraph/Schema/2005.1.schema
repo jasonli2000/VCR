@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #2005.1 -- IMAGE AUDIT FILE                                                                                                                                                                              MAY 20,2014@15:34:37  PAGE 1
-STORED IN ^MAG(2005.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 3.0)   
+STANDARD DATA DICTIONARY #2005.1 -- IMAGE AUDIT FILE                                                                                                                                                                               APR 3,2014@10:26:03  PAGE 1
+STORED IN ^MAG(2005.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                           (VERSION 3.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -48,7 +48,7 @@ POINTED TO BY: LINKED IMAGE field (#115.1) of the IMAGE File (#2005)
                
 
 CROSS
-REFERENCED BY: PATIENT(AC), GROUP PARENT(AGP), STATUS REASON(ASTRSN), OBJECT NAME(B), FILEREF(E)
+REFERENCED BY: PATIENT(AC), GROUP PARENT(AGP), STATUS REASON(ASTRSN), OBJECT NAME(B), FILEREF(E), PACS UID(P)
 
 INDEXED BY:    DATE/TIME IMAGE SAVED (AD), DATE/TIME IMAGE SAVED & IMAGE SAVE BY & ACQUISITION SITE & CAPTURE APPLICATION & GROUP PARENT (ADTDUZ), GROUP PARENT & PROCEDURE/EXAM DATE/TIME (APDT), GROUP PARENT & PROCEDURE/EXAM DATE/TIME & PATIENT &
                PROCEDURE (APDTPX), OBJECT NAME & DOCUMENT DATE & CONTROLLED IMAGE & STATUS & STATUS REASON (AUDIT100), OBJECT NAME & SHORT DESCRIPTION & PROCEDURE & PROCEDURE/EXAM DATE/TIME (AUDIT2), OBJECT NAME & PACKAGE INDEX & TYPE INDEX & PROC/EVENT
@@ -629,10 +629,13 @@ INDEXED BY:    DATE/TIME IMAGE SAVED (AD), DATE/TIME IMAGE SAVED & IMAGE SAVE BY
 
                                 'V' FOR VA; 
                                 'N' FOR NON-VA; 
-              LAST EDITED:      MAY 19, 2004 
-              HELP-PROMPT:      This field indicates whether this image originated inside or outside of the VA 
+                                'D' FOR DOD; 
+                                'F' FOR FEE; 
+                                'I' FOR IHS; 
+              LAST EDITED:      JAN 11, 2012 
+              HELP-PROMPT:      Select Origin Index. 
               DESCRIPTION:
-                                This field indicates whether this image originated inside or outside of  the VA 
+                                This field indicates whether this image originated inside or outside of the VA.  
 
               RECORD INDEXES:   AUDIT40 (#526)
 
@@ -684,10 +687,17 @@ INDEXED BY:    DATE/TIME IMAGE SAVED (AD), DATE/TIME IMAGE SAVED & IMAGE SAVE BY
 2005.1,60     PACS UID               PACS;1 FREE TEXT
 
               INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>64!($L(X)<1) X
-              LAST EDITED:      NOV 07, 2000 
+              LAST EDITED:      JAN 10, 2012 
               HELP-PROMPT:      A UID has up to 64 characters and must be unique. 
               DESCRIPTION:
                                 This field is used by the VISTA-PACS interface and is the unique (up to) 64 character image identifier of the PACS image.  
+
+              CROSS-REFERENCE:  2005.1^P 
+                                1)= S ^MAG(2005.1,"P",$E(X,1,64),DA)=""
+                                2)= K ^MAG(2005.1,"P",$E(X,1,64),DA)
+                                3)= PACS UNIVERSAL IDENTIFIER
+                                This cross reference is set by images captured from VistA Imaging DICOM 
+
 
 
 2005.1,61     RADIOLOGY REPORT       PACS;2 POINTER TO RAD/NUC MED REPORTS FILE (#74)
@@ -1142,17 +1152,47 @@ INDEXED BY:    DATE/TIME IMAGE SAVED (AD), DATE/TIME IMAGE SAVED & IMAGE SAVE BY
                                 '10' FOR In Progress; 
                                 '11' FOR Needs Review; 
                                 '12' FOR Deleted; 
-              LAST EDITED:      DEC 03, 2008 
+                                '13' FOR Image Never Existed; 
+              LAST EDITED:      JUL 01, 2013 
               HELP-PROMPT:      Select the current status of the image. 
-              DESCRIPTION:
-                                Internal value of this field is 12 for all entries of the IMAGE AUDIT file (#2005). 
+              DESCRIPTION:      Viewable 
+                                   
+                                  By default, all images are viewable, and images 
+                                  with no status are considered viewable.  
+                                  
+                                QA Reviewed 
+                                   
+                                  A user has viewed the image and verified that 
+                                  the patient identifier and values of index 
+                                  index fields are correct for this image.  
+                                   
+                                In Progress 
+                                   
+                                  When capturing image groups, this status will 
+                                  indicate that the images are being added to the 
+                                  group of images.  When the process is complete, 
+                                  the status will change to viewable.  
+                                   
+                                Needs Review 
+                                   
+                                  Indicates that the values(s) of the index fields or 
+                                  patient identifier have been found to be 
+                                  incorrect.  The VistA Imaging Display application 
+                                  will block images with this status from being 
+                                  viewed.  The Image Edit utility can be used to 
+                                  modify the incorrect value(s) of the index fields.  
+                                  
+                                Deleted 
+                                  Marks the image as deleted.  
+                                 
+                                Image Never Existed 
+                                  There was an Error while copying the Image to 
+                                  the Image Share.  The Image entry is deleted 
+                                  and the status is set as Image Never Existed.  
+                                 
 
-              TECHNICAL DESCR:  Technically, neither all set codes other than '12:Deleted' nor the screening logic are needed because a trigger cross-reference associated with the OBJECT NAME field (.01) automatically populates the STATUS field (113) and
-                                the latter is not editable.  
-                                 
-                                Therefore, the codes and the logic are here for additional safety and documentation purposes only.  
-                                 
-                                Added by the patch MAG*3*93.  
+              TECHNICAL DESCR:
+                                Use only positive canonic numbers for internal values.  
 
               SCREEN:           S DIC("S")="I Y=12"
               EXPLANATION:      Only '12:Deleted' value is allowed.

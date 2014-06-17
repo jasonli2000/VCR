@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #53.79 -- BCMA MEDICATION LOG FILE                                                                                                                                                                       MAY 20,2014@15:30:56  PAGE 1
-STORED IN ^PSB(53.79,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 3.0)   
+STANDARD DATA DICTIONARY #53.79 -- BCMA MEDICATION LOG FILE                                                                                                                                                                        APR 3,2014@10:21:45  PAGE 1
+STORED IN ^PSB(53.79,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                            (VERSION 3.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -24,15 +24,16 @@ POINTED TO BY: MED LOG PTR field (#.08) of the BCMA MEDICATION VARIANCE LOG File
 
 CROSS
 REFERENCED BY: ACTION DATE/TIME(AADT), PRN EFFECTIVENESS MINUTES(ACHKPRN), ENTERED DATE/TIME(AEDT), ADMINISTRATION MEDICATION(AOIP), ACTION DATE/TIME(AOIP1), SCHEDULED ADMINISTRATION TIME(AORD2), ORDER SCHEDULE(APRN2), ACTION DATE/TIME(AU06), 
-               ACTION STATUS(AU09), INJECTION SITE(AU16), PRN REASON(AU21), PRN EFFECTIVENESS(AU22), ORDER ADMINISTRATION VARIANCE(AVARCHK), PATIENT NAME(B), ADDITIVES(E), SOLUTIONS(F)
+               ACTION STATUS(AU09), INJECTION SITE(AU16), PRN REASON(AU21), PRN EFFECTIVENESS(AU22), WITNESS DATE/TIME(AU28), ADMIN WITNESSED BY(AU29), WITNESS HR ORDER CODE(AU32), WITNESSED?(AU33), ORDER ADMINISTRATION VARIANCE(AVARCHK), 
+               PATIENT NAME(B), ADDITIVES(E), SOLUTIONS(F)
 
-INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT NAME & ADMINISTRATION MEDICATION & ACTION DATE/TIME & INJECTION SITE (AINJOI), PATIENT NAME & ORDER REFERENCE NUMBER & ACTION DATE/TIME (AORDX), PATIENT NAME & ACTION
-               DATE/TIME (APATCH), PATIENT NAME & ORDER REFERENCE NUMBER & IV UNIQUE ID (AUID)
+INDEXED BY:    PATIENT NAME & ACTION DATE/TIME (AINFUSING), PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT NAME & ADMINISTRATION MEDICATION & ACTION DATE/TIME & INJECTION SITE (AINJOI), PATIENT NAME & ORDER REFERENCE NUMBER & ACTION
+               DATE/TIME (AORDX), PATIENT NAME & ACTION DATE/TIME (APATCH), PATIENT NAME & ACTION DATE/TIME (ASTOPPED), PATIENT NAME & ORDER REFERENCE NUMBER & IV UNIQUE ID (AUID)
 
 
 53.79,.01     PATIENT NAME           0;1 POINTER TO PATIENT FILE (#2) (Required)
 
-              LAST EDITED:      SEP 21, 2011 
+              LAST EDITED:      SEP 10, 2012 
               DESCRIPTION:
                                 This field contains a pointer to the PATIENT File (#2) and is the patient that received the medication.  
 
@@ -50,15 +51,15 @@ INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT 
                          X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (forwards)
                          X(2):  ACTION DATE/TIME  (53.79,.06)  (Subscr 2)  (forwards)
 
-              RECORD INDEXES:   AINJ (#1045), AINJOI (#1046), AORDX (#47), AUID (#147)
+              RECORD INDEXES:   AINFUSING (#1115), AINJ (#1045), AINJOI (#1046), AORDX (#47), ASTOPPED (#1116), AUID (#147)
 
 53.79,.02     PATIENT LOCATION       0;2 FREE TEXT
 
               INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
-              LAST EDITED:      MAR 19, 1999 
+              LAST EDITED:      NOV 14, 2012 
               HELP-PROMPT:      Answer must be 1-50 characters in length. 
               DESCRIPTION:
-                                Free text room-bed and ward location of the patient at the time of the med pass.  
+                                Free text room-bed and ward location of the patient for Inpatient Medication orders or Clinic Name for Clinic orders at the time of the med pass.  
 
 
 53.79,.03     PATIENT DIVISION       0;3 POINTER TO INSTITUTION FILE (#4) (Required)
@@ -94,7 +95,7 @@ INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT 
 53.79,.06     ACTION DATE/TIME       0;6 DATE (Required)
 
               INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
-              LAST EDITED:      SEP 21, 2011 
+              LAST EDITED:      SEP 10, 2012 
               DESCRIPTION:
                                 Fileman Date/Time containing the actual time the med was administered.  
 
@@ -152,7 +153,7 @@ INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT 
                          X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (forwards)
                          X(2):  ACTION DATE/TIME  (53.79,.06)  (Subscr 2)  (forwards)
 
-              RECORD INDEXES:   AINJ (#1045), AINJOI (#1046), AORDX (#47)
+              RECORD INDEXES:   AINFUSING (#1115), AINJ (#1045), AINJOI (#1046), AORDX (#47), ASTOPPED (#1116)
 
 53.79,.07     ACTION BY              0;7 POINTER TO NEW PERSON FILE (#200)
 
@@ -428,6 +429,35 @@ INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT 
                                 The PRN REASON FLAG field is to indicate whether the BCMA Med Log file entry is PRN activity and has an associated PRN REASON which has been set to require BCMA user attention or action.  
 
 
+53.79,.28     WITNESS DATE/TIME      0;13 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      SEP 12, 2012 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                Contains the DATE/TIME that this administration of a High Risk/High Alert medication was witnessed.  
+
+              CROSS-REFERENCE:  53.79^AU28^MUMPS 
+                                1)= D AUDIT^PSBUTL(DA,53.79,.28,X,"S")
+                                2)= D AUDIT^PSBUTL(DA,53.79,.28,X,"K")
+                                Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
+53.79,.29     ADMIN WITNESSED BY     0;14 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      SEP 19, 2012 
+              HELP-PROMPT:      Select the witness. 
+              DESCRIPTION:
+                                Contains the user that was required to Witness the passing of meds due to Drug High Risk/Alert.  
+
+              CROSS-REFERENCE:  53.79^AU29^MUMPS 
+                                1)= D AUDIT^PSBUTL(DA,53.79,.29,X,"S")
+                                2)= D AUDIT^PSBUTL(DA,53.79,.29,X,"K")
+                                Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
 53.79,.3      COMMENT                .3;0 Multiple #53.793
 
               DESCRIPTION:
@@ -460,13 +490,54 @@ INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT 
 
 
 
+53.79,.31     WITNESS COMMENT        1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>150!($L(X)<1) X
+              LAST EDITED:      SEP 12, 2012 
+              HELP-PROMPT:      Answer must be 1-150 characters in length. 
+              DESCRIPTION:
+                                Comment the witness may want to enter while witnessing an administration for a High Risk/High Alert medication.  
+
+
+53.79,.32     WITNESS HR ORDER CODE  1;2 SET
+
+                                '0' FOR NOT HIGH RISK/ALERT; 
+                                '1' FOR HIGH RISK/ALERT-NO WITNESS REQUIRED IN BCMA; 
+                                '2' FOR RECOMMEND WITNESS IN BCMA-HIGH RISK/ALERT; 
+                                '3' FOR WITNESS REQUIRED IN BCMA-HIGH RISK/ALERT; 
+              LAST EDITED:      NOV 14, 2012 
+              HELP-PROMPT:      Enter the Order's highest level of High Risk/Alert codes found in its components of Disp Drug, Additives, or Solutions. 
+              DESCRIPTION:
+                                This field contains the highest level of all the High Risk/High Alert drug indicators that were found in the order when this medication was passed.  
+
+              CROSS-REFERENCE:  53.79^AU32^MUMPS 
+                                1)= D AUDIT^PSBUTL(DA,53.79,.32,X,"S")
+                                2)= D AUDIT^PSBUTL(DA,53.79,.32,X,"K")
+
+
+53.79,.33     WITNESSED?             1;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      NOV 14, 2012 
+              HELP-PROMPT:      Enter Yes if this medication administration was witnessed. 
+              DESCRIPTION:
+                                This field will track whether the Witness was bypassed for a High Risk/High Alert drug during medication passing.  
+
+              CROSS-REFERENCE:  53.79^AU33^MUMPS 
+                                1)= D AUDIT^PSBUTL(DA,53.79,.33,X,"S")
+                                2)= D AUDIT^PSBUTL(DA,53.79,.33,X,"K")
+
+
 53.79,.35     INFUSION RATE          0;11 FREE TEXT
 
-              INPUT TRANSFORM:  K:$L(X)>47!($L(X)<1) X
-              LAST EDITED:      FEB 25, 2003 
-              HELP-PROMPT:      Answer must be 1-47 characters in length. 
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      OCT 10, 2012 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
               DESCRIPTION:
                                 This is the infusion rate for an IV bag, which is passed by Inpatient Medications.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
 
 53.79,.5      DISPENSE DRUG          .5;0 POINTER Multiple #53.795
@@ -536,6 +607,18 @@ INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT 
                            X(3):  UNIT OF ADMINISTRATION  (53.795,.04)  (Subscr 3)  (forwards)
 
 
+53.795,.05      HIGH RISK/HIGH ALERT   0;5 SET
+
+                                  '0' FOR NOT HIGH RISK/ALERT; 
+                                  '1' FOR HIGH RISK/ALERT-NO WITNESS REQUIRED IN BCMA; 
+                                  '2' FOR RECOMMEND WITNESS IN BCMA-HIGH RISK/ALERT; 
+                                  '3' FOR WITNESS REQUIRED IN BCMA-HIGH RISK/ALERT; 
+                LAST EDITED:      NOV 14, 2012 
+                HELP-PROMPT:      Enter a valid High Risk/Alert code for this Dispense Drug. 
+                DESCRIPTION:
+                                  High Risk/High Alert indicator for the Orderable Item this disp drug pointed to at the time of administration.  
+
+
 
 
 53.79,.6      ADDITIVES              .6;0 POINTER Multiple #53.796
@@ -597,6 +680,18 @@ INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT 
 
 
 
+53.796,.05      HIGH RISK/HIGH ALERT   0;5 SET
+
+                                  '0' FOR NOT HIGH RISK/ALERT; 
+                                  '1' FOR HIGH RISK/ALERT-NO WITNESS REQUIRED IN BCMA; 
+                                  '2' FOR RECOMMEND WITNESS IN BCMA-HIGH RISK/ALERT; 
+                                  '3' FOR WITNESS REQUIRED IN BCMA-HIGH RISK/ALERT; 
+                LAST EDITED:      NOV 14, 2012 
+                HELP-PROMPT:      Enter a valid High Risk/Alert code for this Additive. 
+                DESCRIPTION:
+                                  High Risk/High Alert indicator for the Orderable Item this additive pointed to at the time of administration.  
+
+
 
 
 53.79,.7      SOLUTIONS              .7;0 POINTER Multiple #53.797
@@ -656,6 +751,18 @@ INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT 
                                   2)= D AUDIT^PSBUTL(DA(1),53.797,.04,X,"K")
                                   Creates an entry in this items audit log whenever changed or deleted.  
 
+
+
+53.797,.05      HIGH RISK/HIGH ALERT   0;5 SET
+
+                                  '0' FOR NOT HIGH RISK/ALERT; 
+                                  '1' FOR HIGH RISK/ALERT-NO WITNESS REQUIRED IN BCMA; 
+                                  '2' FOR RECOMMEND WITNESS IN BCMA-HIGH RISK/ALERT; 
+                                  '3' FOR WITNESS REQUIRED IN BCMA-HIGH RISK/ALERT; 
+                LAST EDITED:      NOV 14, 2012 
+                HELP-PROMPT:      Enter a valid High Risk/Alert code for this Solution. 
+                DESCRIPTION:
+                                  High Risk/High Alert indicator for the Orderable Item this Solution pointed to at the time of administration.  
 
 
 
@@ -724,6 +831,7 @@ IV SOLUTIONS (#52.7)              SOLUTIONS:SOLUTIONS (#.01)
 NEW PERSON (#200)                 ENTERED BY (#.05)
                                   ACTION BY (#.07)
                                   PRN EFFECTIVENESS ENTERED BY (#.23)
+                                  ADMIN WITNESSED BY (#.29)
                                   COMMENT:ENTERED BY (#.02)
                                   AUDIT LOG:USER (#.02)
                                   ACTION BY LOG (#.05)
@@ -736,6 +844,17 @@ PHARMACY ORDERABLE ITEM (#50.7)   ADMINISTRATION MEDICATION (#.08)
 File #53.79
 
   Record Indexes:
+
+  AINFUSING (#1115)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Index of IV's still with a status of Infusing.
+      Description:  Updates AINFUSING when DFN or admin date/time changes and Action Status is "I" for infusing or kill index when Action Status changes from "I" to anything.  
+        Set Logic:  S ^PSB(53.79,"AINFUSING",X(1),X(2),DA)=""
+         Set Cond:  S X=0 I $P(^PSB(53.79,DA,0),U,9)="I",$P(^PSB(53.79,DA,0),U,10)]"" S X=1
+       Kill Logic:  K ^PSB(53.79,"AINFUSING",X(1),X(2),DA)
+        Kill Cond:  S X=0 I $P(^PSB(53.79,DA,0),U,9)'="I" S X=1
+       Whole Kill:  K ^PSB(53.79,"AINFUSING")
+             X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (forwards)
+             X(2):  ACTION DATE/TIME  (53.79,.06)  (Subscr 2)  (forwards)
 
   AINJ (#1045)    RECORD    REGULAR    IR    SORTING ONLY
       Short Descr:  By patient, action date/time, & inject site
@@ -765,6 +884,17 @@ File #53.79
              X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (Len 30)  (forwards)
              X(2):  ORDER REFERENCE NUMBER  (53.79,.11)  (Subscr 2)  (Len 15)  (forwards)
              X(3):  ACTION DATE/TIME  (53.79,.06)  (Subscr 3)  (Len 15)  (forwards)
+
+  ASTOPPED (#1116)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Index of IV's that are status Stopped.
+      Description:  Updates ASTOPPED when DFN or admin date/time changes and Action Status  is "S" for stopped or kill index when Action Status changes from "S" to anything else.  
+        Set Logic:  S ^PSB(53.79,"ASTOPPED",X(1),X(2),DA)=""
+         Set Cond:  S X=0 I $P(^PSB(53.79,DA,0),U,9)="S",$P(^PSB(53.79,DA,0),U,10)]"" S X=1
+       Kill Logic:  K ^PSB(53.79,"ASTOPPED",X(1),X(2),DA)
+        Kill Cond:  S X=0 I $P(^PSB(53.79,DA,0),U,9)'="S" S X=1
+       Whole Kill:  K ^PSB(53.79,"ASTOPPED")
+             X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (forwards)
+             X(2):  ACTION DATE/TIME  (53.79,.06)  (Subscr 2)  (forwards)
 
   AUID (#147)    RECORD    REGULAR    IR    SORTING ONLY
       Short Descr:  cross reference of dfn, order number, and unique id

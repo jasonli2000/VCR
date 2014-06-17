@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #2006.1 -- IMAGING SITE PARAMETERS FILE                                                                                                                                                                  MAY 20,2014@15:34:44  PAGE 1
-STORED IN ^MAG(2006.1,  (1 ENTRY)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                            (VERSION 3.0)   
+STANDARD DATA DICTIONARY #2006.1 -- IMAGING SITE PARAMETERS FILE                                                                                                                                                                   APR 3,2014@10:26:14  PAGE 1
+STORED IN ^MAG(2006.1,  (1 ENTRY)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                            (VERSION 3.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -23,6 +23,8 @@ ELEMENT       TITLE                 LOCATION      TYPE
  
 The Imaging Site Parameter file contains those variables which are site specific, and which are necessary for the Imaging Software to perform properly. Most of the fields have MUMPs cross-references with which they are associated that are used by the
 software for quick access to the specific data. Some of the fields defined may not be in use presently, but are reserved for future development.  Review the Imaging Installation Manual for instructions on making entries into this file.  
+ 
+Non-integrated sites and Integrated sites that have one shared image storage location have one record.  Integrated sites where each site has their own image storage have one record for each of the associated sites.  
 
 
               DD ACCESS: @
@@ -38,10 +40,14 @@ POINTED TO BY: PLACE field (#.04) of the NETWORK LOCATION File (#2005.2)
                PLACE field (#.04) of the BP SERVERS File (#2006.8) 
                PLACE field (#.04) of the IMAGING WINDOWS WORKSTATIONS File (#2006.81) 
                PLACE field (#.04) of the IMAGING WINDOWS SESSIONS File (#2006.82) 
+               STORAGE PLACE field (#.01) of the STORAGE PROVIDER File (#2006.917) 
+               SOURCE PLACE field (#3) of the RETENTION POLICY STORAGE PROVIDER MAP File (#2006.923) 
+               SOURCE PLACE field (#2) of the STORAGE PROVIDER AVAILABILITY File (#2006.924) 
+               ENDPOINT PLACE field (#2) of the TRANSFER STATISTICS File (#2006.925) 
                
 
 CROSS
-REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SERVER TASK(AE), INSTITUTION NAME(B), ASSOCIATED INSTITUTIONS(C)
+REFERENCED BY: SERVER TASK(AE), INSTITUTION NAME(B), ASSOCIATED INSTITUTIONS(C)
 
 2006.1,.01    INSTITUTION NAME       0;1 POINTER TO INSTITUTION FILE (#4) (Required)
 
@@ -286,6 +292,15 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
                                 determine the RAID Group advance and is part of the automatic Purge algorithm.  When this value cannot be maintained, a CRITICAL LOW MESSAGE is triggered. 
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+2006.1,11.5   TIER 2 RESERVE         1;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>50)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 23, 2013 
+              HELP-PROMPT:      Type a number between 0 and 50, 0 decimal digits. 
+              DESCRIPTION:      This field allows sites to define a minimum percentage of free space in the tier 2 storage device in order to prevent loss of cache space for temporary storage. The default value is 5.  The Background Processor JUKEBOX
+                                queue will not write to the currently designated tier 2 storage share if this percent storage capacity is not available or accessible from the Background Processor application.  
 
 
 2006.1,11.9   DATE OF LAST CRITICAL MESSAGE 3;11 DATE
@@ -930,12 +945,6 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
-              CROSS-REFERENCE:  2006.1^AC^MUMPS 
-                                1)= D SAME^MAGDRPC2(1,DA,"GW",1,X)
-                                2)= D SAME^MAGDRPC2(0,DA,"GW",1,X)
-                                This MUMPS cross reference is really a trigger that causes the values for this field to be the same for all entries in the Imaging Site Parameter file.  
-
-
 
 2006.1,125    DICOM GATEWAY VERIFY CODE GW;2 FREE TEXT
 
@@ -948,12 +957,6 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
                                 This field is also used for auto-login for the BP Queue Processor, Purge and Verifier applications. This value is stored encrypted.  
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
-              CROSS-REFERENCE:  2006.1^AD^MUMPS 
-                                1)= D SAME^MAGDRPC2(1,DA,"GW",2,X)
-                                2)= D SAME^MAGDRPC2(0,DA,"GW",2,X)
-                                This MUMPS cross reference is really a trigger that causes the values for this field to be the same for all entries in the Imaging Site Parameter file.  
-
 
 
 2006.1,126    LAST ROUTING ACTIVITY  LASTROUTE;1 DATE
@@ -1060,11 +1063,86 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
               SCREEN:           S DIC("S")="I $P(^(0),U,2)>.5"
               EXPLANATION:      (The System's User Entry is Not Selectable.)
 
+2006.1,300    RAD TECHNOLOGIST       IMPORTER;1 POINTER TO NEW PERSON FILE (#200)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$YNRADIST^MAGVIM07(Y,""RST"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 24, 2012 
+              HELP-PROMPT:      Enter Radiology Technologist to be associated with Importer II Radiology orders/exams. 
+              DESCRIPTION:
+                                This is the Radiology Technologist who will be responsible for the importing of the exam.  
+
+              TECHNICAL DESCR:  This field holds the 'TECH' miscellaneous parameter of the Radiology Orders/Exams API. It is required by the Importer II application to manage Radiology exams automatically. See MSCPRMS^RAMAGU01 for the complete
+                                miscellaneous parameter documentation. (MAG*3.0*118) 
+
+              SCREEN:           S DIC("S")="I $$YNRADIST^MAGVIM07(Y,""RST"")"
+              EXPLANATION:      Restrict choices to Resident, Staff, or Technologist.
+
+2006.1,301    RAD FILM SIZE          IMPORTER;2 POINTER TO FILM SIZES FILE (#78.4)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,1)=""NO FILMS""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 16, 2012 
+              HELP-PROMPT:      Enter a film size to be associated with Importer II generated Radiology exams. 
+              DESCRIPTION:
+                                This is the Film Size to be associated with imported exams.  
+
+              TECHNICAL DESCR:  This field holds the 'FILMSIZE' miscellaneous parameter of the Radiology Orders/Exams API. It is required by the Importer II application to manage Radiology exams automatically. See MSCPRMS^RAMAGU01 for the complete
+                                miscellaneous parameter documentation. (MAG*3.0*118) 
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,1)=""NO FILMS"""
+              EXPLANATION:      Restrict entry to the value 'NO FILMS' for imported studies.
+
+2006.1,302    RAD PRIMARY DIAGNOSTIC CODE IMPORTER;3 POINTER TO DIAGNOSTIC CODES FILE (#78.3)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,1)=""NO ALERT REQUIRED""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 16, 2012 
+              HELP-PROMPT:      Enter the primary diagnostic code to be associated with Importer II generated Radiology exams. 
+              DESCRIPTION:
+                                This is the primary diagnostic code to be associated with imported exams.  
+
+              TECHNICAL DESCR:  This field holds the 'PRIMDXCODE' miscellaneous parameter of the Radiology Orders/Exams API. It is required by the Importer II application to manage Radiology exams automatically. See MSCPRMS^RAMAGU01 for the complete 
+                                miscellaneous parameter documentation. (MAG*3.0*118) 
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,1)=""NO ALERT REQUIRED"""
+              EXPLANATION:      Restrict entry to the value 'NO ALERT REQUIRED' for imported studies.
+
+2006.1,303    RAD PRIMARY CAMERA/EQUIP/RM IMPORTER;4 POINTER TO CAMERA/EQUIP/RM FILE (#78.6)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,1)=""OUTSIDE STUDY""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 16, 2012 
+              HELP-PROMPT:      Enter the camera/equip/room to be associated with Importer II generated Radiology exams. 
+              DESCRIPTION:
+                                This is the primary camera/equip/room to be associated with imported exams.  
+
+              TECHNICAL DESCR:  This field holds the 'PRIMCAM' miscellaneous parameter of the Radiology Orders/Exams API. It is required by the Importer II application to manage Radiology exams automatically. See MSCPRMS^RAMAGU01 for the complete 
+                                miscellaneous parameter documentation. (MAG*3.0*118) 
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,1)=""OUTSIDE STUDY"""
+              EXPLANATION:      Restrict input to the value 'OUTSIDE STUDY' for imported exams.
+
+2006.1,304    RAD CPT MODIFIERS      IMPORTER;5 POINTER TO CPT MODIFIER FILE (#81.3)
+
+              LAST EDITED:      JUL 26, 2011 
+              HELP-PROMPT:      Enter the CPT modifier to be associated with Importer II generated Radiology exams. 
+              DESCRIPTION:
+                                This is the CPT modifier to be associated with imported exams.  
+
+              TECHNICAL DESCR:  This field holds the 'CPTMODS' miscellaneous parameter of the Radiology Orders/Exams API. It is required by the Importer II application to manage Radiology exams automatically. See MSCPRMS^RAMAGU01 for the complete 
+                                miscellaneous parameter documentation. (MAG*3.0*118) 
+
+
 
       FILES POINTED TO                      FIELDS
 
 BP SERVERS (#2006.8)              LAST PURGE BPWS (#60.4)
                                   LAST VERIFY BP WS (#62.5)
+
+CAMERA/EQUIP/RM (#78.6)           RAD PRIMARY CAMERA/EQUIP/RM (#303)
+
+CPT MODIFIER (#81.3)              RAD CPT MODIFIERS (#304)
+
+DIAGNOSTIC CODES (#78.3)          RAD PRIMARY DIAGNOSTIC CODE (#302)
+
+FILM SIZES (#78.4)                RAD FILM SIZE (#301)
 
 IMAGING USER PREFERENCE (#2006.18)  DEFAULT USER PREFERENCE (#100)
 
@@ -1089,7 +1167,8 @@ NETWORK LOCATION (#2005.2)        IMAGE NETWORK WRITE LOCATION (#.03)
                                   NET UPDATE TEST DIRECTORY (#53)
                                   NET SITE SERVICE (#55)
 
-NEW PERSON (#200)                 MESSAGE RECIPIENTS:MESSAGE RECIPIENTS (#.01)
+NEW PERSON (#200)                 RAD TECHNOLOGIST (#300)
+                                  MESSAGE RECIPIENTS:MESSAGE RECIPIENTS (#.01)
 
 SECURITY KEY (#19.1)              SECURITY KEYS:SECURITY KEYS (#.01)
 

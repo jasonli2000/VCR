@@ -1,0 +1,390 @@
+STANDARD DATA DICTIONARY #101.52 -- ORDER DEA ARCHIVE INFO FILE                                                                                                                                                                    APR 3,2014@10:31:09  PAGE 1
+STORED IN ^ORPA(101.52,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                          (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The purpose of this file is to satisfy the Drug Enforcement Agency (DEA) requirement for an electronic prescribing system to maintain an archive of all controlled substance prescriptions that were electronically entered.  
+ 
+The file will store all the information that is considered a part of the prescription.  
+ 
+The file should always be audited. In addition, the file should NEVER be edited using FileMan. These are both DEA requirements.  
+ 
+In order to satisfy the requirement that both the prescribing (CPRS) and filling systems (Outpatient Pharmacy) create an archive, but to reduce the need for additional storage space, both CPRS and Pharmacy will use the same file. CPRS will create the
+entries when an order is signed or when a backdoor order message is received from Pharmacy. Once Pharmacy verifies the data in the Pharmacy system is an exact match for what CPRS stored, they will subscribe to the entry in the archive file and will
+update the PRESCRIPTION NUMBER (#1) field.  
+ 
+The file was defined in a different global name in order to handle the volume set from the rest of the CPRS system (i.e., the ORDER file).  It is important to note that to fully meet the DEA requirements, the fields required by the DEA cannot be
+pointers. We must store the data completely. The fields that are pointers are for our internal use, rather than for the DEA purposes.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: CPRS ORDER NUMBER(AC), CPRS ORDER NUMBER(B)
+
+INDEXED BY:    ISSUANCE DATE & PROVIDER (C)
+
+
+101.52,.01    CPRS ORDER NUMBER      0;1 POINTER TO ORDER FILE (#100) (Required) (audited)
+
+              LAST EDITED:      MAR 14, 2013 
+              HELP-PROMPT:      Enter the CPRS order number associated with this archive entry. 
+              DESCRIPTION:
+                                The CPRS order number that is associated with this archive entry.  
+
+              AUDIT:            YES, ALWAYS
+              CROSS-REFERENCE:  101.52^B 
+                                1)= S ^ORPA(101.52,"B",$E(X,1,30),DA)=""
+                                2)= K ^ORPA(101.52,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  101.52^AC^MUMPS 
+                                1)= D AUDIT^ORDEAAUD
+                                2)= Q
+                                Populates the STACK field (#41).  
+
+
+
+101.52,1      PRESCRIPTION NUMBER    0;2 POINTER TO PRESCRIPTION FILE (#52) (audited)
+
+              LAST EDITED:      MAR 14, 2013 
+              HELP-PROMPT:      Enter the prescription number associated with this archive entry. 
+              DESCRIPTION:
+                                The prescription number associated with this archive entry. This field is populated once Outpatient Pharmacy has determined that the contents of the prescription received match what was entered by the provider.  
+
+              AUDIT:            YES, ALWAYS
+
+101.52,2      DIG SIG HASH           0;3 FREE TEXT (audited)
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+              LAST EDITED:      MAR 14, 2013 
+              HELP-PROMPT:      Enter the digital signature hash associated with this order (1-100 characters). 
+              DESCRIPTION:      This is the digital signature hash associated with this order. This 'hash' is calculated by a Microsoft API that is called by the Kernel code during the signature process in CPRS.  
+                                 
+                                It is stored here so that, at any time, a hash can be calculated and compared to this value to ensure the contents have not changed.  
+
+              AUDIT:            YES, ALWAYS
+
+101.52,4      ISSUANCE DATE          1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:3110701>X X
+              LAST EDITED:      DEC 07, 2012 
+              HELP-PROMPT:      Enter the date of issuance for this order. 
+              DESCRIPTION:
+                                This is the date this order was issued. In other words, what date was it entered into CPRS.  
+
+              RECORD INDEXES:   C (#1102)
+
+101.52,6      DRUG NAME              1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter the drug name associated with this order (1-40 characters). 
+              DESCRIPTION:      This is the drug name associated with the CPRS orderable item for this order. It will only be present if the dispense drug is known at the time the archive entry is created. This information comes from the GENERIC NAME
+                                field (#.01) from the DRUG file (#50).  
+
+
+101.52,8      QTY PRESCRIBED         1;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."3.N) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter the quantity ordered by the provider (1 and 99999999 maximum 2 decimal digits). 
+              DESCRIPTION:
+                                This is the quantity of pills/tablets/liquid specified by the provider for this order. This field correlates to the QTY field (#7) in the PRESCRIPTION file (#52).  
+
+
+101.52,9      DIRECTIONS FOR USE (SIG) 2;0 Multiple #101.529 (Add New Entry without Asking)
+
+              DESCRIPTION:      This is a multiple field for storing the directions for use. In this particular storage location, directions are stored in the format that they are transmitted via the HL7 array and protocols to Pharmacy, rather than in
+                                human readable format.  
+
+
+101.529,.01     DIRECTIONS FOR USE (SIG) 0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>250!($L(X)<1) X
+                LAST EDITED:      DEC 06, 2012 
+                HELP-PROMPT:      Enter the directions for use associated with this order (1-250 characters). 
+                DESCRIPTION:
+                                  The directions for use associated with this order. The format will be the same as that in the HL7 message sent, via a protocol call, to Pharmacy.  
+
+
+
+
+101.52,10     DEA #                  3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter the DEA # or the Facility DEA - VA # used by the provider to sign this order (1-20 characters). 
+              DESCRIPTION:      This is the DEA license number of the provider that signed the order. The DEA number is pulled from one of two places. If present and valid, it will be the DEA# field (#53.2) in the NEW PERSON file (#200) at the time the
+                                order is signed.  
+                                 
+                                If the provider doesn't have personal DEA credentials, this field will contain the facility DEA number, followed by a '-', followed by the provider's VA suffix. This number pulls from the FACILITY DEA NUMBER field (#52) in
+                                the INSTITUTION file (#4) and the VA# field (#53.3) in the NEW PERSON file (#200).  
+
+
+101.52,11     DETOX #                3;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<3) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter the Detox/Maintenance number for this order (3-9 characters). 
+              DESCRIPTION:      This is the Detox/Maintenance license number associated with the provider that signed this order. This comes from the DETOX/MAINTENANCE ID NUMBER field (#53.11) from the NEW PERSON file (#200) at the time the order is
+                                signed.  
+                                 
+                                Not every medication requires a Detox/Maintenance license, so this field will frequently be blank.  
+
+
+101.52,12     PROVIDER NAME          3;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<3) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter the name of the provider associated with this order (3-35 characters). 
+              DESCRIPTION:
+                                The name of the provider, from the NAME field (#.01) of the NEW PERSON file (#200), at the time the order is signed.  
+
+
+101.52,13     PROVIDER ADDRESS #1    4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter the name of the VA facility where this order was signed (3-30 character). 
+              DESCRIPTION:
+                                This is the VA facility name where this order was signed. This comes from the NAME field (.01) of the INSTITUTION file (#4).  
+
+
+101.52,14     PROVIDER ADDRESS #2    4;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<2) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter Street Address 1 for the VA facility where this order was signed (2-40 characters). 
+              DESCRIPTION:
+                                This is the first line of the street address for the VA facility where this order was signed. This comes from the STREET ADDR. 1 field (1.01) of the INSTITUTION file (#4).  
+
+
+101.52,15     PROVIDER ADDRESS #3    4;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<2) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter Street Address 2 for the VA facility where this order was signed (2-40 characters). 
+              DESCRIPTION:
+                                This is the second line of the street address of the VA facility where this order was signed. This comes from the STREET ADDR. 2 field (#1.02) in the INSTITUTION file (#4).  
+
+
+101.52,16     PROVIDER CITY          4;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<2) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter the City for the VA facility where this order was signed (2-40 characters). 
+              DESCRIPTION:
+                                This is the city associated with the VA facility where this order was signed. This comes from the CITY field (#1.03) in the INSTITUTION file (#4).  
+
+
+101.52,17     PROVIDER STATE         4;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter the state for the VA facility where this order was signed (1-30 characters). 
+              DESCRIPTION:
+                                This is the state associated with the VA facility where this order was signed. This is from the NAME field (.01) of the STATE file (#5).  
+
+
+101.52,17.5   PROVIDER ZIP+4         4;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter ZIP or ZIP+4 for the VA facility where this order was signed (5 - 10 characters). 
+              DESCRIPTION:
+                                This is the ZIP or ZIP + 4 of the VA facility where this order was signed. This field comes from the ZIP field (#1.04) in the INSTITUTION file (#4).  
+
+
+101.52,18     PATIENT NAME           5;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter the name of the patient associated with this order (3-30 characters). 
+              DESCRIPTION:
+                                This is the patient name of the patient for whom the prescription was written and signed. This is correlated to the NAME field (#.01) of the PATIENT file (#2).  
+
+
+101.52,19     PATIENT                5;2 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Select the patient associated with this order. 
+              DESCRIPTION:
+                                This is the patient associated with this order.  
+
+
+101.52,20     ICN                    5;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter the ICN for the patient associated with this order (1-30 characters). 
+              DESCRIPTION:
+                                This is the Integration Control Registration (ICN) number associated with the patient for which this order was written/signed. This is the value returned from GETICN^MPIF001. It may be a national ICN or a local ICN.  
+
+
+101.52,21     PATIENT ADDRESS #1     6;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<3) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter address line 1 for the patient associated with this order (3-35 characters). 
+              DESCRIPTION:      This is the address of the patient at the time the order was placed. It is the VAPA(1) return value from the call to ADD^VADPT. Assuming no temporary or foreign address, it would be the STREET ADDRESS [LINE 1] field
+                                (#.111) from the PATIENT file (#2).  
+
+
+101.52,22     PATIENT ADDRESS #2     6;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter address line 2 for the patient associated with this order (3-30 characters). 
+              DESCRIPTION:      This is address line 2 of the patient associated with this order. It is the VAPA(2) return value from the call to ADD^VADPT. Assuming no temporary or foreign address, it would be the STREET ADDRESS [LINE 2] field (#.112)
+                                from the PATIENT file (#2).  
+
+
+101.52,24     PATIENT ADDRESS #3     6;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter address line 3 for the patient associated with this order (3-30 characters). 
+              DESCRIPTION:      This is address line 3 for the patient associated with this order. It is the VAPA(3) return value from the call to ADD^VADPT. Assuming no temporary or foreign address, it would the STREET ADDRESS [LINE 3] field (#.113)
+                                from the PATIENT file (#2).  
+
+
+101.52,25     PATIENT CITY           6;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<2) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter the city for the address of that patient associated with this order (2-15 characters). 
+              DESCRIPTION:      This is the city associated with the address for the patient associated with this order. It is the VAPA(4) return value from the call to ADD^VADPT. Assuming no temporary or foreign address, it would the CITY field (#.114)
+                                from the PATIENT file (#2).  
+
+
+101.52,26     PATIENT STATE          6;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter the state for the patient associated with this order (1-30 characters). 
+              DESCRIPTION:      This is the state for the address of the patient associated with this order. It is the VAPA(5) return value from the call to ADD^VADPT. Assuming no temporary or foreign address, it would the STATE field (#.115) from the 
+                                PATIENT file (#2).  
+
+
+101.52,27     PATIENT ZIP+4          6;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter ZIP or ZIP + 4 for the address of the patient associated with this order. 
+              DESCRIPTION:      This is the ZIP or ZIP+4 code for the city of the address for the patient associated with this order. It is the VAPA(6) return value from the call to ADD^VADPT. Assuming no temporary or foreign address, it would the ZIP 
+                                CODE field (#.116) from the PATIENT file (#2).  
+
+
+101.52,28     # OF REFILLS           1;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>13)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Enter the number of refills for this order (a whole number from 0 to 13). 
+              DESCRIPTION:      This is the number of refills specified by the provider at the time the drug is ordered. There are some limitations on refills for controlled substances and there are times when Pharmacy may correct this after validating
+                                the hash. This is correlated to the # OF REFILLS (#9) of the PRESCRIPTION file (#52).  
+
+
+101.52,29     DISPENSE DRUG          1;3 POINTER TO DRUG FILE (#50)
+
+              LAST EDITED:      DEC 05, 2012 
+              HELP-PROMPT:      Select the Dispense Drug. 
+              DESCRIPTION:
+                                This is the dispense drug associated with this order. It is possible this field will be blank if there is no dispense drug known at the time the order was signed in CPRS.  
+
+
+101.52,30     DEA SCHEDULE           1;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<1) X
+              LAST EDITED:      DEC 06, 2012 
+              HELP-PROMPT:      Enter the DEA Schedule for the dispense drug associated with this order (1-6 characters). 
+              DESCRIPTION:      This is the Drug Enforcement Agency (DEA) drug schedule associated with the medication on this order. For example: 2 for a schedule two non-narcotic or 2n for the schedule two narcotic. This comes from the DEA, SPECIAL
+                                HDLG field (#3) in the DRUG file (#50).  
+
+
+101.52,31     PROVIDER               3;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 07, 2012 
+              HELP-PROMPT:      Select the provider who signed this order. 
+              DESCRIPTION:
+                                This is the provider who signed this order.  
+
+              RECORD INDEXES:   C (#1102)
+
+101.52,40     SOURCE                 7;0 Multiple #101.53
+
+
+101.53,.01      SOURCE                 0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+                LAST EDITED:      FEB 19, 2013 
+                HELP-PROMPT:      Enter the routine name that generated the modification/entry (1-8 characters). 
+                DESCRIPTION:
+                                  This multiple will contain the routine that generated either the initial entry or any modifications.  
+
+                CROSS-REFERENCE:  101.53^B 
+                                  1)= Q
+                                  2)= Q
+
+
+101.53,2        TIME OF ENTRY          0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      DEC 10, 2012 
+                HELP-PROMPT:      Enter the date/time this entry was made. 
+                DESCRIPTION:
+                                  This is the date and time the entry was made/modified. This is part of the additional auditing of the archive entries.  
+
+
+
+
+101.52,41     STACK                  8;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+              LAST EDITED:      FEB 19, 2013 
+              HELP-PROMPT:      Enter the stack trace of the process that is creating this entry. 
+              DESCRIPTION:
+                                Stores the stack trace of the process that created this entry.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DRUG (#50)                        DISPENSE DRUG (#29)
+
+NEW PERSON (#200)                 PROVIDER (#31)
+
+ORDER (#100)                      CPRS ORDER NUMBER (#.01)
+
+PATIENT (#2)                      PATIENT (#19)
+
+PRESCRIPTION (#52)                PRESCRIPTION NUMBER (#1)
+
+
+File #101.52
+
+  Record Indexes:
+
+  C (#1102)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Index on Issuance Date to assist in monthly reporting by provider.
+      Description:  One of the Drug Enforcement Agency (DEA) requirements for electronic prescribing of controlled substances is that a monthly report must be prepared for each provider showing the controlled substance prescriptions written for the
+                    previous month.  
+        Set Logic:  S ^ORPA(101.52,"C",X(2),X(1),DA)=""
+       Kill Logic:  K ^ORPA(101.52,"C",X(2),X(1),DA)
+       Whole Kill:  K ^ORPA(101.52,"C")
+             X(1):  ISSUANCE DATE  (101.52,4)  (Subscr 2)  (forwards)
+             X(2):  PROVIDER  (101.52,31)  (Subscr 1)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
