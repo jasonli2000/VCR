@@ -1,0 +1,389 @@
+STANDARD DATA DICTIONARY #393 -- INCOMPLETE RECORDS FILE                                                                                                                                                                          MAY 20,2014@15:35:16  PAGE 1
+STORED IN ^VAS(393,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is the main file for the Incomplete Records Tracking package IRT This is where all of the data is stored that will be displayed for each deficiency on the enter/edit screens and on all of the reports.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: D
+             DEL ACCESS: D
+           LAYGO ACCESS: D
+IDENTIFIED BY: 
+      "WRITE": S DGJT=^(0) D WR^DGJTUTL
+
+POINTED TO BY: IRT RECORD field (#1403) of the TIU DOCUMENT File (#8925) 
+               
+
+CROSS
+REFERENCED BY: ATTENDING PHYSICIAN(AAT), SERVICE(AC), DICTATED BY(ADB), DATE DICTATED(ADD), ADMISSION(ADM), DATE REVIEWED(ADR), DATE SIGNED(ADS), DATE TRANSCRIBED(ADT), REVIEWED BY(ARB), SIGNED BY(ASB), TRANSCRIBED BY(ATB), PATIENT(B), EVENT DATE(C)
+
+393,.01       PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      JAN 09, 1991 
+              HELP-PROMPT:      Enter the patient for which this summary was created. 
+              DESCRIPTION:
+                                Enter the patient for which this summary or op report has been recorded.  
+
+              CROSS-REFERENCE:  393^B 
+                                1)= S ^VAS(393,"B",$E(X,1,30),DA)=""
+                                2)= K ^VAS(393,"B",$E(X,1,30),DA)
+
+
+393,.02       TYPE OF DEFICIENCY     0;2 POINTER TO IRT TYPE OF DEFICIENCY FILE (#393.3) (Required)
+
+              LAST EDITED:      MAR 05, 1993 
+              DESCRIPTION:
+                                Enter the type of deficiency that is being tracked.  
+
+
+393,.03       EVENT DATE             0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:3991231<X!(2800101>X) X
+              LAST EDITED:      JUL 26, 1991 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1/1/1980 AND 12/31/2099 
+              DESCRIPTION:
+                                Enter the date of the event (discharge date for discharge summaries, date of summary for interim summaries, or date of surgery for op reports).  
+
+              CROSS-REFERENCE:  393^C 
+                                1)= S ^VAS(393,"C",$E(X,1,30),DA)=""
+                                2)= K ^VAS(393,"C",$E(X,1,30),DA)
+
+
+393,.04       ADMISSION              0;4 POINTER TO PATIENT MOVEMENT FILE (#405)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),""^"",2)=1,($P(^(0),""^"",3)=+^DGPM(DA,0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 05, 1993 
+              HELP-PROMPT:      Enter the admission associated with this report. 
+              DESCRIPTION:
+                                Enter the admission associated with this report.  Enter nothing if this is an outpatient op report.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),""^"",2)=1,($P(^(0),""^"",3)=+^DGPM(DA,0))"
+              EXPLANATION:      Only admissions and only for same patient.
+              CROSS-REFERENCE:  ^^TRIGGER^393^.13 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VAS(393,D0,0)):^(0),1:"") S X=$P(Y(1),U,13),X=X S DIU=X K Y S X=DIV S X=1 X ^DD(393,.04,1,1,1.4)
+                                1.4)= S DIH=$S($D(^VAS(393,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,13)=DIV,DIH=393,DIG=.13 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= S X=1
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= INPA
+
+              CROSS-REFERENCE:  393^ADM 
+                                1)= S ^VAS(393,"ADM",$E(X,1,30),DA)=""
+                                2)= K ^VAS(393,"ADM",$E(X,1,30),DA)
+
+
+393,.05       LOCATION               0;5 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="N CA S CA=$S($D(DGJTAIFN):DGJTAIFN,1:+$P(^VAS(393,DA,0),U,4)) I $P(^SC(+Y,0),U,3)=$S(CA:""W"",1:""C"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 10, 1992 
+              HELP-PROMPT:      Enter the location of the patient at the time of the event. 
+              DESCRIPTION:
+                                Enter the location of the patient at the time of the event (discharge operation or interim summary.  
+
+              SCREEN:           S DIC("S")="N CA S CA=$S($D(DGJTAIFN):DGJTAIFN,1:+$P(^VAS(393,DA,0),U,4)) I $P(^SC(+Y,0),U,3)=$S(CA:""W"",1:""C"")"
+              EXPLANATION:      Screen WARDS for inpatients, CLINICS for outpatients
+
+393,.06       DIVISION               0;6 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^DG(40.8,+Y,0)) I $D(^DG(40.8,+Y,""DT"")) I $P(^DG(40.8,+Y,""DT""),""^"",1)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 10, 1992 
+              HELP-PROMPT:      Enter the division at which this event took place. 
+              DESCRIPTION:
+                                Enter the division at which this event took place.  Will initially be determined by the WARD field.  
+
+              SCREEN:           S DIC("S")="I $D(^DG(40.8,+Y,0)) I $D(^DG(40.8,+Y,""DT"")) I $P(^DG(40.8,+Y,""DT""),""^"",1)=1"
+              EXPLANATION:      ONLY THOSE DIVISIONS THAT TRACK RECORDS.
+
+393,.07       SPECIALTY              0;7 POINTER TO FACILITY TREATING SPECIALTY FILE (#45.7) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$ACTIVE^DGACT(45.7,Y,$G(DGJTDT))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 31, 1995 
+              HELP-PROMPT:      Enter the patient's treating specialty.  This must be an active treating specialty. 
+              DESCRIPTION:
+                                Enter the treating specialty the patient had at the time of this event.  
+
+              SCREEN:           S DIC("S")="I $$ACTIVE^DGACT(45.7,Y,$G(DGJTDT))"
+              EXPLANATION:      Allows only active treating specialties.
+
+393,.08       SERVICE                0;8 POINTER TO MAS SERVICE FILE (#393.1) (Required)
+
+              LAST EDITED:      AUG 05, 1991 
+              DESCRIPTION:
+                                Enter the service responsible for filing this report.  This field will be used to generate reports that are incomplete by service.  
+
+              CROSS-REFERENCE:  393^AC 
+                                1)= S ^VAS(393,"AC",$E(X,1,30),DA)=""
+                                2)= K ^VAS(393,"AC",$E(X,1,30),DA)
+
+
+393,.09       PRIMARY PHYSICIAN      0;9 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      JAN 22, 1993 
+              HELP-PROMPT:      Enter the physician responsible for dictation of this report. 
+              DESCRIPTION:
+                                Enter the physician responsible for the patient... usually the physician that will be responsible for the dictation of the summary or report. 
+
+              CROSS-REFERENCE:  ^^TRIGGER^393^.12 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VAS(393,D0,0)):^(0),1:"") S X=$P(Y(1),U,12),X=X S DIU=X K Y S X=DIV S X=DIV,X=X X ^DD(393,.09,1,1,1.4)
+                                1.4)= S DIH=$S($D(^VAS(393,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,12)=DIV,DIH=393,DIG=.12 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= INTERNAL(PRIMARY PHYSICIAN)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PHYSICIAN RESPONSIBLE
+                                This trigger will update the Physician Responsible field with the value of the Primary Physician field.  
+
+
+
+393,.1        ATTENDING PHYSICIAN    0;10 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 20, 1993 
+              HELP-PROMPT:      Enter the physician responsible for reviewing this summary. 
+              DESCRIPTION:
+                                Enter the physician responsible for reviewing this summary (if applicable).  
+
+              CROSS-REFERENCE:  393^AAT^MUMPS 
+                                1)= S DGJATTD=1 D PHYDEF^DGJTUTL
+                                2)= S DGJATTD=1 D PHYDEF^DGJTUTL
+                                This MUMPS cross reference acts like a trigger that updates the Physician for Deficiency field in file 393.  If the attending physician is changed the record status is transcribed and the Physician for Signature is set to
+                                attending then the Physician for Deficiency will be updated with the new attending physicians name.  
+
+
+
+393,.11       STATUS                 0;11 POINTER TO IRT STATUS FILE (#393.2) (Required)
+
+              INPUT TRANSFORM:  D STATUS^DGJTHLP D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 20, 1993 
+              DESCRIPTION:
+                                Enter the status of this report at the present time.  
+
+              SCREEN:           D STATUS^DGJTHLP
+              EXPLANATION:      Choose a STATUS
+
+393,.12       PHYSICIAN RESPONSIBLE  0;12 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      MAR 16, 1993 
+              HELP-PROMPT:      Enter the physician who is responsible for the dictation of the summary or report. 
+              DESCRIPTION:
+                                This is the physician that is responsible for the dictation of the report.  
+
+              NOTES:            TRIGGERED by the PRIMARY PHYSICIAN field of the INCOMPLETE RECORDS File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^393^.14 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X D PHYSRTRG^DGJTUTL I X S X=DIV S Y(1)=$S($D(^VAS(393,D0,0)):^(0),1:"") S X=$P(Y(1),U,14),X=X S DIU=X K Y S X=DIV S X=DIV,X=X X ^DD(393,.12,1,1,1.4)
+                                1.4)= S DIH=$S($D(^VAS(393,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,14)=DIV,DIH=393,DIG=.14 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= D PHYSRTRG^DGJTUTL
+                                CREATE VALUE)= INTERNAL(PHYSICIAN RESPONSIBLE)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PHYSICIAN FOR DE
+                                This trigger updates the Physician for Deficiency field.  
+
+
+
+393,.13       INPATIENT REPORT?      0;13 SET (Required)
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              HELP-PROMPT:      Enter 1 if this is an inpatient summary or op report, otherwise 0. 
+              DESCRIPTION:
+                                Enter  1 if this report is for an inpatient episode.  Enter 0 if it is an outpatient op report.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the ADMISSION field of the INCOMPLETE RECORDS File 
+
+
+393,.14       PHYSICIAN FOR DEFICIENCY 0;14 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 02, 1993 
+              DESCRIPTION:      This field contains the name of the physician that is responsible for the deficiency at the present time.  This field changes whenever an action is taken against a deficiency and the status changes.  This field will be 
+                                displayed on all the IRT reports as well as all of the enter/edit screens.  
+
+              NOTES:            TRIGGERED by the PHYSICIAN RESPONSIBLE field of the INCOMPLETE RECORDS File 
+
+
+393,10.01     DATE DICTATED          DT;1 DATE
+
+              INPUT TRANSFORM:  S %DT(0)="-NOW",%DT="ETX" D ^%DT K %DT(0) S X=Y K:Y<1 X
+              LAST EDITED:      MAR 03, 1993 
+              HELP-PROMPT:      ENTER A DATE IN THE PAST OR NOW 
+              DESCRIPTION:
+                                Enter the date on which this record was dictated.  Time of day may also be entered.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  393^ADD^MUMPS 
+                                1)= S DGJFDIC=1 D PHYDEF^DGJTUTL
+                                2)= S DGJFDIC=1 D PHYDEF^DGJTUTL
+                                This MUMPS cross reference acts like a trigger that updates the Physician for Deficiency field in file 393.  
+
+
+
+393,10.02     DICTATED BY            DT;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 03, 1993 
+              HELP-PROMPT:      Enter the person who dictated this report 
+              DESCRIPTION:
+                                Enter the user responsible for dictation of this summary or op report.  
+
+              CROSS-REFERENCE:  393^ADB^MUMPS 
+                                1)= S DGJFDIC=1 D PHYDEF^DGJTUTL
+                                2)= S DGJFDIC=1 D PHYDEF^DGJTUTL
+                                This MUMPS cross reference acts like a trigger that updates the Physician for Deficiency field in file 393.  
+
+
+
+393,10.03     DATE TRANSCRIBED       DT;3 DATE
+
+              INPUT TRANSFORM:  S %DT(0)="-NOW",%DT="ETX" D ^%DT K %DT(0) S X=Y K:Y<1 X
+              LAST EDITED:      MAR 02, 1993 
+              HELP-PROMPT:      ENTER A DATE IN THE PAST OR NOW 
+              DESCRIPTION:
+                                Enter the date (or date/time) on which this report was transcribed.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  393^ADT^MUMPS 
+                                1)= S DGJFSIG=1 D PHYDEF^DGJTUTL
+                                2)= S DGJFSIG=1 D PHYDEF^DGJTUTL
+                                This MUMPS cross reference acts like a trigger that updates the Physician for Deficiency field in file 393.  
+
+
+
+393,10.04     TRANSCRIBED BY         DT;4         VARIABLE POINTER
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 200  1    P            n   PERSON 
+                 440  2    V            n   VENDOR 
+                                         
+              LAST EDITED:      MAR 02, 1993 
+              DESCRIPTION:
+                                Enter the person or vendor that transcribed this report.  
+
+              TECHNICAL DESCR:
+                                 
+
+              CROSS-REFERENCE:  393^ATB^MUMPS 
+                                1)= S DGJFSIG=1 D PHYDEF^DGJTUTL
+                                2)= S DGJFSIG=1 D PHYDEF^DGJTUTL
+                                This MUMPS cross reference acts like a trigger that updates the Physician for Deficiency field in file 393.  
+
+
+
+393,10.05     DATE SIGNED            DT;5 DATE
+
+              INPUT TRANSFORM:  S %DT(0)="-NOW",%DT="ETX" D ^%DT K %DT(0) S X=Y K:Y<1 X
+              LAST EDITED:      MAR 02, 1993 
+              HELP-PROMPT:      ENTER A DATE IN THE PAST OR NOW 
+              DESCRIPTION:
+                                Enter the date on which this summary was signed by the responsible provider.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  393^ADS^MUMPS 
+                                1)= S DGJFREV=1 D PHYDEF^DGJTUTL
+                                2)= S DGJFREV=1 D PHYDEF^DGJTUTL
+                                This Mumps Cross reference acts like a trigger. It will update the Physician for Deficiency field.  
+
+
+
+393,10.06     SIGNED BY              DT;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 02, 1993 
+              HELP-PROMPT:      Enter the name of the user that signed this report or summary. 
+              DESCRIPTION:
+                                Enter in this field the name of the provider that signed this summary or op report.  
+
+              CROSS-REFERENCE:  393^ASB^MUMPS 
+                                1)= S DGJFREV=1 D PHYDEF^DGJTUTL
+                                2)= S DGJFREV=1 D PHYDEF^DGJTUTL
+                                This Mumps Cross reference acts like a trigger. It will update the Physician for Deficiency field.  
+
+
+
+393,10.07     DATE REVIEWED          DT;7 DATE
+
+              INPUT TRANSFORM:  S %DT(0)="-NOW",%DT="ETX" D ^%DT K %DT(0) S X=Y K:Y<1 X
+              LAST EDITED:      MAR 03, 1993 
+              HELP-PROMPT:      ENTER A DATE IN THE PAST OR NOW 
+              DESCRIPTION:
+                                Enter the date on which this summary or op report was reviewed.  Entry of a review date/reviewer is optional.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  393^ADR^MUMPS 
+                                1)= S DGJREVD=1 D PHYDEF^DGJTUTL
+                                2)= S DGJREVD=1 D PHYDEF^DGJTUTL
+                                This MUMPS cross reference acts like a trigger that updates the Physician for Deficiency field in file 393.  
+
+
+
+393,10.08     REVIEWED BY            DT;8 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 03, 1993 
+              HELP-PROMPT:      Enter the name of the physician responsible for reviewing this report. 
+              DESCRIPTION:
+                                Enter the name of the individual responsible for reviewing the signed summary or op report.  
+
+              CROSS-REFERENCE:  393^ARB^MUMPS 
+                                1)= S DGJREVD=1 D PHYDEF^DGJTUTL
+                                2)= S DGJREVD=1 D PHYDEF^DGJTUTL
+                                This MUMPS cross reference acts like a trigger that updates the Physician for Deficiency field in file 393.  
+
+
+
+393,20.01     COMMENTS               MSG;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<3) X
+              LAST EDITED:      DEC 01, 1992 
+              HELP-PROMPT:      Answer must be 3-200 characters in length. 
+              DESCRIPTION:
+                                This field is a free text field that the user may add any comments that they need to, in regards to the deficiency.  Each deficiency has a comment field.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FACILITY TREATING SPECIALTY 
+                   (#45.7)        SPECIALTY (#.07)
+
+HOSPITAL LOCATION (#44)           LOCATION (#.05)
+
+IRT STATUS (#393.2)               STATUS (#.11)
+
+IRT TYPE OF DEFICIENCY (#393.3)   TYPE OF DEFICIENCY (#.02)
+
+MAS SERVICE (#393.1)              SERVICE (#.08)
+
+MEDICAL CENTER DIVISION (#40.8)   DIVISION (#.06)
+
+NEW PERSON (#200)                 PRIMARY PHYSICIAN (#.09)
+                                  ATTENDING PHYSICIAN (#.1)
+                                  PHYSICIAN RESPONSIBLE (#.12)
+                                  PHYSICIAN FOR DEFICIENCY (#.14)
+                                  DICTATED BY (#10.02)
+                                  TRANSCRIBED BY (#10.04)
+                                  SIGNED BY (#10.06)
+                                  REVIEWED BY (#10.08)
+
+PATIENT (#2)                      PATIENT (#.01)
+
+PATIENT MOVEMENT (#405)           ADMISSION (#.04)
+
+VENDOR (#440)                     TRANSCRIBED BY (#10.04)
+
+
+
+INPUT TEMPLATE(S):
+DGJ EDIT IRT RECORD           MAR 24, 1993@14:48  USER #0    ^DGJXE 
+DGJ ENTER IRT DEFICIENCY      MAR 10, 1993@11:26  USER #0    
+DGJ ENTER IRT RECORD          DEC 01, 1992@15:48  USER #0    ^DGJXA 
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

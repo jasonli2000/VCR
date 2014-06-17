@@ -1,0 +1,404 @@
+STANDARD DATA DICTIONARY #409.5 -- SCHEDULING VISITS FILE                                                                                                                                                                         MAY 20,2014@15:41:40  PAGE 1
+STORED IN ^SDV(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                  (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Unscheduled clinic stop codes and Ambulatory Procedures stored here.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: D
+             DEL ACCESS: D
+           LAYGO ACCESS: D
+IDENTIFIED BY: PATIENT (#2)[R]
+
+CROSS
+REFERENCED BY: APPOINTMENT TYPE(ACG), PATIENT(ADT), COMPUTER GENERATED?(AG), CLINIC STOP CODE(AP), DIVISION(ASDPSD), DATE/TIME(ASDPSD1), DATE/TIME(B), PATIENT(C)
+
+409.5,.01     DATE/TIME              0;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EXT" D ^%DT S X=Y K:Y<1 X S DINUM=X
+              LAST EDITED:      MAY 24, 1988 
+              HELP-PROMPT:      Enter the date of the patient's outpatient visit 
+              DESCRIPTION:
+                                The data/time a veteran was scheduled for an outpatient visit.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  409.5^B 
+                                1)= S ^SDV("B",$E(X,1,30),DA)=""
+                                2)= K ^SDV("B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  409.5^ASDPSD1^MUMPS 
+                                1)= Q
+                                2)= S SDX=$S($D(^SDV(DA,0)):$P(^(0),"^",3),1:"") K:'SDX SDX I $D(SDX) K ^DPT("ASDPSD","C"," "_SDX," ",DA,$P(^SDV(DA,0),"^",2)),SDX
+
+
+409.5,2       PATIENT                0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      MAY 24, 1988 
+              DESCRIPTION:
+                                The name of the patient who had a scheduled outpatient visit which is a pointer to File 2, Patient File 
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  409.5^C 
+                                1)= S ^SDV("C",$E(X,1,30),DA)=""
+                                2)= K ^SDV("C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  409.5^ADT^MUMPS 
+                                1)= S ^SDV("ADT",X,$P(DA,"."))=DA
+                                2)= K ^SDV("ADT",X,$P(DA,"."))
+
+
+409.5,3       DIVISION               0;3 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8)
+
+              LAST EDITED:      NOV 18, 1998 
+              HELP-PROMPT:      Enter division where visit took place. 
+              DESCRIPTION:
+                                The division a veteran was seen at for a scheduled visit in an outpatient clinic.  For example, Albany VA Medical Center is considered a division.  
+
+              CROSS-REFERENCE:  409.5^ASDPSD^MUMPS 
+                                1)= Q
+                                2)= Q
+                                This cross reference use to call SDACS but is no longer needed since the release of patch SD*5.3*132. Cross referece is kept for historial purposes but both the 'Set' and 'Kill' logic are now just QUIT commands.  
+                                 
+                                The following are the former 'Set' and 'Kill' logic: 
+                                  
+                                 Set: S SDX=DA,DA(1)=$P(^SDV(DA,0),"^",2),DIV=X D EN1^SDACS K SDX,DA(1),DIV Kill: S DA(1)=$P(^SDV(DA,0),"^",2),DIV=X,SDX=DA D EN1K^SDACS K DA(1),SDX,DIV 
+                                 
+
+
+
+409.5,10      CLINIC STOP CODE       CS;0 POINTER Multiple #409.51
+
+              DESCRIPTION:      Clinic stop code is one of many codes assigned to specialties of care by VA Central Office for nationwide use.  For example, the stop code number 102 is 'admissions/screening' which can be associated with any clinic in
+                                which the veteran will be screened for treatment and possibly admitted.  
+
+
+409.51,.01      CLINIC STOP CODE       0;1 POINTER TO CLINIC STOP FILE (#40.7)
+
+                LAST EDITED:      FEB 10, 1988 
+                HELP-PROMPT:      Enter the clinic stop code to be credited for this visit. 
+                DESCRIPTION:      The clinic stop code assigned to a variety of treating specialties by VA Central Office.  For example, stop code number '102' is for 'admissions/screening' which can be assigned to any clinic in which a veteran may be
+                                  screened for treatment and possibly admitted.  
+
+                CROSS-REFERENCE:  409.51^B 
+                                  1)= S ^SDV(DA(1),"CS","B",$E(X,1,30),DA)=""
+                                  2)= K ^SDV(DA(1),"CS","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  409.5^AP^MUMPS 
+                                  1)= I $D(^DIC(40.7,+X,0)),$P(^(0),"^",2)=900 S ^SDV("AP",DA(1),DA)=$P(^SDV(DA(1),0),"^",2)
+                                  2)= K ^SDV("AP",DA(1),DA)
+
+
+409.51,2        EDITED LAST BY         0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      OCT 17, 1990 
+                DESCRIPTION:
+                                  This field records the user who last edited any clinic stop code within the Scheduling Visits File for a particular patient entry.  
+
+
+409.51,3        ASSOCIATED CLINIC      0;3 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)=""C"",$D(DA(1)),$S('$D(^(""I"")):1,'^(""I""):1,^(""I"")>$P(DA(1),"".""):1,'$P(^(""I""),U,2):0,1:$P(^(""I""),U,2)'>$P(DA(1),"".""))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      AUG 21, 1989 
+                DESCRIPTION:      The associated clinic that has been assigned by a user in the add/edit menu option of the Scheduling Module.  A clinic stop code may be entered for a patient's visit and the associated clinic added (user specific)
+                                  without going through the Hospital Location File setups.  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,3)=""C"",$D(DA(1)),$S('$D(^(""I"")):1,'^(""I""):1,^(""I"")>$P(DA(1),"".""):1,'$P(^(""I""),U,2):0,1:$P(^(""I""),U,2)'>$P(DA(1),"".""))"
+                EXPLANATION:      Allows only active clinics.
+                DELETE TEST:      1,0)= I $D(^SDV(DA(1),"CS",DA,0)),$D(^DIC(40.7,+^(0),0)),$P(^(0),U,2)="900" W !?5,"Assoicated clinic is required for stop code '900'"
+
+
+409.51,4        ELIGIBILITY FOR VISIT  0;4 POINTER TO ELIGIBILITY CODE FILE (#8)
+
+                INPUT TRANSFORM:  S DIC("S")="I $S($D(^DPT(+$P(^SDV(DA(1),0),U,2),""E"",Y,0)):1,'$D(^DPT(+$P(^SDV(DA(1),0),U,2),.36)):0,1:Y=+^(.36))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 22, 1993 
+                DESCRIPTION:
+                                  The patient's eligibility at the time the appointment is made is store here.  If there are Other Entitled Eligibilities specified, the Add/Edit option will prompt for this and store them here.  
+
+                SCREEN:           S DIC("S")="I $S($D(^DPT(+$P(^SDV(DA(1),0),U,2),""E"",Y,0)):1,'$D(^DPT(+$P(^SDV(DA(1),0),U,2),.36)):0,1:Y=+^(.36))"
+                EXPLANATION:      Allows only patient's entitled eligibilities.
+                NOTES:            TRIGGERED by the APPOINTMENT TYPE field of the CLINIC STOP CODE sub-field of the SCHEDULING VISITS File 
+                                  TRIGGERED by the APPOINTMENT TYPE field of the CLINIC STOP CODE sub-field of the SCHEDULING VISITS File 
+
+                CROSS-REFERENCE:  ^^TRIGGER^409.68^.13 
+                                1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA X ^DD(409.51,4,1,1,89.2) S Y(101)=$S($D(^SCE(D0,0)):^(0),1:"") S X=$S('$D(^DIC(8,+$P(Y(101),U,13),0)):"",1:$P(^(0),U,1)) S D0=I(0,0) S D1=I(1,0) S DIU=X K Y S X=DIV S X=X X ^DD(40
+                                9.51,4,1,1,1.4)
+
+                                1.4)= S DIH=$S($D(^SCE(DIV(0),0)):^(0),1:""),DIV=X I $D(^(0)) S $P(^(0),U,13)=DIV,DIH=409.68,DIG=.13 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+
+                                2)= Q
+
+                                89.2)= S I(1,0)=$S($D(D1):D1,1:""),I(0,0)=$S($D(D0):D0,1:""),Y(1)=$S($D(^SDV(D0,"CS",D1,0)):^(0),1:""),D0=$P(Y(1),U,8) S:'$D(^SCE(+D0,0)) D0=-1 S DIV(0)=D0
+
+                                CREATE VALUE)= S X=X
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= OUTPATIENT ENCOUNTER:ELIGIBILITY OF ENCOUNTER
+
+
+409.51,5        APPOINTMENT TYPE     0;5 POINTER TO APPOINTMENT TYPE FILE (#409.1) (Required)
+
+                INPUT TRANSFORM:S DIC("S")="D APP^SDAMBAE2" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:    JUL 22, 1993 
+                DESCRIPTION:    The appointment type assigned to the veteran at time of scheduling which is dependent on eligibility code and type of care receiving.  For example a 'Regular' appointment type indicates no unusual circumstances for that
+                                scheduled appointment.  'Compensation & Pension' indicates the veteran is receiving an exam requested by the VARO to assist in determining claimed disability that is service related.  
+
+                SCREEN:         S DIC("S")="D APP^SDAMBAE2"
+                EXPLANATION:    Allows only valid appointment types.
+                CROSS-REFERENCE:^^TRIGGER^409.51^4 
+                                1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(0)=X S X="369"'[X I X S X=DIV S Y(1)=$S($D(^SDV(D0,"CS",D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(409.51,5,1,1,1.1) X ^DD(409.51,5,1,1,1.4)
+                                1.1)= S X=DIV S X=$S($D(^SD(409.1,X,0)):$P(^(0),U,6),1:"") S:'X X=$S($D(^DPT(+$P(^SDV(DA(1),0),U,2),.36)):$P(^(.36),U),1:"")
+                                1.4)= S DIH=$S($D(^SDV(DIV(0),"CS",DIV(1),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,3,99))  S DIH=DIH_U" S %=$P(DIH,U,5,999),DIU=$P(DIH,U,4),^(0)=$P(DIH,U,1,3)_U_DIV_$S(%]"":U_%,1:""),DIH=409.51,DIG=4 D ^DICR:$N(^DD(DI
+                                H,DIG,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(0)=X S X="369"'[X I X S X=DIV S Y(1)=$S($D(^SDV(D0,"CS",D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(409.51,5,1,1,2.4)
+
+                                2.4)= S DIH=$S($D(^SDV(DIV(0),"CS",DIV(1),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,3,99))  S DIH=DIH_U" S %=$P(DIH,U,5,999),DIU=$P(DIH,U,4),^(0)=$P(DIH,U,1,3)_U_DIV_$S(%]"":U_%,1:""),DIH=409.51,DIG=4 D ^DICR:$N(^DD(DI
+                                H,DIG,1,0))>0
+
+                                CREATE CONDITION)= S X="369"'[X
+                                CREATE VALUE)= S X=$S($D(^SD(409.1,X,0)):$P(^(0),U,6),1:"") S:'X X=$S($D(^DPT(+$P(^SDV(DA(1),0),U,2),.36)):$P(^(.36),U),1:"")
+                                DELETE CONDITION)= S X="369"'[X
+                                DELETE VALUE)= @
+                                FIELD)= ELIGIBILITY FOR VISIT
+
+                CROSS-REFERENCE:^^TRIGGER^409.51^4 
+                                1)= X ^DD(409.51,5,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^SDV(D0,"CS",D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(409.51,5,1,2,1.1) X ^DD(409.51,5,1,2,1.4)
+                                1.1)= S X=DIV X ^DD(409.51,5,1,2,49.2) S X=$P(Y(101),U,1),X=X S X=X S D0=I(0,0) S D1=I(1,0)
+                                1.3)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(0)=X S X=$S("369"'[X:0,1:$O(^DPT(+$P(^SDV(DA(1),0),U,2),"E",0))) I X S X='$O(^(+X))
+                                1.4)= S DIH=$S($D(^SDV(DIV(0),"CS",DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=409.51,DIG=4 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= X ^DD(409.51,5,1,2,2.3) I X S X=DIV S Y(1)=$S($D(^SDV(D0,"CS",D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(409.51,5,1,2,2.4)
+                                2.3)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(0)=X S X=$S("369"'[X:0,1:$O(^DPT(+$P(^SDV(DA(1),0),U,2),"E",0))) I X S X='$O(^(+X))
+                                2.4)= S DIH=$S($D(^SDV(DIV(0),"CS",DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=409.51,DIG=4 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                49.2)= S I(1,0)=$S($D(D1):D1,1:""),I(0,0)=$S($D(D0):D0,1:""),Y(1)=$S($D(^SDV(D0,0)):^(0),1:""),D0=$P(Y(1),U,2) S:'$D(^DPT(+D0,0)) D0=-1 S Y(101)=$S($D(^DPT(D0,.36)):^(.36),1:"")
+                                CREATE CONDITION)= S X=$S("369"'[X:0,1:$O(^DPT(+$P(^SDV(DA(1),0),U,2),"E",0))) I X S X='$O(^(+X))
+                                CREATE VALUE)= INTERNAL(PATIENT:PRIMARY ELIGIBILITY CODE)
+                                DELETE CONDITION)= S X=$S("369"'[X:0,1:$O(^DPT(+$P(^SDV(DA(1),0),U,2),"E",0))) I X S X='$O(^(+X))
+                                DELETE VALUE)= @
+                                FIELD)= #4
+                                This triggers the ELIGIBILITY FOR VISIT field under the following circumstances: 
+                                  
+                                1) APPOINTMENT TYPE is NOT 3,6,9 ==> Nothing 2) Patient has NO eligibility    ==> Nothing 3) Patient has MANY eligibilities==> Nothing 4) APPOINTMENT TYPE IS 3,6,or 9 AND 
+                                   Patient has ONE eligibility   ==> Primary Eligibility 
+
+
+                CROSS-REFERENCE:409.5^ACG^MUMPS 
+                                1)= S:X=10 ^SDV("ACG",DA(1),DA)=""
+                                2)= K:X=10 ^SDV("ACG",DA(1),DA)
+
+                CROSS-REFERENCE:^^TRIGGER^409.68^.1 
+                                1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA X ^DD(409.51,5,1,4,89.2) S Y(101)=$S($D(^SCE(D0,0)):^(0),1:"") S X=$S('$D(^SD(409.1,+$P(Y(101),U,10),0)):"",1:$P(^(0),U,1)) S D0=I(0,0) S D1=I(1,0) S DIU=X K Y S X=DIV S X=X X ^DD
+                                (409.51,5,1,4,1.4)
+
+                                1.4)= S DIH=$S($D(^SCE(DIV(0),0)):^(0),1:""),DIV=X I $D(^(0)) S $P(^(0),U,10)=DIV,DIH=409.68,DIG=.1 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+
+                                2)= Q
+
+                                89.2)= S I(1,0)=$S($D(D1):D1,1:""),I(0,0)=$S($D(D0):D0,1:""),Y(1)=$S($D(^SDV(D0,"CS",D1,0)):^(0),1:""),D0=$P(Y(1),U,8) S:'$D(^SCE(+D0,0)) D0=-1 S DIV(0)=D0
+
+                                CREATE VALUE)= S X=X
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= OUTPATIENT ENCOUNTER:#.1
+
+
+409.51,6        UNRESOLVED APPT TYPE REASON 0;6 SET
+
+                                '1' FOR DUAL ELIGIBILITY; 
+                                '2' FOR POSSIBLE COMP & PEN; 
+                LAST EDITED:    NOV 07, 1991 
+                HELP-PROMPT:    If the appt type is Computer Generated, enter the reason why 
+                DESCRIPTION:    If visit has an appointment type of computer generated, the UNRESOLVED APPT TYPE REASON field will also be stuffed with the best possible reason why an appropriate appointment type could not be determined.  Currently, if a
+                                patient has a comp and pen exam within the last three days of the visit date which is computer generated the unresolved reason will be POSSIBLE COMP & PEN, if a patient has a dual eligibility and one of those eligibilities
+                                is Sharing Agreement, Employee, or Collateral, the unresolved reason will be DUAL ELIGIBILITY.  Should there be a scenario where both apply, the default is POSSIBLE COMP & PEN.  This field is updated via the programmer
+                                call to the scheduling hook designed to caputure outpatient workload (EN3`SDACS).  
+
+                TECHNICAL DESCR:
+                                Stuffed via the call EN3`SDACS.  
+
+
+409.51,7        DATE ENTRY MADE      0;7 DATE
+
+                INPUT TRANSFORM:S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:    APR 21, 1992 
+                DESCRIPTION:
+                                This field contains the date that the multiple entry was entered into the system.  
+
+                TECHNICAL DESCR:
+                                This field is automatically entered by the software and requires no user input.  
+
+
+409.51,8        OUTPATIENT ENCOUNTER 0;8 POINTER TO OUTPATIENT ENCOUNTER FILE (#409.68)
+
+                LAST EDITED:    FEB 09, 1993 
+
+409.51,9        ENCOUNTER CONVERSION STATUS 0;9 SET
+
+                                '0' FOR NOT CONVERTED; 
+                                '1' FOR CONVERTED; 
+                LAST EDITED:    SEP 12, 1996 
+                DESCRIPTION:    This field indicates whether or not this add/edit stop was converted  during the ACRP Database Conversion (SD*5.3*211).  
+                                 
+                                 
+                                The field is set to '1' after the add/edit stop has been converted by the conversion software.                        
+
+                                UNEDITABLE
+
+409.51,11       COMPUTER GENERATED?  1;1 SET
+
+                                '1' FOR YES; 
+                LAST EDITED:    APR 11, 1991 
+                DESCRIPTION:
+                                Field is used for data validation, to determine which stop codes were automatically generated by outside package calls.  This field should not be edited.  
+
+                                UNEDITABLE
+                CROSS-REFERENCE:409.5^AG^MUMPS 
+                                1)= S:X ^SDV("AG",DA(1),DA)=""
+                                2)= K:X ^SDV("AG",DA(1),DA)
+                                To quickly identify those stop codes 'auto-generated' by other packages 
+
+
+
+409.51,21       PROCEDURE 1          PR;1 POINTER TO CPT FILE (#81)
+
+                INPUT TRANSFORM:S DIC("W")="D ID^SDAMBAE3",DIC("S")="D SCREEN^SDAMBAE3" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X) S %=2 D DUP^SDAMBAE3
+                LAST EDITED:    MAY 01, 1997 
+                DESCRIPTION:
+                                The name/number of the ambulatory procedure that was performed on the patient in conjunction with this scheduled visit to an outpatient clinic.  
+
+                SCREEN:         S DIC("S")="D SCREEN^SDAMBAE3"
+                EXPLANATION:    Allows only active ambulatory procedures
+                DELETE TEST:    1,0)= I $D(^SDV(DA(1),"CS",DA,"PR")) S %=1 X "F I=1:1:5 I I'=1,$P(^(""PR""),U,I) S %=0 Q" I % W !?5,"Cannot delete all procedures"
+
+                NOTES:          XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+409.51,22       PROCEDURE 2          PR;2 POINTER TO CPT FILE (#81)
+
+                INPUT TRANSFORM:S DIC("W")="D ID^SDAMBAE3",DIC("S")="D SCREEN^SDAMBAE3" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X) S %=2 D DUP^SDAMBAE3
+                LAST EDITED:    MAY 01, 1997 
+                DESCRIPTION:
+                                The name/number of a second ambulatory procedure that was performed on the patient in conjunction with this scheduled visit to an outpatient clinic.  
+
+                SCREEN:         S DIC("S")="D SCREEN^SDAMBAE3"
+                EXPLANATION:    Allows only active ambulatory procedures
+                DELETE TEST:    1,0)= I $D(^SDV(DA(1),"CS",DA,"PR")) S %=1 X "F I=1:1:5 I I'=2,$P(^(""PR""),U,I) S %=0 Q" I % W !?5,"Cannot delete all procedures"
+
+                NOTES:          XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+409.51,23       PROCEDURE 3          PR;3 POINTER TO CPT FILE (#81)
+
+                INPUT TRANSFORM:S DIC("W")="D ID^SDAMBAE3",DIC("S")="D SCREEN^SDAMBAE3" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X) S %=3 D DUP^SDAMBAE3
+                LAST EDITED:    MAY 01, 1997 
+                DESCRIPTION:
+                                The name/number of a third ambulatory procedure that was performed on the patient in conjunction with this scheduled visit to an outpatient clinic.  
+
+                SCREEN:         S DIC("S")="D SCREEN^SDAMBAE3"
+                EXPLANATION:    Allows only active ambulatory procedures
+                DELETE TEST:    1,0)= I $D(^SDV(DA(1),"CS",DA,"PR")) S %=1 X "F I=1:1:5 I I'=3,$P(^(""PR""),U,I) S %=0 Q" I % W !?5,"Cannot delete all procedures"
+
+                NOTES:          XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+409.51,24       PROCEDURE 4          PR;4 POINTER TO CPT FILE (#81)
+
+                INPUT TRANSFORM:S DIC("W")="D ID^SDAMBAE3",DIC("S")="D SCREEN^SDAMBAE3" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X) S %=4 D DUP^SDAMBAE3
+                LAST EDITED:    MAY 01, 1997 
+                DESCRIPTION:
+                                The name/number of a fourth ambulatory procedure that was performed on the patient in conjunction with this scheduled visit to an outpatient clinic.  
+
+                SCREEN:         S DIC("S")="D SCREEN^SDAMBAE3"
+                EXPLANATION:    Allows only active ambulatory procedures
+                DELETE TEST:    1,0)= I $D(^SDV(DA(1),"CS",DA,"PR")) S %=1 X "F I=1:1:5 I I'=4,$P(^(""PR""),U,I) S %=0 Q" I % W !?5,"Cannot delete all procedures"
+
+                NOTES:          XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+409.51,25       PROCEDURE 5          PR;5 POINTER TO CPT FILE (#81)
+
+                INPUT TRANSFORM:S DIC("W")="D ID^SDAMBAE3",DIC("S")="D SCREEN^SDAMBAE3" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X) S %=5 D DUP^SDAMBAE3
+                LAST EDITED:    MAY 01, 1997 
+                DESCRIPTION:
+                                The name/number of a fifth ambulatory procedure that was performed on the patient in conjunction with this scheduled visit to an outpatient clinic.  
+
+                SCREEN:         S DIC("S")="D SCREEN^SDAMBAE3"
+                EXPLANATION:    Allows only active ambulatory procedures
+                DELETE TEST:    1,0)= I $D(^SDV(DA(1),"CS",DA,"PR")) S %=1 X "F I=1:1:5 I I'=5,$P(^(""PR""),U,I) S %=0 Q" I % W !?5,"Cannot delete all procedures"
+
+                NOTES:          XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+409.5,200     # OF AMBULATORY PROCEDURES  ;  COMPUTED
+
+              MUMPS CODE:       D COUNT^SDAMBAE4
+              ALGORITHM:        D COUNT^SDAMBAE4
+              LAST EDITED:      SEP 04, 1989 
+              DESCRIPTION:
+                                This computed field returns the total number of ambulatory procedures performed on the patient for the visit date.  
+
+
+409.5,203     PROCEDURE REIMBURSEMENT  ;  COMPUTED
+
+              MUMPS CODE:       D TOTAL^SDAMBAE4
+              ALGORITHM:        D TOTAL^SDAMBAE4
+              DESCRIPTION:
+                                This computed fields returns the total RAM reimbursement for all the procedures performed on the patient for the visit date.  
+
+
+409.5,206     TOTAL LOCAL COST        ;  COMPUTED
+
+              MUMPS CODE:       D LOCAL^SDAMBAE4
+              ALGORITHM:        D LOCAL^SDAMBAE4
+              DESCRIPTION:      This computed field returns the total local cost for all the ambulatory procedures performed on the patient for the visit date.  
+                                 
+                                The 'LOCAL COST' in the AMBULATORY PROCEDURE TIME SENSITIVE DATA file is used if entered for the appropriate entry. Otherwise, the appropriate RAM reimbursement amount, effective on the visit date, is used.  
+                                 
+                                In other words, if no local costs are entered for any of the procedures performed, then the value returned will be equal to the value returned for the PROCEDURE REIMBURSEMENT field.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+APPOINTMENT TYPE (#409.1)         CLINIC STOP CODE:APPOINTMENT TYPE (#5)
+
+CLINIC STOP (#40.7)               CLINIC STOP CODE:CLINIC STOP CODE (#.01)
+
+CPT (#81)                         CLINIC STOP CODE:PROCEDURE 1 (#21)
+                                  PROCEDURE 2 (#22)
+                                  PROCEDURE 3 (#23)
+                                  PROCEDURE 4 (#24)
+                                  PROCEDURE 5 (#25)
+
+ELIGIBILITY CODE (#8)             CLINIC STOP CODE:ELIGIBILITY FOR VISIT (#4)
+
+HOSPITAL LOCATION (#44)           CLINIC STOP CODE:ASSOCIATED CLINIC (#3)
+
+MEDICAL CENTER DIVISION (#40.8)   DIVISION (#3)
+
+NEW PERSON (#200)                 CLINIC STOP CODE:EDITED LAST BY (#2)
+
+OUTPATIENT ENCOUNTER (#409.68)    CLINIC STOP CODE:ELIGIBILITY FOR VISIT (#4)
+                                  APPOINTMENT TYPE (#5)
+                                  OUTPATIENT ENCOUNTER (#8)
+
+PATIENT (#2)                      PATIENT (#2)
+
+
+
+INPUT TEMPLATE(S):
+SDAMBT                        APR 21, 1992@13:26  USER #0    ^SDXA 
+SDXACSE                       NOV 01, 1995@11:22  USER #0    ^SDXACSE 
+     Input template (compiled into SDXACSE* routines), called by SDACS1.
+     This routine is invoked by other package developers adding stop codes
+     to the scheduling visit file.
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

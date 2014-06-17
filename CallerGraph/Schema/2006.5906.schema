@@ -1,0 +1,148 @@
+STANDARD DATA DICTIONARY #2006.5906 -- ROUTE LOAD BALANCE FILE                                                                                                                                                                    MAY 20,2014@15:35:04  PAGE 1
+STORED IN ^MAGRT(2006.5906,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                      (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ +---------------------------------------------------------------+ 
+ |                                                               |
+ | Property of the US Government.                                | 
+ | No permission to copy or redistribute this software is given. | 
+ | Use of unreleased versions of this software requires the user | 
+ | to execute a written test agreement with the VistA Imaging    | 
+ | Development Office of the Department of Veterans Affairs,     | 
+ | telephone (301) 734-0100.                                     | 
+ |                                                               |
+ | The Food and Drug Administration classifies this software as  | 
+ | a medical device.  As such, it may not be changed in any way. | 
+ | Modifications to this software may result in an adulterated   | 
+ | medical device under 21CFR820, the use of which is considered | 
+ | to be a violation of US Federal Statutes.                     | 
+ |                                                               |
+ +---------------------------------------------------------------+
+ 
+This file will be used by the software that processes routing rules and that governs the load-balancing of images to be viewed over a number of candidate recipients.  
+ 
+The data in this file will be extremely volatile, and any data older than a day will be removed automatically.  
+ 
+The load-balancer uses the data in this file in two ways: 
+ - when the first image of a new study is being processed, 
+   the load-balancer will calculate the designated recipient 
+   for that study, based on the routing rule in question 
+ - when subsequent images of that study are being processed 
+   the load-balancer will ensure that they are transmitted 
+   to the same destination.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+
+INDEXED BY:    ROUTE DATE & DESTINATION (D)
+
+
+2006.5906,.01 RULE                   0;1 POINTER TO ROUTING RULE FILE (#2006.59) (Required)
+
+              LAST EDITED:      APR 05, 2002 
+              HELP-PROMPT:      Identify the routing rule for this record. 
+              DESCRIPTION:      The value of this field is a pointer to a Routing Rule (file # 2006.59).  
+                                 
+                                The information in the current record describes how image files are being routed to destinations, and how the load per destination is balanced, based on a routing rule.  
+                                 
+                                The value of this field identifies the routing rule that governs the balancing act that is described in the current record.  
+
+
+2006.5906,1   PARENT                 1;0 POINTER Multiple #2006.59061 (Add New Entry without Asking)
+
+
+2006.59061,.01  PARENT                 0;1 POINTER TO IMAGE FILE (#2005)
+
+                LAST EDITED:      APR 05, 2002 
+                HELP-PROMPT:      Identify the image(group) to be routed. 
+                DESCRIPTION:      The value of this field is a pointer to the Image File (# 2005).  
+                                   
+                                  While balancing the load over multiple destinations, all images for a given study should be sent to the same destination.  
+                                   
+                                  When the first image of a study is being routed, the balancer creates a new record in this multiple to indicate where all other images for the study to which that image belongs.  
+                                   
+                                  The value of this pointer identifies either the "parent" of a group of images, or a single image, if that image is a "group of 1".  
+
+
+2006.59061,1    ROUTE DATE             0;2 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 05, 2002 
+                HELP-PROMPT:      Enter the date on which this image is to be routed. 
+                DESCRIPTION:      The value of this field is a string that represents a date (no time part included). This date identifies the date on which an image file is being routed to a remote destination.  
+                                   
+                                  The load-balancer uses this date to balance the load (per day) over the various possible destinations.  
+
+                RECORD INDEXES:   D (#205) (WHOLE FILE #2006.5906)
+
+2006.59061,2    DESTINATION            0;3 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 05, 2002 
+                HELP-PROMPT:      Identify the destination for all images of this study. 
+                DESCRIPTION:      The value of this field is a pointer to a destination.  This value is not a pointer in the "normal" sense that FileMan uses: it is the value of D2 in the reference 
+                                    ^MAGDICOM(2006.59,D0,"ACTION",D1,1,D2,0) 
+                                   
+                                  This pointer identifies the data record that contains the identification of the destination (which is a variable pointer to either a Network Location (file # 2005.2) or a DICOM Application (file # 2006.585) to which all
+                                  images of the current study are being transmitted.  
+
+                RECORD INDEXES:   D (#205) (WHOLE FILE #2006.5906)
+
+
+
+2006.5906,2   BALANCE                2;E1,250 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>250!($L(X)<1) X
+              LAST EDITED:      APR 05, 2002 
+              HELP-PROMPT:      Enter the balancing parameters. 
+              DESCRIPTION:      The value of this field is computed by the program that balances the load over multiple destinations.  
+                                 
+                                This value is a string that consists of a variable number of data elements (the number depends on the number of possible destinations in the routine rule, see file # 2006.59).  
+                                 
+                                The value for this string is calculated and updated in subroutine BALANCE^MAGBRTE2(IMAGE,RULE).  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+IMAGE (#2005)                     PARENT:PARENT (#.01)
+
+ROUTING RULE (#2006.59)           RULE (#.01)
+
+
+Subfile #2006.59061
+
+  Record Indexes:
+
+  D (#205)    RECORD    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#2006.5906)
+      Short Descr:  Daily track-record for load balancer
+      Description:  This cross reference keeps track of where studies have been slated for transmission.  
+                     
+                    The subscripts in this cross-reference are: 
+                        date, destination, routing-rule, image(parent) 
+                     
+                    This cross-reference is used to clean up any records that are more than 1 day old.  
+                     
+                    For entries that belong to the current day, this cross-reference is used to decide the selection of the next destination that the load-balancer chooses for the transmission of a new study.  
+        Set Logic:  S ^MAGRT(2006.5906,"D",X(1),X(2),DA(1),DA)=""
+       Kill Logic:  K ^MAGRT(2006.5906,"D",X(1),X(2),DA(1),DA)
+       Whole Kill:  K ^MAGRT(2006.5906,"D")
+             X(1):  ROUTE DATE  (2006.59061,1)  (Subscr 1)  (forwards)
+             X(2):  DESTINATION  (2006.59061,2)  (Subscr 2)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

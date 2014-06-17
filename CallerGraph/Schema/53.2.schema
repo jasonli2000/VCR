@@ -1,0 +1,364 @@
+STANDARD DATA DICTIONARY #53.2 -- UNIT DOSE ORDER SET FILE                                                                                                                                                                        MAY 20,2014@15:35:19  PAGE 1
+STORED IN ^PS(53.2,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Allows the grouping of Unit Dose orders, to facilitate the entry of multiple orders at one time.  
+
+
+              DD ACCESS: @
+
+CROSS
+REFERENCED BY: NAME(B)
+
+53.2,.01      NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(X?.N)!($L(X)<3)!'(X'?1P.E) X
+              HELP-PROMPT:      Name must be 3-30 characters, not numeric or starting with punctuation. 
+              DESCRIPTION:
+                                  This is the name of the order set, used is the selection of an order set in the order entry process.  
+
+              GROUP:            PSJU
+              CROSS-REFERENCE:  53.2^B 
+                                1)= S ^PS(53.2,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(53.2,"B",$E(X,1,30),DA)
+
+
+53.2,1        *DRUG                  1;0 POINTER Multiple #53.21
+
+              LAST EDITED:      JUL 30, 1996 
+              DESCRIPTION:
+                                  This is a set of orders for this order set.  
+
+              TECHNICAL DESCR:
+                                  This is a set of orders for this order set.  There is no limit to the number of orders in an order set.  It is these orders that are entered for the patient (through the routine PSGOES) when this order set is selected.  
+
+              GROUP:            PSJU
+              IDENTIFIED BY:    *MED ROUTE(#6)[R], *SCHEDULE TYPE(#7)[R]
+
+53.21,.01       *DRUG                  0;1 POINTER TO PRIMARY DRUG FILE (#50.3) (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="S X(1)=$G(^(1,""AFI"",""U"")) I X(1),$S('$P(X(1),""^"",2):1,1:$P(X(1),""^"",2)>DT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 30, 1996 
+                HELP-PROMPT:      Enter a drug for this order set.  Each drug chosen is an individual order within the order set. 
+                DESCRIPTION:
+                                    This is a drug to be entered as a Unit Dose order when this order set is selected.  
+
+                TECHNICAL DESCR:
+                                    This is the primary drug of an order that is created when this order set is selected.  
+
+                SCREEN:           S DIC("S")="S X(1)=$G(^(1,""AFI"",""U"")) I X(1),$S('$P(X(1),""^"",2):1,1:$P(X(1),""^"",2)>DT)"
+                EXPLANATION:      Drugs must be active primary drugs marked for Unit Dose.
+                GROUP:            PSJU
+                CROSS-REFERENCE:  53.21^B 
+                                  1)= S ^PS(53.2,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(53.2,DA(1),1,"B",$E(X,1,30),DA)
+
+
+53.21,2         *DOSAGE ORDERED        0;9 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  X:$E(X,$L(X))="" ^DD(53.21,2,9.5) K:$L(X)>20!($L(X)<1)!(X=+X) X
+                LAST EDITED:      JUL 30, 1996 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                    This is the total amount of the medication that is to be administered as one dose, such as '500MG' or '100CC'.  This cannot be a number only.  The type of unit (MG, CC, etc.) must be included.  This is required.  
+
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.21,4         *DAY (nD) OR DOSE (nL) LIMIT 0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:+X>90!(+X<1)!(X'?1.2N1"D"&(X'?1.2N1"L")) X
+                LAST EDITED:      JUL 30, 1996 
+                HELP-PROMPT:      Answer must be a number followed by a 'D' (for DAY LIMIT), or a number followed by an 'L' (for DOSE LIMIT). 
+                DESCRIPTION:        This should contain the length of the order with this drug either in DAYS or DOSES (administered).  If the length is in DAYS, the number of days entered must be followed by a D.  If the length is a DOSE LIMIT, the
+                                  number entered must be followed by an L.  
+
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.21,5         *START DAY AND TIME    0;11 DATE
+
+                INPUT TRANSFORM:  K:X'?1"T+"1.2N1"@"1.4N X I $D(X) S %DT="TXR",Z=X D ^%DT K:Y<1 X S:Y>0 X=$P(Z,"@")_"@"_$E(Y_"000",9,12) W:Y>0 "  (",X,")" K Z
+                LAST EDITED:      JUL 30, 1996 
+                HELP-PROMPT:      Enter the day and time after the order is selected that this order should start. 
+                DESCRIPTION:        If the order with this drug is not to start the day the order set is selected, enter when the order is to start here.  Enter as a future date and time in the form of "T+...  This allows orders in an order set to be 
+                                  staggered.  
+
+                EXECUTABLE HELP:  W !,"DO NOT ENTER ANYTHING HERE IF THIS ORDER STARTS THE DAY ITS ORDERED."
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.21,6         *MED ROUTE             0;3 POINTER TO MEDICATION ROUTES FILE (#51.2) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^PS(51.2,+Y,0),""^"",4)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 30, 1996 
+                HELP-PROMPT:      Enter the route of administration for this drug. 
+                DESCRIPTION:
+                                    This is the route of administration for this drug.  
+
+                SCREEN:           S DIC("S")="I $P(^PS(51.2,+Y,0),""^"",4)"
+                EXPLANATION:      MUST BE MARKED FOR ALL PACKAGES
+                GROUP:            PSJU
+
+53.21,7         *SCHEDULE TYPE         0;4 SET (Required)
+
+                                  'C' FOR CONTINUOUS; 
+                                  'O' FOR ONE TIME; 
+                                  'OC' FOR ON CALL; 
+                                  'P' FOR PRN; 
+                                  'R' FOR FILL on REQUEST; 
+                LAST EDITED:      JUL 30, 1996 
+                HELP-PROMPT:      Enter the code (C, O, OC, P, R) corresponding to the scheduling of this order. 
+                DESCRIPTION:
+                                    This is the type of schedule for the administration of the drug.  Please remember that PRE-OP orders fall under ON CALL, and that FILL on REQUEST includes MULTI-DOSE containers.  
+
+                GROUP:            PSJU
+
+53.21,8         *SCHEDULE              0;5 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  D EN^PSGS0 I $D(X)#2,'PSGS0Y,PSGS0XT W "  Every ",PSGS0XT," minutes"
+                LAST EDITED:      JUL 30, 1996 
+                HELP-PROMPT:      Answer must be 2-180 characters in length. 
+                DESCRIPTION:        This is the schedule for the administration of this medication.  Unless the Schedule Type is ON CALL, this field is required, and the order will NOT be entered if no data is found in this field. This field will be
+                                  ignored if the SCHEDULE TYPE is ON CALL (OC).  
+
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.21,9         *SPECIAL INSTRUCTIONS  1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>180!($L(X)<1) X D:$D(X) ^PSGSICHK
+                LAST EDITED:      JUL 30, 1996 
+                HELP-PROMPT:      Answer must be 1-180 characters in length. 
+                DESCRIPTION:        Enter any special instructions (using abbreviations whenever possible) needed for this order.  This would include the physician's reason for ordering a PRN.  This field utilizes the abbreviations and expansions from
+                                  the MEDICATION INSTRUCTION file (#51).  
+
+                EXECUTABLE HELP:  W !,"IF ABBREVIATIONS ARE USED, THE TOTAL LENGTH OF THE EXPANDED INSTRUCTIONS ALSO   MAY NOT BE LONGER THAN 180 CHARACTERS."
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.21,10        *DISPENSE DRUG         2;0 POINTER Multiple #53.2102
+
+                LAST EDITED:      JUL 30, 1996 
+                DESCRIPTION:
+                                    This is the medication(s), and related information, that will actually be dispensed by pharmacy for this order.  
+
+                GROUP:            PSJ
+
+53.2102,.01       *DISPENSE DRUG         0;1 POINTER TO DRUG FILE (#50) (Required) (Multiply asked)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $P($G(^PSDRUG(+Y,2)),""^"",6)=+$G(^PS(53.2,$S($D(DA(2)):DA(2),1:DA(1)),1,$S($D(DA(2)):DA(1),1:DA),0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JUL 30, 1996 
+                  HELP-PROMPT:      Enter a dispense drug for this order. 
+                  DESCRIPTION:
+                                      This is the medication that will actually be dispensed for this order.  An order may have more than one dispense drug.  
+
+                  TECHNICAL DESCR:
+                                      This is an entry from the Drug file (50) that will actually be dispensed as part of the order.  An order can have multiple dispense drugs.  
+
+                  SCREEN:           S DIC("S")="I $P($G(^PSDRUG(+Y,2)),""^"",6)=+$G(^PS(53.2,$S($D(DA(2)):DA(2),1:DA(1)),1,$S($D(DA(2)):DA(1),1:DA),0))"
+                  EXPLANATION:      Only dispense drugs tied to this order's primary drug are selectable.
+                  EXECUTABLE HELP:  S X(1)=+$G(^PS(53.2,DA(1),1,DA,0)) I X(1) S X(1)=$P($G(^PS(50.3,X(1),0)),"^") I X(1)]"" W !?5,"(",X(1)," is the drug for this order.)" K DA(2)
+                  LAYGO TEST:       1,0)= S X(1)=$D(^PS(53.2,$S($D(DA(2)):DA(2),1:DA(1)),1,$S($D(DA(2)):DA(1),1:DA),2,"B",+X)) D:X(1) EN^DDIOL("This dispense drug has already been entered for this order.") I 'X(1)
+
+                  GROUP:            PSJU
+                  CROSS-REFERENCE:  53.2102^B 
+                                    1)= S ^PS(53.2,DA(2),1,DA(1),2,"B",$E(X,1,30),DA)=""
+                                    2)= K ^PS(53.2,DA(2),1,DA(1),2,"B",$E(X,1,30),DA)
+
+
+53.2102,.02       *UNITS PER DOSE        0;2 NUMBER
+
+                  INPUT TRANSFORM:  S X=$S(X="1/2":.5,X="1/4":.25,1:X) K:+X'=X!(X>30)!(X<0)!(X?.E1"."3.N) X
+                  OUTPUT TRANSFORM: S Y=$S(Y=.5:"1/2",Y=.25:"1/4",Y?1".".N:"0"_Y,1:Y)
+                  LAST EDITED:      JUL 30, 1996 
+                  HELP-PROMPT:      Enter a number between 0 and 30 (will accept '1/2' or '1/4'). 
+                  DESCRIPTION:        This is the number of UNITS (tablets, capsules, etc.) to be dispensed as a DOSE for this order.  The literals '1/2' and '1/4' may be entered.  If there is no entry, it is assumed to be ONE (1).  
+                                                             ** PLEASE NOTE ** 
+                                      If a doctor prescribes 30 ml's of a medication that is usually dispensed and administered as 60 ml's, the correct UNITS PER DOSE would be 1/2 (or .5), NOT 30 ml's.  (30 ml's would be entered into the DOSAGE ORDERED
+                                    field.) 
+                                      If the UNITS PER DOSE ordered is a variable amount (1-2 tab.), it is suggested that the maximum amount be entered into this field and the amount ordered noted either in the DOSAGE ORDERED or SPECIAL INSTRUCTIONS
+                                    fields.  
+
+                  EXECUTABLE HELP:  W !,"IF NO ENTRY (OR AN ENTRY OF `0') IS MADE, A ONE (1) WILL BE ASSUMED."
+                  GROUP:            PSJU
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+
+
+53.2,2        ORDERABLE ITEM         2;0 POINTER Multiple #53.22
+
+              DESCRIPTION:
+                                This is the orderable item describing the drug to be administered in this order.  
+
+              SCREEN:           S DIC("S")="I $S('$P($G(^(0)),U,4):1,1:$P($G(^(0)),U,4)>DT)"
+              EXPLANATION:      Only active orderable items may be selected.
+              GROUP:            PSJU
+
+53.22,.01       ORDERABLE ITEM         0;1 POINTER TO PHARMACY ORDERABLE ITEM FILE (#50.7) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $S('$P($G(^(0)),U,4):1,1:$P($G(^(0)),U,4)>DT)"
+                LAST EDITED:      DEC 11, 1997 
+                HELP-PROMPT:      Enter the orderable item to identify this medication. Each orderable item chosen is an individual order within the order set. 
+                DESCRIPTION:
+                                  This is the orderable item for the medication order.  
+
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  53.22^B 
+                                  1)= S ^PS(53.2,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(53.2,DA(1),2,"B",$E(X,1,30),DA)
+
+
+53.22,2         DOSAGE ORDERED         0;9 FREE TEXT
+
+                INPUT TRANSFORM:  X:$E(X,$L(X))="" ^DD(53.22,2,9.5) K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      APR 13, 2001 
+                HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                DESCRIPTION:      This is the total amount of the medication that is to be administered as one dose, such as '500MG' or '100CC'. This cannot be a number only.  The type of unit (MG, CC, etc.) must be included.  
+                                   
+
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.22,4         DAY (nD) OR DOSE (nL) LIMIT 0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(+X)>90!($L(+X)<1)!(X'?1.2N1"D"&(X'?1.2N1"L")) X
+                LAST EDITED:      JUL 25, 1996 
+                HELP-PROMPT:      Answer must be a number followed by a 'D" (for DAY LIMIT), or a number followed by an 'L' (for DOSE LIMIT). 
+                DESCRIPTION:      This should contain the length of the order with this drug either in DAYS or DOSES (administered). If the length is in DAYS, the number of days entered mut be followed by a D. If the length is a DOSE LIMIT, the number
+                                  entered must be followed by an L.  
+
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.22,5         START DAY AND TIME     0;11 DATE
+
+                INPUT TRANSFORM:  K:X'?1"T+"1.2N1"@"1.4N X I $D(X) S %DT="TXR",Z=X D ^%DT K:Y<1 X S:Y>0 X=$P(Z,"@")_"@"_$E(Y_"000",9,12) D:Y>0 EN^DDIOL("  ("_X_")") K Z
+                LAST EDITED:      JUL 25, 1996 
+                HELP-PROMPT:      Enter the day and time after the order is selected that this order should start. 
+                DESCRIPTION:
+                                  If the order with this drug is not to start the day the order set is selected, enter when the order is to start here.  Enter as a future date and time in the form of "T+..." 
+
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.22,6         MED ROUTE              0;3 POINTER TO MEDICATION ROUTES FILE (#51.2) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^PS(51.2,+Y,0),""^"",4)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 25, 1996 
+                HELP-PROMPT:      Enter the route of administration for this drug. 
+                DESCRIPTION:
+                                  This is the route of administration for this drug.  
+
+                SCREEN:           S DIC("S")="I $P(^PS(51.2,+Y,0),""^"",4)"
+                EXPLANATION:      MUST BE MARKED FOR ALL PACKAGES
+
+53.22,7         SCHEDULE TYPE          0;4 SET (Required)
+
+                                  'C' FOR CONTINUOUS; 
+                                  'O' FOR ONE TIME; 
+                                  'OC' FOR ON CALL; 
+                                  'P' FOR PRN; 
+                                  'R' FOR FILL on REQUEST; 
+                LAST EDITED:      JUL 25, 1996 
+                HELP-PROMPT:      Enter the code (C,O,OC,P,R) corresponding to the scheduling of this order. 
+                DESCRIPTION:
+                                  This is the type of schedule for the administration of the drug.  Please remember that PRE-OP orders fall under ON CALL, and that FILL on REQUEST includes MULTI-DOSE containers.  
+
+                GROUP:            PSJU
+
+53.22,8         SCHEDULE               0;5 POINTER TO ADMINISTRATION SCHEDULE FILE (#51.1)
+
+                LAST EDITED:      MAR 02, 2004 
+                HELP-PROMPT:      Enter the schedule for this orderable item. 
+                GROUP:            PSJU
+
+53.22,9         SPECIAL INSTRUCTIONS   1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>180!($L(X)<1) X D:$D(X) ^PSGSICHK
+                LAST EDITED:      JUL 31, 1996 
+                HELP-PROMPT:      Answer must be 1-180 characters in length. 
+                DESCRIPTION:      Enter any special instructions (using abbreviations whenever possible) needed for this order.  This would include the physician's reason for ordering a PRN. This field utilizes the abbreviations and expansions from the
+                                  MEDICATION INSTRUCTION file.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.22,10        DISPENSE DRUG          2;0 POINTER Multiple #53.23
+
+                GROUP:            PSJU
+
+53.23,.01         DISPENSE DRUG          0;1 POINTER TO DRUG FILE (#50) (Required) (Multiply asked)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $P($G(^PSDRUG(+Y,2)),""^"")=+$G(^PS(53.2,$S($D(DA(2)):DA(2),1:DA(1)),2,$S($D(DA(2)):DA(1),1:DA),0))&($P($G(^PSDRUG(+Y,2)),""^"",3)[""U"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JUL 26, 1996 
+                  DESCRIPTION:
+                                    This is the medication(s), and related information, that will actually be dispensed by pharmacy for this order.  
+
+                  SCREEN:           S DIC("S")="I $P($G(^PSDRUG(+Y,2)),""^"")=+$G(^PS(53.2,$S($D(DA(2)):DA(2),1:DA(1)),2,$S($D(DA(2)):DA(1),1:DA),0))&($P($G(^PSDRUG(+Y,2)),""^"",3)[""U"")"
+                  EXPLANATION:      Only dispense drugs that are marked for Unit Dose use and that are tied to this order's ORDERABLE ITEM are selectable.
+                  EXECUTABLE HELP:  S X(1)=+$G(^PS(53.2,DA(1),2,DA,0)) I X(1) S X(1)=$P($G(^PS(50.7,X(1),0)),"^") I X(1)]"" D EN^DDIOL("("_X(1)_" is the drug for this order.") K DA(2)
+                  CROSS-REFERENCE:  53.23^B 
+                                    1)= S ^PS(53.2,DA(2),2,DA(1),2,"B",$E(X,1,30),DA)=""
+                                    2)= K ^PS(53.2,DA(2),2,DA(1),2,"B",$E(X,1,30),DA)
+
+
+53.23,.02         UNITS PER DOSE         0;2 NUMBER
+
+                  INPUT TRANSFORM:  S X=$S(X="1/2":.5,X="1/4":.25,1:X) K:+X'=X!(X>30)!(X<0)!(X?.E1"."3.N) X
+                  OUTPUT TRANSFORM: S Y=$S(Y=.5:"1/2",Y=.25:"1/4",Y?1".".N:"0"_Y,1:Y)
+                  LAST EDITED:      JUL 25, 1996 
+                  HELP-PROMPT:      Enter a number between 0 and 30 (will accept '1/2' or '1/4') 
+                  DESCRIPTION:      This is the number of UNITS (tablets, capsules, etc.) to be dispensed as a DOSE for this order.  The literals '1/2' and .   ** PLEASE NOTE ** If a doctor prescribes 30 ml's of a medication that is usually dispensed and 
+                                    administered as 60 ml's, the correct UNITS PER DOSE would be 1/2 (or .5), NOT 30 ml's.(30 ml's would be entered into the DOSAGE ORDERED field.)If the UNITS PER DOSE ordered is a variable amount (1-2 tab.), it is 
+                                    suggested that the maximum amount be entered into this field and the amount ordered noted either in the DOSAGE ORDERED or SPECIAL INSTRUCTIONS fields.  
+
+                  EXECUTABLE HELP:  D EN^DDIOL(" IF NO ENTRY (OR AN ENTRY OF '0') IS MADE, A ONE (1) WILL BE ASSUMED.")
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ADMINISTRATION SCHEDULE (#51.1)   ORDERABLE ITEM:SCHEDULE (#8)
+
+DRUG (#50)                        *DISPENSE DRUG:*DISPENSE DRUG (#.01)
+                                  DISPENSE DRUG:DISPENSE DRUG (#.01)
+
+MEDICATION ROUTES (#51.2)         *DRUG:*MED ROUTE (#6)
+                                  ORDERABLE ITEM:MED ROUTE (#6)
+
+PHARMACY ORDERABLE ITEM (#50.7)   ORDERABLE ITEM:ORDERABLE ITEM (#.01)
+
+PRIMARY DRUG (#50.3)              *DRUG:*DRUG (#.01)
+
+
+
+INPUT TEMPLATE(S):
+PSJUOSE                       JUL 28, 1996@10:43  USER #0    
+     Used to create and edit Order Sets.
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

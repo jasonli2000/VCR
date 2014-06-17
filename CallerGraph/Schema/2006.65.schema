@@ -1,0 +1,170 @@
+STANDARD DATA DICTIONARY #2006.65 -- MAG RAD PRIOR EXAMS LOGIC FILE                                                                                                                                                               MAY 20,2014@15:35:06  PAGE 1
+STORED IN ^MAG(2006.65,  (288 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                       (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ +---------------------------------------------------------------+ 
+ |                                                               |
+ | Property of the US Government.                                | 
+ | No permission to copy or redistribute this software is given. | 
+ | Use of unreleased versions of this software requires the user | 
+ | to execute a written test agreement with the VistA Imaging    | 
+ | Development Office of the Department of Veterans Affairs,     | 
+ | telephone (301) 734-0100.                                     | 
+ |                                                               |
+ | The Food and Drug Administration classifies this software as  | 
+ | a medical device.  As such, it may not be changed in any way. | 
+ | Modifications to this software may result in an adulterated   | 
+ | medical device under 21CFR820, the use of which is considered | 
+ | to be a violation of US Federal Statutes.                     | 
+ |                                                               |
+ +---------------------------------------------------------------+
+ 
+This file is used by the Radiology Imaging Workstation system to define logic for determining a patient's prior exams that may be of interest when viewing a given exam.  Each entry in the file defines a one-to-many relationship for a current exam to
+prior exams of interest; the mappings are defined in terms of CPT codes.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: CURRENT CPT DESC (#.02)
+
+CROSS
+REFERENCED BY: CURRENT CASE CPT GROUP(B), CURRENT CPT DESC(C)
+
+2006.65,.01   CURRENT CASE CPT GROUP 0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<3)!'(X?3.5N) X
+              LAST EDITED:      MAR 20, 1997 
+              HELP-PROMPT:      Answer must be 3-5 characters in length. 
+              DESCRIPTION:      The CPT "GROUP" corresponds to the Current Case's CPT code, by which logic is defined for finding other exams (by their CPT codes) that may be of interest when viewing an exam that is part of the defined CPT GROUP.  The 
+                                CPT GROUP is either: A 5-digit CPT code; the first 4 digits; or, the first 3 digits of the CPT code.  For example, possible CPT GROUP values for the CPT code 71020 are: 71020; 7102; and 710.  CPT GROUP thus allows rules to 
+                                be defined for specific CPT codes, or whole groups of codes that share the same leading 3 or 4 digits.  The rationale for this is that the CPT coding scheme GENERALLY (not always) groups code ranges by body parts--we can 
+                                take advantage of this to greatly reduce the numbers of entries that would be required to define mappings of exams by their CPT codes.  
+
+              CROSS-REFERENCE:  2006.65^B 
+                                1)= S ^MAG(2006.65,"B",$E(X,1,30),DA)=""
+                                2)= K ^MAG(2006.65,"B",$E(X,1,30),DA)
+
+
+2006.65,.02   CURRENT CPT DESC       0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>75!($L(X)<3) X
+              LAST EDITED:      JUL 01, 1999 
+              HELP-PROMPT:      Answer must be 3-75 characters in length. 
+              DESCRIPTION:
+                                This is a free text description for the current CPT group.  
+
+              CROSS-REFERENCE:  2006.65^C 
+                                1)= S ^MAG(2006.65,"C",$E(X,1,30),DA)=""
+                                2)= K ^MAG(2006.65,"C",$E(X,1,30),DA)
+
+
+2006.65,1     PRIOR CASE MATCHING CPT GROUP 1;0 Multiple #2006.66 (Add New Entry without Asking)
+
+              LAST EDITED:      MAR 11, 1997 
+              DESCRIPTION:      The CPT GROUP concept, explained above in the CURRENT CASE CPT GROUP field, applies here.  These are the codes which, if associated with Prior Cases for a patient, will cause the system to retrieve the images and/or 
+                                information automatically for the intended purposes (e.g., Pre-Fetch or Auto-Display).  
+
+              IDENTIFIED BY:    PRIOR CPT DESC(#7)
+
+2006.66,.01     MATCHING CPT GROUP     0;1 FREE TEXT (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>5!($L(X)<3)!'(X?3.5N) X
+                LAST EDITED:      MAR 13, 1997 
+                HELP-PROMPT:      Answer must be 3-5 characters in length. 
+                DESCRIPTION:
+                                  This is the CPT group to be matched to the current CPT group. It can consist of the first 3 to 5 digits of the CPT code.  (See CURRENT CASE CPT GROUP description for more details.  
+
+                CROSS-REFERENCE:  2006.66^B 
+                                  1)= S ^MAG(2006.65,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^MAG(2006.65,DA(1),1,"B",$E(X,1,30),DA)
+
+
+2006.66,1       AUTO-DISPLAY?          0;2 SET
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      JUN 07, 1999 
+                HELP-PROMPT:      If you want the defined CPT codes combination to result in Automatically displaying prior exams, enter "YES"; otherwise, enter "NO". 
+                DESCRIPTION:      If prior cases having this CPT GROUP should be automatically displayed when reading a Current Case, then the answer should be 'YES'; if not, the answer should be 'NO'.  By allowing this YES/NO for each entry defined, it 
+                                  becomes possible to define rules flexibly, using combinations of Inclusive and Exclusive logic.  For example, a possible definition for the CURRENT CASE CPT GROUP for 735: 
+                                       CURRENT      PRIOR      AUTO-DISPLAY? 
+                                         735         735           Y 
+                                                     7356          N 
+                                                     7358          N 
+                                                     7359          N This example says, for a Current Case with CPT code beginning with 735, do the Auto-Display for any Prior Case having a CPT of 735nn, except for those having CPTs of 7356n, 7358n, and
+                                  7359n.  A more complete definition of this example would then (likely) define three CURRENT entries for these latter 4-digit groups.  
+
+
+2006.66,2       DAYS LIMIT/AUTO-DISPLAY 0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>20000)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 13, 1997 
+                HELP-PROMPT:      To limit auto-display of images based on the time interval between the Current Case and the Prior exam specify a limit in days.  If no time limit is applicable, do NOT enter a value. 
+                DESCRIPTION:
+                                  To limit auto-display of images based on the time interval between the Current Case and the Prior exam, a limit may be specified, expressed in days.  If no time limit is applicable, no value should be entered.  
+
+
+2006.66,3       VERSION LIMIT/AUTO-DISPLAY 0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 11, 1997 
+                HELP-PROMPT:      Enter a number from 1 to 10; this is the maximum number of exams matching this MATCHING CPT GROUP that will be AUTO-DISPLAYED. 
+                DESCRIPTION:      The value entered here will limit the total number of prior exams that match this MATCHING CPT GROUP that will be automatically displayed. The first 'N' (N=VERSION LIMIT) exams, from the most recent to the oldest, that
+                                  match will be Auto_Displayed.  
+
+
+2006.66,4       PRE-FETCH?             0;5 SET (Required)
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      JAN 08, 1997 
+                HELP-PROMPT:      If you want the defined CPT codes combination to result in Automatically Pre-fetching images from archive storage, enter "YES"; otherwise, enter "NO". 
+                DESCRIPTION:
+                                  If prior cases having this CPT GROUP should be automatically Pre-fetched from archive storage (i.e. Jukebox) to magnetic disk, then the answer should be 'YES'; if not, the answer should be 'NO'.  
+
+
+2006.66,5       DAYS LIMIT-PREFETCH    0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>20000)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 13, 1997 
+                HELP-PROMPT:      To limit pre-fetch of images based on the time interval between the Current Case and the Prior exam, specify a limit in days.  If no time limit is applicable, do NOT enter a value. 
+                DESCRIPTION:
+                                  To limit pre-fetch of images based on the time interval between the Current Case and the Prior exam, a limit may be specified, expressed in days.  If no time limit is applicable, no value should be entered.  
+
+
+2006.66,6       VERSION LIMIT-PREFETCH 0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 08, 1997 
+                HELP-PROMPT:      Enter a number from 1 to 10; this is the maximum number of exams matching this MATCHING CPT GROUP that will be pre-fetched. 
+                DESCRIPTION:      The value entered here will limit the total number of prior exams that match this MATCHING CPT GROUP that will be pre-fetched from archive storage. The first 'N' (N=VERSION LIMIT) exams, from the most recent to the
+                                  oldest, that match will be pre-fetched.  
+
+
+2006.66,7       PRIOR CPT DESC         0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>75!($L(X)<3) X
+                LAST EDITED:      JUN 29, 1999 
+                HELP-PROMPT:      Answer must be 3-75 characters in length. 
+                DESCRIPTION:
+                                  This is a free text description for the CPT group. 
+
+
+
+
+
+INPUT TEMPLATE(S):
+MAGJ PRIOR EDIT               JUL 01, 1999@09:35  USER #0    
+
+PRINT TEMPLATE(S):
+MAGJ PRIOR PRINT              JUL 01, 1999@13:57  USER #0                                                                                                                                                                        VISTARAD PREFETCH LOGIC TABLE
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

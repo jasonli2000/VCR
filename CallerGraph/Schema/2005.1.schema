@@ -1,0 +1,1500 @@
+STANDARD DATA DICTIONARY #2005.1 -- IMAGE AUDIT FILE                                                                                                                                                                              MAY 20,2014@15:34:37  PAGE 1
+STORED IN ^MAG(2005.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ +---------------------------------------------------------------+ 
+ |                                                               |
+ | Property of the US Government.                                | 
+ | No permission to copy or redistribute this software is given. | 
+ | Use of unreleased versions of this software requires the user | 
+ | to execute a written test agreement with the VistA Imaging    | 
+ | Development Office of the Department of Veterans Affairs,     | 
+ | telephone (301) 734-0100.                                     | 
+ |                                                               |
+ | The Food and Drug Administration classifies this software as  | 
+ | a medical device.  As such, it may not be changed in any way. | 
+ | Modifications to this software may result in an adulterated   | 
+ | medical device under 21CFR820, the use of which is considered | 
+ | to be a violation of US Federal Statutes.                     | 
+ |                                                               |
+ +---------------------------------------------------------------+
+ 
+This file holds data from modified image records of the Image file (2005) and serves as an audit trail for modified images.  When image deletion takes place, the image is deleted on the server if it is there, the Parent Report file's pointer to the image
+file is deleted, the data from the Image file is copied over to this file using the same IEN, and the node in the image file is set to null as it can never be used again. The image residing on the WORM drive cannot be deleted, so it can always be
+retrieved.  
+ This file stores the modified image record from the Image file (2005) and serves as an audit trail for modified images.  When image deletion takes place: 
+ 
+  * The image is deleted on the imaging server (if it is there).  
+  * The parent report file's pointer to the image file is deleted. 
+  * The data from the image file is copied over to this file using the same IEN. 
+  * The node is deleted from the image file.  
+ The image residing on the WORM drive cannot be deleted, so it can always be retrieved.  The field names and definitions are the same as the Image file (#2005).  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: 
+IDENTIFIED BY: PATIENT (#5)
+
+POINTED TO BY: LINKED IMAGE field (#115.1) of the IMAGE File (#2005) 
+               GROUP PARENT field (#14) of the IMAGE AUDIT File (#2005.1) 
+               LINKED IMAGE field (#115.1) of the IMAGE AUDIT File (#2005.1) 
+               OBJECT GROUP field (#.01) of the OBJECT GROUP sub-field (#2005.14) of the IMAGE AUDIT File (#2005.1) 
+               
+
+CROSS
+REFERENCED BY: PATIENT(AC), GROUP PARENT(AGP), STATUS REASON(ASTRSN), OBJECT NAME(B), FILEREF(E)
+
+INDEXED BY:    DATE/TIME IMAGE SAVED (AD), DATE/TIME IMAGE SAVED & IMAGE SAVE BY & ACQUISITION SITE & CAPTURE APPLICATION & GROUP PARENT (ADTDUZ), GROUP PARENT & PROCEDURE/EXAM DATE/TIME (APDT), GROUP PARENT & PROCEDURE/EXAM DATE/TIME & PATIENT &
+               PROCEDURE (APDTPX), OBJECT NAME & DOCUMENT DATE & CONTROLLED IMAGE & STATUS & STATUS REASON (AUDIT100), OBJECT NAME & SHORT DESCRIPTION & PROCEDURE & PROCEDURE/EXAM DATE/TIME (AUDIT2), OBJECT NAME & PACKAGE INDEX & TYPE INDEX & PROC/EVENT
+               INDEX & SPEC/SUBSPEC INDEX & ORIGIN INDEX (AUDIT40), FILEREF (F), NEW SOP INSTANCE UID (P), DESTINATION & ROUTING TIMESTAMP (ROUTE), SERIES UID (SERIESUID)
+
+
+2005.1,.001   NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 16, 1994 
+              HELP-PROMPT:      Type a Number between 1 and 999999, 0 Decimal Digits 
+              DESCRIPTION:      .001 NUMBER Field is the Internal Entry Number of the Image File Entry.  i.e. "DA" of the Image File entry.  Imaging routines and RPC's use the Image DA for lookups.  The Image Files associated with this entry are stored
+                                on a Networked Image A name for the Image Files is generated from the Image DA, the Extension is appropriate to the Type of Image.  i.e. I0014432.JPG 
+
+
+2005.1,.01    OBJECT NAME            0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>70!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      AUG 26, 2010 
+              HELP-PROMPT:      Answer must be 3-70 characters in length. 
+              DESCRIPTION:
+                                Each object has a natural language name; this usually consists of the patient name, social security number, and object description.  This field is automatically defined by the Imaging software.  
+
+              CROSS-REFERENCE:  2005.1^B 
+                                1)= S ^MAG(2005.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^MAG(2005.1,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^2005.1^113 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^MAG(2005.1,D0,100)):^(100),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X=DIV S X="12" S DIH=$G(^MAG(2005.1,DIV(0),100)),DIV=X S $P(^(100),U,8)=DIV,DIH=2005.1,DIG=113 D ^DICR
+                                2)= Q
+                                3)= Do not delete!
+                                CREATE VALUE)= "12"
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= STATUS
+                                This trigger populates the STATUS field (113) when a new record is added to the file. Since this file can store only deleted images, the image status is always set to 12 ("Deleted").  
+
+
+              RECORD INDEXES:   AUDIT100 (#520), AUDIT2 (#521), AUDIT40 (#526)
+
+2005.1,.05    ACQUISITION SITE       100;3 POINTER TO INSTITUTION FILE (#4) (Required)
+
+              LAST EDITED:      JUN 15, 2011 
+              HELP-PROMPT:      Enter the name of the site where the image was created. 
+              DESCRIPTION:      The 'origin' location is the location where an image is created.  For instance, a site like 'St. Louis' may process images for several other locations, such as Topeka, Wichita and Leavenworth.  Any reference to a site
+                                identifier will return the name of the primary location. For the purpose of finding the 'origin' of images, the more specific sub-site is needed.  This field contains the name of this 'sub-site'.  
+
+              RECORD INDEXES:   ADTDUZ (#667)
+
+2005.1,.06    EXPORT LOCATION        5;0 POINTER Multiple #2005.11 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This table contains audit information regarding the export locations of file copies generated by the generic carbon copy (GCC) utility.  This utility is used by the Health Eligibility Center functionality.  
+
+
+2005.11,.01     EXPORT LOCATION        0;1 POINTER TO NETWORK LOCATION FILE (#2005.2)
+
+                LAST EDITED:      JAN 23, 2003 
+                DESCRIPTION:
+                                  This is the network location file pointer that successfully received a copy of the file.  
+
+                CROSS-REFERENCE:  2005.11^B 
+                                  1)= S ^MAG(2005.1,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^MAG(2005.1,DA(1),5,"B",$E(X,1,30),DA)
+
+
+2005.11,1       TIMESTAMP              0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JAN 23, 2003 
+                DESCRIPTION:
+                                  This is the date and time that the file was copied to the network location.  
+
+
+2005.11,2       EXTENSION              0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                LAST EDITED:      JAN 23, 2003 
+                HELP-PROMPT:      Answer must be 3 characters in length. 
+                DESCRIPTION:
+                                  This is the file extension that was successfully copied to the network location.  
+
+
+
+
+2005.1,1      FILEREF                0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      DEC 21, 2004 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:      This field contains the unique image filename of the image stored on the magnetic server (and the jukebox if you have one). It is always eight characters in length, starting with the facility's 2 character Imaging 
+                                namespace, with the remaining six characters ranging from 000001 to 999999.  The extensions indicate what type of image it is: .BW for Black and White medium resolution (Cath, Path), .TGA for X-ray, .756 for 16-bit 
+                                namespace, with the remaining six characters ranging from 000001 to set by the Imaging software.  
+
+              CROSS-REFERENCE:  2005.1^E 
+                                1)= S ^MAG(2005.1,"E",$E(X,1,30),DA)=""
+                                2)= K ^MAG(2005.1,"E",$E(X,1,30),DA)
+                                3)= DOS IMAGE file cross-reference.
+                                This cross-reference produces a list of unique entries as the DOS file reference associated with each image/object is by definition unique.  This cross-reference is used by Multimedia mail to see whether an image already
+                                is in the image file.  
+
+
+              FIELD INDEX:      F (#659)    MUMPS    IR    LOOKUP & SORTING
+                  Short Descr:  Image File Name Only
+                  Description:  This allows sorting and lookup of the image IEN by the image file name.  
+                    Set Logic:  S ^MAG(2005.1,"F",$P($E(X,1,30),"."),DA)=""
+                   Kill Logic:  K ^MAG(2005.1,"F",$P($E(X,1,30),"."),DA)
+                   Whole Kill:  K ^MAG(2005.1,"F")
+                         X(1):  FILEREF  (2005.1,1)  (Subscr 1)  (Len 30)  (forwards)
+
+
+2005.1,2      DISK & VOL,MAGNETIC    0;3 POINTER TO NETWORK LOCATION FILE (#2005.2)
+
+              LAST EDITED:      APR 02, 1994 
+              HELP-PROMPT:      Enter the disk name and volume set name where the image will be stored 
+              DESCRIPTION:      This field gives the path for the network location of the stored image (i.e. on which server it resides). After a specified time period during which the image is not viewed, the image is deleted from the magnetic server
+                                but remains available upon request from the jukebox. It takes slightly longer to display from the jukebox, but if requested, it is moved back to the server until it is no longer being viewed. This field is set 
+                                automatically by the Imaging software.  
+
+
+2005.1,2.1    DISK & VOLUME. - ABSTRACT 0;4 POINTER TO NETWORK LOCATION FILE (#2005.2)
+
+              LAST EDITED:      JAN 25, 1993 
+              DESCRIPTION:      This field points to the path of the network storage location for the Image abstract.  An abstract is miniature copy of the captured image. If the parent image has not been viewed during the specified time period (if there
+                                is a jukebox), this file will be deleted along with the parent image onto the server currently being used to write captured images.  This field is automatically set by the Imaging software.  
+
+
+2005.1,2.2    DISK & VOL.: WORM      0;5 POINTER TO NETWORK LOCATION FILE (#2005.2)
+
+              LAST EDITED:      SEP 14, 1990 
+              DESCRIPTION:      This field is a pointer to the Network location file giving the jukebox platter where the image is stored (provided there is a jukebox in the Imaging System).  
+                                 If the jukebox is a WORM, this file can never be deleted.  
+
+
+2005.1,3      OBJECT TYPE            0;6 POINTER TO OBJECT TYPE FILE (#2005.02)
+
+              LAST EDITED:      APR 02, 1994 
+              DESCRIPTION:      This field is a pointer to the Object Type file (2005.02) which defines the object type of this object, e.g. still image, black & white image, X-ray etc. The image type determines how various actions are performed i.e.  
+                                how the full resolution image is displayed, or how and when the image abstract is displayed.  This field is automatically set by the Imaging software at the time of image capture.  
+
+
+2005.1,4      OBJECT GROUP           1;0 POINTER Multiple #2005.14
+
+              DESCRIPTION:      The object group is a multiple field pointing back to the Image file (2005.1).  Only objects with an object type of GROUP have the object group field defined.  These objects can be thought of as the 'parent' of a set of
+                                images.  Generally, instead of having their own abstract, objects of the GROUP type use the abstract of the first entry in their object group multiple.  Sometimes, text will be used in place of the GROUP abstract for 
+                                speed.  Methods for viewing a GROUP object generally allow viewing of all the members of the group, either selectively or altogether.  A good example would be a set of thirty CT scan images.  Using the integrated view menu
+                                option, the tiled display of image abstracts would contain only one abstract for the group.  Selecting the group object for viewing provides the user with a tiled display of the abstracts of the individual CT scan images. 
+                                The user can then identify individual images for full resolution viewing.  
+
+
+2005.14,.01     OBJECT GROUP           0;1 POINTER TO IMAGE AUDIT FILE (#2005.1) (Multiply asked)
+
+                LAST EDITED:      MAY 19, 1994 
+                DESCRIPTION:      The object group is a multiple field pointing back to the Image file (2005.1).  Only objects with an object type of GROUP have the object group field defined.  These objects can be thought of as the 'parent' of a set of
+                                  images.  Generally, instead of having their own abstract, objects of the GROUP type use the abstract of the first entry in their object group multiple.  Sometimes, text will be used in place of the GROUP abstract for 
+                                  speed.  Methods for viewing a GROUP object generally allow viewing of all the members of the group, either selectively or altogether.  A good example would be a set of thirty CT scan images.  Using the integrated view
+                                  menu option, the tiled display of image abstracts would contain only one abstract for the group.  Selecting the group object for viewing provides the user with a tiled display of the abstracts of the individual CT scan
+                                  images.  The user can then identify individual images for full resolution viewing.  
+
+
+2005.14,1       DICOM SERIES NUM       0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 18, 1998 
+                HELP-PROMPT:      This is the Dicom 'Series Number' 
+
+2005.14,2       DICOM IMAGE NUM        0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 18, 1998 
+                HELP-PROMPT:      This is the Dicom 'Image Number' 
+
+
+
+2005.1,5      PATIENT                0;7 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      JUN 24, 1997 
+              DESCRIPTION:      This field is a pointer to the VistA patient file (#2), and contains the DFN of the patient that the image or object belongs to. The image or object is part of this patient's medical record. This pointer ties the image to
+                                the patient and is automatically set by the imaging software.  
+
+              TECHNICAL DESCR:
+                                 
+
+              CROSS-REFERENCE:  2005.1^AC 
+                                1)= S ^MAG(2005.1,"AC",$E(X,1,30),DA)=""
+                                2)= K ^MAG(2005.1,"AC",$E(X,1,30),DA)
+
+              RECORD INDEXES:   APDTPX (#519)
+
+2005.1,6      PROCEDURE              0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUN 28, 1994 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This field is an abbreviation for the procedure e.g COL for colonoscopy, SUR for surgery, SP for surgical pathology, X-ray for radiology .  This field is automatically set by the Imaging software.  
+
+              RECORD INDEXES:   APDTPX (#519), AUDIT2 (#521)
+
+2005.1,7      DATE/TIME IMAGE SAVED  2;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 15, 2011 
+              HELP-PROMPT:      This is the date and time of image capture. 
+              DESCRIPTION:      This field is the date and time the image was captured. It is automatically stuffed into the file as 'NOW'. It is not the same as the date and time of the procedure or exam.  This field is set automatically by the Imaging
+                                software.  
+
+              FIELD INDEX:      AD (#528)    REGULAR    IR    SORTING ONLY
+                  Short Descr:  Created by Patch 77
+                    Set Logic:  S ^MAG(2005.1,"AD",X,DA)=""
+                   Kill Logic:  K ^MAG(2005.1,"AD",X,DA)
+                   Whole Kill:  K ^MAG(2005.1,"AD")
+                         X(1):  DATE/TIME IMAGE SAVED  (2005.1,7)  (Subscr 1)  (forwards)
+                                  Transform (Storage):  S X=$P(X,".")
+
+              RECORD INDEXES:   ADTDUZ (#667)
+
+2005.1,8      IMAGE SAVE BY          2;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 15, 2011 
+              DESCRIPTION:      This field is a pointer to the New Person file and thus equal to the DUZ of the person who logged in to capture the image.  It identifies who captured or saved the image and is automatically stuffed into the image file. 
+                                An image received via a Multimedia Mail message will not have data in this field.  
+
+              RECORD INDEXES:   ADTDUZ (#667)
+
+2005.1,8.1    CAPTURE APPLICATION    2;12 SET
+
+                                'C' FOR Capture Workstation; 
+                                'D' FOR DICOM Gateway; 
+                                'I' FOR Import API; 
+              LAST EDITED:      JUN 15, 2011 
+              HELP-PROMPT:      Select code of the application that captured the image. 
+              DESCRIPTION:      Code stored in this field indicates the application that captured this image and created the image entry. 
+                                 
+                                This field cannot be edited; it is auto-populated by the "ACA" action index.  
+
+              TECHNICAL DESCR:
+                                Added by the patch MAG*3*93.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  ^
+              GROUP:            MAG*3*93
+              RECORD INDEXES:   ADTDUZ (#667)
+
+2005.1,9      SUMMARY OBJECT         2;3 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAY 04, 1994 
+              HELP-PROMPT:      Enter 1 for 'Yes' and 0 (or null) for 'No'. 
+              DESCRIPTION:      This field is used to indicate whether the image or object is to be used as a summary for a group of objects. For example, in a GROUP of images, normally the abstract of the first object in the group multiple is used for
+                                the integrated view display.  This field allows the user to select a summary image to be used for this purpose.  This field is currently not in use.  
+
+
+2005.1,10     SHORT DESCRIPTION      2;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      SEP 14, 1990 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:      This field allows the user to store a brief, one line description with the image or object record. For images associated with patients, this data is appended to the patient's name and SSN to create the .01 field of the 
+                                Image file.  It is also permanently written on the upper left corner of the image to provide visible identification.  
+
+              RECORD INDEXES:   AUDIT2 (#521)
+
+2005.1,11     LONG DESCRIPTION       3;0   WORD-PROCESSING #2005.111
+
+              DESCRIPTION:      This word processing field allows the user to describe the image at length.  The user may only choose to append this long description on selected images - ones which are 'classic' or 'unusual' cases. It can be used to
+                                summarize a group of images which have been put together for a conference or consult.  It will be used in the future to a greater extent, as options for image capture independent of VistA package are provided.  
+
+
+2005.1,12     LAST ACCESS DATE       0;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 18, 1992 
+              HELP-PROMPT:      Date image last accessed 
+              DESCRIPTION:      This is the date and time the image was last viewed or accessed. Each time an abstract or image is requested for viewing, this field is automatically set with the current date and time.  In conjunction with the appropriate 
+                                site parameter, this field is used for automatic file migration.  That is, when an image has not been accessed within the predefined time period, it will be deleted from the magnetic server and will only be accessible from 
+                                the optical disk jukebox.  
+
+
+2005.1,13     IQ                     0;11 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 23, 2003 
+              DESCRIPTION:
+                                This field is set by various integrity checkers in the Imaging software.  This field is set if an entry has questionable integrity.  
+
+
+2005.1,13.5   DUPE                   0;12 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 20, 2005 
+              DESCRIPTION:      This field is to allow screening of images that have duplicate instances in the archive file and the image file.  The intent is to prevent purging of these images on the raid until a utility to store this file on the
+                                Jukebox is implemented.  
+
+
+2005.1,14     GROUP PARENT           0;10 POINTER TO IMAGE AUDIT FILE (#2005.1)
+
+              LAST EDITED:      AUG 25, 2008 
+              HELP-PROMPT:      If this object is a member of a group, enter the parent. 
+              DESCRIPTION:      This field is used for images that are part of a group, for example a CT exam might contain 30 images.  This field contains a pointer back to the image file (2005.1), to the object whose type is "GROUP" that points to this 
+                                object as a member of its group.  A pointer to this object will be found in the Object Group multiple of the parent GROUP object.  
+
+              CROSS-REFERENCE:  2005.1^AGP 
+                                1)= S ^MAG(2005.1,"AGP",$E(X,1,30),DA)=""
+                                2)= K ^MAG(2005.1,"AGP",$E(X,1,30),DA)
+                                3)= Do not delete!
+                                Added by the patch MAG*3*93.  
+
+
+              RECORD INDEXES:   ADTDUZ (#667), APDT (#518), APDTPX (#519)
+
+2005.1,15     PROCEDURE/EXAM DATE/TIME 2;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 28, 1994 
+              HELP-PROMPT:      Enter the DATE-TIME of the Procedure or Exam 
+              DESCRIPTION:      This is the date/time of the procedure or the exam. It is obtained from the parent data file, i.e. the date/time of the X-ray exam, the Medical Procedure, the time the Laboratory specimen was obtained from the patient, or
+                                the date/time of the Surgical procedure. This often is not the same as the date/time the image was captured. In a long surgical procedure the image capture time may be several hours later than the start of the operation.
+                                When a lab specimen is collected from a patient, it may be several days before images are captured from the slide.  If images are initially stored on an intermediate media such as X-ray film or video tape, the capture time
+                                can be long after the procedure time.  
+
+              RECORD INDEXES:   APDT (#518), APDTPX (#519), AUDIT2 (#521)
+
+2005.1,16     PARENT DATA FILE#      2;6 POINTER TO PARENT DATA FILE FILE (#2005.03) (Required)
+
+              LAST EDITED:      MAY 04, 1994 
+              HELP-PROMPT:      The Parent Report file (or sub-file) number. 
+              DESCRIPTION:      The values of fields 16, 17, 18 and 63 are numbers.  These numbers are internal entry numbers. Which field corresponds to which internal entry number is explained below.  
+                                 
+                                Together, the values of these fields establish a link back to the entry in the "parent" file, that holds the information that describes why the image was collected.  
+                                 
+                                The link to the "parent" information is brought about by the combination of the values of fields 16, 17, and, 18, and optionally also field 63.  
+                                 
+                                The value of field 16 is a number that indicates the internal entry number of the "parent file" in the VA-FileMan data dictionary.  Common parent files are: 
+                                 
+                                   File    Name 
+                                   ====    ====
+                                     3.9:  MAIL MESSAGE 
+                                    63:    AUTOPSY (MICROSCOPIC) 
+                                    63.02: ELECTRON MICROSCOPY 
+                                    63.08: SURGICAL PATHOLOGY 
+                                    63.09: CYTOLOGY 
+                                    63.2:  AUTOPSY (GROSS) 
+                                    74:    RADIOLOGY 
+                                   130:    SURGERY 
+                                   691:    ECHOCARDIOGRAM 
+                                   691.1:  CARDIAC CATHETERIZATION 
+                                   691.5:  ELECTROCARDIOGRAPHY 
+                                   694:    HEMATOLOGY 
+                                   699:    ENDOSCOPY 
+                                   699.5:  GENERIC MEDICINE 
+                                  8925:    TIU 
+                                 
+                                The records in each of these "parent" files contain a multiple that itemizes the list of images that belong to that record.  
+                                 
+                                The field numbers and fixed indexes for those multiples all have the number 2005. The entries within these multiples all have a field that is a pointer back to the image file.  The entries in these multiples identify the
+                                various images that belong with the record in question.  
+                                 
+                                The various parent files each have their own structure, for instance 
+                                 
+                                 Type Number     Form of Root 
+                                 ===========     ============
+                                     1           ^RARPT(D0,2005,D1,0)=image...  
+                                     2           ^MCAR(699,D0,2005,D1,0)=image...  
+                                     3           ^LR(D0,"SP",D1,2005,D2,0)=image...  
+                                 
+                                Depending on the nature of the file structure of the parent file, the imaging software will need either just the value of D0 (type 1 and type 2) to find the correct entry, or the values of D0 as well as D1 (type 3).  
+                                 
+                                The values of the fields in the image file correspond to the values of the indices in the parent file as follows: 
+                                 
+                                   Type Number   Field Number and FileMan Index 
+                                   ===========   ==============================
+                                       1         field 17 = D0, field 18 = D1 
+                                       2         field 17 = D0, field 18 = D1 
+                                       3         field 17 = D0, field 63 = D1, field 18 = D2 
+                                 
+                                In the case of type 3, the value of D0 is equal to the value of LRDFN.  
+
+
+2005.1,17     PARENT GLOBAL ROOT D0  2;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999.9999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 04, 1994 
+              HELP-PROMPT:      Type a Number between 1 and 9999999.9999, 0 Decimal Digits 
+              DESCRIPTION:      The values of fields 16, 17, 18 and 63 are numbers.  These numbers are internal entry numbers. Which field corresponds to which internal entry number is explained below.  
+                                 
+                                Together, the values of these fields establish a link back to the entry in the "parent" file, that holds the information that describes why the image was collected.  
+                                 
+                                The link to the "parent" information is brought about by the combination of the values of fields 16, 17, and, 18, and optionally also field 63.  
+                                 
+                                The value of field 16 is a number that indicates the internal entry number of the "parent file" in the VA-FileMan data dictionary.  Common parent files are: 
+                                 
+                                   File    Name 
+                                   ====    ====
+                                     3.9:  MAIL MESSAGE 
+                                    63:    AUTOPSY (MICROSCOPIC) 
+                                    63.02: ELECTRON MICROSCOPY 
+                                    63.08: SURGICAL PATHOLOGY 
+                                    63.09: CYTOLOGY 
+                                    63.2:  AUTOPSY (GROSS) 
+                                    74:    RADIOLOGY 
+                                   130:    SURGERY 
+                                   691:    ECHOCARDIOGRAM 
+                                   691.1:  CARDIAC CATHETERIZATION 
+                                   691.5:  ELECTROCARDIOGRAPHY 
+                                   694:    HEMATOLOGY 
+                                   699:    ENDOSCOPY 
+                                   699.5:  GENERIC MEDICINE 
+                                  8925:    TIU 
+                                 
+                                The records in each of these "parent" files contain a multiple that itemizes the list of images that belong to that record.  
+                                 
+                                The field numbers and fixed indexes for those multiples all have the number 2005. The entries within these multiples all have a field that is a pointer back to the image file.  The entries in these multiples identify the
+                                various images that belong with the record in question.  
+                                 
+                                The various parent files each have their own structure, for instance 
+                                 
+                                 Type Number     Form of Root 
+                                 ===========     ============
+                                     1           ^RARPT(D0,2005,D1,0)=image...  
+                                     2           ^MCAR(699,D0,2005,D1,0)=image...  
+                                     3           ^LR(D0,"SP",D1,2005,D2,0)=image...  
+                                 
+                                Depending on the nature of the file structure of the parent file, the imaging software will need either just the value of D0 (type 1 and type 2) to find the correct entry, or the values of D0 as well as D1 (type 3).  
+                                 
+                                The values of the fields in the image file correspond to the values of the indices in the parent file as follows: 
+                                 
+                                   Type Number   Field Number and FileMan Index 
+                                   ===========   ==============================
+                                       1         field 17 = D0, field 18 = D1 
+                                       2         field 17 = D0, field 18 = D1 
+                                       3         field 17 = D0, field 63 = D1, field 18 = D2 
+                                 
+                                In the case of type 3, the value of D0 is equal to the value of LRDFN.  
+
+
+2005.1,18     PARENT DATA FILE IMAGE POINTER 2;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999.9999)!(X<1)!(X?.E1"."5N.N) X
+              LAST EDITED:      MAY 04, 1994 
+              HELP-PROMPT:      Type a Number between 1 and 9999999.9999, 4 Decimal Digits 
+              DESCRIPTION:      The values of fields 16, 17, 18 and 63 are numbers.  These numbers are internal entry numbers. Which field corresponds to which internal entry number is explained below.  
+                                 
+                                Together, the values of these fields establish a link back to the entry in the "parent" file, that holds the information that describes why the image was collected.  
+                                 
+                                The link to the "parent" information is brought about by the combination of the values of fields 16, 17, and, 18, and optionally also field 63.  
+                                 
+                                The value of field 16 is a number that indicates the internal entry number of the "parent file" in the VA-FileMan data dictionary.  Common parent files are: 
+                                 
+                                   File    Name 
+                                   ====    ====
+                                     3.9:  MAIL MESSAGE 
+                                    63:    AUTOPSY (MICROSCOPIC) 
+                                    63.02: ELECTRON MICROSCOPY 
+                                    63.08: SURGICAL PATHOLOGY 
+                                    63.09: CYTOLOGY 
+                                    63.2:  AUTOPSY (GROSS) 
+                                    74:    RADIOLOGY 
+                                   130:    SURGERY 
+                                   691:    ECHOCARDIOGRAM 
+                                   691.1:  CARDIAC CATHETERIZATION 
+                                   691.5:  ELECTROCARDIOGRAPHY 
+                                   694:    HEMATOLOGY 
+                                   699:    ENDOSCOPY 
+                                   699.5:  GENERIC MEDICINE 
+                                  8925:    TIU 
+                                 
+                                The records in each of these "parent" files contain a multiple that itemizes the list of images that belong to that record.  
+                                 
+                                The field numbers and fixed indexes for those multiples all have the number 2005. The entries within these multiples all have a field that is a pointer back to the image file.  The entries in these multiples identify the
+                                various images that belong with the record in question.  
+                                 
+                                The various parent files each have their own structure, for instance 
+                                 
+                                 Type Number     Form of Root 
+                                 ===========     ============
+                                     1           ^RARPT(D0,2005,D1,0)=image...  
+                                     2           ^MCAR(699,D0,2005,D1,0)=image...  
+                                     3           ^LR(D0,"SP",D1,2005,D2,0)=image...  
+                                 
+                                Depending on the nature of the file structure of the parent file, the imaging software will need either just the value of D0 (type 1 and type 2) to find the correct entry, or the values of D0 as well as D1 (type 3).  
+                                 
+                                The values of the fields in the image file correspond to the values of the indices in the parent file as follows: 
+                                 
+                                   Type Number   Field Number and FileMan Index 
+                                   ===========   ==============================
+                                       1         field 17 = D0, field 18 = D1 
+                                       2         field 17 = D0, field 18 = D1 
+                                       3         field 17 = D0, field 63 = D1, field 18 = D2 
+                                 
+                                In the case of type 3, the value of D0 is equal to the value of LRDFN.  
+
+
+2005.1,19     EXPORT REQUEST STATUS  2;9 SET
+
+                                '1' FOR EXPORT REQUESTED; 
+                                '0' FOR EXPORTED; 
+              LAST EDITED:      JUN 28, 1994 
+              HELP-PROMPT:      USED BY MULTIMEDIA MAIL - REQUEST TO COPY IMAGE 
+              DESCRIPTION:      This field is used by Multimedia Mailman when an image needs to be sent to another site.  The Imaging software sets the field automatically, after checking its status.  After the request is carried out, it will be 
+                                automatically reset.  
+
+
+2005.1,30     DELETED BY             30;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 19, 2004 
+              HELP-PROMPT:      This is system added field.  The Person who deleted the image. 
+              DESCRIPTION:      This is the person who deleted the image.  It is a pointer to the new person 
+                                 file.  The system uses the DUZ variable to set the field.  
+
+
+2005.1,30.1   DELETED DATE           30;2 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 19, 2004 
+              HELP-PROMPT:      This is the date the Image was deleted from the Image File. 
+              DESCRIPTION:
+                                This is the date the Image was deleted from the Image File.  
+
+
+2005.1,30.2   DELETED REASON         30;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<10) X
+              LAST EDITED:      MAY 19, 2004 
+              HELP-PROMPT:      The Reason that the Image was deleted from the Patient record. 
+              DESCRIPTION:
+                                This is the Reason that the Image was deleted.  
+
+
+2005.1,40     PACKAGE INDEX          40;1 SET
+
+                                'RAD' FOR RAD; 
+                                'LAB' FOR LAB; 
+                                'MED' FOR MED; 
+                                'NOTE' FOR NOTE; 
+                                'CP' FOR CP; 
+                                'SUR' FOR SUR; 
+                                'PHOTOID' FOR PHOTOID; 
+                                'NONE' FOR NONE; 
+                                'CONS' FOR CONS; 
+              LAST EDITED:      MAY 19, 2004 
+              HELP-PROMPT:      The Package associated with the Image 
+              DESCRIPTION:
+                                This is an abbreviation of the package that the Image is attached to.  
+
+              RECORD INDEXES:   AUDIT40 (#526)
+
+2005.1,41     CLASS INDEX            40;2 POINTER TO IMAGE INDEX FOR CLASS FILE (#2005.82)
+
+              LAST EDITED:      MAY 19, 2004 
+              DESCRIPTION:
+                                The Classification of the Image.  CLASS is an index field used for sorting and searching.  
+
+
+2005.1,42     TYPE INDEX             40;3 POINTER TO IMAGE INDEX FOR TYPES FILE (#2005.83)
+
+              LAST EDITED:      JUL 01, 2004 
+              HELP-PROMPT:      This field is used to screen image types. 
+              RECORD INDEXES:   AUDIT40 (#526)
+
+2005.1,43     PROC/EVENT INDEX       40;4 POINTER TO IMAGE INDEX FOR PROCEDURE/EVENT FILE (#2005.85)
+
+              LAST EDITED:      MAY 19, 2004 
+              DESCRIPTION:
+                                The PROCEDURE/EVENT of Image.  PROCEDURE/EVENT is an index field used for sorting and searching.  
+
+              RECORD INDEXES:   AUDIT40 (#526)
+
+2005.1,44     SPEC/SUBSPEC INDEX     40;5 POINTER TO IMAGE INDEX FOR SPECIALTY/SUBSPECIALTY FILE (#2005.84)
+
+              LAST EDITED:      MAY 19, 2004 
+              DESCRIPTION:      The SPECIALTY/SUBSPECIALTY of Image.  
+                                  SPECIALTY/SUBSPECIALTY is an index field used for sorting and searching.  
+
+              RECORD INDEXES:   AUDIT40 (#526)
+
+2005.1,45     ORIGIN INDEX           40;6 SET
+
+                                'V' FOR VA; 
+                                'N' FOR NON-VA; 
+              LAST EDITED:      MAY 19, 2004 
+              HELP-PROMPT:      This field indicates whether this image originated inside or outside of the VA 
+              DESCRIPTION:
+                                This field indicates whether this image originated inside or outside of  the VA 
+
+              RECORD INDEXES:   AUDIT40 (#526)
+
+2005.1,50     PATH ACCESSION NUMBER  PATH;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<5) X
+              LAST EDITED:      FEB 11, 1993 
+              HELP-PROMPT:      Answer must be 5-9 characters in length. 
+              DESCRIPTION:
+                                This is the Anatomic Pathology accession number - the identifying number for the slide.  
+
+
+2005.1,51     SPECIMEN DESCRIPTION   PATH;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      JUL 09, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is the description given to the specimen in the Lab Data file - the information is carried over and stuffed into the Image file.  
+
+
+2005.1,52     SPECIMEN#              PATH;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 16, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 10, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the specimen number of the slide given in the Lab Data file.  
+
+
+2005.1,53     STAIN                  PATH;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      JUN 24, 1997 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                This is a pointer to the Histological Stain file. It is the stain used in the preparation of the specimen and is input by the pathologist.  
+
+
+2005.1,54     MICROSCOPIC OBJECTIVE  PATH;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUN 24, 1997 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a pointer to the Microscopic Objective file. It is input by the pathologist and identifies the power of the microscope objective used when capturing the image of the slide.  
+
+
+2005.1,60     PACS UID               PACS;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>64!($L(X)<1) X
+              LAST EDITED:      NOV 07, 2000 
+              HELP-PROMPT:      A UID has up to 64 characters and must be unique. 
+              DESCRIPTION:
+                                This field is used by the VISTA-PACS interface and is the unique (up to) 64 character image identifier of the PACS image.  
+
+
+2005.1,61     RADIOLOGY REPORT       PACS;2 POINTER TO RAD/NUC MED REPORTS FILE (#74)
+
+              LAST EDITED:      JUN 15, 1993 
+              DESCRIPTION:
+                                Pointer to radiology report file used by the PACS interface to tie the image to the correct radiology report.  
+
+
+2005.1,62     PACS PROCEDURE         PACS;3 POINTER TO RAD/NUC MED PROCEDURES FILE (#71)
+
+              LAST EDITED:      JUL 08, 1993 
+              HELP-PROMPT:      RADIOLOGICAL PROCEDURE 
+              DESCRIPTION:
+                                This field is used by the CHCP-PACS interface and is a backward pointer to the Radiology Reports file with which this radiological image is associated.  
+
+
+2005.1,63     PARENT GLOBAL ROOT D1  2;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 24, 1997 
+              HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:      The values of fields 16, 17, 18 and 63 are numbers.  These numbers are internal entry numbers. Which field corresponds to which internal entry number is explained below.  
+                                 
+                                Together, the values of these fields establish a link back to the entry in the "parent" file, that holds the information that describes why the image was collected.  
+                                 
+                                The link to the "parent" information is brought about by the combination of the values of fields 16, 17, and, 18, and optionally also field 63.  
+                                 
+                                The value of field 16 is a number that indicates the internal entry number of the "parent file" in the VA-FileMan data dictionary.  Common parent files are: 
+                                 
+                                   File    Name 
+                                   ====    ====
+                                     3.9:  MAIL MESSAGE 
+                                    63:    AUTOPSY (MICROSCOPIC) 
+                                    63.02: ELECTRON MICROSCOPY 
+                                    63.08: SURGICAL PATHOLOGY 
+                                    63.09: CYTOLOGY 
+                                    63.2:  AUTOPSY (GROSS) 
+                                    74:    RADIOLOGY 
+                                   130:    SURGERY 
+                                   691:    ECHOCARDIOGRAM 
+                                   691.1:  CARDIAC CATHETERIZATION 
+                                   691.5:  ELECTROCARDIOGRAPHY 
+                                   694:    HEMATOLOGY 
+                                   699:    ENDOSCOPY 
+                                   699.5:  GENERIC MEDICINE 
+                                  8925:    TIU 
+                                 
+                                The records in each of these "parent" files contain a multiple that itemizes the list of images that belong to that record.  
+                                 
+                                The field numbers and fixed indexes for those multiples all have the number 2005. The entries within these multiples all have a field that is a pointer back to the image file.  The entries in these multiples identify the
+                                various images that belong with the record in question.  
+                                 
+                                The various parent files each have their own structure, for instance 
+                                 
+                                 Type Number     Form of Root 
+                                 ===========     ============
+                                     1           ^RARPT(D0,2005,D1,0)=image...  
+                                     2           ^MCAR(699,D0,2005,D1,0)=image...  
+                                     3           ^LR(D0,"SP",D1,2005,D2,0)=image...  
+                                 
+                                Depending on the nature of the file structure of the parent file, the imaging software will need either just the value of D0 (type 1 and type 2) to find the correct entry, or the values of D0 as well as D1 (type 3).  
+                                 
+                                The values of the fields in the image file correspond to the values of the indices in the parent file as follows: 
+                                 
+                                   Type Number   Field Number and FileMan Index 
+                                   ===========   ==============================
+                                       1         field 17 = D0, field 18 = D1 
+                                       2         field 17 = D0, field 18 = D1 
+                                       3         field 17 = D0, field 63 = D1, field 18 = D2 
+                                 
+                                In the case of type 3, the value of D0 is equal to the value of LRDFN.  
+
+
+2005.1,99     AUDIT                  99;0 DATE Multiple #2005.199
+
+              DESCRIPTION:      This multiple stores previous values of the record fields (audit trail).  
+                                 
+                                See the "AUDIT2", "AUDIT40", and "AUDIT100" cross-references for more details.  
+
+              TECHNICAL DESCR:
+                                Added by the patch MAG*3*93.  
+
+              WRITE AUTHORITY:  @
+              GROUP:            MAG*3*93
+
+              INDEXED BY:       FIELD NUMBER & DATE/TIME RECORDED (FD)
+
+2005.199,.01    DATE/TIME RECORDED     0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAR 31, 2008 
+                HELP-PROMPT:      Enter date and time of the audited change. 
+                DESCRIPTION:
+                                  When a value of an audited field changes, date and time of the change are stored in this field.  
+
+                TECHNICAL DESCR:
+                                  Added by the patch MAG*3*93.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                GROUP:            MAG*3*93
+                CROSS-REFERENCE:  2005.199^B 
+                                  1)= S ^MAG(2005.1,DA(1),99,"B",$E(X,1,30),DA)=""
+                                  2)= K ^MAG(2005.1,DA(1),99,"B",$E(X,1,30),DA)
+                                  3)= Do not delete!
+
+                RECORD INDEXES:   FD (#531)
+
+2005.199,.02    FIELD NUMBER           0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."10N.N) X
+                LAST EDITED:      MAR 31, 2008 
+                HELP-PROMPT:      Enter the field number (between 0 and 9999999999, 9 Decimal Digits). 
+                DESCRIPTION:
+                                  Value of this field identifies the audited field that was updated.  
+
+                TECHNICAL DESCR:
+                                  Added by the patch MAG*3*93.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                GROUP:            MAG*3*93
+                RECORD INDEXES:   FD (#531)
+
+2005.199,.03    USER                   0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAR 31, 2008 
+                DESCRIPTION:
+                                  This field identifies the user who modified value of the audited field.  
+
+                TECHNICAL DESCR:
+                                  Added by the patch MAG*3*93.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                GROUP:            MAG*3*93
+
+2005.199,1      OLD INTERNAL VALUE     1;E1,250 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>250!($L(X)<1) X
+                LAST EDITED:      MAR 31, 2008 
+                HELP-PROMPT:      Enter the old field value in internal format (1-250 characters in length). 
+                DESCRIPTION:
+                                  This field stores the previous value of the audited field in internal format.  
+
+                TECHNICAL DESCR:
+                                  Added by the patch MAG*3*93.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                GROUP:            MAG*3*93
+
+2005.199,2      OLD EXTERNAL VALUE     2;E1,250 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>250!($L(X)<1) X
+                LAST EDITED:      APR 29, 2008 
+                HELP-PROMPT:      Enter the old field value in external format (1-250 characters in length). 
+                DESCRIPTION:
+                                  If the previous external value of the audited field is different from the internal value stored in the OLD INTERNAL VALUE field (1), then the external value is stored in this field.  
+
+                TECHNICAL DESCR:  See the AUDIT^MAGUXRF and GETPFV^MAGUTL04 procedures for more details.  
+                                   
+                                  Added by the patch MAG*3*93.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                GROUP:            MAG*3*93
+
+
+
+2005.1,100    DESCRIPTIVE CATEGORY   100;1 POINTER TO MAG DESCRIPTIVE CATEGORIES FILE (#2005.81)
+
+              LAST EDITED:      JUN 24, 1997 
+              DESCRIPTION:
+                                This is mainly for Document Imaging, it further describes the type of document image.  
+
+
+2005.1,101    CLINIC                 100;2 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      JUN 24, 1997 
+              DESCRIPTION:      Points to the Hospital location file and will be used mainly for document images. If an image is associated with a patient encounter(visit), this is the clinic they had (will have) the appointment.  The appointment
+                                date/time is in field #15, PROCEDURE/EXAM DATE/TIME.  
+
+
+2005.1,102    BIG MAGNETIC PATH      FBIG;1 POINTER TO NETWORK LOCATION FILE (#2005.2)
+
+              LAST EDITED:      MAY 05, 1998 
+              HELP-PROMPT:      This is the BIG file, i.e. the 2k by 2k Radiology image 
+              DESCRIPTION:
+                                Full file path description for Image file of .BIG file types.  This field will indicate on which magnetic server this file resides.  
+
+
+2005.1,103    BIG JUKEBOX PATH       FBIG;2 POINTER TO NETWORK LOCATION FILE (#2005.2)
+
+              LAST EDITED:      MAY 05, 1998 
+              HELP-PROMPT:      The JukeBox location of the BIG file. (the 2k by 2k Rad image) 
+              DESCRIPTION:
+                                Full file path on jukebox for images of .BIG file extension.  This field will indicate whether this file is located on the Jukebox.  
+
+
+2005.1,104    BIG FILE EXTENSION     FBIG;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<3) X
+              LAST EDITED:      DEC 03, 2009 
+              HELP-PROMPT:      Enter a 3-5 character file extension. 
+              DESCRIPTION:
+                                This is the Image File Extension (e.g. DCM, BIG).  
+
+
+2005.1,106    ROUTING TIMESTAMP      4;0 DATE Multiple #2005.1106 (Add New Entry without Asking)
+
+              LAST EDITED:      FEB 26, 2003 
+              DESCRIPTION:
+                                This field keeps track of any routing activity.  
+
+
+2005.1106,.01   ROUTING TIMESTAMP      0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 26, 2003 
+                HELP-PROMPT:      Enter the date and time when the image file was 'routed'. 
+                DESCRIPTION:      This field keeps track of any routing activity.  For each time that an image file is transmitted in the context of 'routing', an entry will be added to this multiple that records which type of image file was transmitted
+                                  (FULL, BIG, ABSTRACT, etcetera), and to which destination (pointer to network location) it was transmitted.  
+
+                RECORD INDEXES:   ROUTE (#77) (WHOLE FILE #2005.1)
+
+2005.1106,2     DESTINATION            0;2 POINTER TO NETWORK LOCATION FILE (#2005.2) (Required)
+
+                LAST EDITED:      FEB 26, 2003 
+                HELP-PROMPT:      Enter the destination to which the image file was transmitted. 
+                DESCRIPTION:
+                                  The value of this field is a pointer (into the network location file) that indicated where an image file was sent in the context of automated routing.  
+
+                CROSS-REFERENCE:  2005.1106^LOC 
+                                  1)= S ^MAG(2005.1,DA(1),4,"LOC",$E(X,1,30),DA)=""
+                                  2)= K ^MAG(2005.1,DA(1),4,"LOC",$E(X,1,30),DA)
+                                  This cross-reference keeps track of which destinations (network locations) have received image files from the current system.  
+
+
+                RECORD INDEXES:   ROUTE (#77) (WHOLE FILE #2005.1)
+
+2005.1106,3     TYPE                   0;3 SET (Required)
+
+                                  'FULL' FOR Full; 
+                                  'ABSTRACT' FOR Abstract; 
+                                  'BIG' FOR Big; 
+                                  'TEXT' FOR Text; 
+                                  'DICOM' FOR DICOM; 
+                LAST EDITED:      FEB 26, 2003 
+                HELP-PROMPT:      Enter the type of image file that was transmitted. 
+                DESCRIPTION:
+                                  The value of this field indicates what type of image file was transmitted (FULL, BIG, TEXT, DICOM or ABSTRACT).  
+
+
+2005.1106,4     FILENAME               0;4 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+                LAST EDITED:      FEB 26, 2003 
+                HELP-PROMPT:      Enter the name of the transmitted file (path+name at destination). 
+                DESCRIPTION:
+                                  The value of this field is the name of the transmitted file as it is at the destination location. This file name contains all directory prefixes and a 'type' suffix.  
+
+
+2005.1106,5     START TRANSMIT         0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the time that the transmission started. 
+                DESCRIPTION:      The value of this field is a timestamp that indicates the date and time when the transmission of a file started.  
+                                   
+                                  Together with the value of the field ROUTING TIMESTAMP, which indicates the time when the transmission completed, statistics can be calculated on how long it took to transmit image files.  
+
+
+2005.1106,6     TIMESTAMP QUEUE ENTRY  0;6 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the time when the queue-entry was made. 
+                DESCRIPTION:      The value of this field is a timestamp that indicates the date and time when the entry was made into the routing queue.  
+                                   
+                                  Together with the value of the field START TRANSMIT, which indicates when the transmission started, statistics can be calculated related to wait times in the routing queue.  
+
+
+2005.1106,7     LOG ENTRY              0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the sequence number of the "permanent" log entry. 
+                DESCRIPTION:      The value of this field is an integer number that indicates the entry in the "permanent" log of all routed copies of the current image (as required by HIPAA).  
+                                   
+                                  This value is used to record when images are purged from their routed destination.  
+
+
+
+
+2005.1,107    ACQUISITION DEVICE     100;4 POINTER TO ACQUISITION DEVICE FILE (#2006.04)
+
+              LAST EDITED:      JAN 23, 2003 
+
+2005.1,108    TRACKING ID            100;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      JAN 23, 2003 
+              HELP-PROMPT:      Package ID that performed the Import ";" Internal package identifier 
+              DESCRIPTION:
+                                This field tracks the packages that are using the Import API.  It is an ";" (semicolon) delimited free text field.  First piece is the Package ID that performed the Import Second piece is the Internal package identifier.  
+
+
+2005.1,109    CREATE METHOD          METHOD;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<3) X
+              LAST EDITED:      JAN 23, 2003 
+              HELP-PROMPT:      This field holds the command that either has created the image(s), or will dynamically access the Image from the Display GUI. 
+              DESCRIPTION:      This field holds the command that either 
+                                   has created the image(s) 
+                                   or will dynamically access the Image when called from the Display GUI an example is a DLL provided by a COTS product.  When the DLL is called, it generates the image.  
+
+
+2005.1,110    DOCUMENT DATE          100;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 18, 2007 
+              HELP-PROMPT:      Enter the date (optionally time too) when this document was created. 
+              DESCRIPTION:
+                                Document Images can have a separate date, unlike clinical images that are attached to a procedure, and only procedure date is needed.  
+
+              RECORD INDEXES:   AUDIT100 (#520)
+
+2005.1,111    ROUTING LOG            6;0 Multiple #2005.1111 (Add New Entry without Asking)
+
+
+2005.1111,.01   ROUTING LOG            0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>63!($L(X)<1) X
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the name of the destination to which the image is routed. 
+                DESCRIPTION:
+                                  The value of this field is a string that identifies the location to which the current image has been routed.  
+
+
+2005.1111,2     COPY LOCATION          0;2 POINTER TO NETWORK LOCATION FILE (#2005.2)
+
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the name of the Network Location to which this image is being routed. 
+                DESCRIPTION:
+                                  The value of this field is a pointer to the Network ocation table (#2005.2). When an image is transmitted using the "copy" method, this field is populated.  
+
+
+2005.1111,3     DICOM SEND LOCATION    0;3 POINTER TO DICOM TRANSMIT DESTINATION FILE (#2006.587)
+
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the name of the DICOM SCP to which the image is being routed. 
+                DESCRIPTION:
+                                  The value of this field is a pointer to the DICOM Transmit Destination table (#2006.587). When an image is transmitted using the DICOM Send method, this field is populated.  
+
+
+2005.1111,4     TIMESTAMP TRANSMIT     0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the time when the transmission finished. 
+                DESCRIPTION:
+                                  The value of this field is a timestamp that indicates the date and time when the current image was transmitted to the location described in the current record.  
+
+
+2005.1111,5     TIMESTAMP PURGE        0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the time when the image was purged at this location. 
+                DESCRIPTION:
+                                  The value of this field is a timestamp that indicates the date and time when the copy of the current image was purged from the location that is described in the current record.  
+
+
+2005.1111,6     FILE NAME              0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>63!($L(X)<1) X
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the name of the file at this destination. 
+                DESCRIPTION:
+                                  The value of this field is a string that represents the name of the (host system) file as it appears at the location to which the image has been copied.  
+
+
+2005.1111,7     FILE TYPE              0;7 SET
+
+                                  'TXT' FOR Text; 
+                                  'BIG' FOR Large X-Ray; 
+                                  'TGA' FOR Targa(TM); 
+                                  'ABS' FOR Thumbnail; 
+                                  'DCM' FOR DICOM; 
+                                  'DICOM' FOR DICOM; 
+                LAST EDITED:      DEC 12, 2003 
+                HELP-PROMPT:      Enter the code for the file-type. 
+                DESCRIPTION:
+                                  The value of this field is a code for the type of data that is stored in the file that is described in the current record.  
+
+
+
+
+2005.1,112    CONTROLLED IMAGE       100;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 18, 2008 
+              HELP-PROMPT:      Select YES, if the image must not be shown until the user explicitly selects it. 
+              DESCRIPTION:      In the Clinical Display application, the abstract of a controlled image is not shown in the Abstracts or Group Abstracts window. A "canned" bitmap is shown in place of the image. It has a text that states that the image is
+                                controlled.  
+                                 
+                                controlled images are not displayed until the user explicitly selects the image to be viewed.  
+                                 
+                                If the value of this field is 'NO' or the field is empty, then the image is handled "as usual": the actual abstract of the image is shown in the Abstracts and Group Abstracts windows.  
+
+              TECHNICAL DESCR:
+                                Added by the patch MAG*3*93.  
+
+              GROUP:            MAG*3*93
+              RECORD INDEXES:   AUDIT100 (#520)
+
+2005.1,112.1  CONTROLLED DATE         ;  COMPUTED DATE
+
+              MUMPS CODE:       S X=$S($G(D0)>0:$P($$LASTAUDT^MAGUTL04(2005.1,D0_",",112),"^",2),1:"")
+              ALGORITHM:        S X=$S($G(D0)>0:$P($$LASTAUDT^MAGUTL04(2005.1,D0_",",112),"^",2),1:"")
+              LAST EDITED:      JUL 17, 2008 
+              DESCRIPTION:
+                                This field indicates date/time of the most recent change of the image controlled status (see the CONTROLLED IMAGE field (112)).  
+
+              TECHNICAL DESCR:  See the $$LASTAUDT^MAGUTL04 function for more details.  
+                                 
+                                Added by the patch MAG*3*93.  
+
+              GROUP:            MAG*3*93
+
+2005.1,112.2  CONTROLLED BY           ;  COMPUTED POINTER
+
+              MUMPS CODE:       S X=$S($G(D0)>0:$P($$LASTAUDT^MAGUTL04(2005.1,D0_",",112),"^",3),1:"")
+              ALGORITHM:        S X=$S($G(D0)>0:$P($$LASTAUDT^MAGUTL04(2005.1,D0_",",112),"^",3),1:"")
+              LAST EDITED:      JUL 17, 2008 
+              DESCRIPTION:
+                                This field references the user who made the most recent change of the image controlled status (see the CONTROLLED IMAGE field (112)).  
+
+              TECHNICAL DESCR:  See the $$LASTAUDT^MAGUTL04 function for more details.  
+                                 
+                                Added by the patch MAG*3*93.  
+
+              GROUP:            MAG*3*93
+
+2005.1,113    STATUS                 100;8 SET
+
+                                '1' FOR Viewable; 
+                                '2' FOR QA Reviewed; 
+                                '10' FOR In Progress; 
+                                '11' FOR Needs Review; 
+                                '12' FOR Deleted; 
+              LAST EDITED:      DEC 03, 2008 
+              HELP-PROMPT:      Select the current status of the image. 
+              DESCRIPTION:
+                                Internal value of this field is 12 for all entries of the IMAGE AUDIT file (#2005). 
+
+              TECHNICAL DESCR:  Technically, neither all set codes other than '12:Deleted' nor the screening logic are needed because a trigger cross-reference associated with the OBJECT NAME field (.01) automatically populates the STATUS field (113) and
+                                the latter is not editable.  
+                                 
+                                Therefore, the codes and the logic are here for additional safety and documentation purposes only.  
+                                 
+                                Added by the patch MAG*3*93.  
+
+              SCREEN:           S DIC("S")="I Y=12"
+              EXPLANATION:      Only '12:Deleted' value is allowed.
+              WRITE AUTHORITY:  ^
+              GROUP:            MAG*3*93
+              NOTES:            TRIGGERED by the OBJECT NAME field of the IMAGE AUDIT File 
+
+              RECORD INDEXES:   AUDIT100 (#520)
+
+2005.1,113.1  STATUS DATE             ;  COMPUTED DATE
+
+              MUMPS CODE:       S X=$S($G(D0)>0:$P($$LASTAUDT^MAGUTL04(2005.1,D0_",",113),"^",2),1:"")
+              ALGORITHM:        S X=$S($G(D0)>0:$P($$LASTAUDT^MAGUTL04(2005.1,D0_",",113),"^",2),1:"")
+              LAST EDITED:      JUL 18, 2008 
+              DESCRIPTION:
+                                This field indicates date/time of the most recent change of the image status (see the STATUS field (113)).  
+
+              TECHNICAL DESCR:  See the $$LASTAUDT^MAGUTL04 function for more details.  
+                                 
+                                Added by the patch MAG*3*93.  
+
+              GROUP:            MAG*3*93
+
+2005.1,113.2  STATUS BY               ;  COMPUTED POINTER
+
+              MUMPS CODE:       S X=$S($G(D0)>0:$P($$LASTAUDT^MAGUTL04(2005.1,D0_",",113),"^",3),1:"")
+              ALGORITHM:        S X=$S($G(D0)>0:$P($$LASTAUDT^MAGUTL04(2005.1,D0_",",113),"^",3),1:"")
+              LAST EDITED:      JUL 18, 2008 
+              DESCRIPTION:
+                                This field references the user who made the most recent change of the image status (see the STATUS field (113)).  
+
+              TECHNICAL DESCR:  See the $$LASTAUDT^MAGUTL04 function for more details.  
+                                 
+                                Added by the patch MAG*3*93.  
+
+              GROUP:            MAG*3*93
+
+2005.1,113.3  STATUS REASON          100;9 POINTER TO MAG REASON FILE (#2005.88)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P($G(^(0)),""^"",2)[""S""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 06, 2008 
+              HELP-PROMPT:      Select the reason for the image status change. 
+              DESCRIPTION:
+                                This field indicates the reason for the latest image status change (see the STATUS field (113)).  
+
+              TECHNICAL DESCR:
+                                Added by the patch MAG*3*93.  
+
+              SCREEN:           S DIC("S")="I $P($G(^(0)),""^"",2)[""S"""
+              EXPLANATION:      Only reasons applicable to image status changes can be selected.
+              GROUP:            MAG*3*93
+              CROSS-REFERENCE:  2005.1^ASTRSN^MUMPS 
+                                1)= S ^MAG(2005.88,"AREF",X,2005,DA_",",113.3)=""
+                                2)= K ^MAG(2005.88,"AREF",X,2005,DA_",",113.3)
+                                The logic of the ASTRSN cross-reference maintains a list of references from the STATUS REASON field (113.3) of the IMAGE AUDIT file (#2005.1) to the MAG REASON file (#2005.88).  
+                                 
+                                This list is used by the logic of the "DELETE" node of the REASON field (.01) of the MAG REASON file (#2005.88) to prevent deletion of reasons that are referenced by records of other files.  
+                                 
+                                The list is stored under the "AREF" subscript in the MAG REASON file (#2005.88) and has the following structure: 
+                                 
+                                 ^MAG(2005.88,"AREF",<Reason>,2005,<IENS>,113.3) = "" 
+                                 
+                                The <Reason> is the IEN of the reason that is pointed by the STATUS REASON field (113.3).  
+                                 
+                                Since the IMAGE (#2005) and IMAGE AUDIT (#2005.1) files are closely related and their records cannot have the same IENS, 2005 is used instead of the real number of the file from where the reason is referenced (2005.1).  
+                                 
+                                The <IENS> is the IENS of the record of the IMAGE AUDIT file (#2005.1) that references the reason.  
+                                 
+                                The 113.3 is the number of the field that points to the reason (STATUS REASON).  
+
+
+              RECORD INDEXES:   AUDIT100 (#520)
+
+2005.1,114    NUMBER OF PAGES        100;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 15, 2008 
+              HELP-PROMPT:      Enter number of pages in a multi-page image (between 1 and 999999999). 
+              DESCRIPTION:
+                                This field stores number of pages in a multi-page document (e.g. multi-page TIFF image).  
+
+              TECHNICAL DESCR:
+                                Added by the patch MAG*3*93.  
+
+              GROUP:            MAG*3*93
+
+2005.1,115.1  LINKED IMAGE           100;11 POINTER TO IMAGE AUDIT FILE (#2005.1)
+
+              LAST EDITED:      JUN 30, 2011 
+              HELP-PROMPT:      If this object is linked, enter the original. 
+              DESCRIPTION:      This is a pointer to the rescinded image. For example, when an image is rescinded a new image entry is created and the original is deleted. A link is established between the new image and the rescinded image. The value of 
+                                the field is the rescinded image.  
+
+              TECHNICAL DESCR:
+                                Added in patch MAG*3.0*121.  
+
+
+2005.1,115.2  LINKED TYPE            100;12 SET
+
+                                '1' FOR RESCINDED; 
+              LAST EDITED:      MAR 08, 2011 
+              HELP-PROMPT:      Enter the type of the relationship between the linked images. 
+              DESCRIPTION:      This is the type of the image link. For example, when image is rescinded a new image entry is created and the original image is deleted. A link is established between the original and the rescinded image. The value of the
+                                LINKED TYPE will be "RESCINDED".  
+
+              TECHNICAL DESCR:
+                                Added in patch MAG*3.0*121.  
+
+
+2005.1,115.3  LINKED DATE            100;13 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      MAR 08, 2011 
+              HELP-PROMPT:      Enter the date and time when the image was linked. 
+              DESCRIPTION:
+                                This is the date that the Document/Image was associated with the LINKED IMAGE.  
+
+              TECHNICAL DESCR:
+                                Added in patch MAG*3.0*121.  
+
+
+2005.1,251    DICOM SOP CLASS        SOP;1 POINTER TO DICOM SOP CLASS FILE (#2006.532)
+
+              LAST EDITED:      JAN 11, 2005 
+              HELP-PROMPT:      Identify the SOP Class that was used to acquire this image. 
+              DESCRIPTION:
+                                The value of this field is a pointer. The pointed to record identifies the DICOM SOP Class that was used to acquire this image.  
+
+
+2005.1,252    NEW SOP INSTANCE UID   SOP;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>64!($L(X)<1)!'($TR(X,"1234567890.")="") X
+              LAST EDITED:      NOV 09, 2004 
+              HELP-PROMPT:      Enter the VA's new SOP instance UID for the corrected image. 
+              DESCRIPTION:      The value of this field is a string that represents a DICOM UID.  The DICOM standard defines the format of a UID: a string containing only digits and periods that does not exceed a length of 64 characters.  This field is
+                                populated when a corrected version of an image is exported, and the corrections are of such a nature that the image cannot be exported with its original SOP Instance UID.  Note that this UID value is assigned by VA
+                                software, and thus will always start with the characters "1.2.840.113754.".  
+
+              FIELD INDEX:      P (#672)    MUMPS    IR    LOOKUP & SORTING
+                  Short Descr:  UID for corrected images
+                  Description:  This cross-reference includes SOP Instance UIDs for corrected images in the cross-reference on the original SOP Instance UIDs.  
+                    Set Logic:  S ^MAG(2005.1,"P",X,DA)=""
+                   Kill Logic:  K ^MAG(2005.1,"P",X,DA)
+                   Whole Kill:  K ^MAG(2005.1,"P")
+                         X(1):  NEW SOP INSTANCE UID  (2005.1,252)  (Subscr 1)  (forwards)
+
+
+2005.1,253    SERIES UID             SERIESUID;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>64!($L(X)<1)!'(X?1.64(1N,1".")) X
+              LAST EDITED:      AUG 03, 2005 
+              HELP-PROMPT:      Enter the Series UID for the current image. 
+              DESCRIPTION:      The value of this field is a DICOM unique identifier for the series to which an image belongs.  A DICOM UID looks like a series of digits and periods, is not longer than 64 characters, starts and ends with a digit and
+                                never has two consecutive periods.  
+
+              FIELD INDEX:      SERIESUID (#673)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  Images sorted by Series UID
+                  Description:  This cross-reference keeps track of which images have which Series UID.  
+                    Set Logic:  S ^MAG(2005.1,"SERIESUID",X,DA)=""
+                   Kill Logic:  K ^MAG(2005.1,"SERIESUID",X,DA)
+                   Whole Kill:  K ^MAG(2005.1,"SERIESUID")
+                         X(1):  SERIES UID  (2005.1,253)  (Subscr 1)  (forwards)
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ACQUISITION DEVICE (#2006.04)     ACQUISITION DEVICE (#107)
+
+DICOM SOP CLASS (#2006.532)       DICOM SOP CLASS (#251)
+
+DICOM TRANSMIT DESTINATION 
+                   (#2006.587)    ROUTING LOG:DICOM SEND LOCATION (#3)
+
+HOSPITAL LOCATION (#44)           CLINIC (#101)
+
+IMAGE AUDIT (#2005.1)             GROUP PARENT (#14)
+                                  LINKED IMAGE (#115.1)
+                                  OBJECT GROUP:OBJECT GROUP (#.01)
+
+IMAGE INDEX FOR CLASS (#2005.82)  CLASS INDEX (#41)
+
+IMAGE INDEX FOR PROCEDURE/EVEN 
+                   (#2005.85)     PROC/EVENT INDEX (#43)
+
+IMAGE INDEX FOR SPECIALTY/SUBS 
+                   (#2005.84)     SPEC/SUBSPEC INDEX (#44)
+
+IMAGE INDEX FOR TYPES (#2005.83)  TYPE INDEX (#42)
+
+INSTITUTION (#4)                  ACQUISITION SITE (#.05)
+
+MAG DESCRIPTIVE CATEGORIES 
+                   (#2005.81)     DESCRIPTIVE CATEGORY (#100)
+
+MAG REASON (#2005.88)             STATUS REASON (#113.3)
+
+NETWORK LOCATION (#2005.2)        DISK & VOL,MAGNETIC (#2)
+                                  DISK & VOLUME. - ABSTRACT (#2.1)
+                                  DISK & VOL.: WORM (#2.2)
+                                  BIG MAGNETIC PATH (#102)
+                                  BIG JUKEBOX PATH (#103)
+                                  EXPORT LOCATION:EXPORT LOCATION (#.01)
+                                  ROUTING TIMESTAMP:DESTINATION (#2)
+                                  ROUTING LOG:COPY LOCATION (#2)
+
+NEW PERSON (#200)                 IMAGE SAVE BY (#8)
+                                  DELETED BY (#30)
+                                  AUDIT:USER (#.03)
+
+OBJECT TYPE (#2005.02)            OBJECT TYPE (#3)
+
+PARENT DATA FILE (#2005.03)       PARENT DATA FILE# (#16)
+
+PATIENT (#2)                      PATIENT (#5)
+
+RAD/NUC MED PROCEDURES (#71)      PACS PROCEDURE (#62)
+
+RAD/NUC MED REPORTS (#74)         RADIOLOGY REPORT (#61)
+
+
+File #2005.1
+
+  Record Indexes:
+
+  ADTDUZ (#667)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  APP-DATE-USER-SITE
+      Description:  This cross reference optimizes the summation of counts of images captured by capture application, by date, by user, by site.  
+                     
+                    The SET CONDITION and KILL CONDITION ensure that this cross reference is set only for standalone images and group parents, not for child images.  
+        Set Logic:  S ^MAG(2005.1,"ADTDUZ",$E(X(1),1,15),$E(X(2),1,30),$E(X(3),1,15),$E(X(4),1,15),DA)=""
+         Set Cond:  S X=(X(5)="")
+       Kill Logic:  K ^MAG(2005.1,"ADTDUZ",$E(X(1),1,15),$E(X(2),1,30),$E(X(3),1,15),$E(X(4),1,15),DA)
+        Kill Cond:  S X=(X(5)="")
+       Whole Kill:  K ^MAG(2005.1,"ADTDUZ")
+             X(1):  CAPTURE APPLICATION  (2005.1,8.1)  (Subscr 1)  (Len 15)  (forwards)
+             X(2):  DATE/TIME IMAGE SAVED  (2005.1,7)  (Subscr 2)  (Len 30)  (forwards)
+                      Transform (Storage):  S X=X\1
+             X(3):  IMAGE SAVE BY  (2005.1,8)  (Subscr 3)  (Len 15)  (forwards)
+             X(4):  ACQUISITION SITE  (2005.1,.05)  (Subscr 4)  (Len 15)  (forwards)
+             X(5):  GROUP PARENT  (2005.1,14)  (forwards)
+
+  APDT (#518)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Procedure Date/Time
+      Description:  This index sorts independent and parent images by their procedure dates. Any record that is a child of a parent (i.e. member of a group) is NOT included in the index. 
+                     
+                    Added by the patch MAG*3*93.  
+        Set Logic:  S ^MAG(2005.1,"APDT",X(2),DA)=""
+         Set Cond:  S X='$G(X(1))
+       Kill Logic:  K ^MAG(2005.1,"APDT",X(2),DA)
+       Whole Kill:  K ^MAG(2005.1,"APDT")
+             X(1):  GROUP PARENT  (2005.1,14)
+             X(2):  PROCEDURE/EXAM DATE/TIME  (2005.1,15)  (Subscr 1)  (forwards)
+
+  APDTPX (#519)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Patient, Date/Time, Procedure Name
+      Description:  This index sorts independent and parent images by patient, procedure date/time, and procedure abbreviation. Any record that is a child of a parent (i.e. member of a group) is NOT included in the index.  
+                     
+                    Added by the patch MAG*3*93.  
+        Set Logic:  S ^MAG(2005.1,"APDTPX",X(3),X(4),X(5),DA)=""
+         Set Cond:  S X='$G(X(1))
+       Kill Logic:  K ^MAG(2005.1,"APDTPX",X(3),X(4),X(5),DA)
+       Whole Kill:  K ^MAG(2005.1,"APDTPX")
+             X(1):  GROUP PARENT  (2005.1,14)
+             X(2):  PROCEDURE/EXAM DATE/TIME  (2005.1,15)
+             X(3):  PATIENT  (2005.1,5)  (Subscr 1)  (forwards)
+             X(4):  Computed Code: S X=9999999.9999-X(2)
+                      (Subscr 2)
+             X(5):  PROCEDURE  (2005.1,6)  (Subscr 3)  (forwards)
+
+  AUDIT100 (#520)    RECORD    MUMPS    I    ACTION
+      Short Descr:  Tracks changes of image fields
+      Description:  When values of the referenced fields are updated, this "index" saves the old values to the AUDIT multiple (99).  
+                     
+                    Added by the patch MAG*3*93.  
+        Set Logic:  D AUDIT^MAGUXRF(2005.1,DA_",",";110;112;113;113.3",2005.199,.X1,.X2)
+       Kill Logic:  Q
+             X(1):  OBJECT NAME  (2005.1,.01)
+             X(2):  DOCUMENT DATE  (2005.1,110)
+             X(3):  CONTROLLED IMAGE  (2005.1,112)
+             X(4):  STATUS  (2005.1,113)
+             X(5):  STATUS REASON  (2005.1,113.3)
+
+  AUDIT2 (#521)    RECORD    MUMPS    I    ACTION
+      Short Descr:  Tracks changes of image fields
+      Description:  When values of the referenced fields are updated, this "index" saves the old values to the AUDIT multiple (99).  
+                     
+                    Added by the patch MAG*3*93.  
+        Set Logic:  D AUDIT^MAGUXRF(2005.1,DA_",",";10;6;15",2005.199,.X1,.X2)
+       Kill Logic:  Q
+             X(1):  OBJECT NAME  (2005.1,.01)
+             X(2):  SHORT DESCRIPTION  (2005.1,10)
+             X(3):  PROCEDURE  (2005.1,6)
+             X(4):  PROCEDURE/EXAM DATE/TIME  (2005.1,15)
+
+  AUDIT40 (#526)    RECORD    MUMPS    I    ACTION
+      Short Descr:  Tracks changes of image fields
+      Description:  When values of the referenced fields are updated, this "index" saves the old values to the AUDIT multiple (99).  
+                     
+                    Added by the patch MAG*3*93.  
+        Set Logic:  D AUDIT^MAGUXRF(2005.1,DA_",",";40;42;43;44;45",2005.199,.X1,.X2)
+       Kill Logic:  Q
+             X(1):  OBJECT NAME  (2005.1,.01)
+             X(2):  PACKAGE INDEX  (2005.1,40)
+             X(3):  TYPE INDEX  (2005.1,42)
+             X(4):  PROC/EVENT INDEX  (2005.1,43)
+             X(5):  SPEC/SUBSPEC INDEX  (2005.1,44)
+             X(6):  ORIGIN INDEX  (2005.1,45)
+
+Subfile #2005.1106
+
+  Record Indexes:
+
+  ROUTE (#77)    RECORD    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#2005.1)
+      Short Descr:  Which files were routed to where
+      Description:  This cross reference keeps track of which files were routed to which remote locations.  This cross reference is automatically cleaned up when entries are removed from this multiple during the daily purge for the remote location.  
+        Set Logic:  S ^MAG(2005.1,"ROUTE",X(1),X(2),DA(1),DA)=""
+       Kill Logic:  K ^MAG(2005.1,"ROUTE",X(1),X(2),DA(1),DA)
+       Whole Kill:  K ^MAG(2005.1,"ROUTE")
+             X(1):  DESTINATION  (2005.1106,2)  (Subscr 1)  (forwards)
+             X(2):  ROUTING TIMESTAMP  (2005.1106,.01)  (Subscr 2)  (forwards)
+
+Subfile #2005.199
+
+  Record Indexes:
+
+  FD (#531)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Field Number & Date/Time
+      Description:  This cross-reference is used for searching previous values of audited fields. See the MAGUTL04 routine for more details.  
+                     
+                    Added by the patch MAG*3*93.  
+        Set Logic:  S ^MAG(2005.1,DA(1),99,"FD",X(1),X(2),DA)=""
+       Kill Logic:  K ^MAG(2005.1,DA(1),99,"FD",X(1),X(2),DA)
+       Whole Kill:  K ^MAG(2005.1,DA(1),99,"FD")
+             X(1):  FIELD NUMBER  (2005.199,.02)  (Subscr 1)  (forwards)
+             X(2):  DATE/TIME RECORDED  (2005.199,.01)  (Subscr 2)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

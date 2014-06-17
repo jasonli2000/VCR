@@ -1,0 +1,139 @@
+STANDARD DATA DICTIONARY #2006.031 -- IMAGE BACKGROUND QUEUE POINTER FILE                                                                                                                                                         MAY 20,2014@15:34:42  PAGE 1
+STORED IN ^MAGQUEUE(2006.031,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                    (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ +---------------------------------------------------------------+ 
+ |                                                               |
+ | Property of the US Government.                                | 
+ | No permission to copy or redistribute this software is given. | 
+ | Use of unreleased versions of this software requires the user | 
+ | to execute a written test agreement with the VistA Imaging    | 
+ | Development Office of the Department of Veterans Affairs,     | 
+ | telephone (301) 734-0100.                                     | 
+ |                                                               |
+ | The Food and Drug Administration classifies this software as  | 
+ | a medical device.  As such, it may not be changed in any way. | 
+ | Modifications to this software may result in an adulterated   | 
+ | medical device under 21CFR820, the use of which is considered | 
+ | to be a violation of US Federal Statutes.                     | 
+ |                                                               |
+ +---------------------------------------------------------------+
+ 
+This file contains the pointers for the Imaging Background Queue file. It tracks the status of queue processing.  
+ 
+ The Background Processor uses three files: 
+              1. Queue   (2006.03) 
+              2. Queue Pointer   (2006.031) 
+              3. Jukebox  (2006.032) 
+ 
+There are five different tasks that can be performed by the background processor: 
+ 
+1. ABSTRACT -- create a small version of an image 
+ 
+2. EXPORT ---- copy an image to an export directory so that it can be used outside the imaging system 
+ 
+3. IMPORT ----copy an image from an import directory into the imaging system 
+ 
+4. JUKEBOX ---copy an image from hard disk to the jukebox 
+ 
+5. JBTOHD ----copy an image from the jukebox to the hard disk 
+ 
+There is a single Input Queue file for all the requests, with a cross-reference to request type.  The background processor processes the entries in a prioritized first-in first-out fashion, and uses the Queue Pointer file to record its progress. The
+background processor uses the Jukebox file for device-specific information.  The jukebox platters are logically placed into the Network Location file, and are pointed to by the Jukebox file and the Image file.  Jukeboxes, which can be configured as a 
+single volume, only have a single entry in the network location file.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: 
+IDENTIFIED BY: PLACE (#.04)[R]
+
+
+INDEXED BY:    PLACE & QUEUE NAME (C)
+
+
+2006.031,.01  QUEUE NAME             0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      JAN 07, 2005 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                Name of the queue holding the entry. The entry is controlled by the Imaging interfaces and should not be entered directly by any user.  
+
+              RECORD INDEXES:   C (#666)
+
+2006.031,.04  PLACE                  0;4 POINTER TO IMAGING SITE PARAMETERS FILE (#2006.1) (Required)
+
+              LAST EDITED:      APR 14, 2005 
+              DESCRIPTION:
+                                This field references the site parameter file.  The Site parameter entry defines all of the attributes of Vista Imaging local area network.  This includes facility user preferences, network write locations, etc.  
+
+              RECORD INDEXES:   C (#666)
+
+2006.031,1    QUEUE POINTER          0;2 POINTER TO IMAGE BACKGROUND QUEUE FILE (#2006.03)
+
+              LAST EDITED:      DEC 20, 1994 
+              DESCRIPTION:
+                                Pointer to the entry in the queue.  
+
+
+2006.031,2    QUEUE COUNT            0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 28, 2005 
+              HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field provides a count of the queue entries that have yet to be processed in the Queue file (#2006.03) for each queue type.  
+
+
+2006.031,3    QUEUE TYPE TOTAL       0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      APR 14, 2005 
+              HELP-PROMPT:      Type a number between 0 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:      This value is the total number of queues in the queue partition of this type for this local area Vista Imaging network.  This value can be used in conjunction with the Queue Count field (#2) to determine the number of 
+                                queues in the failed queue partition.  i.e. Queue Type Total - Queue Count = failed queues (for this "PLACE" and this queue type)..  
+
+
+2006.031,4    LAST_QUEUE_PROCESSED_DATE_TIME 0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 08, 2007 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the latest date and time that this queue was processed.  It is updated at the completion of the BP Queue process. 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+IMAGE BACKGROUND QUEUE (#2006.03)  QUEUE POINTER (#1)
+
+IMAGING SITE PARAMETERS (#2006.1)  PLACE (#.04)
+
+
+File #2006.031
+
+  Record Indexes:
+
+  C (#666)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Place and type index
+        Set Logic:  S ^MAGQUEUE(2006.031,"C",X(1),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^MAGQUEUE(2006.031,"C",X(1),$E(X(2),1,30),DA)
+       Whole Kill:  K ^MAGQUEUE(2006.031,"C")
+             X(1):  PLACE  (2006.031,.04)  (Subscr 1)  (forwards)
+             X(2):  QUEUE NAME  (2006.031,.01)  (Subscr 2)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

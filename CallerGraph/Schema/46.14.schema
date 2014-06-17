@@ -1,0 +1,107 @@
+STANDARD DATA DICTIONARY #46.14 -- RAI MDS ASIH PATIENT FILE                                                                                                                                                                      MAY 20,2014@15:41:17  PAGE 1
+STORED IN ^DGRU(46.14,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+In the initial design of the RAI/MDS interface, the need to create a discharge when a patient exceeds 30 days in ASIH was overlooked.  Because the RAI/MDS interface is triggered by PIMS ADT events, there is no PIMS event for this discharge.  In fact, the
+PIMS software creates a pseudo discharge at the time the patient goes on ASIH with a date/time of NOW plus 30 days.  Therefore, if the 30 days is exceeded, the discharge goes into affect.  If the patient returns or dies while ASIH, the discharge is 
+either deleted or modified.  In order to maintain control of the patients on ASIH, a new file was created.  In addition, a routine which will periodically run checking the entries for patients who have exceeded the 30 day stay.  Whenever a stay is found
+to exceed the 30 days, an HL7 Discharge (A03) will be created and sent to the COTS system and the entry in the RAI MDS ASIH PATIENT file will be inactivated.  This file and associated routine and option are part of patch DG*5.3*328.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: 
+             DEL ACCESS: 
+           LAYGO ACCESS: 
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: ASIH STATUS(AC), NAME(B)
+
+INDEXED BY:    ASIH STATUS (AD)
+
+
+46.14,.01     NAME                   0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  I $D(X) S DINUM=X
+              LAST EDITED:      OCT 11, 2000 
+              DESCRIPTION:
+                                The name of the patient in the format last name,first name.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  46.14^B 
+                                1)= S ^DGRU(46.14,"B",$E(X,1,30),DA)=""
+                                2)= K ^DGRU(46.14,"B",$E(X,1,30),DA)
+
+
+46.14,.02     TO ASIH DATE/TIME      1;0 DATE Multiple #46.15
+
+
+46.15,.01       TO ASIH DATE/TIME      0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 23, 2000 
+                DESCRIPTION:
+                                  Date/Time patient went ASIH.  
+
+                CROSS-REFERENCE:  46.15^B 
+                                  1)= S ^DGRU(46.14,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DGRU(46.14,DA(1),1,"B",$E(X,1,30),DA)
+
+
+46.15,.02       DATE/TIME RETURNED FROM ASIH 0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 23, 2000 
+                DESCRIPTION:
+                                  The date/time the patient returned to the long term care ward from ASIH.  
+
+
+46.15,.04       ASIH STATUS            0;4 SET (Required)
+
+                                  'A' FOR ACTIVE ASIH; 
+                                  'I' FOR INACTIVE ASIH; 
+                LAST EDITED:      NOV 22, 2000 
+                DESCRIPTION:
+                                  Indicates whether this entry is related to a patient who is an active ASIH patient.  
+
+                CROSS-REFERENCE:  46.14^AC^MUMPS 
+                                  1)= S ^DGRU(46.14,"AC",DA(1),$E(X,1,30),DA)=""
+                                  2)= K ^DGRU(46.14,"AC",DA(1),$E(X,1,30),DA)
+                                  Sorts by DFN and Status.  
+
+
+                RECORD INDEXES:   AD (#46) (WHOLE FILE #46.14)
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+PATIENT (#2)                      NAME (#.01)
+
+
+Subfile #46.15
+
+  Record Indexes:
+
+  AD (#46)    RECORD    REGULAR    IR    SORTING ONLY    WHOLE FILE (#46.14)
+      Short Descr:  ASIH Status and ASIH Termination date
+        Set Logic:  S ^DGRU(46.14,"AD",$E(X(1),1,30),$E(X(2),1,30),DA(1),DA)=""
+       Kill Logic:  K ^DGRU(46.14,"AD",$E(X(1),1,30),$E(X(2),1,30),DA(1),DA)
+       Whole Kill:  K ^DGRU(46.14,"AD")
+             X(1):  ASIH STATUS  (46.15,.04)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  Computed Code: N X1,X2 S X1=$P(^DGRU(46.14,DA(1),1,DA,0),U),X2=30 D C^%DTC
+                      (Subscr 2)  (Len 30)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

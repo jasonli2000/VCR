@@ -1,0 +1,163 @@
+STANDARD DATA DICTIONARY #362.3 -- IB BILL/CLAIMS DIAGNOSIS FILE                                                                                                                                                                  MAY 20,2014@15:35:56  PAGE 1
+STORED IN ^IBA(362.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains all diagnoses for bills in the Bill/Claims file.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: BILL NUMBER (#.02)[R]
+
+POINTED TO BY: ASSOCIATED DIAGNOSIS (1) field (#10) of the PROCEDURES sub-field (#399.0304) of the BILL/CLAIMS File (#399) 
+               ASSOCIATED DIAGNOSIS (2) field (#11) of the PROCEDURES sub-field (#399.0304) of the BILL/CLAIMS File (#399) 
+               ASSOCIATED DIAGNOSIS (3) field (#12) of the PROCEDURES sub-field (#399.0304) of the BILL/CLAIMS File (#399) 
+               ASSOCIATED DIAGNOSIS (4) field (#13) of the PROCEDURES sub-field (#399.0304) of the BILL/CLAIMS File (#399) 
+               
+
+CROSS
+REFERENCED BY: DIAGNOSIS(AIFN), BILL NUMBER(AIFN1), BILL NUMBER(AO), ORDER(AO1), DIAGNOSIS(B)
+
+362.3,.01     DIAGNOSIS              0;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Required)
+
+              INPUT TRANSFORM:  S ICDVDT=$$BDATE^IBACSV(+$P($G(^IBA(362.3,+$G(DA),0)),U,2)),DIC("S")="I $$ICD9ACT^IBACSV(+Y,ICDVDT),'$$DXDUP^IBCU1(+Y,$G(DA)),$$DXBSTAT^IBCU1($G(DA))=1" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      OCT 13, 2008 
+              HELP-PROMPT:      Enter a diagnosis for this bill.  Duplicates are not allowed. 
+              DESCRIPTION:
+                                Enter an active diagnosis for this bill.  
+
+              TECHNICAL DESCR:
+                                All diagnosis for a bill are stored here, beginning with IB v2.0.  
+
+              SCREEN:           S DIC("S")="I $$ICD9ACT^IBACSV(+Y,ICDVDT),'$$DXDUP^IBCU1(+Y,$G(DA)),$$DXBSTAT^IBCU1($G(DA))=1"
+              EXPLANATION:      Only active diagnosis, no duplicates for a bill, and bill must not be authorized or cancelled.
+              EXECUTABLE HELP:  D HELP^IBCSC4D
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  362.3^B 
+                                1)= S ^IBA(362.3,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(362.3,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  362.3^AIFN^MUMPS 
+                                1)= S:+$P(^IBA(362.3,DA,0),U,2) ^IBA(362.3,"AIFN"_+$P(^(0),U,2),+X,DA)=""
+                                2)= K:+$P(^IBA(362.3,DA,0),U,2) ^IBA(362.3,"AIFN"_+$P(^(0),U,2),+X,DA)
+                                Special x-ref set up specifically to provide a regular x-ref of a bill and all it's diagnoses for easy look-up.  
+
+
+
+362.3,.02     BILL NUMBER            0;2 POINTER TO BILL/CLAIMS FILE (#399) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,13)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 13, 2008 
+              HELP-PROMPT:      The bill that this diagnosis is related to. 
+              SCREEN:           S DIC("S")="I $P(^(0),U,13)=1"
+              EXPLANATION:      Diagnosis can only be added to open bills.
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  362.3^AIFN1^MUMPS 
+                                1)= S ^IBA(362.3,"AIFN"_X,+^IBA(362.3,DA,0),DA)=""
+                                2)= K ^IBA(362.3,"AIFN"_X,+^IBA(362.3,DA,0),DA)
+                                Special x-ref set up specifically to provide a regular x-ref of a bill and all it's diagnoses for easy look-up.  
+
+
+              CROSS-REFERENCE:  362.3^AO^MUMPS 
+                                1)= S:+$P(^IBA(362.3,DA,0),U,3) ^IBA(362.3,"AO",+X,+$P(^(0),U,3),DA)=""
+                                2)= K:+$P(^IBA(362.3,DA,0),U,3) ^IBA(362.3,"AO",+X,+$P(^(0),U,3),DA)
+                                Print order by bill, used to prevent duplicate print orders for a bill.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^362.3^.03 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBA(362.3,D0,0)):^(0),1:"") S X=$P(Y(1),U,3)="" I X S X=DIV S Y(1)=$S($D(^IBA(362.3,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=$$ORDNXT^IBCU1(+X)
+                                 X ^DD(362.3,.02,1,3,1.4)
+
+                                1.4)= S DIH=$S($D(^IBA(362.3,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=362.3,DIG=.03 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                2)= Q
+
+                                CREATE CONDITION)= ORDER=""
+                                CREATE VALUE)= S X=$$ORDNXT^IBCU1(+X)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= ORDER
+                                Sets default value for print order.  
+
+
+
+362.3,.03     ORDER                  0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N)!($$DXBSTAT^IBCU1(DA)'=1)!($$ORDDUP^IBCU1(+X,DA)) X
+              LAST EDITED:      OCT 13, 2008 
+              HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits.  This is the number that represents the order in which the diagnoses will be printed on a bill.  Each number must be unique for a bill. 
+              DESCRIPTION:
+                                This is the number that represents the order in which the diagnoses will be printed on a bill.  Each number must be unique for a bill.  
+
+              EXECUTABLE HELP:  D HELP^IBCSC4D
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the BILL NUMBER field of the IB BILL/CLAIMS DIAGNOSIS File 
+
+              CROSS-REFERENCE:  362.3^AO1^MUMPS 
+                                1)= S:+$P(^IBA(362.3,DA,0),U,2) ^IBA(362.3,"AO",+$P(^(0),U,2),+X,DA)=""
+                                2)= K:+$P(^IBA(362.3,DA,0),U,2) ^IBA(362.3,"AO",+$P(^(0),U,2),+X,DA)
+                                Print order by bill, used to prevent duplicate print orders for a bill.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^399^215 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$$FIRSTDX^IBCSC4D(DA) I X S X=DIV X ^DD(362.3,.03,1,2,89.2) S X=$S('$D(^ICD9(+$P(Y(101),U,1),0)):"",1:$P(^(0),U,1)) S D0=I(0,0) S DIU=X K Y X ^DD(362.3,.03,1,2,1.1) X ^DD(362.
+                                3,.03,1,2,1.4)
+
+                                1.1)= S X=DIV S Y(1)=$S($D(^IBA(362.3,D0,0)):^(0),1:"") S X=$P(Y(1),U,1),X=X
+
+                                1.4)= S DIH=$S($D(^DGCR(399,DIV(0),"U2")):^("U2"),1:""),DIV=X I $D(^(0)) S $P(^("U2"),U,1)=DIV,DIH=399,DIG=215 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                2)= Q
+                                3)= Do not delete
+                                89.2)= S I(0,0)=$S($D(D0):D0,1:""),Y(1)=$S($D(^IBA(362.3,D0,0)):^(0),1:""),D0=$P(Y(1),U,2) S:'$D(^DGCR(399,+D0,0)) D0=-1 S DIV(0)=D0 S Y(101)=$S($D(^DGCR(399,D0,"U2")):^("U2"),1:"")
+                                CREATE CONDITION)= S X=$$FIRSTDX^IBCSC4D(DA)
+                                CREATE VALUE)= INTERNAL(DIAGNOSIS)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= BILL NUMBER:ADMITTING DIAGNOSIS
+                                This trigger sets the admitting diagnosis on the bill record to the diagnosis entered for the bill if admitting dx is not already on the bill and there is no other diagnosis with a lower numbered order already on the bill. 
+                                This will only fire for inpatient episode bills.  
+
+
+
+362.3,.04     POA INDICATOR          0;4 SET
+
+                                'Y' FOR Yes; 
+                                'N' FOR No; 
+                                'U' FOR No Information; 
+                                'W' FOR Clinically Undetermined; 
+                                '1' FOR Blank/Exempt from POA Reporting; 
+              LAST EDITED:      OCT 10, 2008 
+              HELP-PROMPT:      Enter the value that correctly indicates if this condition was present at the time the patient was admitted. 
+              DESCRIPTION:
+                                Enter the value that correctly indicates if this condition was present at the time the patient was admitted.  
+
+              TECHNICAL DESCR:  This is "Present On Admission" indicator.  
+                                 
+                                Value of "1" instead of the actual blank is required for 837 transmissions and QuadraMed interface.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILL/CLAIMS (#399)                BILL NUMBER (#.02)
+                                  ORDER (#.03)
+
+ICD DIAGNOSIS (#80)               DIAGNOSIS (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,214 @@
+STANDARD DATA DICTIONARY #9000010.06 -- V PROVIDER FILE                                                                                                                                                                           MAY 20,2014@15:39:40  PAGE 1
+STORED IN ^AUPNVPRV(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file has been designed for joint use by the Indian Health Service and the Department of Veteran Affairs.  
+ 
+In IHS, this record, along with a purpose of visit, is required for each patient encounter at a facility, or at a visit in the home or other field location.  This same requirement does not exist in the VA.  
+ 
+Data must exist in both the Patient/IHS file and the Visit file before data can be entered here.  There can be multiple providers for a given visit. The primary/secondary field identifies which provider is considered the primary provider for this visit.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: PATIENT NAME (#.02)[R], VISIT (#.03)[R]
+
+CROSS
+REFERENCED BY: VISIT(AD), VISIT(AV10), PROVIDER(B), PATIENT NAME(C)
+
+9000010.06,.01PROVIDER               0;1 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      MAY 13, 1996 
+              HELP-PROMPT:      Enter the provider of the patient encounter. 
+              DESCRIPTION:
+                                This is the provider giving patient care at this encounter.  
+
+              CROSS-REFERENCE:  9000010.06^B 
+                                1)= S ^AUPNVPRV("B",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVPRV("B",$E(X,1,30),DA)
+
+
+9000010.06,.02PATIENT NAME           0;2 POINTER TO PATIENT/IHS FILE (#9000001) (Required)
+
+              LAST EDITED:      AUG 10, 1995 
+              HELP-PROMPT:      Enter the patient name. 
+              DESCRIPTION:
+                                Patient Name.  
+
+              TECHNICAL DESCR:
+                                Pointer to the Patient file.  Always stuffed by data entry, no editing allowed.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.06^C 
+                                1)= S ^AUPNVPRV("C",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVPRV("C",$E(X,1,30),DA)
+                                This cross reference allows lookup by Patient in this file.  
+
+
+
+9000010.06,.03VISIT                  0;3 POINTER TO VISIT FILE (#9000010) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVPRV(DA,0),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 04, 1994 
+              HELP-PROMPT:      Enter the encounter from the Visit file.  Always stuffed. 
+              DESCRIPTION:
+                                The encounter entry in the Visit file where the provider gave clinical care to the patient.  
+
+              TECHNICAL DESCR:
+                                Pointer to the Visit file. Always stuffed by data entry, no editing allowed.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVPRV(DA,0),U,2)"
+              EXPLANATION:      VISIT MUST BE FOR CURRENT PATIENT
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.06^AD 
+                                1)= S ^AUPNVPRV("AD",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVPRV("AD",$E(X,1,30),DA)
+                                This is used for programmed lookup by visit internal entry number.  
+
+
+              CROSS-REFERENCE:  9000010.06^AV10^MUMPS 
+                                1)= D ADD^AUPNVSIT
+                                2)= D SUB^AUPNVSIT
+                                This cross reference is used to add "1" to the Dependent Entry Count field (#.09) of the related Visit file (9000010) entry to indicate that there is a file (in this case V Provider) pointing to the Visit.  
+                                 
+                                When the measurement entry is deleted, this cross reference is used to subtract "1" from the Dependent Entry Count field (#.09) of the related Visit file (9000010) entry.  
+
+
+
+9000010.06,.04PRIMARY/SECONDARY      0;4 SET (Required)
+
+                                'P' FOR PRIMARY; 
+                                'S' FOR SECONDARY; 
+              LAST EDITED:      APR 27, 1994 
+              HELP-PROMPT:      Enter a P if the provider is the primary care giver for the encounter, otherwise enter S. 
+              DESCRIPTION:      This field indicates the provider was the primary or secondary care giver for the encounter.  The primary provider is usually the physician responsible for the patients care at THIS PARTICULAR encounter, where clinical
+                                decisions were being made.  The primary provider for this encounter may or may not be the "Primary Care Provider" for this patient for overall care.  
+                                  
+                                Secondary providers are those providers, who were also providing care where clinical decisions were being made.  This may be nurses, social workers, pharmacists,...  
+                                  
+                                There may be more than one "primary" and "secondary" V Provider entries for a particular encounter in the Visit file.  
+
+              TECHNICAL DESCR:  In the VA's PCE interfaces, "primary" is the default for provider entries where a provider has not been entered yet for the visit.  "Secondary" is the default for provider entries where a provider already exist for the 
+                                visit. 
+
+              SOURCE OF DATA:   028/PSPRIME
+
+9000010.06,.05OPERATING/ATTENDING    0;5 SET
+
+                                'A' FOR ATTENDING; 
+                                'O' FOR OPERATING; 
+              LAST EDITED:      APR 27, 1994 
+              HELP-PROMPT:      Enter A if the provider was "Attending" at this encounter.  Enter O if the provider was "Operating" at this encounter. 
+              DESCRIPTION:
+                                A Provider may be furthur identified as the "Attending" provider or an "Operating" provider for the encounter.  
+
+
+9000010.06,.06PERSON CLASS           0;6 POINTER TO PERSON CLASS FILE (#8932.1)
+
+              LAST EDITED:      JUN 13, 1996 
+              DESCRIPTION:
+                                This is the class of the provider at the time of the encounter.  
+
+
+9000010.06,1201EVENT DATE AND TIME   12;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 03, 1996 
+              HELP-PROMPT:      Enter the date and time the provider had the encounter with the patient. 
+              DESCRIPTION:      This is the date and time the provider had the encounter with the patient. This date and time may be different from the visit date and time.  For example, for clinic appointment visits, the visit date and time is the date 
+                                and time of the appointment, not the time the provider performed the clinical event. 
+                                 
+                                The date may be an imprecise date.   
+                                                            
+                                Date and time may be within 30 days before or after the visit date, with the restriction the date cannot be a future date.  
+
+              TECHNICAL DESCR:  The PCE User Interface, which allows manual entry of data, will be the primary source of the event date and time.  The event date prompt defaults to the visit date, and the time is entered to reflect the actual time the 
+                                provider had the encounter.  The event date does not have to be the visit date, but it must be within 30 days before or after the visit, and not be a future date.  
+                                 
+                                If a user wants to enter a historical provider encounter, the user should use the Historical Encounter entry action to document the historical encounter with the provider. Historical entries will not be eligible for 
+                                credit.  
+                                 
+                                PCE Data Sources for automatic (scanning) data capture will be blank unless the event date and time are passed to PCE for filing.  
+
+
+9000010.06,80101EDITED FLAG          801;1 SET
+
+                                '1' FOR EDITED; 
+              LAST EDITED:      MAR 14, 1994 
+              HELP-PROMPT:      Answer is automatically entered by PCE filing logic. 
+              DESCRIPTION:
+                                This field is automatically set to 1 if PCE detects that any original provider data is being edited.  
+
+              TECHNICAL DESCR:
+                                PCE filing logic automatically compares the before and after pictures of the record to ddetermine if the edited flag should be set to "1".  
+
+
+9000010.06,80102AUDIT TRAIL          801;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>85!($L(X)<2) X
+              LAST EDITED:      MAY 09, 1996 
+              HELP-PROMPT:      Answer is automatically entered by the PCE filing logic. 
+              DESCRIPTION:
+                                This field is populated automatically by the PCE filing logic.  The formt of the field is as follows:  Pointer to PCE data source file_"-"_A for Add or E for Edit_"-"DUZ of the persion who entered the data_";"...  
+
+              TECHNICAL DESCR:  The PCE filing logic requires a pointer to the PCE data source file.  If this is not passed, then PCE filing logic will not process the data.  
+                                 
+                                If the record is a new record, then an "A" is used to specify the source that added the data.  If the record existed previously, PCE filing logic compares the old and new records of information.  An "E" will be
+                                automatically used if the filing logic finds the data has been edited.  If "E" is used, then the Edited Flag field is automatically set to 1.  
+                                 
+                                The DUZ is stored in its internal format to represent the user who performed the addition or editing of data for this record.  
+                                 
+                                Iterations of editing will be concatenated to the previous data source value, up to 85 characters.  
+
+
+9000010.06,81101COMMENTS             811;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      JUL 12, 1995 
+              HELP-PROMPT:      Enter a comment 1-245 characters in length. 
+              DESCRIPTION:
+                                This is a comment related to the patient's provider.  The provider may enter this manually via the PCE User Interface.  
+
+
+9000010.06,81201VERIFIED             812;1 SET
+
+                                '1' FOR ELECTONICALLY SIGNED; 
+                                '2' FOR VERIFIED BY PACKAGE; 
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+9000010.06,81202PACKAGE              812;2 POINTER TO PACKAGE FILE (#9.4)
+
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+9000010.06,81203DATA SOURCE          812;3 POINTER TO PCE DATA SOURCE FILE (#839.7)
+
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 PROVIDER (#.01)
+
+PACKAGE (#9.4)                    PACKAGE (#81202)
+
+PATIENT/IHS (#9000001)            PATIENT NAME (#.02)
+
+PCE DATA SOURCE (#839.7)          DATA SOURCE (#81203)
+
+PERSON CLASS (#8932.1)            PERSON CLASS (#.06)
+
+VISIT (#9000010)                  VISIT (#.03)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

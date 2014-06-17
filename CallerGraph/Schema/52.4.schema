@@ -1,0 +1,204 @@
+STANDARD DATA DICTIONARY #52.4 -- RX VERIFY FILE                                                                                                                                                                                  MAY 20,2014@15:39:18  PAGE 1
+STORED IN ^PS(52.4,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 7.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used for: 
+  1.  If the outpatient pharmacy is using the verification feature all medication entered by a non-pharmacist will be identified in this file. The label is not printed for dispensing until a pharmacist can review the medication and verify that everything
+is correct.  
+   2.  The next use of this file is for medications that create drug/drug interactions.  While entering new medications, if two or more medications cause interactions, and the input is done by a non-pharmacist, the information about the interaction is
+stored in the file until a pharmacist can review.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+
+CROSS
+REFERENCED BY: DRUG INTERACTION(ADI), RX#(B), PATIENT NAME(C), CLERK(D), LOGIN DATE(LD)
+
+INDEXED BY:    RX# & DOSE WARNING (DW)
+
+
+52.4,.01      RX#                    0;1 POINTER TO PRESCRIPTION FILE (#52) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X Q
+              LAST EDITED:      JUN 12, 1992 
+              HELP-PROMPT:      Prescription number of Non-Verified script 
+              DESCRIPTION:
+                                This refers back to the prescription number within the PRESCRIPTION file.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52.4^B 
+                                1)= S ^PS(52.4,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.4,"B",$E(X,1,30),DA)
+                                3)= Do not delete.
+                                This cross reference lists the Rx# then interal entry number.  
+
+
+              RECORD INDEXES:   DW (#897)
+
+52.4,1        PATIENT NAME           0;2 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      MAR 11, 1993 
+              HELP-PROMPT:      Enter name of patient. 
+              DESCRIPTION:
+                                This field is used to store the patient's name.  
+
+              TECHNICAL DESCR:
+                                pointer.  
+
+              CROSS-REFERENCE:  52.4^C 
+                                1)= S ^PS(52.4,"C",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.4,"C",$E(X,1,30),DA)
+
+
+52.4,2        CLERK                  0;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 29, 1992 
+              DESCRIPTION:
+                                Respond by entering the name of the clerk who entered the prescription.  
+
+              CROSS-REFERENCE:  52.4^D 
+                                1)= S ^PS(52.4,"D",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.4,"D",$E(X,1,30),DA)
+
+
+52.4,3        RENEWED FROM RX#       0;4 POINTER TO PRESCRIPTION FILE (#52)
+
+              HELP-PROMPT:      Enter the prescription number FROM which the prescription was renewed. 
+              DESCRIPTION:
+                                This field is used to enter the Rx number from which the Rx was renewed.  
+
+
+52.4,4        LOGIN DATE             0;5 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 18, 1986 
+              DESCRIPTION:
+                                This field is used to enter the date when the data was entered.  
+
+              CROSS-REFERENCE:  52.4^LD 
+                                1)= S ^PS(52.4,"LD",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.4,"LD",$E(X,1,30),DA)
+
+
+52.4,5        PSORXD0                0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<1) X
+              LAST EDITED:      OCT 21, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-35 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field is currently not in use.  
+
+                                UNEDITABLE
+
+52.4,6        PSORXEXP               0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<1) X
+              LAST EDITED:      OCT 21, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-12 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field is currently not in use.  
+
+                                UNEDITABLE
+
+52.4,7        DRUG INTERACTION       0;8 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              INPUT TRANSFORM:  K:'$G(PSODI) X
+              LAST EDITED:      JUN 29, 1992 
+              HELP-PROMPT:      Data not entered directly with file manager. 
+              DESCRIPTION:
+                                This field will be used to indicate if a drug/drug interaction was encountered from new order entry or editing of a drug in an active Rx.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+              GROUP:            PSO
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52.4^ADI^MUMPS 
+                                1)= S:X=1 ^PS(52.4,"ADI",DA,X)=""
+                                2)= K:X=1 ^PS(52.4,"ADI",DA,X)
+                                3)= do not delete!!
+                                This cross reference is to be use to index medication that has drug/drug interactions. It sets the global ^PS(52.4,"ADI",DA,Drug Interaction)="".  
+
+
+
+52.4,7.1      SEVERITY               0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1)!('$G(PSODI)) X
+              LAST EDITED:      JUN 29, 1992 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:      This field is used to store the pointer values of the interactions encountered.  Data is stored in the form of a string, i.e., 23,43,56.  Each number will represent the drug/drug interaction found in file #56.  Data is not
+                                added directly with file manager.  
+
+              TECHNICAL DESCR:
+                                free text.  
+
+              GROUP:            PSO
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.4,7.2      AFFECTED MEDICATION    0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>120!($L(X)<1)!('$G(PSODI)) X
+              LAST EDITED:      JUN 29, 1992 
+              HELP-PROMPT:      Answer must be 1-120 characters in length. 
+              DESCRIPTION:
+                                This field is used to store the active medication pointer numbers that are considered to be a drug interaction.  
+
+              TECHNICAL DESCR:
+                                free text.  
+
+              GROUP:            PSO
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.4,8        DOSE WARNING           1;1 SET
+
+                                '0' FOR UNKNOWN; 
+                                '1' FOR DAILY DOSE RANGE; 
+                                '2' FOR MAX SINGLE DOSE; 
+                                '3' FOR MAX SINGLE DOSE & DAILY DOSE RANGE; 
+              LAST EDITED:      MAR 04, 2010 
+              HELP-PROMPT:      Enter 1 FOR DAILY DOSE RANGE, 2 FOR MAX SINGLE DOSE, OR 3 FOR BOTH. 
+              RECORD INDEXES:   DW (#897)
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 CLERK (#2)
+
+PATIENT (#2)                      PATIENT NAME (#1)
+
+PRESCRIPTION (#52)                RX# (#.01)
+                                  RENEWED FROM RX# (#3)
+
+
+File #52.4
+
+  Record Indexes:
+
+  DW (#897)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  DOSE WARNING
+        Set Logic:  S ^PS(52.4,"DW",X(1),X(2),DA)=""
+       Kill Logic:  K ^PS(52.4,"DW",X(1),X(2),DA)
+       Whole Kill:  K ^PS(52.4,"DW")
+             X(1):  RX#  (52.4,.01)  (Subscr 1)  (forwards)
+             X(2):  DOSE WARNING  (52.4,8)  (Subscr 2)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,966 @@
+STANDARD DATA DICTIONARY #366.14 -- IB NCPDP EVENT LOG FILE                                                                                                                                                                       MAY 20,2014@15:36:12  PAGE 1
+STORED IN ^IBCNR(366.14,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                         (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains data which are passed into IB NCPDP APIs by outside applications - E CLAIMS MGMT ENGINE and OUTPATIENT PHARMACY  (see IA # 4299). Data stored in this file are used for IB ECME EVENT report to provide details about E-Pharmacy claims
+processing and about communication details between IB and the applications listed above. The data in this file is populated internally by the IB application (data not directly entered by the user).  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+
+CROSS
+REFERENCED BY: DATE(B), PATIENT(D), CLAIMID(E), PRESCRIPTION(I), RX #(I), RX NO(R), ePHARMACY USER(U)
+
+366.14,.01    DATE                   0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 21, 2006 
+              HELP-PROMPT:      Represents the date when specific ePharmacy billing events occurred for an outpatient claim. 
+              DESCRIPTION:
+                                This date is populated by the IB software That supports the processing of ePharmacy Billing events for outpatient claims.  
+
+              CROSS-REFERENCE:  366.14^B 
+                                1)= S ^IBCNR(366.14,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBCNR(366.14,"B",$E(X,1,30),DA)
+
+
+366.14,1      EVENT                  1;0 SET Multiple #366.141 (Add New Entry without Asking)
+
+              LAST EDITED:      MAR 16, 2006 
+              DESCRIPTION:
+                                This multiple contains 1 to many records by Event type that can occur on a given date for 1 to many outpatient prescription claims.  
+
+              TECHNICAL DESCR:  The records in this sub-file are stored by sequence or as they occur in time for a given date.  This sub-file is updated when one of the 2 functions, $$RX^IBNCPDP or $$STORES^IBNCPDP are invoked by the calling application
+                                when processing ePharmacy related billing events.  
+
+
+366.141,.01     EVENT TYPE             0;1 SET (Required)
+
+                                  '0' FOR UNKNOWN; 
+                                  '1' FOR BILLABLE STATUS CHECK; 
+                                  '2' FOR SUBMIT; 
+                                  '3' FOR BILL; 
+                                  '4' FOR RELEASE; 
+                                  '5' FOR REVERSE; 
+                                  '6' FOR CLOSE; 
+                                  '7' FOR REOPEN; 
+                LAST EDITED:      JUN 21, 2006 
+                HELP-PROMPT:      Pharmacy event types 
+                DESCRIPTION:
+                                  The event types represent the various ePharmacy billing events during the processing of outpatient Rx claims.  
+
+                CROSS-REFERENCE:  366.141^B 
+                                  1)= S ^IBCNR(366.14,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBCNR(366.14,DA(1),1,"B",$E(X,1,30),DA)
+
+
+366.141,.03     PATIENT                0;3 POINTER TO PATIENT FILE (#2)
+
+                LAST EDITED:      JUN 21, 2006 
+                HELP-PROMPT:      Internally populated by the IB application (not entered by the user). 
+                DESCRIPTION:
+                                  PATIENT on the Rx claim 
+
+                CROSS-REFERENCE:  366.14^D 
+                                  1)= S ^IBCNR(366.14,"D",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBCNR(366.14,"D",$E(X,1,30),DA(1),DA)
+
+
+366.141,.04     JOB                    0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  The job number of the job currently executing 
+
+
+366.141,.05     TIME                   0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Enter date and time 
+                DESCRIPTION:
+                                  Date and time of the event 
+
+
+366.141,.06     ePHARMACY USER         0;6 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUN 21, 2006 
+                DESCRIPTION:      System user who triggered the e-pharmacy event. This can be the system user who enters prescription or makes billing operation on e-pharmacy claims. It also can be POSTMASTER if the operation (like claims auto-reversal
+                                  process) was performed by a background job.  
+
+                TECHNICAL DESCR:
+                                  NEW PERSON file #200 internal entry number 
+
+                CROSS-REFERENCE:  366.14^U 
+                                  1)= S ^IBCNR(366.14,"U",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBCNR(366.14,"U",$E(X,1,30),DA(1),DA)
+
+
+366.141,.07     RESULT                 0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<-99999)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Number between -99999 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Result of the event processing - return code 
+
+
+366.141,.08     RESULT MESSAGE         0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Answer must be 1-40 characters in length. 
+                DESCRIPTION:
+                                  Result of the event processing - message 
+
+
+366.141,.09     E-PHARMACY DIVISION    0;9 POINTER TO BPS PHARMACIES FILE (#9002313.56)
+
+                LAST EDITED:      FEB 16, 2007 
+                DESCRIPTION:
+                                  E-Pharmacy division (BPS PHARMACY).  
+
+
+366.141,.11     AUTH #                 1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  ECME approval/authorization number 
+
+
+366.141,.12     BCID                   1;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      APR 22, 2011 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This field contains the Prescription/Service Reference Number (also known as the ECME#) and the Date of Service separated by a semi-colon.  
+
+                TECHNICAL DESCR:
+                                  Prescription/Service Reference Number (ECME#);Date of Service Where: Prescription/Service Ref Number (ECME#) is 7 or 12 digits.  Date of Service is in FileMan format.                   
+
+
+366.141,.13     CLAIMID                1;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)'=7&($L(X)'=12) X
+                LAST EDITED:      OCT 26, 2010 
+                HELP-PROMPT:      Answer must be 7 or 12 characters in length. 
+                DESCRIPTION:
+                                  This is a 7 or 12 digit ECME number with leading zero(s).  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  366.14^E^MUMPS 
+                                  1)= S ^IBCNR(366.14,"E",$E(X,1,30),$G(^IBCNR(366.14,DA(1),0)),DA)=""
+                                  2)= K ^IBCNR(366.14,"E",$E(X,1,30),$G(^IBCNR(366.14,DA(1),0)),DA)
+
+
+366.141,.14     PATIENT IN IBD         1;4 POINTER TO PATIENT FILE (#2)
+
+                LAST EDITED:      JUN 20, 2006 
+                DESCRIPTION:
+                                  PATIENT identifier passed in IBD ARRAY when outside application calls $$STORESP^IBNCPDP (IA #4299) 
+
+                TECHNICAL DESCR:
+                                  Pointer to PATIENT file #2 passed into $$STORESP^IBNCPDP in "DFN" node of IBD array.  
+
+
+366.141,.15     MEDICAL CENTER DIVISION 1;5 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8)
+
+                LAST EDITED:      FEB 16, 2007 
+                HELP-PROMPT:      Select a division 
+                DESCRIPTION:
+                                  Division identifier 
+
+
+366.141,.16     RESPONSE               1;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  Response from the payer: ACCEPTED PAYABLE REJECTED DUPLICATE 
+
+
+366.141,.17     REVERSAL REASON        1;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      FEB 14, 2006 
+                HELP-PROMPT:      Answer must be 1-40 characters in length. 
+                DESCRIPTION:
+                                  Reversal reason 
+
+
+366.141,.18     RTS-DEL                1;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Number between 0 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Return to Stock-Delete status 
+
+
+366.141,.19     STATUS                 1;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  Bill status - one of the following values: "PAID","REJECTED","REVERSED", "CLOSED", "RELEASED", or "SUBMITTED" 
+
+
+366.141,.201    PRESCRIPTION           2;1 POINTER TO PRESCRIPTION FILE (#52)
+
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Enter a prescription 
+                DESCRIPTION:
+                                  Pointer TO PRESCRIPTION FILE (#52) as passed into $$STORESP^ IBNCPDP (IA # 4299) in "PRESCRIPTION" node 
+
+                CROSS-REFERENCE:  366.14^I 
+                                  1)= S ^IBCNR(366.14,"I",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBCNR(366.14,"I",$E(X,1,30),DA(1),DA)
+
+
+366.141,.202    RX NO                  2;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  RX Number from file #52 passed into $$STORESP^IBNCPDP (IA # 4299) in the "RX NO" node 
+
+                CROSS-REFERENCE:  366.14^R 
+                                  1)= S ^IBCNR(366.14,"R",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBCNR(366.14,"R",$E(X,1,30),DA(1),DA)
+
+
+366.141,.203    FILL NUMBER            2;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Refill # 0 - for original refill 1...n - for other refills 
+
+
+366.141,.204    DRUG                   2;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                LAST EDITED:      JUN 21, 2006 
+                HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                DESCRIPTION:
+                                  Prescription Drug on the claim 
+
+
+366.141,.205    NDC                    2;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                DESCRIPTION:
+                                  National Drug Code number 
+
+
+366.141,.206    DATE OF SERVICE        2;6 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      APR 22, 2011 
+                HELP-PROMPT:      Enter the date of service. 
+                DESCRIPTION:
+                                  Date of Service of the outpatient pharmacy Rx.  
+
+
+366.141,.207    RELEASE DATE           2;7 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      JUN 20, 2011 
+                HELP-PROMPT:      Enter Rx release date. 
+                DESCRIPTION:
+                                  This is the date the Rx was released.  This field is populated only if the Rx was released.  
+
+
+366.141,.208    QTY                    2;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."4.N) X
+                LAST EDITED:      JUN 20, 2011 
+                HELP-PROMPT:      Type a number between 0 and 99999999, 3 decimal digits. 
+                DESCRIPTION:
+                                  This is the prescription billed quantity.  This may be different than the NCPDP quantity.  
+
+                TECHNICAL DESCR:
+                                  RX Quantity 
+
+
+366.141,.209    DAYS SUPPLY            2;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  RX Days Supply 
+
+
+366.141,.21     DEA                    2;10 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                DESCRIPTION:
+                                  Drug Enforcement Agency number 
+
+
+366.141,.211    FILLED BY              2;11 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Enter a user who filled RX 
+                DESCRIPTION:
+                                  Person, who filled the RX refill.  
+
+                TECHNICAL DESCR:
+                                  Pointer to the NEW PERSON FILE (#200) 
+
+
+366.141,.212    RX #                   2;12 POINTER TO PRESCRIPTION FILE (#52)
+
+                LAST EDITED:      JUN 21, 2006 
+                HELP-PROMPT:      Enter a prescription 
+                DESCRIPTION:
+                                  Pointer TO PRESCRIPTION FILE (#52) as passed into $$RX^IBNCPDP (IA # 4299) in "IEN" node 
+
+                CROSS-REFERENCE:  366.14^I 
+                                  1)= S ^IBCNR(366.14,"I",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBCNR(366.14,"I",$E(X,1,30),DA(1),DA)
+
+
+366.141,.213    BILLING UNITS          2;13 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      JUN 20, 2011 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                DESCRIPTION:
+                                  This is the type of billing units associated with the billing quantity.  Examples include "TAB", "CAP", "EA", "ML", "VI", "GM", and so forth.  
+
+
+366.141,.214    NCPDP QTY              2;14 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."4.N) X
+                LAST EDITED:      JUN 20, 2011 
+                HELP-PROMPT:      Type a number between 0 and 99999999, 3 decimal digits. 
+                DESCRIPTION:
+                                  This is the NCPDP Quantity for the prescription. This may be different than the billed quantity.  
+
+
+366.141,.215    NCPDP UNITS            2;15 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>2!($L(X)<1) X
+                LAST EDITED:      JUN 21, 2011 
+                HELP-PROMPT:      Answer must be 1-2 characters in length. 
+                DESCRIPTION:      This is the NCPDP standard for unit type: 
+                                   
+                                     EA - each 
+                                     ML - milliliters 
+                                     GM - grams 
+                                   
+                                  This is the type of unit associated with the NCPDP quantity.  
+
+
+366.141,.301    BILL                   3;1 POINTER TO BILL/CLAIMS FILE (#399)
+
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Enter IB bill 
+                DESCRIPTION:
+                                  IB bill 
+
+                TECHNICAL DESCR:
+                                  Pointer TO BILL/CLAIMS FILE (#399) 
+
+
+366.141,.302    BILLED                 3;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999999)!(X<0) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Amount billed to the insurance 
+
+
+366.141,.303    PLAN                   3;3 POINTER TO GROUP INSURANCE PLAN FILE (#355.3)
+
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Enter a group plan 
+                DESCRIPTION:
+                                  Group insurance plan 
+
+
+366.141,.304    COST                   3;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."5N.N) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Number between 0 and 9999999, 4 Decimal Digits 
+                DESCRIPTION:
+                                  Cost - dollar amount per Dispensed Unit 
+
+
+366.141,.305    PAID BY INSURANCE      3;5 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Amount paid by the Insurance 
+
+
+366.141,.306    CLOSE/REOPEN COMMENT   3;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>70!($L(X)<1) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Answer must be 1-70 characters in length. 
+                DESCRIPTION:
+                                  Close or reopen comment 
+
+
+366.141,.307    CLOSE REASON           3;7 POINTER TO CLAIMS TRACKING NON-BILLABLE REASONS FILE (#356.8)
+
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Select a close reason 
+                DESCRIPTION:
+                                  Close reason 
+
+
+366.141,.308    DROP TO PAPER          3;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Drop to Paper flag. 
+
+                TECHNICAL DESCR:
+                                  1 (TRUE) for certain Close Claim Reasons indicates that the closed episode still may be "dropped to paper" - passed to the Autobiller.  
+
+
+366.141,.309    RELEASE COPAY          3;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 20, 2006 
+                HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Release Copay flag.  
+
+                TECHNICAL DESCR:
+                                  1 (TRUE) indicates that the patients copay should be released off hold.  
+
+
+366.141,.31     ECME USER IN IBD       3;10 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUN 20, 2006 
+                DESCRIPTION:      System user who triggered the ECME event and whose identifier was passed in IBD ARRAY when outside application calls $$STORESP^IBNCPDP (IA #4299). This can be the system user who enters prescription or makes billing
+                                  operation on e-pharmacy claims. It also can be POSTMASTER if the operation (like claims auto-reversal process) was performed by a background job.  
+
+                TECHNICAL DESCR:
+                                  System User's ID as is passed inside IBD array into IB APIs.  
+
+
+366.141,.311    COPAY AMOUNT           3;11 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+                LAST EDITED:      AUG 03, 2011 
+                HELP-PROMPT:      Type a dollar amount between 0 and 999999.99, 2 decimal digits. 
+                DESCRIPTION:
+                                  This is to store the copayment amount specified by the payer for amounts that are to be charge for non-Veteran copayment charges such as TRICARE or CHAMPVA.  
+
+
+366.141,.312    INGREDIENT COST PAID   3;12 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999999)!(X<0)!(X?.E1"."3.N) X
+                LAST EDITED:      JUN 20, 2011 
+                HELP-PROMPT:      Type a dollar amount between 0 and 99999999, 2 decimal digits. 
+                DESCRIPTION:
+                                  This is the amount of the ingredient cost paid as reported by the payer.  
+
+                TECHNICAL DESCR:
+                                  NCPDP Field 506-F6.  
+
+
+366.141,.313    DISPENSING FEE PAID    3;13 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999999)!(X<0)!(X?.E1"."3.N) X
+                LAST EDITED:      JUN 20, 2011 
+                HELP-PROMPT:      Type a dollar amount between 0 and 99999999, 2 decimal digits. 
+                DESCRIPTION:
+                                  This is the amount of the dispensing fee paid as reported by the payer.  
+
+                TECHNICAL DESCR:
+                                  NCPDP Field 507-F7.  
+
+
+366.141,.314    PATIENT RESPONSIBILITY (INS) 3;14 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999999)!(X<0)!(X?.E1"."3.N) X
+                LAST EDITED:      JUN 20, 2011 
+                HELP-PROMPT:      Type a dollar amount between 0 and 99999999, 2 decimal digits. 
+                DESCRIPTION:
+                                  This is the amount for which the patient is responsible as reported by the payer.  
+
+                TECHNICAL DESCR:
+                                  NCPDP Field 505-F5.  
+
+
+366.141,.401    AO                     4;1 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                                  '2' FOR NO ANSWER; 
+                                  '3' FOR OVERRIDDEN; 
+                LAST EDITED:      JUL 30, 2007 
+                HELP-PROMPT:      Enter Agent Orange indicator 
+                DESCRIPTION:
+                                  Agent Orange indicator 
+
+
+366.141,.402    CV                     4;2 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                                  '2' FOR NO ANSWER; 
+                                  '3' FOR OVERRIDDEN; 
+                LAST EDITED:      JUL 30, 2007 
+                HELP-PROMPT:      Enter Combat Veteran indicator 
+                DESCRIPTION:
+                                  Combat Veteran indicator 
+
+
+366.141,.403    SWA                    4;3 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                                  '2' FOR NO ANSWER; 
+                                  '3' FOR OVERRIDDEN; 
+                LAST EDITED:      JUL 30, 2007 
+                HELP-PROMPT:      Enter Southwest Asia indicator 
+                DESCRIPTION:
+                                  Southwest Asia indicator.  
+
+
+366.141,.404    IR                     4;4 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                                  '2' FOR NO ANSWER; 
+                                  '3' FOR OVERRIDDEN; 
+                LAST EDITED:      JUL 30, 2007 
+                HELP-PROMPT:      Enter Ionizing radiation exposure indicator 
+                DESCRIPTION:
+                                  Ionizing radiation exposure indicator 
+
+
+366.141,.405    MST                    4;5 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                                  '2' FOR NO ANSWER; 
+                                  '3' FOR OVERRIDDEN; 
+                LAST EDITED:      JUL 30, 2007 
+                HELP-PROMPT:      Enter Military Sexual trauma indicator 
+                DESCRIPTION:
+                                  Military Sexual trauma indicator 
+
+
+366.141,.406    HNC                    4;6 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                                  '2' FOR NO ANSWER; 
+                                  '3' FOR OVERRIDDEN; 
+                LAST EDITED:      JUL 30, 2007 
+                HELP-PROMPT:      Enter Head/neck cancer indicator 
+                DESCRIPTION:
+                                  Head/neck cancer indicator 
+
+
+366.141,.407    SC                     4;7 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                                  '2' FOR NO ANSWER; 
+                                  '3' FOR OVERRIDDEN; 
+                LAST EDITED:      JUL 30, 2007 
+                HELP-PROMPT:      Enter Service Connected indicator 
+                DESCRIPTION:
+                                  Service Connected indicator 
+
+
+366.141,.408    SHAD                   4;8 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                                  '2' FOR NO ANSWER; 
+                                  '3' FOR OVERRIDDEN; 
+                LAST EDITED:      AUG 03, 2007 
+                HELP-PROMPT:      Enter Project 112/SHAD indicator 
+                DESCRIPTION:
+                                  Project 112/SHAD indicator 
+
+
+366.141,2       INSURANCE              5;0 Multiple #366.1412 (Add New Entry without Asking)
+
+                DESCRIPTION:
+                                  Insurance data 
+
+                TECHNICAL DESCR:
+                                  Insurance data stored in "INS" node of the array which is passed into $$RX^IBNCPDP API (IA #4299) 
+
+
+366.1412,.01      INSURANCE              0;1 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    Sequential number for patients insurances.  
+
+                  CROSS-REFERENCE:  366.1412^B 
+                                    1)= S ^IBCNR(366.14,DA(2),1,DA(1),5,"B",$E(X,1,30),DA)=""
+                                    2)= K ^IBCNR(366.14,DA(2),1,DA(1),5,"B",$E(X,1,30),DA)
+
+
+366.1412,.02      GROUP INSURANCE PLAN   0;2 POINTER TO GROUP INSURANCE PLAN FILE (#355.3)
+
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Enter Group Insurance Plan 
+                  DESCRIPTION:
+                                    Group Insurance Plan 
+
+
+366.1412,.03      BIN                    0;3 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-10 characters in length 
+                  DESCRIPTION:
+                                    Bank Identification Number 
+
+
+366.1412,.04      PCN                    0;4 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>16!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-16 characters in length. 
+                  DESCRIPTION:
+                                    Processor Control Number 
+
+
+366.1412,.05      PAYER SHEET B1         0;5 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                  DESCRIPTION:
+                                    Payer sheet B1 
+
+
+366.1412,.06      GROUP ID               0;6 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                  DESCRIPTION:
+                                    Group ID 
+
+
+366.1412,.07      CARDHOLDER ID          0;7 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                  DESCRIPTION:
+                                    Cardholder ID 
+
+
+366.1412,.08      PATIENT RELATIONSHIP CODE 0;8 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Type a Number between 0 and 99, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    Patient Relationship code 
+
+
+366.1412,.09      PHARMACY PERSON CODE   0;9 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+                  LAST EDITED:      JUN 21, 2011 
+                  HELP-PROMPT:      Answer must be 1-3 characters in length. 
+                  DESCRIPTION:      This is the pharmacy person code value at the time of IB billing determination.  This field is stored and maintained with the patient insurance policy data.  This is the code that is assigned by the payer to identify
+                                    the patient.  The payer may use a unique person code to identify each specific person on the pharmacy insurance policy. This code may also describe the patient's relationship to the cardholder.  
+                                     
+                                    Enrollment Standard Examples: 
+                                     
+                                      001 = Cardholder 
+                                      002 = Spouse 
+                                      003 - 999 = Dependents and Others (including second spouses, etc.) 
+
+                  TECHNICAL DESCR:
+                                    This corresponds with field# 4.06 in subfile 2.312 of the PATIENT (#2) file.  NCPDP field 303-C3 - Person Code 
+
+
+366.1412,.101     CARDHOLDER FIRST NAME  1;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-25 characters in length. 
+                  DESCRIPTION:
+                                    Cardholder First Name 
+
+
+366.1412,.102     CARDHOLDER LAST NAME   1;2 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>35!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-35 characters in length. 
+                  DESCRIPTION:
+                                    Cardholder Last Name 
+
+
+366.1412,.103     STATE                  1;3 POINTER TO STATE FILE (#5)
+
+                  LAST EDITED:      JUN 20, 2006 
+                  DESCRIPTION:
+                                    State 
+
+
+366.1412,.104     PAYER SHEET B2         1;4 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                  DESCRIPTION:
+                                    Payer sheet B2 
+
+
+366.1412,.105     PAYER SHEET B3         1;5 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                  DESCRIPTION:
+                                    Payer sheet B3 
+
+
+366.1412,.106     SOFTWARE/VENDOR CERT ID 1;6 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                  DESCRIPTION:
+                                    Software/Vendor Certification ID 
+
+
+366.1412,.107     INSURANCE NAME         1;7 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                  DESCRIPTION:
+                                    Insurance Name 
+
+
+366.1412,.201     DISPENSING FEE         2;1 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    Dispensing Fee Submitted 
+
+
+366.1412,.202     BASIS OF COST DETERMINATION 2;2 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-4 characters in length. 
+                  DESCRIPTION:
+                                    Basis of Cost Determination 
+
+                  TECHNICAL DESCR:
+                                    for basis of cost determination the following is used: "07" would be sent for Usual & Customary "01" would be sent for AWP "05" would be sent for Cost calculations 
+
+
+366.1412,.203     AWP OR TORT RATE OR COST 2;3 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    Average Wholesale Price OR Tort dollar amount rate OR Cost amount 
+
+
+366.1412,.204     GROSS AMOUNT DUE       2;4 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    Gross Amount Due. Base price plus Dispense fee/Administrative fee.  
+
+
+366.1412,.205     ADMINISTRATIVE FEE     2;5 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    Administrative Fee 
+
+
+366.1412,.206     INGREDIENT COST        2;6 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      MAY 17, 2011 
+                  HELP-PROMPT:      Type a dollar amount between 0 and 9999999, 2 decimal digits. 
+                  DESCRIPTION:
+                                    The ingredient cost is the calculation of quantity times unit price.  No fees included.  
+
+
+366.1412,.207     USUAL AND CUSTOMARY CHARGE 2;7 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      MAY 26, 2011 
+                  HELP-PROMPT:      Type a dollar amount between 0 and 9999999, 2 decimal digits. 
+                  DESCRIPTION:
+                                    Usual & Customary Charges. Gross Amount Due less the administrative fees.  
+
+
+366.1412,.301     GROUP NAME             3;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                  DESCRIPTION:
+                                    Group Name 
+
+
+366.1412,.302     INSURANCE PHONE NUMBER 3;2 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                  DESCRIPTION:
+                                    Insurance Phone Number 
+
+
+366.1412,.303     PLAN ID                3;3 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                  LAST EDITED:      JUN 20, 2006 
+                  HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                  DESCRIPTION:
+                                    Plan ID 
+
+
+366.1412,.304     PT INSURANCE POLICY    3;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1.N) X
+                  LAST EDITED:      JUN 21, 2011 
+                  HELP-PROMPT:      Type a number between 0 and 99999999, 0 decimal digits. 
+                  DESCRIPTION:
+                                    This is the insurance policy at the time of IB billing determination.  This is the internal entry number to the 2.312 subfile of the PATIENT (#2) file.  
+
+
+
+
+366.141,7.01    RX COB                   7;1 SET
+
+                                    '0' FOR UNKNOWN; 
+                                    '1' FOR PRIMARY; 
+                                    '2' FOR SECONDARY; 
+                  LAST EDITED:      AUG 30, 2010 
+                  HELP-PROMPT:      Select COB indicator for the claim. 
+                  DESCRIPTION:
+                                    The Coordination Of Benefits (COB) indicator designates the payer sequence for the claim.  
+
+
+366.141,7.02    PRIMARY BILL             7;2 POINTER TO BILL/CLAIMS FILE (#399)
+
+                  LAST EDITED:      JAN 08, 2009 
+                  HELP-PROMPT:      Select the primary bill for the prescription. 
+                  DESCRIPTION:
+                                    This field will hold the Primary bill associated with the original prescription/refill related to this claim.  
+
+
+366.141,7.03    PRIOR PAYMENT            7;3 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999999)!(X<0) X
+                  LAST EDITED:      JAN 08, 2009 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 99999999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    This field will store a prior payment amount that the primary insurer agreed to pay for the original prescription/refill related to this claim.  
+
+
+366.141,7.04    RATE TYPE SELECTED BY USER 7;4 POINTER TO RATE TYPE FILE (#399.3)
+
+                  LAST EDITED:      AUG 30, 2010 
+                  HELP-PROMPT:      Select the appropriate Rate Type. 
+                  DESCRIPTION:
+                                    This is the Rate Type selected by the user for ECME Pharmacy billing purposes.  Users may select the rate type in the option "Process Secondary/TRICARE Rx to ECME" [BPS COB PROCESS SECOND TRICARE].  
+
+
+366.141,7.05    ELIGIBILITY              7;5 SET
+
+                                    'V' FOR VETERAN; 
+                                    'T' FOR TRICARE; 
+                                    'C' FOR CHAMPVA; 
+                  LAST EDITED:      MAY 02, 2011 
+                  HELP-PROMPT:      Enter the patient's eligibility. 
+                  DESCRIPTION:
+                                    This is the patient's eligibility as determined by IB billing determination during the finish event.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILL/CLAIMS (#399)                EVENT:BILL (#.301)
+                                  PRIMARY BILL (#7.02)
+
+BPS PHARMACIES (#9002313.56)      EVENT:E-PHARMACY DIVISION (#.09)
+
+CLAIMS TRACKING NON-BILLABLE R 
+                   (#356.8)       EVENT:CLOSE REASON (#.307)
+
+GROUP INSURANCE PLAN (#355.3)     EVENT:PLAN (#.303)
+                                  INSURANCE:GROUP INSURANCE PLAN (#.02)
+
+MEDICAL CENTER DIVISION (#40.8)   EVENT:MEDICAL CENTER DIVISION (#.15)
+
+NEW PERSON (#200)                 EVENT:ePHARMACY USER (#.06)
+                                  FILLED BY (#.211)
+                                  ECME USER IN IBD (#.31)
+
+PATIENT (#2)                      EVENT:PATIENT (#.03)
+                                  PATIENT IN IBD (#.14)
+
+PRESCRIPTION (#52)                EVENT:PRESCRIPTION (#.201)
+                                  RX # (#.212)
+
+RATE TYPE (#399.3)                EVENT:RATE TYPE SELECTED BY USER (#7.04)
+
+STATE (#5)                        INSURANCE:STATE (#.103)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

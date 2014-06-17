@@ -1,0 +1,826 @@
+STANDARD DATA DICTIONARY #75.1 -- RAD/NUC MED ORDERS FILE                                                                                                                                                                         MAY 20,2014@15:40:33  PAGE 1
+STORED IN ^RAO(75.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 5.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains all information pertaining to an imaging order entered for a patient. The file structure like that of the Rad/Nuc Med Patient file in future, will allow the storage of nuclear medicine, nuclear magnetic resonance and other types of
+imaging data.  
+ 
+ 
+ 
+Data Storage 
+------------
+The data for 'RAD/NUC MED ORDERS' file is stored in the ^RAO(75.1,global..  This file is very volatile and should be journaled and translated if the operating system supports these two functions.  
+ 
+ 
+ 
+Input Templates 
+---------------
+The following is a list of input templates used by the package and in the OPTIONS file (#19) that uses the template: 
+ 
+ 
+Name            Routine       Description: Option(s) 
+----            --------      ----------------------
+ 
+RA ORDER EXAM   ^RACTOE*     Enter an order for a 
+                             procedure; 
+                             RA ORDEREXAM 
+ 
+RA QUICK EXAM   ^RACTQE*     Allows quick entry of one or multiple 
+  ORDER                      exams for a patient.  
+                             RA ORDEREXAM 
+ 
+RA OERR EDIT                 Edit an unreleased order that was entered 
+                             through the OE/RR package.  
+ 
+ 
+Print Templates 
+---------------
+There are no print templates associated with this file.  
+ 
+ 
+Sort Templates 
+--------------
+There are no sort templates associated with this file.  
+
+
+IDENTIFIED BY: PROCEDURE (#2), REQUEST ENTERED DATE/TIME (#16)
+
+POINTED TO BY: IMAGING ORDER field (#11) of the EXAMINATIONS sub-field (#70.03) of the REGISTERED EXAMS sub-field (#70.02) of the RAD/NUC MED PATIENT File (#70) 
+               RADIOLOGY CLINICAL HX field (#15.01) of the PFSS ACCOUNT File (#375) 
+               
+
+CROSS
+REFERENCED BY: DATE DESIRED (Not guaranteed)(AC), REQUEST STATUS(ACHN), SCHEDULED DATE (TIME optional)(AD), LAST ACTIVITY DATE/TIME(AO), PROCEDURE(AP), REQUEST STATUS(AS), NAME(B)
+
+75.1,.01      NAME                   0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              NAME OF THIS RAD/NUC MED PATIENT                                                                                 
+              LAST EDITED:      NOV 22, 1995 
+              HELP-PROMPT:      Select a patient name. 
+              DESCRIPTION:      This field gives the name of this rad/nuc med patient. The system obtains this information from the main 'PATIENT' file (#2).  It is not stored in the 'RAD/NUC MED PATIENT' file (#70).  
+                                 
+                                         ALLOWABLE WAYS TO ENTER PATIENT NAME: 
+                                         ------------------------------------
+                                           -Patient's last name (to reduce typing errors, 
+                                            enter only first few letters of last name) 
+                                           -Last 4 digits of patient's Social Security Number 
+                                           -First letter of patient's last name and last 4 
+                                            digits of patient's Social Security Number.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE
+              CROSS-REFERENCE:  75.1^B 
+                                1)= S ^RAO(75.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^RAO(75.1,"B",$E(X,1,30),DA)
+                                     Regular 'B' cross reference assigned by FileMan.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^75.1^15 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RAO(75.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,15),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(75.1,.01,1,2,1.4)
+                                1.4)= S DIH=$S($D(^RAO(75.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,15)=DIV,DIH=75.1,DIG=15 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                3)= Do not delete.
+                                CREATE VALUE)= S X=DUZ
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= USER ENTERING REQ
+                                Tracks the user who entered the request.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^75.1^16 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RAO(75.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y X ^DD(75.1,.01,1,3,1.1) X ^DD(75.1,.01,1,3,1.4)
+                                1.1)= S X=DIV N %I,%H,% D NOW^%DTC S X=%
+                                1.4)= S DIH=$S($D(^RAO(75.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,16)=DIV,DIH=75.1,DIG=16 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                3)= Do not delete.
+                                CREATE VALUE)= NOW
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= REQUEST ENTERED DATE/TIME
+                                    Tracks when the request was entered.  
+
+
+
+75.1,1.1      REASON FOR STUDY       .1;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>64!($L(X)<3) X
+              LAST EDITED:      AUG 23, 2005 
+              HELP-PROMPT:      The reason for study must be 3-64 characters in length. 
+              DESCRIPTION:
+                                The reason for the study is often a short patient history summarizing the condition of the patient and giving background information as to why the study has been initiated.  
+
+              TECHNICAL DESCR:  The 'REASON FOR STUDY' field was added as a result of NSR: 20050606 'Standardize Vista RIS messaging interface to current IHE specs').  
+                                 
+                                This field was exported in patch RA*5.0*75.  
+
+
+75.1,2        PROCEDURE              0;2 POINTER TO RAD/NUC MED PROCEDURES FILE (#71)
+
+              IMAGING PROCEDURE ASSOCIATED WITH THIS REQUEST                                                                   
+              INPUT TRANSFORM:  S DIC("S")="I $S('$D(^(""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X D:$D(X) ORDPRC^RAUTL2
+              LAST EDITED:      JUN 08, 1994 
+              HELP-PROMPT:      Enter the appropriate Imaging procedure. 
+              DESCRIPTION:      This field points to the 'RAD/NUC MED PROCEDURES' file (#71) to indicate the Imaging procedure associated with this request.  
+                                 
+                                 
+                                   ALLOWABLE WAYS TO ENTER THE RADIOLOGY/NUCLEAR MEDICINE PROCEDURE FOR THIS REQUEST: 
+                                   -----------------------------------------------------------------
+                                          -Name of procedure 
+                                          -CPT Code 
+                                          -Site specific synonym 
+
+              SCREEN:           S DIC("S")="I $S('$D(^(""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0)"
+              EXPLANATION:      Only Active Procedures Allowed.
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR IMAGING SERVICE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  75.1^AP^MUMPS 
+                                1)= S:$P(^RAO(75.1,DA,0),"^",21) ^RAO(75.1,"AP",+$P(^RAO(75.1,DA,0),U),X,9999999.9999-$P(^(0),U,21),DA)=""
+                                2)= K:$P(^RAO(75.1,DA,0),"^",21) ^RAO(75.1,"AP",+$P(^RAO(75.1,DA,0),U),X,9999999.9999-$P(^(0),U,21),DA)
+                                Used to screen duplicate requests at time of entry.  
+
+
+
+75.1,3        TYPE OF IMAGING        0;3 POINTER TO IMAGING TYPE FILE (#79.2)
+
+              THE TYPE OF IMAGING FOR THIS REQUESTED EXAM                                                                      
+              LAST EDITED:      APR 14, 1988 
+              HELP-PROMPT:      This field contains the type of imaging used for this procedure. 
+              DESCRIPTION:      This field points to the 'IMAGING TYPE' file (#79.2) to indicate the type of imaging used for this rad/nuc med request. It is filled in by the system with the appropriate type of imaging (i.e. GENERAL RADIOLOGY, NUCLEAR
+                                MEDICINE, ULTRASOUND, CT SCAN, MAGNETIC RESONANCE IMAGING, VASCULAR LAB, etc.).  For example, when a General Radiology procedure is chosen, this field is filled in with 'GENERAL RADIOLOGY'.  
+
+              SOURCE OF DATA:   SYSTEM GENERATED
+
+75.1,4        CATEGORY OF EXAM       0;4 SET
+
+              CATEGORY OF THIS RAD/NUC MED REQUEST                                                                             
+                                'I' FOR INPATIENT; 
+                                'O' FOR OUTPATIENT; 
+                                'C' FOR CONTRACT; 
+                                'S' FOR SHARING; 
+                                'E' FOR EMPLOYEE; 
+                                'R' FOR RESEARCH; 
+              LAST EDITED:      MAY 19, 1994 
+              HELP-PROMPT:      Enter the appropriate exam category for this request. 
+              DESCRIPTION:      This field contains the exam category associated with this request.  It is used to compile various workload statistics and various management reports (i.e. AMIS and RCS14-4). Available exam categories are: 'I' for
+                                INPATIENT, 'O' for OUTPATIENT, 'C' for CONTRACT, 'E' for EMPLOYEE, and 'R' for RESEARCH.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR RAD/NUC MED SERVICE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+75.1,5        REQUEST STATUS         0;5 SET
+
+              STATUS OF THIS REQUEST                                                                                           
+                                '1' FOR DISCONTINUED; 
+                                '2' FOR COMPLETE; 
+                                '3' FOR HOLD; 
+                                '5' FOR PENDING; 
+                                '6' FOR ACTIVE; 
+                                '8' FOR SCHEDULED; 
+                                '11' FOR UNRELEASED; 
+              INPUT TRANSFORM:  S:X=1!(X=3) RAXBUL=X D:X=1!(X=3) EN^RABUL(RAXBUL) S:$G(RAXBUL)=1!($G(RAXBUL)=3) X=RAXBUL K RAXBUL
+              LAST EDITED:      MAY 03, 1996 
+              HELP-PROMPT:      This status is system generated. 
+              DESCRIPTION:
+                                This field is a set type field. The statuses in this field should correspond in name and number to those in the OE/RR 'ORDER STATUS' file (#100.01).  
+
+              SOURCE OF DATA:   SYSTEM GENERATED
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  75.1^AS^MUMPS 
+                                1)= S ^RAO(75.1,"AS",+$P(^RAO(75.1,DA,0),U),X,DA)=""
+                                2)= K ^RAO(75.1,"AS",+$P(^RAO(75.1,DA,0),U),X,DA)
+                                List Imaging requests by request status.  
+
+
+              CROSS-REFERENCE:  75.1^ACHN^MUMPS 
+                                1)= D:$$ORVR^RAORDU()=2.5&((X=1)!(X=3)) CH^RADD2(DA,X)
+                                2)= Q
+                                3)= Do not delete.
+                                This cross reference will fire off the 'Radiology Request Cancel/Hold' notification defined in the OE/RR NOTIFICATIONS file when the environment is running OE/RR 2.5 and the status of the order is changed to either 
+                                'discontinued' or 'hold'.  
+
+
+
+75.1,6        REQUEST URGENCY        0;6 SET
+
+                                '1' FOR STAT; 
+                                '2' FOR URGENT; 
+                                '9' FOR ROUTINE; 
+              LAST EDITED:      AUG 13, 1999 
+              HELP-PROMPT:      Enter the appropriate urgency for the request. 
+              DESCRIPTION:
+                                This field value defaults to 'ROUTINE', when entering a new request for an imaging exam.  Available Urgencies are: ROUTINE, URGENT and STAT.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR IMAGING SERVICE
+
+75.1,7        ORDER                  0;7 POINTER TO ORDER FILE (#100)
+
+              LAST EDITED:      FEB 10, 1989 
+              HELP-PROMPT:      Enter the appropriate order. 
+              DESCRIPTION:
+                                This field points to the Order Entry/Results Reporting (OE/RR) 'ORDER' File (#100). This field will only contain data if the OE/RR Package is running and the Radiology/Nuclear Medicine package is available through OE/RR.  
+
+              SOURCE OF DATA:   RAD/OE INTERFACE
+
+75.1,8        APPROVING RAD/NUC MED PHYS 0;8 POINTER TO NEW PERSON FILE (#200)
+
+              INPUT TRANSFORM:  S DIC("S")="I $S('$D(^(""RA"")):1,'$P(^(""RA""),U,3):1,DT'>$P(^(""RA""),U,3):1,1:0),$D(^VA(200,""ARC"",""S"",+Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 04, 1999 
+              HELP-PROMPT:      Enter the name of the approving imaging service physician. 
+              DESCRIPTION:
+                                This field points to the 'NEW PERSON' file (#200) to indicate the name of the radiology or nuclear medicine physician who approved this order.  Procedures which require an approving physician are site specific.  
+
+              SCREEN:           S DIC("S")="I $S('$D(^(""RA"")):1,'$P(^(""RA""),U,3):1,DT'>$P(^(""RA""),U,3):1,1:0),$D(^VA(200,""ARC"",""S"",+Y))"
+              EXPLANATION:      Personnel must be classified as Interpreting Staff Physician.
+              SOURCE OF DATA:   RAD/NUC MED SERVICE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+75.1,9        CONTRACT/SHARING SOURCE 0;9 POINTER TO CONTRACT/SHARING AGREEMENTS FILE (#34)
+
+              REFERRING CONTRACT/SHARING AGREEMENT                                                                             
+              INPUT TRANSFORM:  S DIC("S")="I $S('$D(^(""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 08, 1991 
+              HELP-PROMPT:      Enter the contract or sharing agreement that referred this patient. 
+              DESCRIPTION:      This field is used for exams with a 'category of exam' of 'contract' or 'sharing'. It points to the 'CONTRACT/SHARING AGREEMENTS' file (#34) to indicate the name of the contract or sharing agreement that referred this
+                                patient to the imaging service for this exam.  
+
+              SCREEN:           S DIC("S")="I $S('$D(^(""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0)"
+              EXPLANATION:      Only active agreements are selectable.
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR IMAGING SERVICE
+
+75.1,9.5      RESEARCH SOURCE        R;1 FREE TEXT
+
+              REFERRING RESEARCH SOURCE                                                                                        
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+              LAST EDITED:      MAR 29, 1988 
+              HELP-PROMPT:      Enter the research source (3-40 characters) that referred this patient. 
+              DESCRIPTION:
+                                This field is used for exams with a 'category of exam' of 'research'.  This field contains the name (3-40 characters) of the research source that referred this patient to the imaging service for this exam.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR IMAGING SERVICE
+
+75.1,10       REASON                 0;10 POINTER TO RAD/NUC MED REASON FILE (#75.2)
+
+              LAST EDITED:      JUN 24, 1988 
+              HELP-PROMPT:      Select the reason for the 'HOLD' or 'CANCELLED' status. 
+              DESCRIPTION:
+                                This field points to the 'RAD/NUC MED REASON' file (#75.2) to indicate the reason a request is placed in the 'HOLD' or 'CANCELLED' status.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR RAD/NUC MED SERVICE
+
+75.1,11       ORIGINAL REQUEST CHANGED 0;11 SET
+
+                                'y' FOR YES; 
+                                'n' FOR NO; 
+              LAST EDITED:      JUL 11, 1988 
+              HELP-PROMPT:      Enter whether or not the original request was changed by the Radiology or Nuclear Medicine Service. 
+              DESCRIPTION:      This field contains a value to indicate if the information contained in the original request was changed by Rad/Nuc Med Service. Available values are: 'Y' for 'Yes' and 'N' for 'NO".  
+                                 
+                                This field is populated when the request moves to a 'complete' status.  If the procedure on the request is a 'parent' procedure, this field will always be set to 'yes' since it is not the parent procedure that is actually
+                                performed.  
+
+              SOURCE OF DATA:   RAD/NUC MED SERVICE
+
+75.1,12       PRE-OP SCHEDULED DATE/TIME 0;12 DATE
+
+              PRE-OP SCHEDULED DATE (TIME optional)                                                                            
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 02, 1991 
+              HELP-PROMPT:      If a pre-op has been scheduled, enter the date and time. 
+              DESCRIPTION:
+                                This field contains the date/time if a patient has a pre-op scheduled.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR RAD/NUC MED SERVICE
+
+75.1,13       PREGNANT               0;13 SET (Required)
+
+                                'y' FOR YES; 
+                                'n' FOR NO; 
+                                'u' FOR UNKNOWN; 
+              LAST EDITED:      NOV 17, 1997 
+              HELP-PROMPT:      Enter the pregnancy status of the patient. 
+              DESCRIPTION:      This field contains a value to indicate if the patient is pregnant.  Available values are 'Y' for 'Yes' and 'N' for 'No'. If 'Yes', a warning message is displayed to the receptionist when this patient is registered for the
+                                procedure requested.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR RAD/NUC MED SERVICE
+
+75.1,14       REQUESTING PHYSICIAN   0;14 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              NAME OF THE REQUESTING PHYSICIAN                                                                                 
+              INPUT TRANSFORM:  S DIC("S")="I $$PROV^RABWORD" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 01, 2004 
+              HELP-PROMPT:      Enter the name of the person requesting this exam. 
+              DESCRIPTION:
+                                This field points to the 'NEW PERSON' file (#200) to indicate the name of the person who requested this rad/nuc med exam. This person is not always a physician.  (i.e. A nurse might request the exam.) 
+
+              SCREEN:           S DIC("S")="I $$PROV^RABWORD"
+              EXPLANATION:      Provider must be active.
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR RAD/NUC MED SERVICE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+75.1,15       USER ENTERING REQUEST  0;15 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 02, 1990 
+              HELP-PROMPT:      This field contains the name of the person entering the request. 
+              DESCRIPTION:
+                                This field points to the 'NEW PERSON' file (#200) to indicate the person entering the request into the rad/nuc med system.  It is filled in by the system from information the user entered at sign-on.  
+
+              WRITE AUTHORITY:  ^
+              SOURCE OF DATA:   SYSTEM GENERATED
+              NOTES:            TRIGGERED by the NAME field of the RAD/NUC MED ORDERS File 
+
+
+75.1,16       REQUEST ENTERED DATE/TIME 0;16 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 26, 1988 
+              HELP-PROMPT:      This is the date and time the request was entered. 
+              DESCRIPTION:
+                                This field contains the date and time the request was entered into the system.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION OR IMAGING SERVICE
+              NOTES:            TRIGGERED by the NAME field of the RAD/NUC MED ORDERS File 
+
+
+75.1,17       PAST VISIT DATE/TIME   0;17 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 24, 1988 
+              HELP-PROMPT:      This is the last date and time the patient visited the Radiology/Nuclear Medicine Service. 
+              DESCRIPTION:
+                                This field contains the date and time of the patient's last recorded visit to the Radiology/Nuclear Medicine Service.  
+
+              SOURCE OF DATA:   SYSTEM DETERMINED
+
+75.1,18       LAST ACTIVITY DATE/TIME 0;18 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 31, 1988 
+              HELP-PROMPT:      This is the date and time of the last action on this request. 
+              DESCRIPTION:
+                                This field contains the date and time the last action was taken on this request.  
+
+              SOURCE OF DATA:   SYSTEM GENERATED
+              CROSS-REFERENCE:  75.1^AO 
+                                1)= S ^RAO(75.1,"AO",$E(X,1,30),DA)=""
+                                2)= K ^RAO(75.1,"AO",$E(X,1,30),DA)
+                                Used to generate a list of requests by last activity date/time.  
+
+
+
+75.1,19       MODE OF TRANSPORT      0;19 SET
+
+                                'a' FOR AMBULATORY; 
+                                'p' FOR PORTABLE; 
+                                's' FOR STRETCHER; 
+                                'w' FOR WHEEL CHAIR; 
+              LAST EDITED:      FEB 13, 1989 
+              HELP-PROMPT:      Enter the mode of transport for this patient. 
+              DESCRIPTION:
+                                This field contains the mode of transport which the patient will require when the exam is performed. Available categories are : AMBULATORY, PORTABLE, STRETCHER and WHEEL CHAIR.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR RAD/NUC MED SERVICE
+
+75.1,20       IMAGING LOCATION       0;20 POINTER TO IMAGING LOCATIONS FILE (#79.1)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$SUBMIT^RAUTL13(DA,+Y)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 09, 1994 
+              HELP-PROMPT:      This is the imaging location of the exam. 
+              DESCRIPTION:
+                                This field points to the 'IMAGING LOCATIONS' file (#79.1) to indicate the name of the imaging location within the hospital division where the rad/nuc med exam is to be performed.  
+
+              SCREEN:           S DIC("S")="I $$SUBMIT^RAUTL13(DA,+Y)"
+              EXPLANATION:      Imaging Location's imaging type must match procedure's imaging type.
+              SOURCE OF DATA:   SYSTEM GENERATED
+
+75.1,21       DATE DESIRED (Not guaranteed) 0;21 DATE
+
+              REQUESTED DATE (TIME optional)                                                                                   
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 15, 1994 
+              HELP-PROMPT:      Enter the date on which you would like the exam done. 
+              DESCRIPTION:
+                                This field contains the date for which the rad/nuc med exam is requested.  This field should not be interpreted as an appointment date.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR RAD/NUC MED SERVICE
+              CROSS-REFERENCE:  75.1^AC^MUMPS 
+                                1)= S ^RAO(75.1,"AP",+$P(^RAO(75.1,DA,0),U),+$P(^(0),U,2),9999999.9999-$E(X,1,30),DA)=""
+                                2)= K ^RAO(75.1,"AP",+$P(^RAO(75.1,DA,0),U),+$P(^(0),U,2),9999999.9999-$E(X,1,30),DA)
+                                This cross-reference is used for the verification process in OE/RR.  
+
+
+
+75.1,22       REQUESTING LOCATION    0;22 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      FEB 27, 2008 
+              HELP-PROMPT:      Enter the name of the hospital location requesting the exam. 
+              DESCRIPTION:
+                                This field points to the 'HOSPITAL LOCATION' file (#44) to indicate the name of the hospital location that is requesting the exam.  
+
+              TECHNICAL DESCR:
+                                This field has been modified with the release of patch: RA*5.0*86.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR RAD/NUC MED SERVICE
+
+75.1,23       SCHEDULED DATE (TIME optional) 0;23 DATE
+
+              INPUT TRANSFORM:  S %DT="EFT" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 22, 1993 
+              HELP-PROMPT:      Enter the scheduled date for this exam. 
+              DESCRIPTION:
+                                This field contains the scheduled date and time of the requested exam.  
+
+              SOURCE OF DATA:   RAD/NUC MED SERVICE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  75.1^AD^MUMPS 
+                                1)= S ^RAO(75.1,"AD",X,+$P(^RAO(75.1,DA,0),U),DA)=""
+                                2)= K ^RAO(75.1,"AD",X,+$P(^RAO(75.1,DA,0),U),DA)
+                                Used to print log of scheduled requests.  
+
+
+
+75.1,24       ISOLATION PROCEDURES   0;24 SET
+
+              IS PATIENT ON ISOLATION PROCEDURES?                                                                              
+                                'y' FOR YES; 
+                                'n' FOR NO; 
+              LAST EDITED:      JAN 18, 1994 
+              HELP-PROMPT:      Enter 'Y'es if the patient is on isolation. 
+              DESCRIPTION:      This field contains 'YES' if the patient is on isolation procedures at the time the request is submitted, or 'NO' if the patient is not.  If the patient is on isolation procedures the following message will be displayed on
+                                the request printed in the imaging service location: 
+                                 ** Universal Isolation Precautions ** 
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR IMAGING SERVICE
+
+75.1,25       HOLD DESCRIPTION       1;0   WORD-PROCESSING #75.125   (NOWRAP)
+
+              DESCRIPTION:
+                                This is a word processing field for entering the reason an order is on hold.  
+
+
+75.1,26       NATURE OF (NEW) ORDER ACTIVITY 0;26 SET
+
+                                'w' FOR WRITTEN; 
+                                'v' FOR VERBAL; 
+                                'p' FOR TELEPHONED; 
+                                's' FOR SERVICE CORRECTION; 
+                                'i' FOR POLICY; 
+                                'e' FOR PHYSICIAN ENTERED; 
+              LAST EDITED:      JAN 11, 1997 
+              HELP-PROMPT:      Select the code that most closely describes why you are entering this order. 
+              DESCRIPTION:      This is the Nature of Order Activity for newly entered orders through the Radiology/Nuclear Medicine 'back door' order entry option.  This information is needed to clarify which actions should be taken as a result of
+                                entering this order.  Depending on the facility configuration of the Nature of Order Activity in the OE/RR software, the code entered here may or may not trigger alerts for electronic signatures and chart copy printing.  
+
+              EXECUTABLE HELP:  I $L($T(NA1^ORX1)) D NA1^ORX1("I ""WVPSIE""[$P(^(0),""^"",2)")
+
+75.1,27       CANCEL DESCRIPTION     0;27 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+              LAST EDITED:      APR 12, 2000 
+              HELP-PROMPT:      Enter the reason for the CANCELED status 
+              DESCRIPTION:      This field indicates the reason a request is placed in the 'CANCELED' status via CPRS (front-door) only. The description matches an entry on file #100.03. If not canceled using CPRS, then this field will be empty and the 
+                                REASON field (field 10) will be populated instead.  
+
+
+75.1,75       REQUEST STATUS TIMES   T;0 DATE Multiple #75.12 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This field is a multiple that contains dates and times the status of the request is changed. The status changes will only be recorded if the Division Parameter 'Track Request Status Changes' is set to 'YES'.  
+
+
+75.12,.01       STATUS CHANGE DATE/TIME 0;1 DATE
+
+                THE DATE AND TIME OF THE STATUS CHANGE                                                                         
+                INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 24, 1988 
+                HELP-PROMPT:      Enter the date that the request status was changed. 
+                DESCRIPTION:
+                                  This field contains the date and time that the request status was changed.  
+
+                SOURCE OF DATA:   SYSTEM GENERATED OR RAD/NUC MED USER
+
+75.12,2         NEW STATUS             0;2 SET
+
+                                  '1' FOR DISCONTINUED; 
+                                  '2' FOR COMPLETE; 
+                                  '3' FOR HOLD; 
+                                  '5' FOR PENDING; 
+                                  '6' FOR ACTIVE; 
+                                  '8' FOR SCHEDULED; 
+                                  '11' FOR UNRELEASED; 
+                LAST EDITED:      MAY 02, 1991 
+                HELP-PROMPT:      This is a system generated status for the order. 
+                DESCRIPTION:
+                                  This field contains the new status an order is placed into. The available statuses are: 'Discontinued', 'Complete', 'Hold', 'Pending', 'Active', and 'Scheduled'.  
+
+                SOURCE OF DATA:   SYSTEM GENERATED
+
+75.12,3         COMPUTER USER          0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAR 02, 1990 
+                HELP-PROMPT:      This is the name of the user when the status was changed. 
+                DESCRIPTION:
+                                  This field points to the 'NEW PERSON' file (#200) to indicate the person doing the processing that caused the request status to change.  
+
+                SOURCE OF DATA:   SYSTEM GENERATED
+
+75.12,4         REASON                 0;4 POINTER TO RAD/NUC MED REASON FILE (#75.2)
+
+                LAST EDITED:      JUN 24, 1988 
+                HELP-PROMPT:      Enter the reason the request was placed on hold or cancelled. 
+                DESCRIPTION:
+                                  This field is a pointer to the 'Radiology Reason' file (#75.2) to indicate the reason a request is placed in the 'Hold' or 'Cancelled' status.  
+
+                SOURCE OF DATA:   MEDICAL ADMINISTRATIVE SERVICE OR RAD/NUC MED SERVICE
+
+
+
+75.1,90       PFSS ACCOUNT REFERENCE 0;28 POINTER TO PFSS ACCOUNT FILE (#375) (Required)
+
+              LAST EDITED:      JUN 22, 2005 
+              HELP-PROMPT:      This value is filled in by the system.  Do NOT change the value of this field. 
+              DESCRIPTION:      This field points to the PFSS ACCOUNT file (#375).  The value is returned from the GETACCT^IBBAPI, which Radiology silently invokes whenever an order is placed, whether from the Front Door (CPRS) or from the Back Door 
+                                (Vista Radiology).  
+
+              TECHNICAL DESCR:
+                                Calls referencing PFSS Account Reference (field 90 file #75.1)) uses DBIA #4741 
+
+                                UNEDITABLE
+
+75.1,91       PRIMARY ORDERING ICD DIAGNOSIS BA;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Required)
+
+              LAST EDITED:      SEP 18, 2003 
+              HELP-PROMPT:      Enter the ICD Diagnosis primarily responsible for this order. 
+              DESCRIPTION:
+                                This field contains the Primary ICD Diagnosis responsible for this order.  
+
+
+75.1,92       PRIMARY DX RELATED TO SC BA;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      SEP 22, 2003 
+              HELP-PROMPT:      If this order is for treating a Service Connected related problem, enter "YES" here. 
+              DESCRIPTION:
+                                This field will be used to indicate if this order was for treating a VA patient based on a Service Connected related problem.  
+
+
+75.1,93       PRIMARY DX RELATED TO AO BA;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      SEP 22, 2003 
+              HELP-PROMPT:      If this order is for treating an Agent Orange related problem, enter "YES" here. 
+              DESCRIPTION:
+                                This field will be used to indicate if this order was for treating a VA patient based on an Agent Orange related problem.  
+
+
+75.1,94       PRIMARY DX RELATED TO IR BA;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      SEP 22, 2003 
+              HELP-PROMPT:      If this order is for treating an Ionizing Radiation related problem, enter "YES" here. 
+              DESCRIPTION:
+                                This field will be used to indicate if this order was for treating a VA patient based on an Ionizing Radiation related problem.  
+
+
+75.1,95       PRIMARY DX RELATED TO SWAC BA;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 27, 2006 
+              HELP-PROMPT:      If this order is for treating a Southwest Asia Conditions related problem, enter "YES" here. 
+              DESCRIPTION:
+                                This field is used to indicate if this order was for treating a VA patient based on a Southwest Asia Conditions related problem.  
+
+
+75.1,96       PRIMARY DX RELATED TO MST BA;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      SEP 22, 2003 
+              HELP-PROMPT:      If this order is for treating a Military Sexual Trauma related problem, enter "YES" here.  
+              DESCRIPTION:
+                                This field will be used to indicate if this order was for treating a VA patient based on a Military Sexual Trauma related problem.  
+
+
+75.1,97       PRIMARY DX RELATED TO HNC BA;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 26, 2004 
+              HELP-PROMPT:      If this order is for treating a Head and Neck cancer (HNC) related problem, enter "YES" here. 
+              DESCRIPTION:
+                                This field will be used to indicate if this order was for treating a VA patient based on a Head and Neck cancer (HNC) related problem.  
+
+
+75.1,98       SECONDARY ORDERING ICD DIAG. BAS;0 POINTER Multiple #75.13 (Add New Entry without Asking)
+
+
+75.13,.01       SECONDARY ORDERING ICD DIAG. 0;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Multiply asked)
+
+                LAST EDITED:      SEP 18, 2003 
+                HELP-PROMPT:      Enter an ICD diagnosis secindarily responsible for this order. 
+                DESCRIPTION:
+                                  This field contains a Secondary Diagnosis responsible for this order.  
+
+                CROSS-REFERENCE:  75.13^B 
+                                  1)= S ^RAO(75.1,DA(1),"BAS","B",$E(X,1,30),DA)=""
+                                  2)= K ^RAO(75.1,DA(1),"BAS","B",$E(X,1,30),DA)
+
+
+75.13,2         SECONDARY DX RELATED TO SC 0;2 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      SEP 22, 2003 
+                HELP-PROMPT:      If this order is for treating a Service Connected related problem, enter "YES" here. 
+                DESCRIPTION:
+                                  This field will be used to indicate if this order was for treating a VA patient based on a Service Connected related problem.  
+
+
+75.13,3         SECONDARY DX RELATED TO AO 0;3 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      SEP 22, 2003 
+                HELP-PROMPT:      If this order is for treating an Agent Orange related problem, enter "YES" here. 
+                DESCRIPTION:
+                                  This field will be used to indicate if this order was for treating a VA patient based on an Agent Orange related problem.  
+
+
+75.13,4         SECONDARY DX RELATED TO IR 0;4 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      SEP 22, 2003 
+                HELP-PROMPT:      If this order is for treating an Ionizing Radiation related problem,enter "YES" here. 
+                DESCRIPTION:
+                                  This field will be used to indicate if this order was for treating a VA patient based on an Ionizing Radiation related problem.  
+
+
+75.13,5         SECONDARY DX RELATED TO SWAC 0;5 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JUN 27, 2006 
+                HELP-PROMPT:      If this order is for treating a Southwest Asia Conditions related problem, enter "YES" here. 
+                DESCRIPTION:
+                                  This field is used to indicate if this order was for treating a VA patient based on a Southwest Asia Conditions related problem.  
+
+
+75.13,6         SECONDARY DX RELATED TO MST 0;6 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      SEP 22, 2003 
+                HELP-PROMPT:      If this order is for treating a Military Sexual Trauma related problem, enter "YES" here. 
+                DESCRIPTION:
+                                  This field will be used to indicate if this order was for treating a VA patient based on a Military Sexual Trauma related problem.  
+
+
+75.13,7         SECONDARY DX RELATED TO HNC 0;7 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      MAY 26, 2004 
+                HELP-PROMPT:      If this order is for treating a Head and Neck cancer (HNC) related problem, enter "YES" here. 
+                DESCRIPTION:
+                                  This field will be used to indicate if this order was for treating a VA patient based on a Head and Neck cancer (HNC) related problem.  
+
+
+75.13,8         SECONDARY DX RELATED TO CV 0;8 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      FEB 18, 2004 
+                HELP-PROMPT:      If this order is for treating a Combat Veteran related problem, enter "YES" here. 
+                DESCRIPTION:
+                                  This field will be used to indicate if this order was for treating a VA patient based on a Combat Veteran related problem.  
+
+
+75.13,9         SECONDARY DX RELATED TO SHAD 0;9 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      MAR 14, 2006 
+                HELP-PROMPT:      If this order is for treating a Shipboard Hazard and Defense related problem, enter 'YES' here. 
+                DESCRIPTION:
+                                  This field is used to indicate if this order was for treating a Shipboard Hazard and Defense related problem.  
+
+
+
+
+75.1,99       PRIMARY DX RELATED TO CV BA;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 18, 2004 
+              HELP-PROMPT:      If this order is for treating a Combat Veteran related problem, enter "YES" here. 
+              DESCRIPTION:
+                                This field will be used to indicate if this order was for treating a VA patient based on an Combat Veteran related problem.  
+
+
+75.1,100      PRIMARY DX RELATED TO SHAD BA;9 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAR 14, 2006 
+              HELP-PROMPT:      If this order is for treating a Shipboard Hazard and Defense related problem, enter 'YES' here. 
+              DESCRIPTION:
+                                This field is used to indicate if this order was for treating a VA patient based on a Shipboard Hazard and Defense related problem.  
+
+
+75.1,125      PROCEDURE MODIFIERS    M;0 POINTER Multiple #75.1125 (Add New Entry without Asking)
+
+              LAST EDITED:      AUG 06, 1999 
+              DESCRIPTION:
+                                This multiple field is used to store the rad/nuc med procedure modifiers that are associated with this exam.  
+
+
+75.1125,.01     PROCEDURE MODIFIERS    0;1 POINTER TO PROCEDURE MODIFIERS FILE (#71.2) (Multiply asked)
+
+                MODIFIERS OF THIS REQUEST SUB-FIELD                                                                            
+                INPUT TRANSFORM:  S DIC("S")="N RASERIES I +$D(^RAMIS(71.2,""AB"",(+$$ITYPE^RASITE($$GET^RAPRI(D0))),+Y)),$S('$G(RASERIES):1,$P(^RAMIS(71.2,+Y,0),U,2)="""":1,1:0)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      AUG 06, 1999 
+                HELP-PROMPT:      Enter any appropriate procedure modifier(s). 
+                DESCRIPTION:
+                                  This multiple field is used to provide rad/nuc med procedure modifiers that are associated with this order.  
+
+                SCREEN:           S DIC("S")="N RASERIES I +$D(^RAMIS(71.2,""AB"",(+$$ITYPE^RASITE($$GET^RAPRI(D0))),+Y)),$S('$G(RASERIES):1,$P(^RAMIS(71.2,+Y,0),U,2)="""":1,1:0)"
+                EXPLANATION:      Select procedure modifiers which have the same imaging type as the procedure.  In addition, if the procedure is 'SERIES', it must not have AMIS CREDIT INDICATOR
+                SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  75.1125^B 
+                                  1)= S ^RAO(75.1,DA(1),"M","B",$E(X,1,30),DA)=""
+                                  2)= K ^RAO(75.1,DA(1),"M","B",$E(X,1,30),DA)
+                                       Regular filewide 'B' cross reference assigned by FileMan.  
+
+
+
+
+
+75.1,400      CLINICAL HISTORY FOR EXAM H;0   WORD-PROCESSING #75.11
+
+              DESCRIPTION:      This field may contain a written clinical history pertinent to the procedure requested, as well as instructions to the interpreting physician. For example, the instructions might be for the interpreting physician to read
+                                the exam films to rule out the possibility of a patient having a certain disease.  
+                                 
+                                This field is used as the 'Clinical History' that appears on the printed report for each exam associated with this visit.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE OR RAD/NUC MED RECEPTIONIST
+
+
+      FILES POINTED TO                      FIELDS
+
+CONTRACT/SHARING AGREEMENTS 
+                   (#34)          CONTRACT/SHARING SOURCE (#9)
+
+HOSPITAL LOCATION (#44)           REQUESTING LOCATION (#22)
+
+ICD DIAGNOSIS (#80)               PRIMARY ORDERING ICD DIAGNOSIS (#91)
+                                  SECONDARY ORDERING ICD DIAG.:SECONDARY ORDERING ICD DIAG. (#.01)
+
+IMAGING LOCATIONS (#79.1)         IMAGING LOCATION (#20)
+
+IMAGING TYPE (#79.2)              TYPE OF IMAGING (#3)
+
+NEW PERSON (#200)                 APPROVING RAD/NUC MED PHYS (#8)
+                                  REQUESTING PHYSICIAN (#14)
+                                  USER ENTERING REQUEST (#15)
+                                  REQUEST STATUS TIMES:COMPUTER USER (#3)
+
+ORDER (#100)                      ORDER (#7)
+
+PATIENT (#2)                      NAME (#.01)
+
+PFSS ACCOUNT (#375)               PFSS ACCOUNT REFERENCE (#90)
+
+PROCEDURE MODIFIERS (#71.2)       PROCEDURE MODIFIERS:PROCEDURE MODIFIERS (#.01)
+
+RAD/NUC MED PROCEDURES (#71)      PROCEDURE (#2)
+
+RAD/NUC MED REASON (#75.2)        REASON (#10)
+                                  REQUEST STATUS TIMES:REASON (#4)
+
+
+
+INPUT TEMPLATE(S):
+RA OERR EDIT                  MAY 02, 1997@15:09  USER #0    
+     This template is used for the editing of imaging requests.
+RA ORDER EXAM                 SEP 17, 2009@08:30  USER #0    ^RACTOE 
+     This template is used to request an imaging exam.
+RA QUICK EXAM ORDER           SEP 17, 2009@08:16  USER #0    ^RACTQE 
+     This template is used in conjunction with OE/RR for ordering imaging
+     exams.
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

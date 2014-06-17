@@ -1,0 +1,613 @@
+STANDARD DATA DICTIONARY #161 -- FEE BASIS PATIENT FILE                                                                                                                                                                           MAY 20,2014@15:33:04  PAGE 1
+STORED IN ^FBAAA(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                (VERSION 3.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+CONTAINS ALL AUTHORIZATIONS FOR FEE BASIS SERVICES.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: #
+              WR ACCESS: #
+             DEL ACCESS: #
+           LAYGO ACCESS: #
+
+POINTED TO BY: PATIENT field (#.04) of the FEE BASIS CNH AUTHORIZATION RATE File (#161.23) 
+               PATIENT field (#4) of the PRESCRIPTION NUMBER sub-field (#162.11) of the FEE BASIS PHARMACY INVOICE File (#162.1) 
+               VETERAN field (#1) of the FEE CNH ACTIVITY File (#162.3) 
+               VETERAN field (#3) of the FEE BASIS INVOICE File (#162.5) 
+               
+
+CROSS
+REFERENCED BY: VENDOR(ACV), FEE ID CARD NUMBER(AE), FROM DATE(AENR01), TO DATE(AENR02), FEE PROGRAM(AENR03), TREATMENT TYPE CODE(AENR095), AUSTIN DELETE FLAG(AENR102), PRINT AUTHORIZATION (Y/N)(AF), POTENTIAL COST RECOVERY CASE(AIC), FROM DATE(AIC1), 
+               FEE ID CARD NUMBER(AOLD), ARCH ELIGIBILITY DATE(ARCH), ARCH ELIGIBILITY DETERMINATION(ARCHSRC), FROM DATE(ATST), NAME(B), FEE ID CARD NUMBER(C)
+
+INDEXED BY:    CONTRACT (ACN)
+
+
+161,.01       NAME                   0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  S:$D(X) DINUM=X
+              DESCRIPTION:
+                                The name of the patient who is requesting authorization for obtaining Fee services.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  161^B 
+                                1)= S ^FBAAA("B",$E(X,1,30),DA)=""
+                                2)= K ^FBAAA("B",$E(X,1,30),DA)
+
+
+161,.5        FEE ID CARD NUMBER     4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>7!($L(X)<5) X I $D(X),$D(^FBAAA("AE",X))!($D(^FBAA(161.83,"C",X))) W !,"You cannot assign that number because it already has been assigned!" K X
+              LAST EDITED:      JUL 01, 1993 
+              HELP-PROMPT:      ANSWER MUST BE 5-7 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                The number pre-printed on the Fee ID Card assigned (given) to the patient.  The patient can only have one number assigned to him/her at a given time.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  161^AE 
+                                1)= S ^FBAAA("AE",$E(X,1,30),DA)=""
+                                2)= K ^FBAAA("AE",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  161^AOLD^MUMPS 
+                                1)= Q
+                                2)= S ^FBAAA("AOLD",$E(X,1,30),DA)=""
+
+              CROSS-REFERENCE:  161^C 
+                                1)= S ^FBAAA("C",$E(X,1,30),DA)=""
+                                2)= K ^FBAAA("C",$E(X,1,30),DA)
+                                This cross-reference will allow a user to look-up a fee patient with the Fee ID Card number.  
+
+
+
+161,.6        FEE ID CARD ISSUE DATE 4;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 12, 1985 
+              DESCRIPTION:
+                                The date that the Fee ID Card was issued to the patient.  
+
+
+161,.65       FEE ID CARD EXPIRATION DATE 4;4 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 29, 1987 
+              DESCRIPTION:
+                                This field contains the expiration date for a patient's ID card.  
+
+
+161,.7        REASON FOR CARD NUMBER CHANGE 4;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<2) X
+              LAST EDITED:      APR 11, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 2-80 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                The reason that the patient's Fee ID Card number was changed or terminated.  
+
+
+161,1         AUTHORIZATION          1;0 DATE Multiple #161.01
+
+              LAST EDITED:      JUN 03, 1993 
+              DESCRIPTION:
+                                This data is related to specific validity periods where the veteran is authorized to obtain Fee services and the VA will reimburse.  
+
+
+161.01,.01      FROM DATE              0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      SEP 29, 1998 
+                DESCRIPTION:      The beginning date for which the patient is authorized to obtain services from private vendors. For every claim made by a vendor for this patient, this date will be checked to insure that the date the service was
+                                  provided was on or after this date.  
+
+                DELETE TEST:      .01,0)= I $$DELA^FBUCDD1(.DA,1)
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  161^AIC1^MUMPS 
+                                  1)= S:$P(^FBAAA(DA(1),1,DA,0),U,20)]"" ^FBAAA("AIC",DA(1),-X,$P(^FBAAA(DA(1),1,DA,0),U,20),DA)=""
+                                  2)= K:$P(^FBAAA(DA(1),1,DA,0),U,20)]"" ^FBAAA("AIC",DA(1),-X,$P(^FBAAA(DA(1),1,DA,0),U,20),DA)
+                                  Cross-reference used to identify potential billables using inverse date.  Used to set "AIC" cross-reference on field .097, POTENTIAL COST RECOVERY CASE.  
+
+
+                CROSS-REFERENCE:  161^ATST 
+                                  1)= S ^FBAAA("ATST",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FBAAA("ATST",$E(X,1,30),DA(1),DA)
+
+                CROSS-REFERENCE:  161.01^B 
+                                  1)= S ^FBAAA(DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^FBAAA(DA(1),1,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  161^AENR01^MUMPS 
+                                  1)= D:'$D(DIU(0)) EVENT^IVMPLOG(DA(1))
+                                  2)= D:'$D(DIU(0)) EVENT^IVMPLOG(DA(1))
+                                  Notify HEC of changes to FEE Authorization.  
+
+
+
+161.01,.02      TO DATE                0;2 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X),$P(^FBAAA(DA(1),1,DA,0),U,1)>X K X W !!,"To Date cannot be earlier than From Date!",!
+                LAST EDITED:      FEB 28, 2003 
+                DESCRIPTION:      The date through which the veteran may obtain services from private vendors, and which the VA will reimburse. For every claim submitted by a vendor, this date is compared with the date the service was provided, and 
+                                  service date must be on or before this date.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  161^AENR02^MUMPS 
+                                  1)= D:'$D(DIU(0)) EVENT^IVMPLOG(DA(1)),ENRLLMNT^FBGMT2(DA(1))
+                                  2)= Q
+                                  Notify HEC and Enrollment of changes to FEE Authorization.  
+
+
+
+161.01,.021     AUTHORIZATION REMARKS  2;0   WORD-PROCESSING #161.06
+
+                DESCRIPTION:
+                                  Used to identify limitations or detail specifics regarding the authorization. The information contained here is displayed during the enter payment option and also on patient inquiry option.  
+
+
+161.01,.03      FEE PROGRAM            0;3 POINTER TO FEE BASIS PROGRAM FILE (#161.8) (Required)
+
+                LAST EDITED:      JUL 23, 1998 
+                DESCRIPTION:
+                                  Links this authorization to one of the valid Fee programs (ie Medical, Contract Hospital, Community Nursing Home).  
+
+                CROSS-REFERENCE:  161^AENR03^MUMPS 
+                                  1)= D:'$D(DIU(0)) EVENT^IVMPLOG(DA(1))
+                                  2)= Q
+                                  Notify HEC of changes to FEE Authorization.  
+
+
+
+161.01,.04      VENDOR                 0;4 POINTER TO FEE BASIS VENDOR FILE (#161.2)
+
+                LAST EDITED:      DEC 23, 1993 
+                DESCRIPTION:
+                                  The name of the vendor providing the veteran service if the authorization is limited to one specific vendor.  
+
+                CROSS-REFERENCE:  161^ACV^MUMPS 
+                                  1)= S ^FBAAA("ACV",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FBAAA("ACV",$E(X,1,30),DA(1),DA)
+
+
+161.01,.055     ASSOCIATED 7078/583    0;9        VARIABLE POINTER
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+               162.4    1    FB7078       n   Select associated 7078 
+               162.7    2    FB583        n   Select associated 583 
+                                         
+                LAST EDITED:      SEP 19, 1990 
+                DESCRIPTION:
+                                  This field contains the related 7078/583 for the authorization.  It points to the 7078 file or the 583 file for an unauthorized claim.  
+
+                CROSS-REFERENCE:  161.01^AG^MUMPS 
+                                  1)= S ^FBAAA("AG",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FBAAA("AG",$E(X,1,30),DA(1),DA)
+
+
+161.01,.06      DISCHARGE TYPE         0;15 SET
+
+                                  '1' FOR TRANSFER TO VA; 
+                                  '2' FOR DEATH WITH AUTOPSY; 
+                                  '3' FOR DEATH WITHOUT AUTOPSY; 
+                                  '4' FOR DISCHARGE; 
+                LAST EDITED:      JAN 31, 1989 
+                DESCRIPTION:
+                                  This field is filled in as part of the disposition process in contract hospital.  
+
+
+161.01,.065     PATIENT TYPE CODE      0;18 SET
+
+                                  '00' FOR SURGICAL; 
+                                  '10' FOR MEDICAL; 
+                                  '60' FOR HOME NURSING SERVICE; 
+                                  '85' FOR PSYCHIATRIC-CONTRACT; 
+                                  '86' FOR PSYCHIATRIC; 
+                                  '95' FOR NEUROLOGICAL-CONTRACT; 
+                                  '96' FOR NEUROLOGICAL; 
+                LAST EDITED:      FEB 21, 1986 
+                DESCRIPTION:
+                                  The code which indicates whether the patient is a medical, surgical, psychiatric or one of the other valid codes. See M-1, Part I, Chapter 18 for specific detail.  
+
+
+161.01,.07      PURPOSE OF VISIT CODE  0;7 POINTER TO FEE BASIS PURPOSE OF VISIT FILE (#161.82) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $S('$G(^(""I"")):1,DT'>^(""I""):1,1:0),$S('$D(FBTYPE):1,$P(^(0),U,2)=FBTYPE:1,1:0)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      FEB 04, 1993 
+                DESCRIPTION:      Used to indicate the purpose for the visit to the provider. Selection of these are screened based on the Fee program entered earlier. For example, if Outpatient Medical Fee Program is selected Purpose of visit of
+                                  'Authorized Contract Hospitalization' could not be selected.  
+
+                SCREEN:           S DIC("S")="I $S('$G(^(""I"")):1,DT'>^(""I""):1,1:0),$S('$D(FBTYPE):1,$P(^(0),U,2)=FBTYPE:1,1:0)"
+                EXPLANATION:      Allows selection of POV related to FEE Program being used...disallows selection of an inactive POV Code.
+
+161.01,.08      DX LINE 1              0;8 FREE TEXT
+
+                DIAGNOSIS                                                                                                      
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                LAST EDITED:      MAR 16, 1987 
+                HELP-PROMPT:      ANSWER MUST BE 3-60 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  Patient's diagnosis for which this authorization is being issued.[LINE 1] 
+
+
+161.01,.085     DX LINE 2              3;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<2) X
+                LAST EDITED:      MAR 16, 1987 
+                HELP-PROMPT:      ANSWER MUST BE 2-60 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  An additional 60 characters to continue the description of patient's diagnosis for which this authorization is being issued.  
+
+
+161.01,.086     DX LINE 3              3;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<2) X
+                LAST EDITED:      MAR 16, 1987 
+                HELP-PROMPT:      ANSWER MUST BE 2-60 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  An additional 60 characters to continue describing patient's diagnosis.  This is the diagnosis applicable to this authorization.  
+
+
+161.01,.095     TREATMENT TYPE CODE    0;13 SET (Required)
+
+                                  '1' FOR SHORT TERM FEE STATUS; 
+                                  '2' FOR HOME NURSING SERVICES; 
+                                  '3' FOR I.D. CARD STATUS; 
+                                  '4' FOR STATE HOME; 
+                LAST EDITED:      SEP 29, 1998 
+                DESCRIPTION:
+                                  Indicates what the type of treatment this authorization is related to.  See M-1, Part 1, Chapter 18, for valid entries.  
+
+                SCREEN:           S DIC("S")="I Y'=4"
+                EXPLANATION:      Select a value appropriate for the FEE program.
+                CROSS-REFERENCE:  161^AENR095^MUMPS 
+                                  1)= D:'$D(DIU(0)) EVENT^IVMPLOG(DA(1))
+                                  2)= Q
+                                  Notify HEC of changes to FEE Authorization.  
+
+
+
+161.01,.096     ACCIDENT RELATED (Y/N) 0;19 FREE TEXT
+
+                INPUT TRANSFORM:  I $D(X) D YN^FBAAUTL3
+                OUTPUT TRANSFORM: D OUTYN^FBAAUTL3
+                LAST EDITED:      MAR 18, 1994 
+                HELP-PROMPT:      Answer 'Yes' or '1' for YES and a 'No' or '0' for NO. 
+                DESCRIPTION:
+                                  This field allows the fee system to track those authorizations that were issued for an accident related condition.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  161.01^AA^MUMPS 
+                                  1)= S ^FBAAA("AA",X,$P(^FBAAA(DA(1),1,DA,0),U,1),DA(1),DA)=""
+                                  2)= K ^FBAAA("AA",X,$P(^FBAAA(DA(1),1,DA,0),U,1),DA(1),DA)
+
+
+161.01,.097     POTENTIAL COST RECOVERY CASE 0;20 FREE TEXT (Required)
+
+                POTENTIAL COST RECOVERY CASE (Y/N)                                                                             
+                INPUT TRANSFORM:  I $D(X) D YN^FBAAUTL3
+                OUTPUT TRANSFORM: D OUTYN^FBAAUTL3
+                LAST EDITED:      MAR 18, 1994 
+                HELP-PROMPT:      Answer a 'Yes' or '1' for YES and a 'No' or '0' for NO. 
+                DESCRIPTION:
+                                  Determines if payment can be recovered from the veteran's insurance, or if payment can be recovered due to the veteran being a Cat. C patient.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  161.01^AC^MUMPS 
+                                  1)= S ^FBAAA("AC",X,$P(^FBAAA(DA(1),1,DA,0),U,1),DA(1),DA)=""
+                                  2)= K ^FBAAA("AC",X,$P(^FBAAA(DA(1),1,DA,0),U,1),DA(1),DA)
+
+                CROSS-REFERENCE:  161^AIC^MUMPS 
+                                  1)= S:$P(^FBAAA(DA(1),1,DA,0),U) ^FBAAA("AIC",DA(1),-($P(^FBAAA(DA(1),1,DA,0),U)),X,DA)=""
+                                  2)= K:$P(^FBAAA(DA(1),1,DA,0),U) ^FBAAA("AIC",DA(1),-($P(^FBAAA(DA(1),1,DA,0),U)),X,DA)
+                                  Cross-reference used to identify potential billables using inverse date.  
+
+
+
+161.01,1        PRINT AUTHORIZATION (Y/N) C;1 FREE TEXT
+
+                INPUT TRANSFORM:  I $D(X) D YN^FBAAUTL3
+                LAST EDITED:      MAY 25, 1994 
+                HELP-PROMPT:      Answer a 'Yes' or '1' for YES and a 'No' or '0' for NO. 
+                DESCRIPTION:
+                                  Used to indicate whether a VA Form 7079, Request For Outpatient Services, should be printed at the completion of entering the authorization data.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  161.01^AF^MUMPS 
+                                  1)= D ADD^FBAAUTL2
+                                  2)= D KILL^FBAAUTL2
+
+                CROSS-REFERENCE:  161^AF^MUMPS 
+                                  1)= S ^FBAAA("AF",$P(^FBAAA(DA(1),1,DA,0),U,3),DT,DA(1),DA)=""
+                                  2)= K ^FBAAA("AF",$P(^FBAAA(DA(1),1,DA,0),U,3),DT,DA(1),DA)
+
+
+161.01,2        TYPE OF CARE           0;14 SET
+
+                                  '1' FOR C&P; 
+                                  '2' FOR OPT NSC; 
+                                  '3' FOR OPT SC; 
+                LAST EDITED:      MAR 24, 1988 
+                DESCRIPTION:
+                                  Defines whether this authorization is related to OPT/NSC, OPT/SC, or C&P type of care.  
+
+
+161.01,3        DATE PRINTED           1;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                DESCRIPTION:
+                                  The date the last 7079 was printed for this authorization.  
+
+                DELETE AUTHORITY: ~
+
+161.01,100      CLERK                  100;1 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      APR 05, 1990 
+                DESCRIPTION:
+                                  The last user to enter/edit data for this authorization.  
+
+                DELETE AUTHORITY: ~
+
+161.01,101      PRIMARY SERVICE AREA   0;5 POINTER TO INSTITUTION FILE (#4) (Required)
+
+                PRIMARY SERVICE FACILITY                                                                                       
+                LAST EDITED:      APR 03, 1990 
+                DESCRIPTION:
+                                  The VA Hospital responsible for the veterans care.  
+
+
+161.01,102      AUSTIN DELETE FLAG     ADEL;1 FREE TEXT
+
+                INPUT TRANSFORM:  I $D(X) D YN^FBAAUTL3
+                OUTPUT TRANSFORM: D OUTYN^FBAAUTL3
+                LAST EDITED:      JUL 23, 1998 
+                HELP-PROMPT:      Answer 'Yes' or '1' for YES and 'No' or '0' for NO. 
+                DESCRIPTION:
+                                  This field will be populated when a 'Delete MRA' is transmitted to Austin DPC. This field will also be used to screen out selection for payments made to Austin.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  161^AENR102^MUMPS 
+                                  1)= D:'$D(DIU(0)) EVENT^IVMPLOG(DA(1))
+                                  2)= D:'$D(DIU(0)) EVENT^IVMPLOG(DA(1))
+                                  Notify HEC of changes to FEE Authorization.  
+
+
+
+161.01,103      DATE DELETE MRA TRANSMITTED ADEL;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 26, 1992 
+                DESCRIPTION:
+                                  This field will be set internally when a 'Delete Veteran MRA' is sent to Austin.  It will be used to screen selection during the enter payment options.  
+
+
+161.01,104      REFERRING PROVIDER     0;21 POINTER TO NEW PERSON FILE (#200)
+
+                INPUT TRANSFORM:  S DIC("S")="I $$PROVIDER^FBAAAUT(+Y)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      APR 16, 2008 
+                HELP-PROMPT:      Enter the provider who referred this patient for service. 
+                DESCRIPTION:
+                                  This field contains the name of the VA provider who referred this patient for service. This is not necessarily the same as the Authorizing Physician although they may be the same in some cases.  
+
+                SCREEN:           S DIC("S")="I $$PROVIDER^FBAAAUT(+Y)"
+                EXPLANATION:      Types of users allowed should only be providers.
+
+161.01,105      CONTRACT               0;22 POINTER TO FEE BASIS CONTRACT FILE (#161.43)
+
+                INPUT TRANSFORM:  S DIC("S")="I $$CNTRSCR^FBUTL7($G(DA(1)),$G(DA),+Y)" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+                LAST EDITED:      JUN 03, 2009 
+                HELP-PROMPT:      If the authorization is under a contract then select it. 
+                DESCRIPTION:      Contract (if any) applicable to all authorized services.  If an authorization has a contract, the system will automatically assign that contract to any payments associated with the authorization if the vendor being paid
+                                  matches the vendor specified on the authorization.  
+
+                SCREEN:           S DIC("S")="I $$CNTRSCR^FBUTL7($G(DA(1)),$G(DA),+Y)"
+                EXPLANATION:      Contract must be active and applicable for the authorized vendor.
+                FIELD INDEX:      ACN (#879)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#161)
+                    Short Descr:  Index of contracts.
+                    Description:  This is an index of contracts entered for fee authorizations. The index will be used to prevent deletion of entries from the FEE BASIS CONTRACT file that are referenced (pointed to) by an authorization.  
+                      Set Logic:  S ^FBAAA("ACN",X,DA(1),DA)=""
+                     Kill Logic:  K ^FBAAA("ACN",X,DA(1),DA)
+                     Whole Kill:  K ^FBAAA("ACN")
+                           X(1):  CONTRACT  (161.01,105)  (Subscr 1)  (forwards)
+
+
+
+
+161,2         REPORT OF CONTACT      2;0 DATE Multiple #161.02
+
+              DESCRIPTION:
+                                Contains information relating to the initial contact between the VA and a patient's representative, regarding patient treatment at a non-VA facility.  
+
+
+161.02,.01      DATE OF CONTACT        0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="EX",%DT(0)=-DT D ^%DT K %DT(0) S X=Y K:Y<1 X
+                LAST EDITED:      JUN 05, 1990 
+                DESCRIPTION:
+                                  Date the contact occurred. The actual date that a communication occurred.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+161.02,1        VENDOR/PROVIDER        0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>46!($L(X)<2) X
+                LAST EDITED:      JAN 07, 1986 
+                HELP-PROMPT:      ANSWER MUST BE 2-46 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  The vendor/provider with whom the contact took place.  
+
+
+161.02,1.5      VENDOR/PROVIDER TELEPHONE NO. 0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+                LAST EDITED:      AUG 02, 1988 
+                HELP-PROMPT:      ANSWER MUST BE 3-20 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  Contains the phone number of the vendor/provider who initially treated the patient.  
+
+
+161.02,2        NARRATIVE              1;0   WORD-PROCESSING #161.04
+
+                DESCRIPTION:
+                                  Detail accounting of the discussion or topic of the contact. Clearly describes the main points and purpose of the contact.  
+
+
+161.02,3        DX                     0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>45!($L(X)<1) X
+                HELP-PROMPT:      ANSWER MUST BE 1-45 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  Diagnosis of the patient to whom the contact was related.  
+
+
+161.02,3.5      TYPE OF CONTACT        0;6 SET (Required)
+
+                                  'P' FOR personal; 
+                                  'T' FOR telephonic; 
+                LAST EDITED:      OCT 31, 1988 
+                DESCRIPTION:
+                                  Field indicates whether initial contact with VA on behalf of a patient was personal or telephonic.  
+
+
+161.02,5        INPUT DATE             0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="EX",%DT(0)=-DT D ^%DT K %DT(0) S X=Y K:Y<1 X
+                LAST EDITED:      OCT 16, 1990 
+                DESCRIPTION:
+                                  This is the date that the report of contact was entered into the DHCP Fee package.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+161.02,100      CLERK                  100;1 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      APR 05, 1990 
+                DESCRIPTION:
+                                  Clerk entering this report of contact.  
+
+                DELETE AUTHORITY: ~
+
+
+
+161,11        ARCH ELIGIBILITY       ARCHFEE;0 DATE Multiple #161.011
+
+              DESCRIPTION:
+                                This field is a Project ARCH (Access Received Closer to Home) Eligibility multiple.  Every time a new update of eligibility data comes in, a new entry for this multiple is created.            
+
+
+161.011,.01     ARCH ELIGIBILITY DATE  0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      MAR 25, 2011 
+                HELP-PROMPT:      Enter the date on which the decision was made as to patient's ARCH eligibility. 
+                DESCRIPTION:
+                                  This is the date when patient becomes ARCH (Access Received Closer to Home) eligible or NOT.  
+
+                CROSS-REFERENCE:  161.011^B 
+                                  1)= S ^FBAAA(DA(1),"ARCHFEE","B",$E(X,1,30),DA)=""
+                                  2)= K ^FBAAA(DA(1),"ARCHFEE","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  161^ARCH 
+                                  1)= S ^FBAAA("ARCH",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FBAAA("ARCH",$E(X,1,30),DA(1),DA)
+
+
+161.011,2       ARCH ELIGIBILITY       0;2 SET
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      MAR 24, 2011 
+                HELP-PROMPT:      Is the patient ARCH Eligible? 
+                DESCRIPTION:      This field is the patient project ARCH (Access Received Closer to Home) Eligibility.  If patient is ARCH eligible, user/provider will be alerted in the CPRS Clinical Reminders cover sheet.  
+                                   
+                                  Answer YES if the patient is ARCH eligible.  
+
+
+161.011,3       ARCH ELIGIBILITY DETERMINATION 0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      AUG 01, 2011 
+                HELP-PROMPT:      Enter the person that determined ARCH elibility. 
+                DESCRIPTION:
+                                  This is the person that determined local Project ARCH eligiblity for this patient.  
+
+                CROSS-REFERENCE:  161^ARCHSRC 
+                                  1)= S ^FBAAA("ARCHSRC",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FBAAA("ARCHSRC",$E(X,1,30),DA(1),DA)
+
+
+161.011,4       JUSTIFICATION          0;4 POINTER TO FEE BASIS PROJECT ARCH JUSTIFICATION FILE (#161.35)
+
+                LAST EDITED:      AUG 01, 2011 
+                HELP-PROMPT:      Select the justification for determining Project ARCH eligibility. 
+                DESCRIPTION:
+                                  This is the justification for locally determining that a patient is eligible for Project ARCH.  
+
+
+161.011,5       VERIFICATION OF MILEAGE 0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<3) X
+                LAST EDITED:      AUG 08, 2011 
+                HELP-PROMPT:      Enter 3-100 characters of how the mileage requirement was verified (e.g. Google Maps, Zip Code listing, etc.) 
+                DESCRIPTION:      This is how the user verified the mileage requirements for Project ARCH before adding the patient to local dataset. This can be done through the use of an online tool such as Google Maps or with the Zip Code listing from
+                                  the national Project ARCH dataset.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FEE BASIS CONTRACT (#161.43)      AUTHORIZATION:CONTRACT (#105)
+
+FEE BASIS PROGRAM (#161.8)        AUTHORIZATION:FEE PROGRAM (#.03)
+
+FEE BASIS PROJECT ARCH JUSTIFI 
+                   (#161.35)      ARCH ELIGIBILITY:JUSTIFICATION (#4)
+
+FEE BASIS PURPOSE OF VISIT 
+                   (#161.82)      AUTHORIZATION:PURPOSE OF VISIT CODE (#.07)
+
+FEE BASIS VENDOR (#161.2)         AUTHORIZATION:VENDOR (#.04)
+
+INSTITUTION (#4)                  AUTHORIZATION:PRIMARY SERVICE AREA (#101)
+
+NEW PERSON (#200)                 AUTHORIZATION:CLERK (#100)
+                                  REFERRING PROVIDER (#104)
+                                  ARCH ELIGIBILITY:ARCH ELIGIBILITY DETERMINATION (#3)
+                                  REPORT OF CONTACT:CLERK (#100)
+
+PATIENT (#2)                      NAME (#.01)
+
+
+
+INPUT TEMPLATE(S):
+FB UNAUTHORIZED EDIT          JUL 19, 2001@15:10  USER #0    
+     If dispositioned claim has been reopened, this template is 
+     used to keep the authorization information in synch with the unauthorized
+     claim
+FB UNAUTHORIZED UPDATE        JUN 21, 2001@08:52  USER #0    
+     Enter authorization based on discharge type of unauthorized claim
+FB UNAUTHORIZED UPDATE1       JUN 21, 2001@08:54  USER #0    
+     Update authorization based on changes to unauthorized claim
+FBAA AUTHORIZATION            JUN 02, 2009@17:20  USER #0    ^FBCTAU 
+     This template is used for creating new authorizations for Fee Basis.
+FBAA REPORT OF CONTACT        NOV 04, 1990@18:37  USER #0    
+FBNH EDIT AUTHORIZATION       MAR 26, 1993@13:14  USER #0    
+FBNH ENTER AUTHORIZATION      MAR 26, 1993@13:15  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,645 @@
+STANDARD DATA DICTIONARY #355.4 -- ANNUAL BENEFITS FILE                                                                                                                                                                           MAY 20,2014@15:35:44  PAGE 1
+STORED IN ^IBA(355.4,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the fields to maintain the annual benefits by year for an insurance policy.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: HEALTH INSURANCE POLICY (#.02)
+
+CROSS
+REFERENCED BY: HEALTH INSURANCE POLICY(APY), BENEFIT YEAR BEGINNING ON(APY1), BENEFIT YEAR BEGINNING ON(B), HEALTH INSURANCE POLICY(C)
+
+355.4,.01     BENEFIT YEAR BEGINNING ON 0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D:$D(X) ^%DT S X=Y K:Y<1 X D DATECHK^IBCNSA2
+              LAST EDITED:      JUN 10, 2004 
+              HELP-PROMPT:      Partial benefit years not allowed. 
+              DESCRIPTION:
+                                This is the year to which the health insurance policy's benefits apply.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  355.4^B 
+                                1)= S ^IBA(355.4,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.4,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  355.4^APY1^MUMPS 
+                                1)= S:$P(^IBA(355.4,DA,0),U,2) ^IBA(355.4,"APY",$P(^(0),U,2),-X,DA)=""
+                                2)= K ^IBA(355.4,"APY",+$P(^IBA(355.4,DA,0),U,2),-X,DA)
+                                3)= DO NOT DELETE
+                                Cross-reference of all policies by calendar year.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.4^1.01 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.4,D0,1)):^(1),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X=DIV S X=DT S DIH=$G(^IBA(355.4,DIV(0),1)),DIV=X S $P(^(1),U,1)=DIV,DIH=355.4,DIG=1.01 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=DT
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #1.01
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.4^1.02 
+                                1)= X ^DD(355.4,.01,1,4,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.4,D0,1)):^(1),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=DUZ S DIH=$G(^IBA(355.4,DIV(0),1)),DIV=X S $P(^(1),U,2)=DIV,DIH=355.4,DIG=1.02 D ^DICR
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBA(355.4,D0,1)):^(1),1:"") S X=$P($G(^VA(200,+$P(Y(1),U,2),0)),U)=""
+                                2)= Q
+                                CREATE CONDITION)= #1.02=""
+                                CREATE VALUE)= S X=DUZ
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #1.02
+
+
+355.4,.02     HEALTH INSURANCE POLICY 0;2 POINTER TO GROUP INSURANCE PLAN FILE (#355.3)
+
+              LAST EDITED:      AUG 31, 1993 
+              DESCRIPTION:
+                                This is the particular health insurance policy that provides some subset of all of the possible benefits for the year selected.  Enter the name of the health insurance policy.  
+
+              CROSS-REFERENCE:  355.4^C 
+                                1)= S ^IBA(355.4,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.4,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  355.4^APY^MUMPS 
+                                1)= S:+^IBA(355.4,DA,0) ^IBA(355.4,"APY",X,-^(0),DA)=""
+                                2)= K ^IBA(355.4,"APY",X,-^IBA(355.4,DA,0),DA)
+                                3)= DO NOT DELETE
+                                Cross-reference of all policies by calendar year.  
+
+
+
+355.4,.05     MAX. OUT OF POCKET     0;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      AUG 25, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the dollar amount that this policy does not cover in claims.  This information will be used in calculating whether reimbursement for claims against this policy are appropriate.  
+
+
+355.4,.06     AMBULANCE COVERAGE (%) 0;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides an ambulance coverage benefit, then this is the amount of that benefit.  
+
+
+355.4,1.01    DATE ENTERED           1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 28, 1994 
+              DESCRIPTION:
+                                This is the date that the information was first entered.  It is necessary to supply a time as well as date, for example "12/12/93@1300".  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the BENEFIT YEAR BEGINNING ON field of the ANNUAL BENEFITS File 
+
+
+355.4,1.02    ENTERED BY             1;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 20, 1993 
+              DESCRIPTION:
+                                This is the name of the person who entered the information.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the BENEFIT YEAR BEGINNING ON field of the ANNUAL BENEFITS File 
+
+
+355.4,1.03    DATE LAST VERIFIED     1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 07, 1993 
+              DESCRIPTION:
+                                This is the date that the information was last verified.  It is necessary to supply a time as well as date, for example "12/12/93@1300".  
+
+
+355.4,1.04    VERIFIED BY            1;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 20, 1993 
+              DESCRIPTION:
+                                This is the name of the person who verified the information on "DATE LAST VERIFIED".  
+
+
+355.4,1.05    DATE LAST EDITED       1;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 07, 1993 
+              DESCRIPTION:
+                                This is the date that the information was last edited.  The time must be included, for example 12/12/93@1300.  
+
+              WRITE AUTHORITY:  ^
+
+355.4,1.06    LAST EDIT BY           1;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 20, 1993 
+              DESCRIPTION:
+                                This is the name of the person who last edited the information.  
+
+              WRITE AUTHORITY:  ^
+
+355.4,1.07    PERSON CONTACTED       1;7 FREE TEXT
+
+              WHO DID YOU TALK TO AT THE INSURANCE COMPANY                                                                     
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      JUL 01, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is the name of the person who was contacted for verification purposes.  
+
+
+355.4,1.08    COMMENTS               1;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+              LAST EDITED:      MAY 20, 1993 
+              HELP-PROMPT:      Answer must be 3-80 characters in length. 
+              DESCRIPTION:
+                                Enter any additional information here.  
+
+
+355.4,1.09    CONTACT'S PHONE NUMBER 1;9 FREE TEXT
+
+              WHAT WAS THEIR PHONE NUMBER                                                                                      
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<7) X
+              LAST EDITED:      SEP 07, 1993 
+              HELP-PROMPT:      Answer must be 7-20 characters in length. 
+              DESCRIPTION:
+                                Enter the telephone number of the person who was contacted for verification purposes.  
+
+
+355.4,2.01    ANNUAL DEDUCTIBLE (OPT) 2;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      JUN 04, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount that this policy does not cover in claims.  This information will be used in calculating whether reimbursement for claims against this policy are appropriate.  
+
+
+355.4,2.02    PER VISIT DEDUCTIBLE   2;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the deductible that the patient must pay for each outpatient visit.  
+
+
+355.4,2.03    OUTPATIENT LIFETIME MAXIMUM 2;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 28, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a lifetime maximum benefit for outpatient services, then this is the amount of that benefit.  
+
+
+355.4,2.04    OUTPATIENT ANNUAL MAXIMUM 2;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for outpatient services, then this amount is the maxiumum of that benefit for one year.  
+
+
+355.4,2.05    MH LIFETIME OUTPATIENT MAX. 2;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 28, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a lifetime maximum benefit for mental health services, then this is the amount of that benefit.  
+
+
+355.4,2.06    MH ANNUAL OUTPATIENT MAX. 2;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for mental health services, then this amount is the maximum of that benefit for one year.  
+
+
+355.4,2.07    DENTAL COVERAGE TYPE   2;7 SET
+
+                                '0' FOR NONE; 
+                                '1' FOR PER VISIT AMOUNT; 
+                                '2' FOR PERCENTAGE AMOUNT; 
+              LAST EDITED:      JAN 07, 1994 
+              DESCRIPTION:
+                                This indicates whether there is a dental benefit, and if so, the per visit or percentage amount.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.4^2.08 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.4,D0,2)):^(2),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X="" X ^DD(355.4,2.07,1,1,1.4)
+                                1.4)= S DIH=$S($D(^IBA(355.4,DIV(0),2)):^(2),1:""),DIV=X S $P(^(2),U,8)=DIV,DIH=355.4,DIG=2.08 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.4,D0,2)):^(2),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X="" X ^DD(355.4,2.07,1,1,2.4)
+                                2.4)= S DIH=$S($D(^IBA(355.4,DIV(0),2)):^(2),1:""),DIV=X S $P(^(2),U,8)=DIV,DIH=355.4,DIG=2.08 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= @
+                                DELETE VALUE)= @
+                                FIELD)= #2.08
+                                When changing or deleting DENTAL COVERAGE TYPE delete DENTAL COVERAGE $ OR %.  
+
+
+
+355.4,2.08    DENTAL COVERAGE $ OR % 2;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits if coverage is a $ amount, or between 0 and 100 if %. 
+              DESCRIPTION:
+                                If there is a dental benefit, this number indicates the dollar or percentage amount of that benefit.  
+
+              NOTES:            TRIGGERED by the DENTAL COVERAGE TYPE field of the ANNUAL BENEFITS File 
+
+
+355.4,2.09    OUTPATIENT VISIT (%)   2;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 03, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has an outpatient benefit, this is the percentage coverage per outpatient visit.  
+
+
+355.4,2.1     EMERGENCY OUTPATIENT (%) 2;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 07, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for emergency outpatient services, this is the percentage covered by that benefit.  
+
+
+355.4,2.11    MENTAL HEALTH OUTPATIENT (%) 2;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 03, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for mental health outpatient services, this is the percentage covered by that benefit.  
+
+
+355.4,2.12    PRESCRIPTION (%)       2;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for prescription services, this is the percentage covered by that benefit.  
+
+
+355.4,2.13    OUTPATIENT SURGERY (%) 2;13 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for outpatient surgery services, this is the percentage covered by that benefit.  
+
+
+355.4,2.14    MH OPT. MAX DAYS PER YEAR 2;14 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 08, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for mental health outpatient services, this is the maximum number of days per year of this benefit.  
+
+
+355.4,2.15    OUTPATIENT VISITS PER YEAR 2;15 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 25, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides outpatient benefits, this is the maximum number of visits per year.  
+
+
+355.4,2.17    ADULT DAY HEALTH CARE  2;17 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 27, 1993 
+              DESCRIPTION:
+                                This indicates whether the policy has a benefit for Adult Day Health Care services.  
+
+
+355.4,3.01    HOME HEALTH CARE LEVEL 3;1 SET
+
+                                '0' FOR NONE; 
+                                '1' FOR NURSES AIDE; 
+                                '2' FOR LPN; 
+                                '3' FOR RN; 
+                                '4' FOR THERAPIST/OTHER; 
+              LAST EDITED:      SEP 24, 1993 
+              DESCRIPTION:
+                                If this policy provides home health care, this is the highest level of nursing care that it will cover.  
+
+
+355.4,3.02    HOME HEALTH VISITS PER YEAR 3;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides home health care, this is the maximum number of visits per year.  
+
+
+355.4,3.03    HOME HEALTH MAX DAYS PER YEAR 3;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides home health care, this is the maximum number of days per year of home health care services.  
+
+
+355.4,3.04    HOME HEALTH MED. EQUIPMENT (%) 3;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for medical equipment used in home health care services, this is the percentage of that benefit.  
+
+
+355.4,3.05    HOME HEALTH VISIT DEFINITION 3;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                If this policy provides for home health visits, this defines the nature of the visits.  
+
+
+355.4,3.06    OCCUPATIONAL THERAPY # VISITS 3;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 26, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for occupational therapy, then this is the maximum number of OT visits that the policy allows in one year.  
+
+
+355.4,3.07    PHYSICAL THERAPY # VISITS 3;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 26, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for physical therapy, then this is the maximum number of PT visits that the policy allows in one year.  
+
+
+355.4,3.08    SPEECH THERAPY # VISITS 3;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 26, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for speech therapy, then this is the maximum number of ST visits that the policy allows in one year.  
+
+
+355.4,3.09    MEDICATION COUNSELING # VISITS 3;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 26, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy has a benefit for medication counseling, then this is the maximum number of MC visits that the policy allows in one year.  
+
+
+355.4,4.01    HOSPICE ANNUAL DEDUCTIBLE 4;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides hospice services, this is the amount that the policy does not cover in claims.  This information will be used in calculating whether reimbursement for claims against this policy are appropriate.  
+
+
+355.4,4.02    HOSPICE INPATIENT ANNUAL MAX 4;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides hospice inpatient services, this is the maximum amount of coverage for one year.  
+
+
+355.4,4.03    HOSPICE INPT. LIFETIME MAX 4;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 28, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides hospice inpatient services, this is the maximum amount over the life of the policy for this benefit.  
+
+
+355.4,4.04    ROOM AND BOARD (%)     4;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a room and board benefit, this is the percentage of the charges that the policy will cover.  
+
+
+355.4,4.05    OTHER INPATIENT CHARGES (%) 4;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for other inpatient charges, this is the percentage covered by that benefit.  
+
+
+355.4,4.06    IV INFUSION OPT.       4;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 26, 1993 
+              DESCRIPTION:
+                                This indicates whether the policy has a benefit for outpatient IV Infusion services.  
+
+
+355.4,4.07    IV INFUSION INPT.      4;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 26, 1993 
+              DESCRIPTION:
+                                This indicates whether the policy has a benefit for inpatient IV Infusion services.  
+
+
+355.4,4.08    IV ANTIBIOTICS OPT.    4;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 26, 1993 
+              DESCRIPTION:
+                                This indicates whether the policy has a benefit for outpatient IV Antibiotics services.  
+
+
+355.4,4.09    IV ANTIBIOTICS INPT.   4;9 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      SEP 07, 1993 
+              DESCRIPTION:
+                                This indicates whether the policy has a benefit for inpatient IV Antibiotics.  
+
+
+355.4,5.01    ANNUAL DEDUCTIBLE (INPATIENT) 5;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      JUN 04, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:      If this policy provides for inpatient services, this is the amount that the policy does not cover in claims.  This information will be used in calculating whether reimburseent for claims against this policy are
+                                appropriate.  
+
+
+355.4,5.02    PER ADMISSION DEDUCTIBLE 5;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAY 20, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the dollar amount that this policy does not cover in claims for each admission.  
+
+
+355.4,5.03    INPATIENT LIFETIME MAXIMUM 5;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 28, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides inpatient services, this is the maximum amount over the life of this policy for this benefit.  
+
+
+355.4,5.04    INPATIENT ANNUAL MAXIMUM 5;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAY 20, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides inpatient services, this is the maximum annual amount of this benefit.  
+
+
+355.4,5.05    MH LIFETIME INPATIENT MAXIMUM 5;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 28, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for mental health inpatient services, this is the maximum amount over the life of the policy for this benefit.  
+
+
+355.4,5.06    MH ANNUAL INPATIENT MAXIMUM 5;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAY 20, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for mental health inpatient services, this is the maximum amount that this policy will pay toward these services in one year.  
+
+
+355.4,5.07    DRUG & ALCOHOL LIFETIME MAX 5;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 28, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for drug and alcohol services, this is the maximum amount over the life of the policy for this benefit.  
+
+
+355.4,5.08    DRUG & ALCOHOL ANNUAL MAX 5;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAY 20, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for drug and alcohol services, this is the maximum amount that this policy will pay toward these services in one year.  
+
+
+355.4,5.09    ROOM AND BOARD (%)     5;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 20, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a room and board benefit, this is the percentage of room and board charges that the policy will cover.  
+
+
+355.4,5.1     NURSING HOME (%)       5;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 20, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for nursing home services, this is the percentage of nursing home charges that the policy will cover.  
+
+
+355.4,5.11    MENTAL HEALTH INPATIENT (%) 5;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 20, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for mental health inpatient services, this is the percentage of the charges that the policy will cover.  
+
+
+355.4,5.12    OTHER INPATIENT CHARGES (%) 5;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 20, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for other inpatient charges, this is the percentage of those charges that the policy will cover.  
+
+
+355.4,5.14    MH INPT. MAX DAYS PER YEAR 5;14 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 08, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this policy provides a benefit for mental health inpatient services, this is the maximum number of days per year of this benefit.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+GROUP INSURANCE PLAN (#355.3)     HEALTH INSURANCE POLICY (#.02)
+
+NEW PERSON (#200)                 ENTERED BY (#1.02)
+                                  VERIFIED BY (#1.04)
+                                  LAST EDIT BY (#1.06)
+
+
+
+INPUT TEMPLATE(S):
+IBCN AB ADD COM               JUN 11, 1993@11:42  USER #11985
+IBCN AB EDIT ALL              JAN 06, 1994@11:08  USER #12540
+IBCN AB HOME HEA              JUN 11, 1993@11:21  USER #11985
+IBCN AB HOSPC                 JUN 11, 1993@11:29  USER #11985
+IBCN AB INPT                  JUN 11, 1993@11:20  USER #11985
+IBCN AB IV MGMT               AUG 27, 1993@11:46  USER #0    
+IBCN AB MEN H                 JAN 06, 1994@13:08  USER #12540
+IBCN AB OPT                   JAN 06, 1994@13:01  USER #12540
+IBCN AB POL INF               JUL 08, 1993@12:22  USER #11985
+IBCN AB REHAB                 AUG 27, 1993@11:46  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

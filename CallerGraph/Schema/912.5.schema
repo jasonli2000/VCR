@@ -1,0 +1,168 @@
+STANDARD DATA DICTIONARY #912.5 -- ESP POLICE TRAINING FILE                                                                                                                                                                       MAY 20,2014@15:40:06  PAGE 1
+STORED IN ^ESP(912.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The ESP POLICE TRAINING file contains data recording the types of training, subject matter and number of minutes of training received for each VA Police Officer.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: ATTENDEE(B)
+
+912.5,.01     ATTENDEE               0;1 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^VA(200,""AK.ESP POLICE"",$P(^(0),U)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X S:$D(X) DINUM=X
+              LAST EDITED:      JUL 19, 1993 
+              HELP-PROMPT:      Answer must be [3-30 characters]. 
+              DESCRIPTION:
+                                Enter the name of the police officer receiving credit for the training.  The officer's name must be entered into the NEW PERSON file (200) and must also be assigned the ESP POLICE Security Key.  
+
+              SCREEN:           S DIC("S")="I $D(^VA(200,""AK.ESP POLICE"",$P(^(0),U)))"
+              EXPLANATION:      Select a police officer currently assigned to the Service.
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  912.5^B 
+                                1)= S ^ESP(912.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^ESP(912.5,"B",$E(X,1,30),DA)
+
+
+912.5,5       TRAINING DATE          5;0 DATE Multiple #912.55
+
+              DESCRIPTION:
+                                This field is used to record the date that training was received.  
+
+
+912.55,.01      TRAINING DATE          0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 26, 1992 
+                HELP-PROMPT:      Enter the date. 
+                DESCRIPTION:
+                                  Enter the date that the VA Police staff person received the training.  
+
+                CROSS-REFERENCE:  912.55^B 
+                                  1)= S ^ESP(912.5,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ESP(912.5,DA(1),5,"B",$E(X,1,30),DA)
+
+
+912.55,5        SUBJECT                5;0 Multiple #912.555
+
+
+912.555,.01       SUBJECT                0;1 FREE TEXT (Required)
+
+                  INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                  LAST EDITED:      OCT 26, 1992 
+                  HELP-PROMPT:      Answer must be [1-30 characters]. 
+                  DESCRIPTION:
+                                    Enter the subject or course title for the training received.  
+
+                  CROSS-REFERENCE:  912.555^B 
+                                    1)= S ^ESP(912.5,DA(2),5,DA(1),5,"B",$E(X,1,30),DA)=""
+                                    2)= K ^ESP(912.5,DA(2),5,DA(1),5,"B",$E(X,1,30),DA)
+
+
+912.555,.02       TYPE                   0;2 SET
+
+                                    'F' FOR FIRE/SAFETY; 
+                                    'I/O' FOR IN-SERVICE/OTHER; 
+                                    'O' FOR ORIENTATION; 
+                                    'P1' FOR PHASE I; 
+                                    'P2' FOR PHASE II; 
+                  LAST EDITED:      OCT 29, 1992 
+                  HELP-PROMPT:      Enter the type. 
+                  DESCRIPTION:
+                                    Enter the category type of the training received.  You must select from the available codes.  
+
+
+912.555,.03       INSTRUCTOR             0;3 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                  LAST EDITED:      OCT 26, 1992 
+                  HELP-PROMPT:      Answer must be [1-30 characters]. 
+                  DESCRIPTION:
+                                    Enter the name of the instructor providing the training.  Name format should be:  LAST,FIRST MIDDLE same as name format through out the program.  
+
+
+912.555,.04       MINUTES                0;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      OCT 26, 1992 
+                  HELP-PROMPT:      Answer must be numeric[1-999999]. 
+                  DESCRIPTION:
+                                    Enter the number of minutes of training received.  The program will convert the minutes to hours automatically.  
+
+
+912.555,.05       HOURS                   ;  COMPUTED
+
+                  MUMPS CODE:       S Y(912.555,.05,1)=$S($D(^ESP(912.5,D0,5,D1,5,D2,0)):^(0),1:"") S X=$P(Y(912.555,.05,1),U,4)/60+.005*100\1/100 S X=$J(X,0,2)
+                  ALGORITHM:        MINUTES/60+.005*100\1/100  (ALWAYS 2 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    The minutes field (.04) will automatically be converted to hours of training.  
+
+                  SUM:              S X=S("912.555^.04")/60+.005*100\1/100 S Y=X
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 ATTENDEE (#.01)
+
+
+
+INPUT TEMPLATE(S):
+ESP TRAINING EDIT             JUL 14, 1993@09:56  USER #0    
+
+PRINT TEMPLATE(S):
+ESP TRAINING                  OCT 21, 1993@16:27  USER #1221                                                                                                                                                                        POLICE TRAINING STATISTICS
+     This print template displays pertinent data on the records of
+     training received by VA Police Officers.
+
+SORT TEMPLATE(S):
+ESP TRAINING                  OCT 22, 1993@12:29  USER #1221 
+SORT BY: +ATTENDEE;S1//
+  WITHIN ATTENDEE, SORT BY: @'TRAINING DATE//
+  TRAINING DATE SUB-FIELD: TRAINING DATE//    (User is asked range)
+
+ESP TRAINING1                 JUL 19, 1993@09:21  USER #0    
+SORT BY: TRAINING DATE//
+TRAINING DATE SUB-FIELD: SUBJECT//
+SUBJECT SUB-FIELD: TYPE//    (User is asked range)
+  WITHIN TYPE, SORT BY: TRAINING DATE//
+  TRAINING DATE SUB-FIELD: TRAINING DATE//    (User is asked range)
+
+ESP TRAINING2                 JUL 19, 1993@09:20  USER #0    
+SORT BY: ]@TRAINING DATE//
+TRAINING DATE SUB-FIELD: TRAINING DATE//    (User is asked range)
+  WITHIN TRAINING DATE, SORT BY: +TRAINING DATE;S1//
+  TRAINING DATE SUB-FIELD: SUBJECT//
+  SUBJECT SUB-FIELD: SUBJECT//    (User is asked range)
+
+ESP TRAINING3                 JUL 19, 1993@09:22  USER #0    
+SORT BY: @'ATTENDEE//    (User is asked range)
+  WITHIN ATTENDEE, SORT BY: @'TRAINING DATE//
+  TRAINING DATE SUB-FIELD: TRAINING DATE//    (User is asked range)
+
+ESP TRAINING4                 JUL 19, 1993@09:23  USER #0    
+SORT BY: TRAINING DATE//
+TRAINING DATE SUB-FIELD: TRAINING DATE//    (User is asked range)
+  WITHIN TRAINING DATE, SORT BY: ATTENDEE//    (User is asked range)
+    WITHIN ATTENDEE, SORT BY: TRAINING DATE//
+    TRAINING DATE SUB-FIELD: SUBJECT//
+    SUBJECT SUB-FIELD: TYPE//    (User is asked range)
+      WITHIN TYPE, SORT BY: TRAINING DATE//
+      TRAINING DATE SUB-FIELD: SUBJECT//
+      SUBJECT SUB-FIELD: SUBJECT//    (User is asked range)
+
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,783 @@
+STANDARD DATA DICTIONARY #375 -- PFSS ACCOUNT FILE                                                                                                                                                                                MAY 20,2014@15:36:13  PAGE 1
+STORED IN ^IBBAA(375,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to store visit/encounter data from various VistA applications, so that a background process can create HL7 ADT messages that are sent to the external medical billing system.  
+  
+Under no circumstances may records be created or modified directly via FileMan or other methods.  Record creation and data update is allowed only through GETACCT^IBBAPI.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: PFSS ACCOUNT REFERENCE field (#125) of the PRESCRIPTION File (#52) 
+               PFSS ACCOUNT REFERENCE field (#21) of the REFILL sub-field (#52.1) of the PRESCRIPTION File (#52) 
+               PFSS ACCOUNT REFERENCE field (#90) of the RAD/NUC MED ORDERS File (#75.1) 
+               PFSS ACCOUNT REFERENCE field (#97) of the ORDER File (#100) 
+               PFSS ACCOUNT REFERENCE field (#500) of the SURGERY File (#130) 
+               PFSS ACCOUNT REFERENCE field (#.22) of the INTEGRATED BILLING ACTION File (#350) 
+               PFSS ACCOUNT REFERENCE field (#.02) of the PFSS CHARGE CACHE File (#373) 
+               PFSS ACCOUNT REFERENCE field (#.04) of the APPOINTMENT PFSS ACCOUNT REFERENCE File (#409.55) 
+               PFSS ACCOUNT REFERENCE field (#100) of the RECORD OF PROS APPLIANCE/REPAIR File (#660) 
+               PFSS ACCOUNT REFERENCE field (#101) of the HOME OXYGEN ITEM sub-field (#665.194) of the PROSTHETICS PATIENT File (#665) 
+               PFSS ACCOUNT REFERENCE field (#100) of the ITEM sub-field (#665.723191) of the PATIENT sub-field (#665.72319) of the VENDOR sub-field (#665.7231) of the BILLING MONTH sub-field (#665.723) of the HOME OXYGEN TRANSACTIONS FILE File (#665.72) 
+               PFSS ACCOUNT REFERENCE field (#.26) of the VISIT File (#9000010) 
+               
+
+CROSS
+REFERENCED BY: PATIENT(AA), EXTERNAL ACCOUNT NUMBER(C), HL7 MESSAGE(G)
+
+INDEXED BY:    PATIENT & ADMIT DATE/TIME & PATIENT LOCATION (AC), PATIENT & ADMIT DATE/TIME & OUTSIDE LOCATION (AF)
+
+
+375,.01       ACCOUNT REFERENCE      0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  S DINUM=X K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 06, 2005 
+              DESCRIPTION:
+                                The number by which all VistA applications will reference an external medical billing system account number for purposes of attaching charges for 1st or 3rd party billing.  
+
+              TECHNICAL DESCR:
+                                The file is DINUM'd; the internal entry number and #.01 field are the same value.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+375,.02       EXTERNAL ACCOUNT NUMBER 0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      JUN 30, 2005 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                The number provided by the external medical billing system for purposes of attaching charges for 1st or 3rd party billing.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; PV1 Segment; Sequence 19.  
+
+              CROSS-REFERENCE:  375^C 
+                                1)= S ^IBBAA(375,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBBAA(375,"C",$E(X,1,30),DA)
+
+
+375,.03       PATIENT                0;3 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      JUN 20, 2005 
+              DESCRIPTION:
+                                The Patient identifier associated with the billing account.  An internal entry number to the PATIENT file (#2).  
+
+              TECHNICAL DESCR:  This pointer to the PATIENT file (#2) is used to construct the HL7 PID Segment for PFSS ADT messages.  
+                                  
+                                Both the "AC" cross-reference, which uses field #1.03, and the "AF" cross-reference, which uses field #16.01, depend on field #.03.  
+                                 
+                                S ^IBBAA(375,"AC",X1,X3,X2,DA)="" 
+                                   where:  X1=field #.03 
+                                           X2=field #1.03 
+                                           X3=field #1.44 
+                                  
+                                S ^IBBAA(375,"AF",X1,X3,X2,DA)="" 
+                                   where:  X1=field #.03 
+                                           X2=field #16.01 
+                                           X3=field #1.44 
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  375^AA 
+                                1)= S ^IBBAA(375,"AA",$E(X,1,30),DA)=""
+                                2)= K ^IBBAA(375,"AA",$E(X,1,30),DA)
+                                The is a regular cross-reference by PATIENT (field #.03).  The principal purpose of this cross-reference is to allow the Patient Merge processor (Kernel) to operate efficiently in the event that patient's with records in
+                                file #375 are merged.  
+
+
+              RECORD INDEXES:   AC (#628), AF (#629)
+
+375,.04       APPLICATION REFERENCE  0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<3) X
+              LAST EDITED:      JUN 27, 2005 
+              HELP-PROMPT:      Answer must be 3-25 characters in length. 
+              DESCRIPTION:
+                                This field value indicates where in application processing the GETACCT^IBBAPI function is called.  
+
+              TECHNICAL DESCR:
+                                ";"_<routine_name> or <tag>_";"_<routine_name> 
+
+
+375,.05       EXTERNAL ACCT REC'D    0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 23, 2005 
+              DESCRIPTION:
+                                The date/time at which the External Account Number was received and processed into file #375, field #.02.  
+
+
+375,.2        TEST PATIENT           0;20 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 11, 2005 
+              DESCRIPTION:
+                                If the DFN for this patient indicates a test patient as a result of a call to $$TESTPAT^VADPT, then this field is set to "YES".  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 messages will not be constructed for any record in this file where TEST PATIENT = "YES".  
+
+
+375,1.02      PATIENT CLASS          PV1;2 SET (Required)
+
+                                'I' FOR INPATIENT; 
+                                'O' FOR OUTPATIENT; 
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                The Patient associated with this account is classified as either "I" (Inpatient) or "O" (Outpatient).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 2.  
+
+
+375,1.03      PATIENT LOCATION       PV1;3 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      JUN 20, 2005 
+              DESCRIPTION:
+                                The sending application provides a pointer to the HOSPITAL LOCATION file (#44), which provides the a medical center location where the patient visit took place or where service was provided.  
+
+              TECHNICAL DESCR:  PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 3.  
+                                  
+                                The "AC" cross-reference uses field #1.03.  
+                                  
+                                S ^IBBAA(375,"AC",X1,X3,X2,DA)="" 
+                                   where:  X1=field #.03 
+                                           X2=field #1.03 
+                                           X3=field #1.44 
+                                 
+
+              RECORD INDEXES:   AC (#628)
+
+375,1.04      APPOINTMENT TYPE       PV1;4 POINTER TO APPOINTMENT TYPE FILE (#409.1)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                If the account is setup for an actual outpatient visit (i.e., a Scheduled appointment), this field will contain a pointer to the APPOINTMENT TYPE file (#409.1).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 4.  
+
+
+375,1.07      ATTENDING PHYSICIAN    PV1;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                The sending application may provide data on the Attending Physician or Ordering Provided as a pointer to the NEW PERSON file (#200).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 7.  
+
+
+375,1.09      CONSULTING PHYSICIAN   PV1;9 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                The sending application may provide data on the Consulting Physician related to a patient visit as a pointer to the NEW PERSON file (#200).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 9.  
+
+
+375,1.1       PURPOSE OF VISIT       PV1;10 SET
+
+                                '1' FOR C&P; 
+                                '2' FOR 10-10; 
+                                '3' FOR SV; 
+                                '4' FOR UV; 
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:      This field may contain a code to indicate the general type of the outpatient visit associated with this account: 
+                                   C&P = Compensation & Pension 
+                                   10-10 = Registration 10-10 
+                                   SV = Scheduled Visit 
+                                   UV = Unscheduled Visit.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 10.  
+
+
+375,1.17      ADMITTING PHYSICIAN    PV1;17 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                The sending application may provide data on the Admitting Physician, Surgeon, or Primary Provider associated with the visit/encounter.  The data is provided as a pointer to the NEW PERSON file (#200).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 17.  
+
+
+375,1.18      PRIMARY STOP CODE      PV1;18 POINTER TO CLINIC STOP FILE (#40.7)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                The sending application may provide a pointer to the CLINIC STOP file (#40.7) in order to identify the Primary Stop Code associated with the visit, encounter, or occasion of service.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 18.  
+
+
+375,1.25      CHECK-IN DATE/TIME     PV1;25 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                Normally only used when SCHEDULING is the sending application, this indicates the date/time of the clinic visit check-in.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 25.  
+
+
+375,1.41      CREDIT STOP CODE       PV1;41 POINTER TO CLINIC STOP FILE (#40.7)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                The sending application may provide a pointer to the CLINIC STOP file (#40.7) in order to identify the Credit Stop Code associated with the visit, encounter, or occasion of service.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 41.  
+
+
+375,1.44      ADMIT DATE/TIME        PV1;44 DATE
+
+              INPUT TRANSFORM:  D KAC144^IBBAADD(DA) S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 27, 2005 
+              DESCRIPTION:      The definition of this data element is dependent upon the application that is the originating source of the data in the account record.  
+                                   SCHEDULING -- Appointment Date/Time 
+                                   PCE -- Visit Date/Time 
+                                   PTF/FEE BASIS -- Admit Date 
+                                   RADIOLOGY -- Date Exam Desired 
+                                   PROSTHETICS -- Entry Date 
+                                   OP PHARMACY -- Fill/Refill Date 
+                                   SURGERY -- Date of Operation 
+
+              TECHNICAL DESCR:  PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 44.  
+                                  
+                                Both the "AC" cross-reference, which uses field #1.03, and the "AF" cross-reference, which uses field #16.01, depend on field #1.44.  Some input to $$GETACCT^IBBAPI does not contain a data for field #1.44.  An example
+                                would be input for a Pre-Admit (A05) message.  It contains data for field #2.08 (Expected Admit Date/Time), but normally does not contain data for field #1.44 (Admit Date/Time).  In these cases, the data for field #2.08 is
+                                also placed in field #1.44, so that field #1.44 will be non-null, and both "AC" and "AF" cross-references can be set. 
+                                  
+                                S ^IBBAA(375,"AC",X1,X3,X2,DA)="" 
+                                   where:  X1=field #.03 
+                                           X2=field #1.03 
+                                           X3=field #1.44 
+                                  
+                                S ^IBBAA(375,"AF",X1,X3,X2,DA)="" 
+                                   where:  X1=field #.03 
+                                           X2=field #16.01 
+                                           X3=field #1.44 
+                                  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              RECORD INDEXES:   AC (#628), AF (#629)
+
+375,1.45      DISCHARGE DATE/TIME    PV1;45 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                Used only by Scheduling to indicate the Check-Out Date/Time for the outpatient appointment.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 45.  
+
+
+375,1.5       ALTERNATE VISIT ID     PV1;50 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAY 17, 2005 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:      Radiology   Secondary Visit Number; used for Radiology charges; the external billing system's Visit Number associated with the CPRS ORDER (#100) for the outpatient or inpatient Radiology order.  Concatenate ";;;;RAD  to
+                                numeric string.  
+                                 
+                                Surgery   Surgical Case Number; used for Surgery account creation.  Concatenate ";;;;SUR  to numeric string.  
+                                 
+                                OP Pharmacy   IEN to PRESCRIPTION file (#52); used for Pharmacy account creation.  Concatenate ";;;;OPP  to numeric string.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 50.  
+
+
+375,1.51      WORKLOAD NON-COUNT     PV1;51 SET
+
+                                'Y' FOR WNC; 
+                                'N' FOR WC; 
+              LAST EDITED:      JUN 08, 2005 
+              DESCRIPTION:
+                                Normally only used when SCHEDULING is the sending application, this defines the clinic location found in field #1.03 as "count" or "non-count" for workload purposes.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 51.  
+
+
+375,1.52      OTHER PROVIDER         PV1;52 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                Data for an additional Provider to be supplied by the calling application as a pointer to the NEW PERSON file (#200).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT and DFT message data; PV1 Segment; Sequence 52.  
+
+
+375,2.07      ELIGIBILITY OF VISIT   PV2;7 POINTER TO MAS ELIGIBILITY CODE FILE (#8.1)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                Only used by SCHEDULING or PCE to indicate the patient's Eligibility related to the outpatient visit with which this account record is associated.  Data is provided as a pointer to the MAS ELIGIBILITY CODE file (#8.1).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT or DFT message data; PV2 Segment, Sequence 7.  
+
+
+375,2.08      EXPECTED ADMIT DATE/TIME PV2;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 07, 2005 
+              DESCRIPTION:      The definition of this data element is dependent upon the application that is the originating source of the data.  
+                                   SCHEDULING -- Appointment Date/Time 
+                                   PROSTHETICS -- Entry Date/Time 
+                                   SURGERY -- Planned Date of Operation 
+                                   RADIOLOGY -- Date Desired for Exam 
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT or DFT message data; PV2 Segment, Sequence 8.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+375,2.24      APPOINTMENT STATUS     PV2;24 SET
+
+                                'R' FOR SCHEDULED/KEPT; 
+                                'I' FOR INPATIENT; 
+                                'NS' FOR NO-SHOW; 
+                                'NSR' FOR NO-SHOW/RESCHEDULED; 
+                                'CP' FOR CANCELLED BY PATIENT; 
+                                'CPR' FOR CANCELLED BY PATIENT/RESCHEDULED; 
+                                'CC' FOR CANCELLED BY CLINIC; 
+                                'CCR' FOR CANCELLED BY CLINIC/RESCHEDULED; 
+                                'NT' FOR NO ACTION TAKEN; 
+              LAST EDITED:      FEB 24, 2005 
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT or DFT message data; PV2 Segment, Sequence 24.  
+
+
+375,2.46      PT STATUS EFFECTIVE DATE PV2;46 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 17, 2005 
+              DESCRIPTION:      The definition of this data element is dependent upon the application that is the originating source of the data.  
+                                   SCHEDULING - Date Appointment Made.  
+                                   PROSTHETICS - Date Ordered/Suspense Date.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT or DFT message data; PV2 Segment, Sequence 46.  
+
+
+375,3.03      PROCEDURE CODE         PR1;3 POINTER TO CPT FILE (#81)
+
+              LAST EDITED:      JUN 27, 2005 
+              DESCRIPTION:      The applications sending account data to IBB may provide a purpose for the visit, encounter, or occasion of service, in the form of a pointer value to the CPT file (#81).  The pointer is used to derive a specific CPT or
+                                HCPCS code.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; PR1 Segment, Sequence 3.  
+
+
+375,3.06      FUNCTIONAL TYPE        PR1;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+              LAST EDITED:      MAR 18, 2005 
+              HELP-PROMPT:      Answer must be 1-4 characters in length. 
+              DESCRIPTION:      Radiology - Imaging Type Abbreviation.  
+                                   ANI  = ANGIO/NEURO/INTERVENTIONAL 
+                                   CARD = CARDIOLOGY STUDIES (NUC MED) 
+                                   CT   = CT SCAN 
+                                   RAD  = GENERAL RADIOLOGY 
+                                   MRI  = MAGNETIC RESONANCE IMAGING 
+                                   MAM  = MAMMOGRAPHY 
+                                   NM   = NUCLEAR MEDICINE 
+                                   US   = ULTRASOUND 
+                                   VAS  = VASCULAR LAB 
+                                  
+                                Prosthetics - Prosthetics Flag.  
+                                   O = Home Oxygen 
+                                   P = Purchasing 
+                                   I = Stock Issue 
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; PR1 Segment, Sequence 6.  
+
+
+375,3.11      SURGEON                PR1;11 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 18, 2005 
+              DESCRIPTION:
+                                If SURGERY passes to IBB data for setup of an account, then this field provides the identity of the Principal Surgeon as a pointer to the NEW PERSON file (#200).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; PR1 Segment; Sequence 11.  
+
+
+375,3.16      PROCEDURE CODE MODIFIER(S) PR1;16 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      FEB 24, 2005 
+              HELP-PROMPT:      Answer must be 1-25 characters in length. 
+              DESCRIPTION:      Data may only be contained here if field #3.03 holds a pointer to the CPT file (#81), which may be resolved to a CPT or HCPCS code.  A string of numbers delimited by semi-colons; each number is a pointer to the CPT
+                                MODIFIER file (#81.3).  Example: 68;245;74;318; 
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; PR1 Segment; Sequence 16.  
+
+
+375,4         DIAGNOSIS              DG1;0 Multiple #375.04 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Multiple DG1 Segments are allowed within an ADT message.  Each subrecord in subfile #375.04 contains data for an individual DG1 Segment.  
+
+
+375.04,.01      SET ID                 0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 27, 2005 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:      Unique, sequential integer.  The Diagnosis with SET ID=1 should be interpreted as the Primary Diagnosis.  
+                                    
+                                  Each application sending account data to IBB may provide one or more related diagnoses.  If more than one, then these diagnoses are passed to IBB in priority order; i.e., the first diagnosis is the primary diagnosis
+                                  related to the charge, the second diagnosis is the secondary diagnosis related to the charge, etc.  IBB files the data into subfile #375.04 in that same order.  This field indicates the exact order in which the diagnoses
+                                  were received and filed.  
+
+                CROSS-REFERENCE:  375.04^B 
+                                  1)= S ^IBBAA(375,DA(1),"DG1","B",$E(X,1,30),DA)=""
+                                  2)= K ^IBBAA(375,DA(1),"DG1","B",$E(X,1,30),DA)
+
+
+375.04,.03      DIAGNOSIS CODE         0;3 POINTER TO ICD DIAGNOSIS FILE (#80) (Required)
+
+                LAST EDITED:      FEB 24, 2005 
+                DESCRIPTION:
+                                  The applications sending account data to IBB may provide one or more related diagnoses.  Each diagnosis is provided as a pointer to the ICD DIAGNOSIS file (#80).  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 ADT message data; DG1 Segment, Sequence 3.  
+
+
+375.04,.06      DIAGNOSIS TYPE         0;6 SET (Required)
+
+                                  'A' FOR ADMITTING; 
+                                  'D' FOR DISCHARGE; 
+                                  'W' FOR WORKING; 
+                                  'F' FOR FINAL; 
+                LAST EDITED:      APR 20, 2005 
+                DESCRIPTION:
+                                  The applications passing account data to IBB must define each diagnosis code included in the charge data as being one of the following: A(dmitting), W(orking), D(ischarging), or F(inal).  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 ADT message data; DG1 Segment, Sequence 6.  
+
+
+
+
+375,5         SC/EI CLASSIFICATION   ZCL;0 Multiple #375.05 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Multiple ZCL Segments are allowed within an ADT message.  Each subrecord in subfile #375.05 contains data for an individual ZCL Segment.  
+
+
+375.05,.01      SET ID                 0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 12, 2005 
+                HELP-PROMPT:      Type a Number between 1 and 9, 0 Decimal Digits 
+                DESCRIPTION:      SC/EI Classification data related to the charge is usually a set of classification codes, which causes multiple records to be created in subfile #375.05.  The value in this field merely indicates the order in which the
+                                  subfile record was created.  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 ADT message data; ZCL Segment; Sequence 1.  
+
+
+375.05,.02      TYPE                   0;2 SET
+
+                                  '1' FOR AO; 
+                                  '2' FOR IR; 
+                                  '3' FOR SC; 
+                                  '4' FOR EC; 
+                                  '5' FOR MST; 
+                                  '6' FOR HNC; 
+                                  '7' FOR CV; 
+                                  '8' FOR SHAD; 
+                LAST EDITED:      MAY 26, 2005 
+                DESCRIPTION:
+                                  SC/EI Classification data related to the charge can only be one of the following types: AO, IR, SC, EC, MST, HNC, CV, or SHAD.  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 ADT message data; ZCL Segment; Sequence 2.  
+
+
+375.05,.03      VALUE                  0;3 SET
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      MAR 04, 2005 
+                DESCRIPTION:
+                                  SC/EI Classification data related to the charge can have any of the following values: Yes (1), No (0), or Unknown (null).  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 ADT message data; ZCL Segment; Sequence 3.  
+
+
+
+
+375,11        PROCEDURE TEXT         11;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<3) X
+              LAST EDITED:      MAR 02, 2005 
+              HELP-PROMPT:      Answer must be 3-200 characters in length. 
+              DESCRIPTION:      If the application calling GETACCT^IBBAPI does not yet have Procedure data as a pointer to the CPT file (#81), then Procedure may be supplied as free text.  
+                                  
+                                The calling application may also provide data for this field that is used to enhance or add detail to the CPT or HCPCS code provided in field #3.03.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; PR1 Segment; Sequence 4.  
+
+
+375,12        DIAGNOSIS TEXT         12;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<3) X
+              LAST EDITED:      JUN 09, 2005 
+              HELP-PROMPT:      Answer must be 3-200 characters in length. 
+              DESCRIPTION:
+                                If the application calling GETACCT^IBBAPI does not yet have Diagnosis data as a pointer to the ICD DIAGNOSIS file (#80), then Diagnosis may be supplied as free text.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; DG1 Segment; Sequence 4.  
+
+
+375,13        FACILITY ID            13;1 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8)
+
+              LAST EDITED:      MAR 09, 2005 
+              DESCRIPTION:
+                                Identifies the facility (i.e., medical center division) associated with the patient service.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; EVN Segment; Sequence 6.  
+
+
+375,14.01     SURGICAL CASE #        14;1 POINTER TO SURGERY FILE (#130)
+
+              LAST EDITED:      MAR 09, 2005 
+              DESCRIPTION:
+                                Surgical Case # for any account setup by Surgery package.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; PV1 Segment; Sequence 50.  
+
+
+375,14.02     SURGICAL SPECIALTY     14;2 POINTER TO SURGICAL SPECIALTY FILE (#45.3)
+
+              LAST EDITED:      MAR 09, 2005 
+              DESCRIPTION:
+                                Surgical Specialty for any account setup by Surgery package.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; PV2 Segment; Sequence 12.  
+
+
+375,15.01     RADIOLOGY CLINICAL HX  15;1 POINTER TO RAD/NUC MED ORDERS FILE (#75.1)
+
+              LAST EDITED:      MAR 18, 2005 
+              DESCRIPTION:
+                                The Clinical History for the Radiology exam can be obtained by using this pointer value to the RAD/NUC MED ORDERS file (#75.1).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; OBX Segment; Sequence 5.  
+
+
+375,16.01     OUTSIDE LOCATION       16;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+              LAST EDITED:      JUN 20, 2005 
+              HELP-PROMPT:      Answer must be 2-50 characters in length. 
+              DESCRIPTION:      If the Patient Location for the visit/encounter/service is outside the VAMC, then the name of that location is stored here as free text.  
+                                  
+                                For A01 event messages related to inpatient admissions to outside hospitals, the PTF application will use "FEE BASIS" as a generic location descriptor.  
+
+              TECHNICAL DESCR:  PFSS HL7 ADT message data; PV1 Segment; Sequence 3.  
+                                 
+                                The "AF" cross-reference uses field #16.01.  
+                                 
+                                S ^IBBAA(375,"AF",X1,X3,X2,DA)="" 
+                                   where:  X1=field #.03 
+                                           X2=field #16.01 
+                                           X3=field #1.44 
+                                 
+
+              RECORD INDEXES:   AF (#629)
+
+375,99        EVENT HISTORY          99;0 DATE Multiple #375.099 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This subfile stores a history of the HL7 ADT events that are sent/received for this PFSS ACCOUNT record.  
+
+
+375.099,.01     CREATE DATE/TIME       0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 27, 2005 
+                DESCRIPTION:
+                                  Date/time at which the subrecord was created. 
+
+                TECHNICAL DESCR:  This may represent any of the following: (1) The date/time at which the VistA application called the GETACCT^IBBAPI 
+                                      in order to send data to the external billing system for the purpose of 
+                                      either establishing a new account/visit or updating an existing 
+                                      account/visit.  (2) The date/time at which an ADT message was sent to the external billing 
+                                      system via the outbound HL7 interface after processing by EN^IBBAADTO.  (3) The date/time at which an ADT message was received from the external 
+                                      billing system and processed by EN^IBBAADTI via the inbound HL7 
+                                      interface.  
+
+                CROSS-REFERENCE:  375.099^B 
+                                  1)= S ^IBBAA(375,DA(1),99,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBBAA(375,DA(1),99,"B",$E(X,1,30),DA)
+
+
+375.099,.02     HL7 EVENT              0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                LAST EDITED:      FEB 24, 2005 
+                HELP-PROMPT:      Answer must be 3 characters in length. 
+                DESCRIPTION:
+                                  The HL7 ADT event code, which may be one of the following: A01, A03, A04, A05, A08, A11, A13, A38.  
+
+                TECHNICAL DESCR:  The HL7 Event code specified by the VistA application in order to send visit-level data to the external billing system.  OR The HL7 Event code contained in an inbound message from the external billing system and
+                                  processed by IBB.  
+
+
+375.099,.03     REASON                 0;3 SET (Required)
+
+                                  'R' FOR REQUEST; 
+                                  'O' FOR OUTBOUND; 
+                                  'I' FOR INBOUND; 
+                LAST EDITED:      FEB 24, 2005 
+                DESCRIPTION:      Indicates the reason for the entry into the EVENT HISTORY subfile.  
+                                    
+                                  There are only three points in the history of the ADT message event that are tracked by IBB: 
+                                    
+                                  (1) Date/time of original request by application; 
+                                      Reason = "R" (Request) 
+                                    
+                                  (2) Date/time at which VDEF sent the message to VistA HL7; 
+                                      Reason = "O" (Outbound) 
+                                    
+                                  (3) Date/time at which a incoming message from the external medical 
+                                      billing system was received; 
+                                      Reason = "I" (Inbound) 
+                                    
+                                      Note: The incoming message could be either a response to an 
+                                      outbound ADT message that originated in VistA, or it may be 
+                                      an ADT message related to inpatient bed control that originated 
+                                      in the external medical billing system.  
+
+
+375.099,.04     HL7 MESSAGE            0;4 POINTER TO HL7 MESSAGE TEXT FILE (#772)
+
+                LAST EDITED:      JUL 13, 2005 
+                DESCRIPTION:
+                                  The pointer to the HL7 MESSAGE TEXT file (#772) where the outbound ADT message resides.  
+
+                TECHNICAL DESCR:
+                                  This data item is provided by the VDEF message builder; it will only be present in the subfile #375.099 record if field #.03 is set to "OUTBOUND".  
+
+                CROSS-REFERENCE:  375^G^MUMPS 
+                                  1)= I X,$P(^IBBAA(375,DA(1),0),U,2)="G" S $P(^(0),U,2)="" K ^IBBAA(375,"C","G",DA(1))
+                                  2)= Q
+                                  Whenever field #.04 in subfile #375.099 is set then the HL7 message (at least one) has been sent for this Account.  At that point, if the EXTERNAL ACCOUNT NUMBER (field #.02) is set to "G", then remove "G".  
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+APPOINTMENT TYPE (#409.1)         APPOINTMENT TYPE (#1.04)
+
+CLINIC STOP (#40.7)               PRIMARY STOP CODE (#1.18)
+                                  CREDIT STOP CODE (#1.41)
+
+CPT (#81)                         PROCEDURE CODE (#3.03)
+
+HL7 MESSAGE TEXT (#772)           EVENT HISTORY:HL7 MESSAGE (#.04)
+
+HOSPITAL LOCATION (#44)           PATIENT LOCATION (#1.03)
+
+ICD DIAGNOSIS (#80)               DIAGNOSIS:DIAGNOSIS CODE (#.03)
+
+MAS ELIGIBILITY CODE (#8.1)       ELIGIBILITY OF VISIT (#2.07)
+
+MEDICAL CENTER DIVISION (#40.8)   FACILITY ID (#13)
+
+NEW PERSON (#200)                 ATTENDING PHYSICIAN (#1.07)
+                                  CONSULTING PHYSICIAN (#1.09)
+                                  ADMITTING PHYSICIAN (#1.17)
+                                  OTHER PROVIDER (#1.52)
+                                  SURGEON (#3.11)
+
+PATIENT (#2)                      PATIENT (#.03)
+
+RAD/NUC MED ORDERS (#75.1)        RADIOLOGY CLINICAL HX (#15.01)
+
+SURGERY (#130)                    SURGICAL CASE # (#14.01)
+
+SURGICAL SPECIALTY (#45.3)        SURGICAL SPECIALTY (#14.02)
+
+
+File #375
+
+  Record Indexes:
+
+  AC (#628)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Set and kill the critical "AC" cross-reference.
+      Description:  S ^IBBAA(375,"AC",X1,X3,X2,DA)="" 
+                       where:  X1=field #.03 
+                               X2=field #1.03 
+                               X3=field #1.44 
+        Set Logic:  S ^IBBAA(375,"AC",X(1),X(2),X(3),DA)=""
+       Kill Logic:  K ^IBBAA(375,"AC",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^IBBAA(375,"AC")
+             X(1):  PATIENT  (375,.03)  (Subscr 1)  (forwards)
+             X(2):  ADMIT DATE/TIME  (375,1.44)  (Subscr 2)  (forwards)
+             X(3):  PATIENT LOCATION  (375,1.03)  (Subscr 3)  (forwards)
+
+  AF (#629)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Set critical "AF" cross-reference.
+      Description:  S ^IBBAA(375,"AF",X1,X3,X2,DA)="" 
+                       where:  X1=field #.03 
+                               X2=field #16.01 
+                               X3=field #1.44 
+        Set Logic:  S ^IBBAA(375,"AF",X(1),X(2),$E(X(3),1,30),DA)=""
+       Kill Logic:  K ^IBBAA(375,"AF",X(1),X(2),$E(X(3),1,30),DA)
+       Whole Kill:  K ^IBBAA(375,"AF")
+             X(1):  PATIENT  (375,.03)  (Subscr 1)  (forwards)
+             X(2):  ADMIT DATE/TIME  (375,1.44)  (Subscr 2)  (forwards)
+             X(3):  OUTSIDE LOCATION  (375,16.01)  (Subscr 3)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

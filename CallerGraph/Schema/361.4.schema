@@ -1,0 +1,199 @@
+STANDARD DATA DICTIONARY #361.4 -- EDI TEST CLAIM STATUS MESSAGE FILE                                                                                                                                                             MAY 20,2014@15:35:56  PAGE 1
+STORED IN ^IBM(361.4,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the transmission history and return messages that were received via the test queue for claims that were sent initially as EDI claims and have been retransmitted as test claims.  
+
+
+
+CROSS
+REFERENCED BY: LAST TRANSMIT DATE(ALT), MESSAGE RECEIVED DATE/TIME(ARD), TRANSMIT DATE/TIME(ATD), CLAIM(B), BATCH #(C)
+
+361.4,.01     CLAIM                  0;1 POINTER TO BILL/CLAIMS FILE (#399) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X Q
+              LAST EDITED:      JAN 27, 2005 
+              HELP-PROMPT:      Enter the bill # that was transmitted as test 
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  361.4^B 
+                                1)= S ^IBM(361.4,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBM(361.4,"B",$E(X,1,30),DA)
+
+
+361.4,.02     LAST TRANSMIT DATE     0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 26, 2005 
+              HELP-PROMPT:      Enter the latest date that this claim was transmitted as test. 
+              DESCRIPTION:
+                                This is the latest date the claim was sent as a test claim.  
+
+              NOTES:            TRIGGERED by the TRANSMIT DATE/TIME field of the TRANSMIT DATE/TIME sub-field of the EDI TEST CLAIM STATUS MESSAGE File 
+
+              CROSS-REFERENCE:  361.4^ALT 
+                                1)= S ^IBM(361.4,"ALT",$E(X,1,30),DA)=""
+                                2)= K ^IBM(361.4,"ALT",$E(X,1,30),DA)
+                                3)= Do not delete
+
+
+361.4,1       TRANSMIT DATE/TIME     1;0 DATE Multiple #361.41
+
+              DESCRIPTION:
+                                This multiple contains the date/time, batch and user information for the transmission of previously transmitted claims for test purposes.  
+
+
+361.41,.01      TRANSMIT DATE/TIME     0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JAN 18, 2006 
+                HELP-PROMPT:      Enter the date and time the claim was transmitted as test. 
+                DESCRIPTION:
+                                  This is the date and time the claim was transmitted as test.  
+
+                CROSS-REFERENCE:  361.41^B 
+                                  1)= S ^IBM(361.4,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.4,DA(1),1,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  ^^TRIGGER^361.4^.02 
+                                1)= X ^DD(361.41,.01,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^IBM(361.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=DIV,X=$P(X,".",1) S DIH=$G(^IBM(361.4,DIV(0),0)),DIV=X S $P(^(0),U,2)=DIV,DIH=361.4,DIG=.02 D
+                                 ^DICR
+
+                                1.3)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(0)=X S Y(1)=$S($D(^IBM(361.4,D0,0)):^(0),1:"") S X=Y(0),X=$P(X,".",1) S X=X>$P(Y(1),U,2)
+
+                                2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^IBM(361.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=$$LASTDT^IBCEPTU(.DA) X ^DD(361.41,.01,1,2,2.4)
+
+                                2.4)= S DIH=$G(^IBM(361.4,DIV(0),0)),DIV=X S $P(^(0),U,2)=DIV,DIH=361.4,DIG=.02 D ^DICR
+
+                                CREATE CONDITION)= DATE(TRANSMIT DATE)>LAST TRANSMIT DATE
+                                CREATE VALUE)= DATE(TRANSMIT DATE)
+                                DELETE VALUE)= S X=$$LASTDT^IBCEPTU(.DA)
+                                DIC)= 
+                                FIELD)= LAST TRANSMIT DATE
+
+                CROSS-REFERENCE:361.41^ALTD^MUMPS 
+                                1)= S ^IBM(361.4,DA(1),1,"ALTD",X\1,DA)=""
+                                2)= K ^IBM(361.4,DA(1),1,"ALTD",X\1,DA)
+                                3)= Do not delete
+                                This xref is used to determine the last transmit date as it is date without time.  
+
+
+                CROSS-REFERENCE:361.4^ATD 
+                                1)= S ^IBM(361.4,"ATD",$E(X,1,30),DA(1),DA)=""
+                                2)= K ^IBM(361.4,"ATD",$E(X,1,30),DA(1),DA)
+
+
+361.41,.02      BATCH #              0;2 POINTER TO EDI TRANSMISSION BATCH FILE (#364.1)
+
+                INPUT TRANSFORM:S DIC("S")="I $P(^(0),U,14)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:    JAN 26, 2005 
+                HELP-PROMPT:    Enter the batch # this claim was transmitted in. 
+                DESCRIPTION:
+                                This is the batch # this claim was transmitted in.  
+
+                SCREEN:         S DIC("S")="I $P(^(0),U,14)"
+                EXPLANATION:    Must be flagged as a test batch
+                CROSS-REFERENCE:361.4^C 
+                                1)= S ^IBM(361.4,"C",$E(X,1,30),DA(1),DA)=""
+                                2)= K ^IBM(361.4,"C",$E(X,1,30),DA(1),DA)
+                                3)= Do not delete
+
+
+361.41,.03      TRANSMITTED BY       0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:    JAN 26, 2005 
+                HELP-PROMPT:    Enter the user who transmitted the claim as test. 
+                DESCRIPTION:
+                                This is the user who transmitted the claim as test.  
+
+
+361.41,.04      CURRENT PAYER SEQUENCE 0;4 NUMBER
+
+                INPUT TRANSFORM:K:+X'=X!(X>3)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:    JAN 27, 2005 
+                HELP-PROMPT:    Type a Number between 1 and 3, 0 Decimal Digits 
+                DESCRIPTION:
+                                This is the current payer sequence when this claim was resubmitted.  
+
+
+
+
+361.4,2       MESSAGE                2;0 DATE Multiple #361.42
+
+              DESCRIPTION:
+                                This multiple contains the information about the status messages received in the test queue for the test claim.  
+
+
+361.42,.01      MESSAGE RECEIVED DATE/TIME 0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JAN 26, 2005 
+                HELP-PROMPT:      Enter the date/time the message was received. 
+                DESCRIPTION:
+                                  This is the date/time the message was received.  
+
+                CROSS-REFERENCE:  361.42^B 
+                                  1)= S ^IBM(361.4,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.4,DA(1),2,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  361.4^ARD 
+                                  1)= S ^IBM(361.4,"ARD",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBM(361.4,"ARD",$E(X,1,30),DA(1),DA)
+                                  3)= Do not delete
+
+
+361.42,.02      MESSAGE SEVERITY       0;2 SET
+
+                                  'R' FOR REJECTION; 
+                                  'I' FOR INFORMATION/WARNING; 
+                LAST EDITED:      JAN 26, 2005 
+                HELP-PROMPT:      Enter the code that corresponds to the severity of the message. 
+                DESCRIPTION:
+                                  This is the code that corresponds to the severity of the message.  
+
+
+361.42,.03      RETURN MESSAGE ID      0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JAN 27, 2005 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This is the VistA mailman message # that the status message was received in.  
+
+                CROSS-REFERENCE:  361.42^AC 
+                                  1)= S ^IBM(361.4,DA(1),2,"AC",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.4,DA(1),2,"AC",$E(X,1,30),DA)
+                                  3)= Do not delete
+
+
+361.42,1        MESSAGE                1;0   WORD-PROCESSING #361.421   (NOWRAP)
+
+                DESCRIPTION:
+                                  This field contains the formatted version of the status message received.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILL/CLAIMS (#399)                CLAIM (#.01)
+
+EDI TEST CLAIM STATUS MESSAGE 
+                   (#361.4)       TRANSMIT DATE/TIME:TRANSMIT DATE/TIME (#.01)
+
+EDI TRANSMISSION BATCH (#364.1)   TRANSMIT DATE/TIME:BATCH # (#.02)
+
+NEW PERSON (#200)                 TRANSMIT DATE/TIME:TRANSMITTED BY (#.03)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

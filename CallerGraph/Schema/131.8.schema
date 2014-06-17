@@ -1,0 +1,206 @@
+STANDARD DATA DICTIONARY #131.8 -- SURGERY UTILIZATION FILE                                                                                                                                                                       MAY 20,2014@15:41:56  PAGE 1
+STORED IN ^SRU(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                    (VERSION 3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains information related to operating room and surgical specialty utilization.  Start and end times for each room will be stored for each specific date.  
+ 
+
+
+
+
+131.8,.01     UTILIZATION DATE       0;1 DATE (Required)
+
+              Utilization Date                                                                                                 
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X S DINUM=X
+              LAST EDITED:      NOV 30, 1990 
+              HELP-PROMPT:      Enter the date for which the start and end times will be edited. 
+              DESCRIPTION:      This is the date for which the utilization will be calculated.  
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+131.8,1       OPERATING ROOM         1;0 POINTER Multiple #131.81 (Add New Entry without Asking)
+
+              Operating Room                                                                                                   
+              DESCRIPTION:      This contains information related to the start and end times for all operating rooms on a specific date.  
+                                 
+
+
+131.81,.01      OPERATING ROOM         0;1 POINTER TO OPERATING ROOM FILE (#131.7) (Multiply asked)
+
+                Operating Room                                                                                                 
+                INPUT TRANSFORM:  S DIC("S")="I $$ORDIV^SROUTL0(+Y),('$P(^SRS(+Y,0),U,6))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X S:$D(X) DINUM=X
+                LAST EDITED:      MAR 13, 1996 
+                HELP-PROMPT:      Enter the name of the operating room. 
+                DESCRIPTION:      This is the name of the operating room.  
+                                   
+
+                SCREEN:           S DIC("S")="I $$ORDIV^SROUTL0(+Y),('$P(^SRS(+Y,0),U,6))"
+                EXPLANATION:      Screen limits selection to active operating rooms for the division.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+131.81,1        START TIME             0;2 DATE
+
+                Time this Operating Room Begins Functioning                                                                    
+                INPUT TRANSFORM:  S X=$E(DA(1),4,5)_"/"_$E(DA(1),6,7)_"/"_$E(DA(1),2,3)_"@"_X,%DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                OUTPUT TRANSFORM: S Y=$P(Y,".",2)_"0000",Y=$E(Y,1,2)_":"_$E(Y,3,4)
+                LAST EDITED:      MAY 23, 1990 
+                HELP-PROMPT:      Enter the time that this room begins functioning on this date. 
+                DESCRIPTION:      This is the time of day that this operating room begins functioning on the date selected.  
+                                   
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  ^^TRIGGER^131.81^2 
+                                  1)= Q
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^SRU(D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(131.81,1,1,1,2.4)
+                                  2.4)= S DIH=$S($D(^SRU(DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=131.81,DIG=2 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= NO EFFECT
+                                  DELETE VALUE)= @
+                                  FIELD)= END T
+                                  This trigger of the END TIME field functions to delete the END TIME when the START TIME is deleted.  
+
+
+                CROSS-REFERENCE:  ^^TRIGGER^131.81^3 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^SRU(D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X="N" X ^DD(131.81,1,1,2,1.4)
+                                  1.4)= S DIH=$S($D(^SRU(DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=131.81,DIG=3 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^SRU(D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X="Y" X ^DD(131.81,1,1,2,2.4)
+                                  2.4)= S DIH=$S($D(^SRU(DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=131.81,DIG=3 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= "N"
+                                  DELETE VALUE)= "Y"
+                                  FIELD)= INAC
+                                  This trigger of the INACTIVE (Y/N) field functions to mark the operating room as active when a START TIME is entered and mark the room as inactive when the START TIME is deleted.  
+
+
+
+131.81,2        END TIME               0;3 DATE
+
+                Time this Operating Room Stops Functioning                                                                     
+                INPUT TRANSFORM:  S X=$E(DA(1),4,5)_"/"_$E(DA(1),6,7)_"/"_$E(DA(1),2,3)_"@"_X,%DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                OUTPUT TRANSFORM: S Y=$P(Y,".",2)_"0000",Y=$E(Y,1,2)_":"_$E(Y,3,4)
+                LAST EDITED:      MAY 08, 1990 
+                HELP-PROMPT:      Enter the time that this operating room stops functioning on this date. 
+                DESCRIPTION:      This is the time that this operating room stops functioning on this date.  It will be used when generating the operating room utilization reports.  
+                                   
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                  TRIGGERED by the START TIME field of the OPERATING ROOM sub-field of the SURGERY UTILIZATION File 
+
+
+131.81,3        INACTIVE (Y/N)         0;4 SET
+
+                Has this Room been Inactivated on this Date ?  (Y/N)                                                           
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      MAY 23, 1990 
+                HELP-PROMPT:      Enter 'Y' if the room is inactive on this date. 
+                DESCRIPTION:      This flags the operating room if inactive on the date selected.  
+                                   
+
+                NOTES:            TRIGGERED by the START TIME field of the OPERATING ROOM sub-field of the SURGERY UTILIZATION File 
+
+
+
+
+131.8,2       SURGICAL SPECIALTY     2;0 POINTER Multiple #131.82 (Add New Entry without Asking)
+
+              Surgical Specialty                                                                                               
+              DESCRIPTION:      This is information related to the start and end times for each Surgical Specialty on a given date.  
+                                 
+
+
+131.82,.01      SURGICAL SPECIALTY     0;1 POINTER TO LOCAL SURGICAL SPECIALTY FILE (#137.45) (Multiply asked)
+
+                Surgical Specialty                                                                                             
+                LAST EDITED:      MAR 17, 1993 
+                HELP-PROMPT:      Enter the name of the Surgical Specialty. 
+                DESCRIPTION:      This is the name of the Surgical Specialty.  
+                                   
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+131.82,1        START TIME             0;2 DATE
+
+                Time this Specialty is Scheduled to Begin Functioning                                                          
+                INPUT TRANSFORM:  S X=$E(DA(1),4,5)_"/"_$E(DA(1),6,7)_"/"_$E(DA(1),2,3)_"@"_X,%DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                OUTPUT TRANSFORM: S Y=$P(Y,".",2)_"0000",Y=$E(Y,1,2)_":"_$E(Y,3,4)
+                LAST EDITED:      MAY 23, 1990 
+                HELP-PROMPT:      Enter the time that this surgical specialty begins functioning on this date. 
+                DESCRIPTION:      This is the time of day that this Surgical Specialty begins functioning on this date.  Any time entered prior to the start time will be considered overtime.  
+                                   
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  ^^TRIGGER^131.82^2 
+                                  1)= Q
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^SRU(D0,2,D1,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(131.82,1,1,1,2.4)
+                                  2.4)= S DIH=$S($D(^SRU(DIV(0),2,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=131.82,DIG=2 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= NO EFFECT
+                                  DELETE VALUE)= @
+                                  FIELD)= END
+                                  This trigger of the END TIME field functions to delete the END TIME when the START TIME is deleted.  
+
+
+                CROSS-REFERENCE:  ^^TRIGGER^131.82^3 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^SRU(D0,2,D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X="N" X ^DD(131.82,1,1,2,1.4)
+                                  1.4)= S DIH=$S($D(^SRU(DIV(0),2,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=131.82,DIG=3 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^SRU(D0,2,D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X="Y" X ^DD(131.82,1,1,2,2.4)
+                                  2.4)= S DIH=$S($D(^SRU(DIV(0),2,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=131.82,DIG=3 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= "N"
+                                  DELETE VALUE)= "Y"
+                                  FIELD)= INACT
+                                  This trigger of the INACTIVE (Y/N) field functions to mark the surgical specialty as active when a START TIME is entered and to mark the specialty as inactive when the START TIME is deleted.  
+
+
+
+131.82,2        END TIME               0;3 DATE
+
+                Time this Specialty is Scheduled to Stop Functioning                                                           
+                INPUT TRANSFORM:  S X=$E(DA(1),4,5)_"/"_$E(DA(1),6,7)_"/"_$E(DA(1),2,3)_"@"_X,%DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                OUTPUT TRANSFORM: S Y=$P(Y,".",2)_"0000",Y=$E(Y,1,2)_":"_$E(Y,3,4)
+                LAST EDITED:      MAY 08, 1990 
+                HELP-PROMPT:      Enter the time that this surgical specialty stops functioning on this date. 
+                DESCRIPTION:      This is the time of day that this Surgical Specialty stops functioning.  Any time worked after this time will be considered overtime.  
+                                   
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                  TRIGGERED by the START TIME field of the SURGICAL SPECIALTY sub-field of the SURGERY UTILIZATION File 
+
+
+131.82,3        INACTIVE (Y/N)         0;4 SET
+
+                Has this Specialty been Inactivated for this Date ?  (Y/N)                                                     
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      MAY 23, 1990 
+                HELP-PROMPT:      Enter 'Y' if this specialty is not active on this date. 
+                DESCRIPTION:      This flags the surgical specialty if it is inactive on this particular date.  
+                                   
+
+                NOTES:            TRIGGERED by the START TIME field of the SURGICAL SPECIALTY sub-field of the SURGERY UTILIZATION File 
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+LOCAL SURGICAL SPECIALTY 
+                   (#137.45)      SURGICAL SPECIALTY:SURGICAL SPECIALTY (#.01)
+
+OPERATING ROOM (#131.7)           OPERATING ROOM:OPERATING ROOM (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

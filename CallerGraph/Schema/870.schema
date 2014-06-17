@@ -1,0 +1,889 @@
+STANDARD DATA DICTIONARY #870 -- HL LOGICAL LINK FILE                                                                                                                                                                             MAY 20,2014@15:33:45  PAGE 1
+STORED IN ^HLCS(870,  (64 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                           (VERSION 1.6)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file serves two purposes. It is a fileman-compatible transmission log. The Low Layer Protocols write and read directly from this file.  (See routines HLCSDR1 and HLCSDR2) 
+ 
+This file stores parameters that govern the behaviour of the Low Layer Protocols. Fields like: READ TIMEOUT, ACK TIMEOUT, LLP START BLOCK, and LLP END BLOCK, are fields that govern how long the finite state machine waits for data to come down the line
+(READ TIMEOUT), how long it waits for a lower level acknowledgement (ACK TIMEOUT), and which control characters define the beginning and end of a message (LLP START BLOCK and LLP END BLOCK).  
+ 
+This file also stores information that drives the SYSTEMS LINK MONITOR display option. Fields like, IN QUEUE FRONT POINTER, IN QUEUE BACK POINTER are used to manage the data flow in the queues but they are also displayed on the SYSTEMS LINK MONITOR under
+the alias's MESSAGES PROCESSED and MESSAGES RECEIVED. Fields like STATE and DEVICE TYPE are also used to drive the SYSTEMS LINK MONITOR. These fields are updated by the lower layer protocols in order to give real-time feedback as to what is ocurring on a
+link. For example, when a message is received (see HLCSDR1) the state transitions from "IDLE" to "READING".  
+
+
+
+POINTED TO BY: LOGICAL LINK field (#2005) of the OUTPATIENT SITE File (#59) 
+               LOGICAL LINK field (#1) of the CPRS ORDERING INSTITUTION sub-field (#59.08) of the OUTPATIENT SITE File (#59) 
+               LOGICAL LINK field (#770.7) of the PROTOCOL File (#101) 
+               HL7 LOGICAL LINK field (#.18) of the CP INSTRUMENT File (#702.09) 
+               LOGICAL LINK field (#11) of the HL7 MESSAGE TEXT File (#772) 
+               LOGICAL LINK field (#7) of the HL7 MESSAGE ADMINISTRATION File (#773) 
+               LOGICAL LINK - IN QUEUE field (#17) of the HL7 MESSAGE ADMINISTRATION File (#773) 
+               LOGICAL LINK field (#3) of the DESTINATION sub-field (#774.01) of the SUBSCRIPTION CONTROL File (#774) 
+               HLO STANDARD LISTENER field (#.1) of the HLO SYSTEM PARAMETERS File (#779.1) 
+               APPLICATION SPECIFIC LISTENER field (#.09) of the HLO APPLICATION REGISTRY File (#779.2) 
+               MIDDLEWARE LOGICAL LINK field (#.02) of the RECIPIENTS sub-field (#779.41) of the HLO SUBSCRIPTION REGISTRY File (#779.4) 
+               FACILITY LOGICAL LINK field (#.021) of the RECIPIENTS sub-field (#779.41) of the HLO SUBSCRIPTION REGISTRY File (#779.4) 
+               LINK field (#.01) of the LINKS sub-field (#779.91) of the HLO PRIORITY QUEUES File (#779.9) 
+               LOGICAL LINK field (#.01) of the LOGICAL LINK sub-field (#869.311) of the LINK MONITOR VIEWS sub-field (#869.31) of the HL COMMUNICATION SERVER PARAMETERS File (#869.3) 
+               
+
+CROSS
+REFERENCED BY: STATUS(AISTAT), LLP TYPE(ALLP), NODE(B), INSTITUTION(C), MAILMAN DOMAIN(D), TCP/IP SERVICE TYPE(E)
+
+INDEXED BY:    INSTITUTION & NODE (AC), NODE & LLP TYPE & MAILMAN DOMAIN & TCP/IP SERVICE TYPE (AD), NODE & LLP TYPE & DNS DOMAIN & TCP/IP SERVICE TYPE (AD1), NODE & LLP TYPE & HLLP DEVICE (AD2), DNS DOMAIN (DNS), DNS DOMAIN & NODE (DNS2), IEN772
+               InQ-Non-TCP (IEN772IN), IEN772 OutQ-Non-TCP (IEN772OUT), TCP/IP ADDRESS (IP)
+
+
+870,.01       NODE                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      MAR 08, 2005 
+              HELP-PROMPT:      Enter the name of the logical link (3-10 characters) 
+              DESCRIPTION:      This is the name of the logical link that data will be communicated on.  It is this name that will be displayed in the "NODE" column of the SYSTEMS LINK MONITOR display option.  It is suggested that this name be the same
+                                name as the commercial application e.g. KURZWEIL1,KURZWEIL2,COPATH, or SUNQUEST1.  
+
+              CROSS-REFERENCE:  870^B 
+                                1)= S ^HLCS(870,"B",$E(X,1,30),DA)=""
+                                2)= K ^HLCS(870,"B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AC (#94), AD (#95), AD1 (#101), AD2 (#108), DNS2 (#216)
+
+870,.02       INSTITUTION            0;2 POINTER TO INSTITUTION FILE (#4)
+
+              INPUT TRANSFORM:  K:$O(^HLCS(870,"C",X,0)) X
+              LAST EDITED:      MAY 28, 2004 
+              HELP-PROMPT:      Select an institution that has not been associated with another link. 
+              DESCRIPTION:      It may be necessary for an application to determine the appropriate link to use when the only information it has is the institution. This field is used to associate a link with that institution. There is a 1:1 
+                                correspondence between institution and logical link. An institution cannot be associated with more than one logical link.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  870^C 
+                                1)= S ^HLCS(870,"C",$E(X,1,30),DA)=""
+                                2)= K ^HLCS(870,"C",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AC (#94)
+
+870,.03       MAILMAN DOMAIN         0;7 POINTER TO DOMAIN FILE (#4.2)
+
+              INPUT TRANSFORM:  K:$O(^HLCS(870,"D",X,0)) X
+              LAST EDITED:      MAR 08, 2005 
+              HELP-PROMPT:      Enter the Mailman domain corresponding to this link. 
+              DESCRIPTION:
+                                Either this field or the OTHER DOMAIN field should have a value.  The domain is used to formulate the RECEIVING FACILITY field of the message header.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  870^D 
+                                1)= S ^HLCS(870,"D",$E(X,1,30),DA)=""
+                                2)= K ^HLCS(870,"D",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AD (#95)
+
+870,.08       DNS DOMAIN             0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>70!($L(X)<4) X S HLIP=$$ADDRESS^XLFNSLK(X) K:('HLIP)&($P($G(^HLCS(869.3,1,0)),"^",3)="P")&($P($$SITE^VASITE,"^",3)) X I HLIP S HLIP=$$IP^HLMA3(DA,HLIP)
+              LAST EDITED:      MAR 09, 2005 
+              HELP-PROMPT:      Enter the full domain name as registered with DNS. 
+              DESCRIPTION:
+                                The domain name as registered with DNS.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              FIELD INDEX:      DNS (#109)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  This is a regular index of new-style cross-reference on the DNS Domain field
+                    Set Logic:  S ^HLCS(870,"DNS",$E(X,1,70),DA)=""
+                   Kill Logic:  K ^HLCS(870,"DNS",$E(X,1,70),DA)
+                   Whole Kill:  K ^HLCS(870,"DNS")
+                         X(1):  DNS DOMAIN  (870,.08)  (Subscr 1)  (Len 70)  (forwards)
+
+              RECORD INDEXES:   AD1 (#101), DNS2 (#216)
+
+870,1         DESCRIPTION            3;0   WORD-PROCESSING #870.02
+
+              HELP-PROMPT:      Enter a description for this link 
+              DESCRIPTION:
+                                This field contains a brief explanation of this link.  
+
+
+870,2         LLP TYPE               0;3 POINTER TO HL LOWER LEVEL PROTOCOL TYPE FILE (#869.1) (Required)
+
+              LAST EDITED:      MAR 08, 2005 
+              HELP-PROMPT:      Enter the  LLP used for this logical link. 
+              DESCRIPTION:
+                                Enter the type of Lower Level Protocol for this logical link. Selection of TCP implies that the MLLP protocol will be used. Each of the supported LLP's are described in detail in Appendix C of the HL7 Implementation Guide.  
+
+              CROSS-REFERENCE:  870^ALLP 
+                                1)= S ^HLCS(870,"ALLP",$E(X,1,30),DA)=""
+                                2)= K ^HLCS(870,"ALLP",$E(X,1,30),DA)
+                                This cross-reference is used to link the HL Lower Layer Parameter file (#869.2) with the HL Logical Link file. Using this x-ref you can locate the parameter associated with this link.  
+
+
+              RECORD INDEXES:   AD (#95), AD1 (#101), AD2 (#108)
+
+870,3         DEVICE TYPE            0;4 SET
+
+                                'PC' FOR Persistent Client; 
+                                'NC' FOR Non-Persistent Client; 
+                                'SS' FOR Single-threaded Server; 
+                                'MS' FOR Multi-threaded Server; 
+                                'SH' FOR Serial HLLP; 
+                                'SX' FOR Serial X3.28; 
+                                'MM' FOR MailMan; 
+              LAST EDITED:      JUL 10, 2003 
+              HELP-PROMPT:      Not editable from any user option. See field description. 
+              DESCRIPTION:
+                                This field is not editable from any user option. It is used purely for display purposes in the DEVICE TYPE column of the SYSTEMS LINK MONITOR display option.  
+
+
+870,4         STATE                  0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 01, 2007 
+              HELP-PROMPT:      Answer must be 1-60 characters in length 
+              DESCRIPTION:
+                                This field is not editable from any user option. It is used purely for display purposes in the STATE column of the SYSTEMS LINK MONITOR display option.  
+
+
+870,4.5       AUTOSTART              0;6 SET
+
+                                '0' FOR Disabled; 
+                                '1' FOR Enabled; 
+              LAST EDITED:      NOV 20, 1996 
+              DESCRIPTION:
+                                This field permits the link to be restarted by Taskman after a system reboot. If disabled, the link will not be restarted.  
+
+
+870,4.9       STOP PROCESSING IN-QUEUE 0;9 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 18, 2006 
+              HELP-PROMPT:      Setting this field to 'Y' prevents the incoming filer from processing the incoming messages queued in this link.  
+              DESCRIPTION:
+                                Setting this field to 'Y' prevents the incoming filer from processing the incoming messages queued in this link.  
+
+
+870,5         IN QUEUE FRONT POINTER IN QUEUE FRONT POINTER;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 21, 2004 
+              HELP-PROMPT:      This field is not editable from any user option. See Field Description. 
+              DESCRIPTION:
+                                The queue structure relies on two queues, INcoming and OUTgoing.  This pointer is used to point to the first message in the FIFO queue.  
+
+
+870,6         IN QUEUE BACK POINTER  IN QUEUE BACK POINTER;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 21, 2004 
+              HELP-PROMPT:      Type a Number between 0 and 99999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The queue structure relies on two queues-INcoming and OUTgoing.  This pointer points to the last message in the FIFO queue.  
+
+
+870,7         OUT QUEUE FRONT POINTER OUT QUEUE FRONT POINTER;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 21, 2004 
+              HELP-PROMPT:      This field is not editable from any user option. See Field Description. 
+              DESCRIPTION:
+                                The queue structure relies on two queues-INcoming and OUTgoing.  This pointer points to the first message in the FIFO queue.  
+
+
+870,8         OUT QUEUE BACK POINTER OUT QUEUE BACK POINTER;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 21, 2004 
+              HELP-PROMPT:      This field is not editable from any user option. See field description. 
+              DESCRIPTION:
+                                The queue structure relies on two queues, INcoming and OUTgoing.  This pointer points to the last message in the FIFO queue.  
+
+
+870,9         TIME STARTED           0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 06, 1994 
+              HELP-PROMPT:      This field is not editable from any user option. See Field Description. 
+              DESCRIPTION:
+                                This field contains the Date/Time the Lower Layer Protocol was last launched for the Logical Link. Only applicable to Lower Layer Protocols, not Mailman.  
+
+
+870,10        TIME STOPPED           0;11 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 06, 1994 
+              HELP-PROMPT:      This field is not editable from any user option. See Field Description. 
+              DESCRIPTION:
+                                This field contains the Date/Time the Lower Layer Protocol was last shutdown for the Logical Link. Only applicable to Lower Layer Protocols, not Mailman.  
+
+
+870,11        TASK NUMBER            0;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 06, 1994 
+              HELP-PROMPT:      This field is not editable from any user option. See Field Description. 
+              DESCRIPTION:
+                                This is the task number assigned by TaskMan when the Lower Layer Protocol is launched in the background.  
+
+
+870,14        SHUTDOWN LLP ?         0;15 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 22, 1995 
+              HELP-PROMPT:      Setting this field to 'Y' through the STOP HYBRID LLP option, shuts down the lower layer protocol and closes the device. 
+              DESCRIPTION:
+                                This field is editable through the STOP HYBRID LLP option. When the Lower Layer Protocol is running, and this field is set to 'Y' the Lower Layer Protocol will shutdown and close the device.  
+
+
+870,16        SHUTDOWN OUTGOING HLO MESSAGES 0;16 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      SEP 14, 2005 
+              HELP-PROMPT:      Enter YES to stop HLO messages from being transmitted to this destinations. 
+              DESCRIPTION:      This field affects only HLO messages.  
+                                 
+
+
+870,18        GROSS COMMUNICATIONS ERROR 0;19 POINTER TO HL7 ERROR MESSAGE FILE (#771.7)
+
+              LAST EDITED:      DEC 13, 1994 
+              HELP-PROMPT:      This field contains the most recent communications error which has occured on a particular link. 
+              DESCRIPTION:      This field contains the most recent gross communications error. It serves a two purposes. It is a flag for the SYSTEMS LINK MONITOR.  In other words, if this field is defined it means a communications error has occured on
+                                the link. This is indicated by the NODE field flashing on the SYSTEMS LINK MONITOR. The error can be viewed by using the SHOW COMMUNICATION ERROR option.  The error can be cleared by using the CLEAR COMMUNICATION ERROR
+                                option.  If set, an error occurred while transmitting (timeout for example).  This field can be viewed using the 'Show Gross LLP Error' and cleared using the 'Clear Gross LLP Error' options.  
+
+
+870,19        IN QUEUE               1;0 Multiple #870.019
+
+              LAST EDITED:      OCT 12, 2004 
+              DESCRIPTION:
+                                This multiple contains the queue for incoming messages.  
+
+
+870.019,.01     MESSAGE NUMBER         0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 02, 1994 
+                HELP-PROMPT:      Not editable from any user option. See field description. 
+                DESCRIPTION:
+                                  This is the number assigned to the message when it is enqued into the FIFO queue.  
+
+                CROSS-REFERENCE:  870.019^B 
+                                  1)= S ^HLCS(870,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^HLCS(870,DA(1),1,"B",$E(X,1,30),DA)
+
+
+870.019,1       STATUS                 0;2 SET
+
+                                  'P' FOR PENDING; 
+                                  'D' FOR DONE PROCESSING; 
+                                  'S' FOR STUB RECORD; 
+                                  'U' FOR UNUSED STUB RECORD; 
+                LAST EDITED:      FEB 01, 2010 
+                HELP-PROMPT:      This is the status of an individual message in the queue. These statuses control the flow and processing of the message. 
+                DESCRIPTION:      Status of a particular message. Can be Stub, Pending, Done or Unused.  These statuses control the processing of a message. For example, a stub record is created when a message is enqueued, and cannot be processed until
+                                  its status is changed from 'stub' to 'pending'.  Changing this status is the last thing the Low Layer Protocol does after reading in a message.  Finally, once the message has been processed, its status is changed to
+                                  'done'. Also, the effect of setting the 'UNUSED STUB RECORD' status is to remove the record from the queue and not to block the transmission of other messages that are pending on the queue.  The 'UNUSED STUB RECORD'
+                                  status will get set if the stub record goes unused for a period of time as determined by the 'RETENTION TIME QUEUED STUB RCD' parameter.  
+
+                CROSS-REFERENCE:  870^AISTAT 
+                                  1)= S ^HLCS(870,"AISTAT",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^HLCS(870,"AISTAT",$E(X,1,30),DA(1),DA)
+                                  Used to quickly identify links with messages in any status, thus improving performance.  
+
+
+
+870.019,2       ERROR                  0;3 SET
+
+                                  'A' FOR LLP ACKNOWLEDGED NO ERROR; 
+                                  'C' FOR LLP CHAR COUNT WRONG; 
+                                  'X' FOR LLP XOR WRONG; 
+                                  'B' FOR DATA TOO LONG; 
+                                  'G' FOR OTHER LLP ERROR; 
+                LAST EDITED:      OCT 27, 1994 
+                HELP-PROMPT:      This field is not editable from any user option. See Field Description. 
+                DESCRIPTION:
+                                  If this field contains a "C","X","B", or a "G" it means an error has ocurred while reading in a message. This field is not editable from any user option.  
+
+
+870.019,3       MESSAGE TEXT           1;0   WORD-PROCESSING #870.193   (NOWRAP)
+
+                DESCRIPTION:
+                                  This field contains the text of the message.  
+
+
+870.019,4       tvv                    0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                LAST EDITED:      JAN 12, 1995 
+                HELP-PROMPT:      Answer must be 3 characters in length. 
+
+870.019,5       ccccc                  0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>5!($L(X)<1) X
+                LAST EDITED:      JAN 13, 1995 
+                HELP-PROMPT:      Answer must be 1-5 characters in length. 
+
+870.019,6       xxx                    0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+                LAST EDITED:      JAN 13, 1995 
+                HELP-PROMPT:      Answer must be 1-3 characters in length. 
+
+870.019,7       dhcp-longtitudinal checksum 0;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>5!($L(X)<1) X
+                LAST EDITED:      JAN 13, 1995 
+                HELP-PROMPT:      Answer must be 1-5 characters in length. 
+
+870.019,8       dhcp-xor checksum      0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+                LAST EDITED:      JAN 13, 1995 
+                HELP-PROMPT:      Answer must be 1-3 characters in length. 
+
+870.019,9       IEN772 InQ-Non-TCP     0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1)!'(X?.N) X
+                LAST EDITED:      DEC 21, 2004 
+                HELP-PROMPT:      Answer must be 1-30 numeric digits in length. 
+                DESCRIPTION:
+                                  The ien of file #772, where this sub-entry is copied to. 
+
+                FIELD INDEX:      IEN772IN (#217)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#870)
+                    Short Descr:  IEN772 whole file cross reference
+                      Set Logic:  S ^HLCS(870,"IEN772IN",X,DA(1),DA)=""
+                     Kill Logic:  K ^HLCS(870,"IEN772IN",X,DA(1),DA)
+                     Whole Kill:  K ^HLCS(870,"IEN772IN")
+                           X(1):  IEN772 InQ-Non-TCP  (870.019,9)  (Subscr 1)  (forwards)
+
+
+870.019,10      DATE/TIME STUB RCD FOUND 0;10 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 30, 2009 
+                DESCRIPTION:
+                                  A system date/time is entered into this field when a stub record is found.  
+
+
+
+
+870,20        OUT QUEUE              2;0 Multiple #870.01 (Add New Entry without Asking)
+
+              LAST EDITED:      OCT 12, 2004 
+              DESCRIPTION:
+                                This multiple contains the queue for outgoing messages.  
+
+
+870.01,.01      MESSAGE NUMBER         0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 02, 1994 
+                HELP-PROMPT:      Not editable from any user option. See Field Description. 
+                DESCRIPTION:
+                                  This is the number assigned to the message when it is enque'd into the FIFO queue.  
+
+                CROSS-REFERENCE:  870.01^B 
+                                  1)= S ^HLCS(870,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^HLCS(870,DA(1),2,"B",$E(X,1,30),DA)
+
+
+870.01,1        STATUS                 0;2 SET
+
+                                  'P' FOR PENDING; 
+                                  'D' FOR DONE PROCESSING; 
+                                  'S' FOR STUB RECORD; 
+                                  'U' FOR UNUSED STUB RECORD; 
+                LAST EDITED:      JAN 28, 2010 
+                HELP-PROMPT:      This is the status of an individual message in the queue. These statuses control the flow and processing of the message. 
+                DESCRIPTION:      Status of a particular message. Can be Stub, Pending, Done or Unused.  These statuses control the processing of a message. For example, a stub record is created when a message is enqueued, it cannot be processed until
+                                  its status is changed from a 'stub' to 'pending', this is the last thing HLCS1 does when dequeueing a message from file #772 and enqueueing it into file #870.  Finally, once the message has been processed, its status is
+                                  changed to 'done'.  Also, the effect of setting the 'UNUSED STUB RECORD' status is to remove the record from the queue and not to block the transmission of other messages that are pending on the queue.  The 'UNUSED STUB
+                                  RECORD' status will get set if the stub record goes unused for a period of time as determined by the 'RETENTION TIME QUEUED STUB RCD' parameter.  
+
+
+870.01,2        ERROR                  0;3 SET
+
+                                  'A' FOR LLP ACKNOWLEDGED NO ERROR; 
+                                  'C' FOR LLP CHAR COUNT WRONG; 
+                                  'X' FOR LLP XOR WRONG; 
+                                  'B' FOR DATA TOO LONG; 
+                                  'G' FOR OTHER LLP ERROR; 
+                LAST EDITED:      NOV 17, 1994 
+                HELP-PROMPT:      This field is not editable from any user option. See field description. 
+                DESCRIPTION:
+                                  If this field contains a "C","X","B", or a "G" it means an error has occured while attempting to send a message to another application.  This field is not editable from any user option.  
+
+
+870.01,3        MESSAGE TEXT           1;0   WORD-PROCESSING #870.13   (NOWRAP)
+
+                DESCRIPTION:
+                                  This field contains the text of the message.  
+
+
+870.01,4        dhcp-longtitudinal checksum 0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>5!($L(X)<1) X
+                LAST EDITED:      JAN 13, 1995 
+                HELP-PROMPT:      Answer must be 1-5 characters in length. 
+
+870.01,5        dhcp-xor checksum      0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+                LAST EDITED:      JAN 13, 1995 
+                HELP-PROMPT:      Answer must be 1-3 characters in length. 
+
+870.01,6        IEN772 OutQ-Non-TCP    0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1)!'(X?.N) X
+                LAST EDITED:      DEC 21, 2004 
+                HELP-PROMPT:      Answer must be 1-30 numeric digits in length. 
+                DESCRIPTION:
+                                  The ien of file #772, where this sub-entry is copied from.  
+
+                FIELD INDEX:      IEN772OUT (#218)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#870)
+                    Short Descr:  IEN772 whole file cross reference
+                      Set Logic:  S ^HLCS(870,"IEN772OUT",X,DA(1),DA)=""
+                     Kill Logic:  K ^HLCS(870,"IEN772OUT",X,DA(1),DA)
+                     Whole Kill:  K ^HLCS(870,"IEN772OUT")
+                           X(1):  IEN772 OutQ-Non-TCP  (870.01,6)  (Subscr 1)  (forwards)
+
+
+870.01,10       DATE/TIME STUB RCD FOUND 0;10 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 30, 2009 
+                DESCRIPTION:
+                                  A system date/time is entered into this field when a stub record is found.  
+
+
+
+
+870,21        QUEUE SIZE             0;21 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100000)!(X<2)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 21, 2004 
+              HELP-PROMPT:      Type a Number between 2 and 100000, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the steady-state size of the queue. The queue may dynamically grow beyond this size, under certain conditions. See Users Manual, for more information.  
+
+
+870,22        RETENTION TIME QUEUED STUB RCD 0;22 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<5)!(X?.E1"."1.N) X
+              LAST EDITED:      NOV 17, 2010 
+              HELP-PROMPT:      Type a number between 5 and 60, 0 decimal digits. 
+              DESCRIPTION:      The field represents the time in minutes for how long a stub record must remain as such before that record is changed to a unused status.  The default time is 10 minutes.  
+                                 
+                                This field is compared to DATE/TIME STUB RCD FOUND.  If the time elapsed since the DATE/TIME STUB RCD FOUND is greater than the number of minutes found in this field, then the STATUS (870.019,1) is changed to unused if it
+                                is an incoming message.  If it is an outgoing message then the STATUS (870.01,1) is changed to unused.  
+                                 
+
+              TECHNICAL DESCR:
+                                 
+
+
+870,23        SINGLE THREADED        0;23 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      FEB 11, 2011 
+              HELP-PROMPT:      Enter YES if the remote server is single threaded. HLO will then limit the client to a single connection. 
+              DESCRIPTION:      HLO provides the ability to setup multiple queues of outgoing messages to be transmitted over the same HL LOGICAL LINK.   However, if the remote server is single threaded, trying to open multiple connections over TCP/IP
+                                may cause problems.  Therefore, if the HL LOGICAL LINK is setup to communicate with a single threaded server, this field should be set to YES.  
+                                 
+                                 
+                                Currently, only HLO messaging honors this field.  The older HL7 1.6 VistA messaging software does not support multiple outgoing queues to be transmitted over the same HL LOGICAL LINK.  
+                                 
+
+
+870,24        DO NOT PING            0;24 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 12, 2012 
+              HELP-PROMPT:      Enter YES to prevent this link from being PINGED. The default is NO. 
+              DESCRIPTION:      This field, if set to YES, will prevent the link from being PINGED.  
+                                 
+
+
+870,100.01    MAIL GROUP             100;1 POINTER TO MAIL GROUP FILE (#3.8)
+
+              LAST EDITED:      JUL 07, 1999 
+              HELP-PROMPT:      Enter the mail group that messages should be sent to. 
+              DESCRIPTION:      If you are building a logical link that will use Mailman as a transport, you must define a mail group that contains the remote member, 
+                                 
+                                S.HL V16 SERVER@your target domain 
+                                 
+                                The HL7 package will place outbound messages in file 870's outque. The link must be running for messages to be handed off to Mailman.  
+                                 
+                                Inbound messages that are received by the server option are placed directly in file 772.  
+
+
+870,200.01    HLLP DEVICE            200;1 POINTER TO DEVICE FILE (#3.5)
+
+              LAST EDITED:      MAR 08, 2005 
+              HELP-PROMPT:      Enter the device to be used for the HLLP protocol. 
+              DESCRIPTION:
+                                This is an entry in the Device file (#3.5). It is opened when this logical link is started up and remains open until the link is shut down. Normally, Vista will initiate and the connection with this serial device.  
+
+              RECORD INDEXES:   AD2 (#108)
+
+870,200.02    RE-TRANSMISSION ATTEMPTS 200;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 07, 1999 
+              HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the number of times to re-try sending a message.  The default is 5 tries if this field is left blank. If a single message exceeds this value an Alert is sent to the HL7 mail group and the link is shutdown.  
+
+
+870,200.021   EXCEED RE-TRANSMIT ACTION 200;10 SET
+
+                                'I' FOR ignore; 
+                                'R' FOR restart; 
+                                'S' FOR shutdown; 
+              LAST EDITED:      AUG 20, 1999 
+              DESCRIPTION:      This field determines what to do when a message exceeds the number of 
+                                 retry attempts for this Logical Link.  Actions are: 
+                                  Ignore   = send alert once and keep trying to resend 
+                                  Restart  = send alert once and shutdown link then start link 
+                                  Shutdown = send alert once and shutdown link 
+
+
+870,200.022   CLOSE BEFORE RE-TRANSMISSION 200;11 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 29, 2006 
+              HELP-PROMPT:      Enter YES if the TCP device should always be closed and re-opened before another re-transmission attempt. 
+              DESCRIPTION:      Re-transmitting a message over the same open connection may cause a synchronization problem for some applications.  Setting this field to YES will cause the TCP connection to always be closed after a READ timeout or other 
+                                communication failure.  Instead, a new connection will be opened before attempting to re-transmit the message.  
+                                 
+
+
+870,200.03    BLOCK SIZE             200;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>512)!(X<9)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 07, 1999 
+              HELP-PROMPT:      Type a Number between 9 and 512, 0 Decimal Digits245 is the recommended default. 
+
+870,200.04    READ TIMEOUT           200;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>600)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 08, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 600, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the number of seconds the Lower Layer Protocol remains in a read state for data to come in on the link. The default is 10 seconds if this field is left blank.  
+
+
+870,200.05    ACK TIMEOUT            200;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>600)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 18, 2000 
+              HELP-PROMPT:      Type a Number between 0 and 600, 0 Decimal Digits 
+              DESCRIPTION:
+                                The number of seconds the Lower Layer Protocol waits for an acknowledgement from the receiving application. The default is 60.  If this field is less than the READ TIMEOUT field, the READ TIMEOUT value will be used.  
+
+
+870,200.06    LLP START BLOCK        200;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>300)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 300, 0 Decimal Digits 
+              DESCRIPTION:      Enter the numeric value of the control character used by the HLLP communications protocol as a START BLOCK CHARACTER. While this character is negotiable, the HL7 implementation guide recommends the use of the 'VT' 
+                                character. If this field is left blank, the default value of 11 will be used.  
+
+
+870,200.07    LLP END BLOCK          200;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>300)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 300, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the numeric value of the control character defined in the HLLP specification as the END BLOCK CHARACTER. The recommended value is 28. If this field is left blank, the default value will be 28 for the 'FS' character.  
+
+
+870,200.08    PROTOCOL ID VERSION    200;8 SET
+
+                                '21' FOR 2.1; 
+                                '22' FOR 2.2; 
+                                '23' FOR 2.3; 
+              LAST EDITED:      AUG 05, 1999 
+              HELP-PROMPT:      Enter the version of HLLP as specified by the lates HL7 Implementation Guide 
+              DESCRIPTION:
+                                The latest specification for the HLLP communications protocol is identified by a version number, which may be different from the HL7 standard itself.  
+
+
+870,200.09    UNI-DIRECTIONAL WAIT   200;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 0 and 10, 0 Decimal Digits 
+              DESCRIPTION:
+                                The number of seconds the Lower Layer Protocol waits after sending a messages.  This is only used if the message doesn't want an acknowledgment.  
+
+
+870,300.01    X3.28 DEVICE           300;1 POINTER TO DEVICE FILE (#3.5)
+
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Enter the device from the Device File. 
+              DESCRIPTION:      X3.28 is a serial protocol like HLLP. It requires the remote system be configured as a device (bi-directional) in the Device and terminal type files. The Vista system will normally open and maintain the connection.  See
+                                the HL7 Implementation Guide for details of this protocol.  
+
+
+870,300.02    MAXIMUM MESSAGE SIZE   300;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                See the HL7 Implementation Guide for details of the x3.28 protcol.  
+
+
+870,300.03    MAXIMUM BLOCK SIZE     300;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>245)!(X<9)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 9 and 245, 0 Decimal Digits 
+              DESCRIPTION:
+                                See the HL7 Implementation Guide for details of the x3.28 protcol.  
+
+
+870,300.04    TIMER A                300;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 60, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the time in seconds for the Response Timer. The default is 6 seconds if no time is entered.  
+
+
+870,300.05    TIMER B                300;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 60, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the time in seconds for the Receive Timer. The default is 3 seconds if no time is entered.  
+
+
+870,300.06    TIMER D                300;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 60, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the time for the Inter-Block timer. The default is 30 seconds if no time is specified.  
+
+
+870,300.07    TIMER E                300;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>600)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 600, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the time for the Line Check Timer. The default is 180 seconds is no time is specified.  
+
+
+870,400.01    TCP/IP ADDRESS         400;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<7) X
+              LAST EDITED:      OCT 12, 2004 
+              HELP-PROMPT:      Answer must be 7-40 characters in length. 
+              DESCRIPTION:
+                                Enter the numeric address of the remote site using the syntax, nn.nn.nn.nn 
+
+              FIELD INDEX:      IP (#219)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  IP Address cross reference
+                    Set Logic:  S ^HLCS(870,"IP",$E(X,1,40),DA)=""
+                   Kill Logic:  K ^HLCS(870,"IP",$E(X,1,40),DA)
+                   Whole Kill:  K ^HLCS(870,"IP")
+                         X(1):  TCP/IP ADDRESS  (870,400.01)  (Subscr 1)  (Len 40)  (forwards)
+
+
+870,400.02    TCP/IP PORT            400;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>65535)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 65535, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the port over which the HL7 service will create a socket for message exchange. In VA, this port will be 5000 between production systems.  
+
+
+870,400.03    TCP/IP SERVICE TYPE    400;3 SET
+
+                                'C' FOR CLIENT (SENDER); 
+                                'S' FOR SINGLE LISTENER; 
+                                'M' FOR MULTI LISTENER; 
+              LAST EDITED:      MAR 08, 2005 
+              HELP-PROMPT:      Does this link send a connection request or receive connection requests? 
+              DESCRIPTION:      This field determines if the Logical Link is the client (sender) or a listener (server) of a message.  Choose from: 
+                                 
+                                                                
+                                 CLIENT (SENDER): Indicates that this Logical Link connects to a target system, with the current system acting as the sender.  
+                                 
+                                 SINGLE LISTENER: Designates that the current system is a server (listener), using a single M process to do the listening.  
+                                                                 
+                                 MULTI LISTENER: Designates that the current system is a server (listener), creating multiple background processes.  
+
+              CROSS-REFERENCE:  870^E 
+                                1)= S ^HLCS(870,"E",$E(X,1,30),DA)=""
+                                2)= K ^HLCS(870,"E",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AD (#95), AD1 (#101)
+
+870,400.04    PERSISTENT             400;4 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      JUL 09, 1999 
+              DESCRIPTION:      Enter 'YES' if this connection needs to remain open even if there are no messages to send. The connection will remain open until it is disconnected by either side via shutting-down the logical link.  A setting of 'YES' is 
+                                appropriate for connecting to a COTS device with a high volume of messages.  
+
+
+870,400.05    RETENTION              400;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:      Retention is the maximum time in seconds in which a non-persistent LLP will wait after the associated queue has been emptied.  If further messages arrive in the queue before the retention time has expired, the LLP will
+                                continue to dequeue and send messages. Otherwise, the LLP will become inactive and will remain inactive until further messages are queued.  
+
+
+870,400.06    STARTUP NODE           400;6 POINTER TO TASKMAN SITE PARAMETERS FILE (#14.7)
+
+              LAST EDITED:      JUL 09, 1999 
+              HELP-PROMPT:      Enter the Taskman node to start this LLP on. 
+              DESCRIPTION:      This field is ONLY for VMS sites running Dual Taskman in DCL. This field is used to specify what Taskman node you want to job the Lower Level Protocol. It should only be used if you have two Taskmans running and only want
+                                the LLP to run on a particular node.  It will only work if you are running the dual Taskmans in DCL context on a VMS system.  
+
+
+870,400.07    SAY HELO               400;7 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      NOV 02, 2000 
+              HELP-PROMPT:      Send initial HELO for Cache/NT TCP links? 
+              DESCRIPTION:      This field is applicable only to Cache/NT sites with TCP links.  If you are not a Cache/NT site, or this is not a TCP link, this field does not apply, AND will be ignored.  
+                                 
+                                If this TCP link is for a VA site, answer YES.  If this TCP link is for a COTS system, answer NO.  This is the default.  
+
+              TECHNICAL DESCR:  When sending HL7 transactions to other VA sites over TCP links, Cache/NT sites must send an initial HELO to overcome buffering issues.  However, the initial HELO is not part of the HL7 standard, and may cause a reject 
+                                error when sent to a COTS system.  
+
+
+870,400.08    TCP/IP PORT (OPTIMIZED) 400;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>65535)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 16, 2005 
+              HELP-PROMPT:      Enter the port to use for the new HL7 'optimized' server, a number between 1 and 65535. 5001 is the default. 
+              DESCRIPTION:      The new HL7 'optimized' server will operate concurrently with the  old HL7 1.6 server.  To  enable that, the two servers are assigned different ports to listen on.  The default port for the old HL7 server is 5000, whereas 
+                                the new optimized HL7 server uses port 5001.  
+
+
+870,400.09    TCP/IP OPENFAIL TIMEOUT 400;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 16, 2008 
+              HELP-PROMPT:      Type a Number between 1 and 60, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the number of seconds for the TCP/IP Openfail Timeout. The default is 30 seconds if this field is left blank.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DEVICE (#3.5)                     HLLP DEVICE (#200.01)
+                                  X3.28 DEVICE (#300.01)
+
+DOMAIN (#4.2)                     MAILMAN DOMAIN (#.03)
+
+HL LOWER LEVEL PROTOCOL TYPE 
+                   (#869.1)       LLP TYPE (#2)
+
+HL7 ERROR MESSAGE (#771.7)        GROSS COMMUNICATIONS ERROR (#18)
+
+INSTITUTION (#4)                  INSTITUTION (#.02)
+
+MAIL GROUP (#3.8)                 MAIL GROUP (#100.01)
+
+TASKMAN SITE PARAMETERS (#14.7)   STARTUP NODE (#400.06)
+
+
+File #870
+
+  Record Indexes:
+
+  AC (#94)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  Sorts entries by <station number>,<link name>,<ien>
+        Set Logic:  S ^HLCS(870,"AC",$S($L($P($G(^DIC(4,+X2(1),99)),"^")):$P($G(^DIC(4,+X2(1),99)),"^"),1:" "),X2(2),DA)=""
+       Kill Logic:  K ^HLCS(870,"AC",$S($L($P($G(^DIC(4,+X1(1),99)),"^")):$P($G(^DIC(4,+X1(1),99)),"^"),1:" "),X1(2),DA)
+       Whole Kill:  K ^HLCS(870,"AC")
+             X(1):  INSTITUTION  (870,.02)  (Subscr 1)  (forwards)
+             X(2):  NODE  (870,.01)  (forwards)
+
+  AD (#95)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  Used to find the link over which to send the application acknowledgment.
+        Set Logic:  D SET1^HLOTLNK(X(1),X(3))
+         Set Cond:  S X=0 I X(4)="C",X(2),$P($G(^HLCS(869.1,X(2),0)),"^")="TCP" S X=1
+       Kill Logic:  D KILL1^HLOTLNK(X(1),X(3))
+        Kill Cond:  S X=0 I X(4)="C",X(2),$P($G(^HLCS(869.1,X(2),0)),"^")="TCP" S X=1
+             X(1):  NODE  (870,.01)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  LLP TYPE  (870,2)  (Subscr 2)  (forwards)
+             X(3):  MAILMAN DOMAIN  (870,.03)  (Subscr 3)  (forwards)
+             X(4):  TCP/IP SERVICE TYPE  (870,400.03)  (Subscr 4)  (forwards)
+
+  AD1 (#101)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  Used to find the link overwhich to send the application acknowledgment.
+        Set Logic:  D SET2^HLOTLNK(X(1),X(3))
+         Set Cond:  S X=0 I X(4)="C",X(2),$P($G(^HLCS(869.1,X(2),0)),"^")="TCP" S X=1
+       Kill Logic:  D KILL2^HLOTLNK(X(1),X(3))
+        Kill Cond:  S X=0 I X(4)="C",X(2),$P($G(^HLCS(869.1,X(2),0)),"^")="TCP" S X=1
+             X(1):  NODE  (870,.01)  (Subscr 1)  (forwards)
+             X(2):  LLP TYPE  (870,2)  (Subscr 2)  (forwards)
+             X(3):  DNS DOMAIN  (870,.08)  (Subscr 3)  (forwards)
+             X(4):  TCP/IP SERVICE TYPE  (870,400.03)  (Subscr 4)  (forwards)
+
+  AD2 (#108)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  Used to find the link overwhich to send an application acknowledgment.
+        Set Logic:  D SET3^HLOTLNK(X(1),X(3))
+         Set Cond:  S X=0 I X(2),$P($G(^HLCS(869.1,X(2),0)),"^")="HLLP" S X=1
+       Kill Logic:  D KILL3^HLOTLNK(X(1),X(3))
+        Kill Cond:  S X=0 I X(2),$P($G(^HLCS(869.1,X(2),0)),"^")="HLLP" S X=1
+       Whole Kill:  K ^HLCS(870,"AD","HLLP")
+             X(1):  NODE  (870,.01)  (Subscr 1)  (forwards)
+             X(2):  LLP TYPE  (870,2)  (Subscr 2)  (forwards)
+             X(3):  HLLP DEVICE  (870,200.01)  (Subscr 3)  (forwards)
+
+  DNS2 (#216)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Regular index of new-style x-ref on the DNS Domain and Node fields
+        Set Logic:  S ^HLCS(870,"DNS2",$E(X(1),1,70),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^HLCS(870,"DNS2",$E(X(1),1,70),$E(X(2),1,30),DA)
+       Whole Kill:  K ^HLCS(870,"DNS2")
+             X(1):  DNS DOMAIN  (870,.08)  (Subscr 1)  (Len 70)  (forwards)
+             X(2):  NODE  (870,.01)  (Subscr 2)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+CAPTIONED                                         USER #0    
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+HL7 LOGICAL LINK              JUL 06, 1999@12:07  USER #0
+  HL7 LL HEADER1                DD #870
+  HL7 LL BLK1                   DD #870
+  HL7 LLP HLLP                  DD #870
+  HL7 LLP TCP                   DD #870
+  HL7 LLP MAIL                  DD #870
+  HL7 LLP X3.28                 DD #870
+

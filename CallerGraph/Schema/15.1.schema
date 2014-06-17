@@ -1,0 +1,690 @@
+STANDARD DATA DICTIONARY #15.1 -- DUPLICATE RESOLUTION FILE                                                                                                                                                                       MAY 20,2014@15:42:15  PAGE 1
+STORED IN ^VA(15.1,  (1 ENTRY)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                               (VERSION 7.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to handle duplicate checking and merging of files that have entries in the Duplicate Record File.  It is meant to provide the overall control information that would be used to first identify duplicates within a file, e.g. Patient File,
+and then to merge the entries.  
+
+
+              DD ACCESS: @
+              RD ACCESS: #
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: #
+
+CROSS
+REFERENCED BY: FILE TO BE CHECKED(AGL), POTENTIAL DUPLICATE THRESHOLD%(APDTI), FILE TO BE CHECKED(B)
+
+15.1,.01      FILE TO BE CHECKED     0;1 POINTER TO FILE FILE (#1) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^DD(15,.01,""V"",""B"",Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X S:$D(X) DINUM=X
+              LAST EDITED:      DEC 21, 1992 
+              HELP-PROMPT:      Please enter a file name or file number. 
+              DESCRIPTION:
+                                This is the file that is being checked for duplicates and if duplicates are found, to be merged.  
+
+              SCREEN:           S DIC("S")="I $D(^DD(15,.01,""V"",""B"",Y))"
+              EXPLANATION:      MUST BE VARIABLE POINTER FILE IN FIELD .01 OF FILE 15
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  15.1^B 
+                                1)= S ^VA(15.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^VA(15.1,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  15.1^AGL^MUMPS 
+                                1)= S ^VA(15.1,"AGL",$P(^DIC(X,0,"GL"),U,2),DA)=""
+                                2)= K ^VA(15.1,"AGL",$P(^DIC(X,0,"GL"),U,2),DA)
+                                This cross reference is utilized by the XDRDUP when adjusting existing score values for a Duplicate Record entry.  
+
+
+
+15.1,.02      DUPLICATE SEARCH STATUS 0;2 SET (Required)
+
+                                'c' FOR COMPLETED; 
+                                'h' FOR HALTED; 
+                                'r' FOR RUNNING; 
+                                'e' FOR ERROR(STOP); 
+              LAST EDITED:      FEB 02, 1996 
+              HELP-PROMPT:      This is the status of the duplicate checker at any given time. 
+              DESCRIPTION:
+                                 This is the status of the duplicate checker at any given time.  
+
+              TECHNICAL DESCR:  This field is set by the duplicate checker software.  It is set to running when the search is first initiated, set to halt if a person wants to stop the search, and to completed when the search is finished.  
+                                 
+                                If for some reason the search aborts you will need to set this field to halted from running in order for you to restart the search.  
+
+
+15.1,.03      SEARCH BEGINNING DATE  0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 30, 1990 
+              HELP-PROMPT:      No entry is required in this field.  It will automatically be filled in for you by the search software. 
+              DESCRIPTION:
+                                This is the date and time that the present search started.  This field does not require user input, it is automatically filled in when you start the search.  
+
+              TECHNICAL DESCR:
+                                This field is automatically stuffed with the date and time that the search is queued by the search queueing software.  
+
+
+15.1,.04      SEARCH COMPLETION DATE 0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 30, 1990 
+              HELP-PROMPT:      You do not need to fill in this field.  It will automatically be done for you by the search software. 
+              DESCRIPTION:
+                                This field is used to store the date and time that the duplicate search is completed.  
+
+              TECHNICAL DESCR:
+                                This field is automatically stuffed by the search software upon completion of the search.  
+
+
+15.1,.05      TYPE OF SEARCH         0;5 SET
+
+                                'b' FOR BASIC; 
+                                'n' FOR NEW; 
+              LAST EDITED:      AUG 29, 1990 
+              HELP-PROMPT:      This is the type of search that is currently being run or has been completed. 
+              DESCRIPTION:
+                                This field describes the type of search the Duplicate Resolution software will conduct.  A 'BASIC' search starts at the beginning of a file while the 'NEW' search will only check those newly added entries.  
+
+              TECHNICAL DESCR:  This field is used to describe the type of search that is currently being run or has been completed.  The Basic search type is used whenever you are starting at the very beginning of a file and searching for duplicates. 
+                                The New search type is used to take records from a defined cross reference to check for duplicates in the file.  
+
+
+15.1,.06      CROSS-REF FOR NEW SEARCH 0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      AUG 29, 1990 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is the name of the cross reference that should be utilized to separate out any records that you wish to run through the Duplicate Resolution software checking to see if any potential duplicates.  
+
+              TECHNICAL DESCR:  If the operator chooses to do a 'NEW' search this cross reference will be $Ordered through checking each record against a gathered group of records to determine if any potential duplicates.  
+                                 
+                                The 'NEW' search will be utilized almost exclusively once the file has gone through a basic cleaning up phase utilizing the 'BASIC' search type.  
+
+
+15.1,.07      NUMBER OF RECORDS PROCESSED 0;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 29, 1990 
+              HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of records that have been checked for duplicates by the duplicate checking software.  
+
+              TECHNICAL DESCR:
+                                This field is stuffed by the duplicate checking software whenever the search is stopped or completed.  
+
+
+15.1,.08      LAST RECORD PROCESSED  0;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 17, 1997 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the last record that was processed by the duplicate checking software.  
+
+              TECHNICAL DESCR:  This field is utilized by the duplicate software as a starting point whenever the duplicate search is started up from a halted status.  This means that if the search was stopped either by a user or some other reason, the
+                                search would start up again starting with this record number.  
+                                 
+                                This field is updated every time a record is checked for duplicates by the duplicate checking software.  
+
+
+15.1,.09      CANDIDATE COLLECTION ROUTINE 0;9 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>17!($L(X)<1) X
+              LAST EDITED:      DEC 17, 1992 
+              HELP-PROMPT:      Answer must be 1-17 characters in length.  No '^' allowed. 
+              DESCRIPTION:
+                                This is the name of the routine which will be used to gather any potential duplicate records which should be checked by the Duplicate Resolution software.  
+
+              TECHNICAL DESCR:  Enter the routine name without the '^' character.  A label entry point reference is allowed but you must use a '-' instead of the normal '^', ex. ENTRY POINT-ROUTINE.  This entry will be executed by the Kernel duplicate
+                                resolution software after transforming the '-' into a '^'.  
+
+
+15.1,.1       SECONDS SEARCHED       0;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 02, 1996 
+              HELP-PROMPT:      This value is entered when the search process is stopped for any reason. 
+              DESCRIPTION:      This field is used to track the number of seconds that the search process was running PRIOR TO the most current start (or restart).  The value is determined at the time the process stops for any reason (completed, halt, or
+                                error).  While the search is running it does NOT include time for the current process.  
+
+
+15.1,.11      DUPLICATE MANAGER MAIL GROUP 0;11 POINTER TO MAIL GROUP FILE (#3.8)
+
+              LAST EDITED:      NOV 27, 1990 
+              HELP-PROMPT:      Enter the name of the mail group to which you want to send a bulletin when some error causes the halting of the duplicate search or merge process.  The name must be in the Mail Group file. 
+              DESCRIPTION:
+                                This is the mail group that will be sent a bulletin whenever any known problems occur during the duplicate checking or merging process.  
+
+
+15.1,.12      NUMBER SELECTED        0;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 13, 1996 
+              HELP-PROMPT:      This number indicates the number of patients that have been selected during the current search. 
+              DESCRIPTION:
+                                This field is used to indicate the number of potential duplicates that have been found in the current search.  
+
+
+15.1,.13      DAYS BEFORE FINAL VERIFY 0;13 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>30)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 10, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 30, 0 Decimal Digits 
+              DESCRIPTION:      The value of this field is the number of days available for ancillary reviewers to conduct their reviews. If action is still pending by any ancillary reviewers after this period, the site may take alternative action;
+                                notify designated persons via a mail group, establish an additional reviewer, or otherwise resolve the review. All reviews must be resolved prior to merging the affected record pair. The default with this application
+                                release is five days.  Days 1 to 30.  
+
+
+15.1,.14      DAYS BETWEEN VERIFY AND MERGE 0;14 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>30)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 13, 1996 
+              HELP-PROMPT:      Enter the number of days (0 to 30) which must pass after a patient pair is marked as completely verified as a duplicate pair before the pair may be merged. 
+              DESCRIPTION:      This field contains the sites determination on the number of days that MUST pass before a completely verified duplicate pair may be merged.  This time period is included to provide for outstanding tests which might have
+                                been ordered for the entry which is to be merged into the other one to be completed prior to the merge, so that data are not entered for the merged entry after the merge has been completed.  
+                                 
+
+
+15.1,.15      POTENTIAL DUPLICATE THRESHOLD% 0;15 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X K:$P(^VA(15.1,DA,0),U,2)="r" X
+              LAST EDITED:      OCT 02, 1990 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits.  You cannot edit if a Search is running. 
+              DESCRIPTION:
+                                This is the percentage of the total possible score that needs to be obtained before a duplicate record pair is placed in the Duplicate Record file as a Potential Non-Verified Duplicate pair.  
+
+              TECHNICAL DESCR:
+                                This field has a input transform that prevents the user from editing the field if the Duplicate Search Status is set to 'Running'.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  15.1^APDTI^MUMPS 
+                                1)= I $D(XDR("APDTI")),XDR("APDTI"),X>XDR("APDTI") S ^VA(15.1,DA,"APDTI")="" K XDR("APDTI")
+                                2)= I $D(X),X S XDR("APDTI")=X
+                                This cross reference is set whenever the Potential Duplicate Threshold is increased.  This Xref is utilized by the Duplicate Resolution software to let it know to go through the existing Non-verified Potential Duplicates 
+                                and see if the duplicate record pair meet the increased Potential Duplicate Threshold.  If not, the duplicate record pair entry is deleted from the file.  
+                                 
+                                The variable XDR("APDTI") is left around if somebody deletes the entry from the Duplicate Resolution file.   This is due to Fileman never allowing you to know if a person is just editing, adding, or deleting an entry.  
+
+
+
+15.1,.16      VERIFIED DUPLICATE MAIL GROUP 0;16 POINTER TO MAIL GROUP FILE (#3.8)
+
+              LAST EDITED:      AUG 29, 1990 
+              HELP-PROMPT:      Enter the name of the mail group to which you want to send a bulletin when the record is verified a duplicate.  The name must be in the Mail Group file. 
+              DESCRIPTION:
+                                This is the mail group that will be sent a bulletin whenever a Potential Non-Verified Duplicate is changed to a Verified Duplicate status.  
+
+              TECHNICAL DESCR:  This is the mail group that will be sent a bulletin saying that a Potential Non-Verified Duplicate pair has been verified as a Duplicate pair.  The bulletin will be sent immediately after the status has been changed to
+                                Verified Duplicate unless it is okay to proceed immediately with merging the records.  
+
+
+15.1,.17      VERIFIED DUPLICATE MSG ROUTINE 0;17 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>17!($L(X)<1) X
+              LAST EDITED:      DEC 31, 1990 
+              HELP-PROMPT:      Answer must be 1-17 characters in length.  No '^' allowed. 
+              DESCRIPTION:
+                                Enter the name of the routine which will be called to send a bulletin to members of the Verified Duplicate Mail Group. No '^' should be included.  
+
+              TECHNICAL DESCR:  This optional field is to allow a package developer to send a customized bulletin notifying the Verified Duplicate Mail Group about verified duplicates.  If nothing is entered the Kernel Duplicate Resolution software will
+                                send a brief bulletin to the members of the mail group.  This bulletin will only provide the .01 value and the DFN numbers of the two records.  The duplicate resolution software will pass the routine XDRMFR and XDRMTO and 
+                                it will be up to this routine to gather any other information it wants to send in the bulletin and also to send the bulletin to the Verified Duplicate Mail Group.  A label entry point is allowed but you must use a '-'
+                                instead of the normal '^', ex. ENTRY POINT- ROUTINE.  This entry point will be executed by the duplicate resolution software after transforming the '-' into a '^'.  
+
+
+15.1,.18      VERIFIED DUPLICATE THRESHOLD% 0;18 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X K:$P(^VA(15.1,DA,0),U,2)="r" X
+              LAST EDITED:      OCT 02, 1990 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits.  You cannot edit if a search is running. 
+              DESCRIPTION:
+                                This is the percentage that needs to be obtained before a duplicate record pair is placed in the Duplicate Record file as a Verified Potential Duplicate pair.  
+
+              TECHNICAL DESCR:  There is a input transform that does not allow the user to edit this field if the Duplicate Search Status is set to 'Running'.  
+                                 
+                                It is unknown in the early phases of the Duplicate Resolution software whether there will be a percentage which no user interaction will be required to look at a potential duplicate and make the determination that the pair
+                                truly are duplicates.  
+                                 
+                                However if someone does enter a percentage in this field and the Duplicate Checker score exceeds this percentage, the duplicate resolution software will enter the pair as verified non-duplicates and will send the message 
+                                to the Verified Duplicate Mail Group.  
+                                 
+                                The merge will not occur at this time, it will either be started up via the automatic merge option or be done at the completion of the duplicate checker.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+15.1,.25      MERGE STYLE            0;25 SET (Required)
+
+                                '0' FOR INTERACTIVE; 
+                                '1' FOR NON-INTERACTIVE; 
+              LAST EDITED:      DEC 13, 1990 
+              HELP-PROMPT:      Enter 'Interactive' if during the merge process you wish to be able to select certain field values of the From record to replace in the To record 
+              DESCRIPTION:
+                                This field is used to define whether during the merge process the operator will be able to select certain field values to transfer (Interactive) or if the merge will occur automatically (Non-interactive).  
+
+              TECHNICAL DESCR:  If you enter 'Interactive' the utilities of DITC will be utilized to display both records and different fields in a columnar format on the screen.  The operator will then be able to select field values of the From record
+                                to replace the corresponding fields in the To record.  
+                                 
+                                If you choose 'Non-interactive' the operator will not see a display of the records and the To field values will be retained with the fields that are empty being replaced by any corresponding From field value.  
+
+
+15.1,.26      DELETE FROM ENTRY      0;26 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 29, 1990 
+              HELP-PROMPT:      If you wish to delete the From record entry enter a 'YES', if you wish to keep the From entry or have done any manipulation of the From entry in the Post-Merge Routine enter a 'NO'. 
+              DESCRIPTION:
+                                This field is used to tell the Duplicate Resolution software whether or not you wish to delete the From entry in this file.  
+
+              TECHNICAL DESCR:  This field is used to tell the Duplicate Resolution software whether or not the From entry should be deleted from the file.  The From entry will be deleted using DIK and it should also be remebered that any files pointing 
+                                to the From entry will have been repointed before the entry is deleted.  
+                                 
+                                Also if you wish to leave some sort of stub or cross reference of the From entry, this should be accomplished in the Post-Merge Routine.  
+
+
+15.1,.27      PRE-MERGE ROUTINE      0;27 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>17!($L(X)<1) X
+              LAST EDITED:      SEP 12, 1990 
+              HELP-PROMPT:      Answer must be 1-17 characters in length.  No '^' allowed. 
+              DESCRIPTION:
+                                This field is utilized to name a routine that should be done prior to the merging process.  This may be a entry point call to a routine or just a routine name.  
+
+              TECHNICAL DESCR:  This field will be executed by the duplicate resolution software.  The routine should be entered without a '^' if an entry point is utilized use a '-' to separate the entry point from the routine name.  The duplicate
+                                resolution software will execute this field after transforming the '-' to a '^'.  
+
+
+15.1,.28      POST-MERGE ROUTINE     0;28 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>17!($L(X)<1) X
+              LAST EDITED:      SEP 12, 1990 
+              HELP-PROMPT:      Answer must be 1-17 characters in length.  No '^' allowed. 
+              DESCRIPTION:
+                                This field is utilized to name a routine that should be done after the completion of the merge process.  This may be a entry point call to a routine or just a routine name.  
+
+              TECHNICAL DESCR:  This field will be executed by the duplicate resolution software.  The routine should be entered without a '^', if an entry point is utilized use a '-' to separate the entry point from the routine name.  The duplicate
+                                resolution software will execute this field after transforming the '-' to a '^'.  
+
+
+15.1,.29      MERGE MAIL GROUP       0;29 POINTER TO MAIL GROUP FILE (#3.8)
+
+              LAST EDITED:      AUG 30, 1990 
+              HELP-PROMPT:      Enter the name of the mail group to which you want to send a bulletin when a duplicate record pair has completed being merged.  The name must be in the Mail Group file. 
+              DESCRIPTION:
+                                This is the mail group that will be sent a bulletin whenever the merge process has been completed for a duplicate record pair.  
+
+              TECHNICAL DESCR:
+                                This is the mail group that will be sent a bulletin saying that a duplicate record pair has been merged.  Generally it will be the same mail group as specified in the Verified Duplicate Mail Group field (#.16).  
+
+
+15.1,.31      MERGE MSG ROUTINE      0;31 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>17!($L(X)<1) X
+              LAST EDITED:      DEC 31, 1990 
+              HELP-PROMPT:      Answer must be 1-17 characters in length.  No '^' allowed. 
+              DESCRIPTION:
+                                Enter the name of the routine which will be called to send a bulletin to members of the Merge Mail Group.  No '^' should be included.  
+
+              TECHNICAL DESCR:  This optional field is to allow a package developer to send a customized bulletin notifying the Merge Mail Group about merged duplicate pairs.  If nothing is entered, the Kernel duplicate resolution software will send a
+                                brief bulletin to the members of the mail group.  The Kernel Bulletin will only provide the .01 values and the DFN's of the two records.  The duplicate resolution software will pass this routine XDRMFR and XDRMTO and it
+                                will be up to the routine to gather any information it wants to send in the bulletin and also to send the bulletin to the Merge Mail Group.  A label entry point is allowed but you must use a '-' instead of the normal '^',
+                                ex.  ENTRY POINT-ROUTINE.  This entry point will be executed by the duplicate resolution software after transforming the '-' into a '^'.  
+
+
+15.1,.32      AUTO MERGE STATUS      0;32 SET
+
+                                '0' FOR RUN; 
+                                '1' FOR STOP; 
+              LAST EDITED:      DEC 12, 1990 
+              HELP-PROMPT:      "Enter 'S' if you are currently automatically merging all Ready to Merge Duplicates and want to stop the process." 
+              DESCRIPTION:
+                                This field is used by the Kernel Merge routines to determine if it should stop automatically merging the Ready to Merge Verified Duplicates.  
+
+              TECHNICAL DESCR:  This field is used as a quit flag for the EN1 entry point in XDRMAIN.  It is used to stop the looping of the ^VA(15,"AMRG", X-ref which is utilized to merge the verified duplicates that could not be merged at the time of
+                                verification due to package interactions.  It only comes into play when the MERGE STYLE field is set to Non-Interactive.  
+
+
+15.1,.33      MERGE DIRECTION INP TRANSFORM 0;33 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>17!($L(X)<2) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Answer must be 2-17 characters in length. No '^' allowed.  Use a "-" in place of a "^". 
+              DESCRIPTION:      This field contains the routine that will be executed by the input transform on the merge directions field of the Duplicate record file.  This routine will execute code that will help the user decide whether or not they
+                                have selected the best record to be the target record.  
+
+              TECHNICAL DESCR:
+                                A routine or entry point_"-"_routine.  This field is optional.  Called from the input transform on .04 field of file 15.  
+
+
+15.1,1.01     NUMBER OF THREADS      1;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>5)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 10, 1996 
+              HELP-PROMPT:      Enter the maximum number of threads you want running during phase 3.  Enter 1 for only the main process or enter up to 5 for the main process and 4 other threads. 
+              DESCRIPTION:      This field is used to indicate the number of threads that should be used during the longest phase of the merge process.  Entry of 1 would indicate that only the main process (the same as null) would be running.  Entry of 2
+                                to 5 indicates that the main process along with 1 to 4 other threads should be used during this phase.  Each additional thread will be used to process one of the most time consuming files.  Which will reduce the amount of
+                                time that the main process takes.  
+
+
+15.1,1.02     THREAD FILES           1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      MAY 10, 1996 
+              HELP-PROMPT:      Enter the file numbers which should be threaded in the order in which they should be used (i.e., most time consuming first) separated by semi-colons, e.g., 44;52;50.8  . 
+              DESCRIPTION:      This field is used to indicate the preference for files which be used as separate threads during the 3rd phase of the merge if extra threads are indicated in field 1.01.  The files to be threaded should be those which take
+                                the longest during this phase of the merge process with the most time consuming file indicated first.  The files are indicated by file numbers separated by semi-colons, e.g.,  44;52;50.8; 
+
+
+15.1,1.03     SECONDS TO WAIT FOR STOP CHECK 1;3 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>300)!(X<60)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 22, 2005 
+              HELP-PROMPT:      Type a Number between 60 and 300, 0 Decimal Digits 
+              DESCRIPTION:      This field will define how many seconds a merge process should run before making a call to ZTLOAD to see if the user requested the background processes to stop.  
+                                 
+
+
+15.1,2        ANCILLARY SERVICE      2;0 Multiple #15.12
+
+              DESCRIPTION:
+                                Ancillary Service is a multiple of the service packages that are associated with the duplicates.  
+
+
+15.12,.01       ANCILLARY SERVICE      0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      FEB 06, 1996 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                DESCRIPTION:
+                                  The name of the ancillary service that is associated with each duplicate.  
+
+                CROSS-REFERENCE:  15.12^B 
+                                  1)= S ^VA(15.1,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VA(15.1,DA(1),2,"B",$E(X,1,30),DA)
+
+
+15.12,.02       MAIL GROUP             0;2 POINTER TO MAIL GROUP FILE (#3.8)
+
+                LAST EDITED:      SEP 20, 1996 
+                DESCRIPTION:
+                                  This field is the name of the ancillary mail group that the mail messages will be sent too.  The mail messages are used to notify ancillary services to process potential duplicate.  
+
+
+15.12,.03       PRIMARY FILE NUMBER    0;3 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999999999)!(X<0)!(X?.E1"."5N.N) X
+                LAST EDITED:      FEB 07, 1996 
+                HELP-PROMPT:      Enter the file NUMBER for the primary file to be used for identifying duplicates for this ancillary package (e.g., LAB DATA (63), RADIOLOGY PATIENT (70), PHARMACY PATIENT (55), etc.) 
+                DESCRIPTION:
+                                  This is the file number mostly related to the ancillary service (package).  
+
+
+15.12,1         INDIVIDUAL             1;0 POINTER Multiple #15.121
+
+                DESCRIPTION:
+                                  This multiple is a pointer to the New Person file which is used to include individuals that are not part of the mail group.  
+
+
+15.121,.01        INDIVIDUAL             0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                  LAST EDITED:      FEB 06, 1996 
+                  DESCRIPTION:
+                                    This field is the individual/individuals that the alerts would be sent to.  
+
+                  CROSS-REFERENCE:  15.121^B 
+                                    1)= S ^VA(15.1,DA(2),2,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^VA(15.1,DA(2),2,DA(1),1,"B",$E(X,1,30),DA)
+
+
+
+
+15.12,2.01      SUBFILES (FIELD NUMBERS) 2;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                  LAST EDITED:      FEB 07, 1996 
+                  HELP-PROMPT:      Enter field numbers for subfiles (with DATE values in the .01 field) to be displayed separated by a semicolon, e.g., 1;.085;2;4;5 
+                  DESCRIPTION:      This field is used to indicate one or more subfiles within the primary file which should have a .01 field as a date and can be used to display the last date associated with the subfiles's data for the potential 
+                                    duplicate patients.  The field numbers in the primary file for the desired subfiles should be entered and separated by a semicolon.  
+                                     
+                                    For example, in the laboratory data file (63), entry of 
+                                     
+                                       1;.085;2;4;5;8;9 
+                                     
+                                    would indicate field 1 in file 63, which is the Blood Bank subfile field .085, which is the Tranfusion Record subfile field 2, which is the EM subfile field 4, which is the CHEM, HEM, TOX, ..., etc. subfile field 5,
+                                    which is the Microbiology subfile field 8, which is the Surgical Pathology subfile and field 9, which is the Cytopathology subfile 
+
+
+15.12,2.02      DISPLAY NAMES FOR SUBFILES 2;2 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>120!($L(X)<1) X
+                  LAST EDITED:      FEB 07, 1996 
+                  HELP-PROMPT:      Enter the names which are to be associated with the subfiles, separating each by a semicolon, e.g., Bld Bank;Transfusn;EM;Lab Tests;Microbiol 
+                  DESCRIPTION:      This field is used to specify names to be displayed for any subfiles which are listed in the SUBFILES (FIELD NUMBERS). The names should be entered in the same order as the field numbers for the subfiles are entered and
+                                    a semicolon should be used to separate each name.  
+                                     
+                                    For example the following might be entered for SUBFILES (FIELD NUMBERS) for file 63 
+                                     
+                                        1;.085;2;4;5;8;9 
+                                     
+                                    and the entry for the DISPLAY NAMES FOR SUBFILES might be 
+                                     
+                                       Bld Bank;Transfusn;EM;Lab Tests;Microbiol;Surg Pathol;Cytology 
+
+
+
+
+15.1,3.01     LAST TIME NOTED        3;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 22, 1997 
+              HELP-PROMPT:      This field is entered and updated during the Search for Potential Duplicates. 
+              DESCRIPTION:      This field is entered and updated during the search for potential duplicates.  It is entered and updated by XDRDMAIN on each entry of the file that is being searched for duplicates.  It is used by XDRDSTAT to determine if
+                                an apparently running process has stopped processing.  If this is the case, the process is marked as having errored out after 15 minutes of no recorded activity.  
+
+
+15.1,99       SUPPRESS NEW DUP EMAIL 99;1 SET
+
+                                '1' FOR Yes; 
+                                '0' FOR No; 
+              LAST EDITED:      SEP 19, 2008 
+              HELP-PROMPT:      Enter 1 to suppress email sent when a new entry is added to the DUPLICATE RECORD file. Enter 0 to send email. 
+              DESCRIPTION:      When a PATIENT pair entry is added to the DUPLICATE RECORD file by PSIM, an email is sent to the mail group specified in the DUPLICATE MANAGER MAIL GROUP field, notifying them that the patient pair has been added to the 
+                                file with POTENTIAL DUPLICATE, UNVERIFIED status.  
+                                 
+                                If this field is set to 1 (YES), the email will be suppressed (NOT sent).  If this field is set to 0 (NO), the email will be sent.  
+
+              TECHNICAL DESCR:  This field is initialized to 1 for the PATIENT file record in patch XT*7.3*113, to suppress sending the email messages while IMDQ processes a potentially large number of duplicate patients generated by the Initiate search
+                                engine when its database is initially loaded.  
+                                 
+                                IMDQ will later use a new option to set the field back to 0, so that email messages will be generated when new entries are added to the DUPLICATE RECORD file.  
+                                 
+                                If set to null, it will behave as if the field were set to 0.  
+                                 
+                                The value in this field does not affect the DUPLICATE RECORD MERGE options.  
+
+
+15.1,1100     DUPLICATE TESTS        11;0 Multiple #15.111 (Add New Entry without Asking)
+
+              LAST EDITED:      AUG 30, 1990 
+              DESCRIPTION:
+                                Enter the name of the duplicate test you wish to run to determine if a pair of records are duplicates.  
+
+
+15.111,.01      DUPLICATE TEST         0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      JUN 04, 1991 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                DESCRIPTION:
+                                  Enter the name of the duplicate test you wish to run to determine if a pair of records are duplicates.  
+
+                CROSS-REFERENCE:  15.111^B 
+                                  1)= S ^VA(15.1,DA(1),11,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VA(15.1,DA(1),11,"B",$E(X,1,30),DA)
+
+
+15.111,.02      ORDER OF TEST          0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      DEC 17, 1992 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Enter a number to represent whether you want this test run first, second, third, etc. to help in determining if a pair of records are potential duplicates.  
+
+                CROSS-REFERENCE:  15.111^AO 
+                                  1)= S ^VA(15.1,DA(1),11,"AO",$E(X,1,30),DA)=""
+                                  2)= K ^VA(15.1,DA(1),11,"AO",$E(X,1,30),DA)
+                                  This cross reference is used to place the duplicate resolution tests in the order the programmers want them to be executed.  
+
+
+
+15.111,.03      DUPLICATE TEST ROUTINE 0;3 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>17!($L(X)<1) X
+                LAST EDITED:      SEP 26, 1990 
+                HELP-PROMPT:      Answer must be 1-17 characters in length.  No '^' allowed. 
+                DESCRIPTION:
+                                  Enter the name of the routine which will be called to do the actual comparison of the two records for a specific field.  No '^' should be included in the name.  
+
+                TECHNICAL DESCR:  Enter the routine name without the '^' character. A label entry point reference is allowed but you must use a '-' instead of the normal '^', ex. ENTRY POINT-ROUTINE.  This entry will be executed by the Kernel duplicate
+                                  resolution software after transforming the '-' into a '^'.  
+
+
+15.111,.04      FILE FOR INFORMATION   0;4 POINTER TO FILE FILE (#1)
+
+                LAST EDITED:      MAR 06, 1991 
+                HELP-PROMPT:      Enter the File from which to get the information you want to compare. 
+                DESCRIPTION:
+                                  This is the field that you wish to compare and assign a matching value.  You cannot compare computed fields or any fields that are in a multiple.  
+
+                TECHNICAL DESCR:  This field represents the field number that you wish to compare values to help in determining if a potential duplicate record pair.  No multiples or computed fields are allowed.  There is a screen preventing their
+                                  selection.  
+                                   
+                                  If the user enters a '??' the executable help will display all the fields that are valid choices.  
+
+                EXECUTABLE HELP:  I $D(DZ),DZ="??" F I=0:0 S I=$O(^DD(D0,I)) Q:I'=+I  W:$P(^(I,0),U,2)'["C"&('+$P(^(0),U,2)) !,I,"  ",$P(^(0),U,1)
+                CROSS-REFERENCE:  15.111^AZ1^MUMPS 
+                                  1)= Q
+                                  2)= Q
+                                  This cross reference is just used to make Fileman log the response so that the input transform on the FIELD TO BE CHECKED can refer to the $P value of this field.  
+
+
+
+15.111,.05      FIELD TO BE CHECKED    0;5 NUMBER (Required)
+
+                INPUT TRANSFORM:  S %=$S('$P(^VA(15.1,DA(1),11,DA,0),U,4):DA(1),1:$P(^(0),U,4)) X "I $D(^DD(%,X,0)) S %=^(0) I $P(%,U,2)'[""C"",$P($P(%,U,4),"";"",2)" K:'$T X
+                LAST EDITED:      DEC 17, 1992 
+                HELP-PROMPT:      Enter a field # (e.g.  .05), it cannot be a computed field or a multiple.  If you enter a '??' you will get a list of possible fields. 
+                DESCRIPTION:
+                                  This is the field that you wish to compare and assign a matching value.  You cannot compare computed fields or any fields that are in a multiple.  
+
+                TECHNICAL DESCR:  This field represents the field number that you wish to compare values to help in determining if a potential duplicate record pair.  No multiples or computed fields are allowed.  There is a screen preventing their
+                                  selection.  
+                                   
+                                  If the user enters a '??' the executable help will display all the fields that are valid choices.  
+
+                EXECUTABLE HELP:  I $D(DZ),DZ="??" S %=$S('$P(^VA(15.1,DA(1),11,DA,0),U,4):DA(1),1:$P(^(0),U,4)) F I=0:0 S I=$O(^DD(%,I)) Q:I'=+I  W:$P(^(I,0),U,2)'["C"&('+$P(^(0),U,2)) !,I,"  ",$P(^(0),U,1)
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+15.111,.06      SUCCESSFUL MATCH WEIGHT 0;6 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 27, 1997 
+                HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the value given towards determing if a pair of records are potential duplicates.  
+
+                TECHNICAL DESCR:  This is the value given towards determing if a pair of records are potential duplicates.  This should be the maximum number of points awarded if the field from both records exactly matched.  
+                                   
+                                  In the Duplicate Test routine fractions of this value will be awarded based on whether there was an exact match or some partial match.  
+
+
+15.111,.07      UNSUCCESSFUL MATCH WEIGHT 0;7 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>0)!(X<-100)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 27, 1997 
+                HELP-PROMPT:      Type a Number between -100 and 0, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the value that should be subtracted from the total number of points awarded in determining if a pair of records are potential duplicates.  
+
+                TECHNICAL DESCR:  This is the value that should be subtracted from the total number of points awarded in determing if a pair of records are potential duplicates.  
+                                   
+                                  In other words, when there is no type of match that can be made on the field in the two records this negative score will be assigned to the checking algorithm.  
+
+
+
+
+15.1,1200     DINUM FILES FOR MERGE  12;0 POINTER Multiple #15.112 (Add New Entry without Asking)
+
+              DESCRIPTION:      This multiple contains files that you want an operator to be able to compare and merge specific fields from prior to the merging and deletion of the duplicate record From entry.  You may only enter files that point to and
+                                are dinum with the file you specified in the File to Be Checked field (#.01).  
+                                 
+                                You should only place entries in this multiple if you have chosen 'Interactive' for the type of merge in the Merge Style field (#.25).  
+                                 
+                                It uses Fileman's Compare and Merge option to display the duplicate record pair side by side allowing the operator to merge specific fields from the From entry to the To entry.  
+                                 
+
+              SCREEN:           S DIC("S")="I $P(^DD(XY,.01,0),U,2)[(""P""_D0),$P(^(0),U,5,99)[""DINUM"""
+              EXPLANATION:      File has to be a Dinum file pointing to the 'FILE TO BE CHECKED' file.
+
+15.112,.01      DINUM FILE FOR MERGE   0;1 POINTER TO FILE FILE (#1) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^DD(Y,.01,0),U,2)[""P"",+$P($P(^(0),U,2),""P"",2)=D0,$P(^(0),U,5,99)[""DINUM""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 05, 1991 
+                HELP-PROMPT:      Enter a file number or name that points to and is dinum with the File to Be Checked field (#.01). 
+                DESCRIPTION:      This is a file that points to the File to Be Checked entry and is Dinum with it.  
+                                   
+                                  During an Interactive style of merge the duplicate record pair entries for this file will be displayed side by side allowing an operator to merge selected fields in these entries.  
+
+                SCREEN:           S DIC("S")="I $P(^DD(Y,.01,0),U,2)[""P"",+$P($P(^(0),U,2),""P"",2)=D0,$P(^(0),U,5,99)[""DINUM"""
+                EXPLANATION:      Must point to primary file and be DINUM
+                CROSS-REFERENCE:  15.112^B 
+                                  1)= S ^VA(15.1,DA(1),12,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VA(15.1,DA(1),12,"B",$E(X,1,30),DA)
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FILE (#1)                         FILE TO BE CHECKED (#.01)
+                                  DUPLICATE TEST:FILE FOR INFORMATION (#.04)
+                                  DINUM FILES FOR MERGE:DINUM FILE FOR MERGE (#.01)
+
+MAIL GROUP (#3.8)                 DUPLICATE MANAGER MAIL GROUP (#.11)
+                                  VERIFIED DUPLICATE MAIL GROUP (#.16)
+                                  MERGE MAIL GROUP (#.29)
+                                  ANCILLARY SERVICE:MAIL GROUP (#.02)
+
+NEW PERSON (#200)                 INDIVIDUAL:INDIVIDUAL (#.01)
+
+
+
+INPUT TEMPLATE(S):
+XDR DUPLICATE RESOLUTION EDIT MAR 31, 1993@16:18  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+XDR RESFILE FORM              NOV 17, 1995@10:44  USER #0
+  XDR RESFILE HEADER            DD #15.1
+  XDR RESFILE DATA              DD #15.1
+  XDR RESFILE RPT-BLK1          DD #15.12
+  XDR RESFILE SUB-BLK1          DD #15.111
+  XDR RESFILE SUB-BLK2          DD #15.12
+  XDR RESFILE SUB-BLK3          DD #15.121
+     This form is used to edited site parameters.  This form is used in the
+     option, Edit Duplicate Resolution File, which is locked by the XDRMGR key.
+

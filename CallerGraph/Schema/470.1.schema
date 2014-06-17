@@ -1,0 +1,239 @@
+STANDARD DATA DICTIONARY #470.1 -- PATIENT FUNDS MASTER TRANSACTION FILE                                                                                                                                                          MAY 20,2014@15:36:16  PAGE 1
+STORED IN ^PRPF(470.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is the file which contains ALL transactactions entered for ALL patients.  The Transaction field of each patient account points to this file.  
+
+
+              WR ACCESS: ^
+             DEL ACCESS: ^
+           LAYGO ACCESS: ^
+
+POINTED TO BY: PATIENT TRANSACTION field (#.01) of the PATIENT TRANSACTION sub-field (#470.01) of the PATIENT FUNDS File (#470) 
+               
+
+CROSS
+REFERENCED BY: DATE TRANSACTION ENTERED(AC), TRANSACTION DATE(AD), TRANSACTION ID(B)
+
+470.1,.01     TRANSACTION ID         0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<2)!'(X?1N.11N1"M") X
+              LAST EDITED:      JUN 15, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 2-12 CHARACTERS IN LENGTH 
+              DELETE TEST:      1,0)= D EN^DDIOL("Deletions are not allowed due to PFOP Migration!!","","!?5,$C(7)") I 1
+
+              LAYGO TEST:       1,0)= D:'$G(XUMF) EN^DDIOL("Additions are not allowed due to PFOP Migration!!","","!?5,$C(7)") I +$G(XUMF)
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  470.1^B 
+                                1)= S ^PRPF(470.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRPF(470.1,"B",$E(X,1,30),DA)
+
+
+470.1,1       PATIENT NAME           0;2 POINTER TO PATIENT FUNDS FILE (#470)
+
+
+470.1,2       PATIENT TRANSACTION #  0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 99999 
+
+470.1,3       AMOUNT                 0;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:+X'=X&(X'?."-".N1"."2N)!(X>9999999)!(X<-9999999) X
+              LAST EDITED:      MAR 18, 1988 
+              HELP-PROMPT:      TYPE A NUMBER BETWEEN -9999999 AND 9999999 
+
+470.1,4       TRANSACTION DATE       0;5 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 18, 1988 
+              CROSS-REFERENCE:  470.1^AD 
+                                1)= S ^PRPF(470.1,"AD",$E(X,1,30),DA)=""
+                                2)= K ^PRPF(470.1,"AD",$E(X,1,30),DA)
+
+
+470.1,5       DATE TRANSACTION ENTERED 0;6 DATE (Required)
+
+              DATE ENTERED                                                                                                     
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 01, 1987 
+              HELP-PROMPT:        
+              CROSS-REFERENCE:  470.1^AC 
+                                1)= S ^PRPF(470.1,"AC",$E(X,1,30),DA)=""
+                                2)= K ^PRPF(470.1,"AC",$E(X,1,30),DA)
+
+
+470.1,5.5     DAYS BETWEEN DATES      ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(470.1,5.5,9.2) S X1=Y(470.1,5.5,2) S X2=X1,X1=X D ^%DTC S Y=X
+                                9.2 = S Y(470.1,5.5,1)=$S($D(^PRPF(470.1,D0,0)):^(0),1:"") S X=$P(Y(470.1,5.5,1),U,5),Y(470.1,5.5,2)=X S X=$P(Y(470.1,5.5,1),U,6)
+              ALGORITHM:        DAYS BETWEEN DATES(#4,#5)
+
+470.1,6       REFERENCE              0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              HELP-PROMPT:      ANSWER MUST BE 1-10 CHARACTERS IN LENGTH 
+
+470.1,7       DEPOSIT/WITHDRAWAL     0;8 SET (Required)
+
+                                'D' FOR DEPOSIT; 
+                                'W' FOR WITHDRAWAL; 
+              LAST EDITED:      SEP 01, 1987 
+
+470.1,8       CASH/CHECK/OTHER       0;9 SET (Required)
+
+                                '1' FOR CASH; 
+                                '2' FOR CHECK; 
+                                '3' FOR OTHER; 
+              LAST EDITED:      SEP 01, 1987 
+
+470.1,9       SOURCE                 0;10 SET
+
+                                'P' FOR PRIVATE SOURCE; 
+                                'G' FOR GRATUITOUS; 
+                                'B' FOR BOTH; 
+              LAST EDITED:      FEB 26, 1988 
+              SCREEN:           I "PG"[Y
+              EXPLANATION:      Allows user to select only Private Source or Gratuitous during normal operations.
+
+470.1,10      FORM                   0;11 POINTER TO PATIENT FUNDS FORMS FILE (#470.2) (Required)
+
+              LAST EDITED:      SEP 01, 1987 
+
+470.1,11      PRIVATE SOURCE AMT     0;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<-9999999)!(X?.E1"."1N.N) X
+              OUTPUT TRANSFORM: I $P(^PRPF(470.1,D0,0),"^",8)["W" S Y=-Y
+              LAST EDITED:      MAR 02, 1988 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN -9999999 AND 9999999 
+
+470.1,12      GRATUITOUS AMOUNT      0;13 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<-9999999)!(X?.E1"."1N.N) X
+              OUTPUT TRANSFORM: I $P(^PRPF(470.1,D0,0),"^",8)["W" S Y=-Y
+              LAST EDITED:      MAR 02, 1988 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN -9999999 AND 9999999 
+
+470.1,13      PATIENT FUNDS CLERK    0;14 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      APR 28, 1995 
+              HELP-PROMPT:        
+
+470.1,13.5    VALIDATION CODE        0;17 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 25, 1995 
+              HELP-PROMPT:      Type a Number between 1 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Field contains the validation code for verification of electronic signature.  
+
+
+470.1,13.7    VALIDATION VERSION     0;22 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<1)!(X?.E1"."2N.N) X
+              LAST EDITED:      APR 25, 1995 
+              HELP-PROMPT:      Type a Number between 1 and 100, 1 Decimal Digit 
+              DESCRIPTION:
+                                This field contains the version number used to encode the Electronic Signature Code.  
+
+
+470.1,14      ELECTRONIC SIGNATURE   0;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              OUTPUT TRANSFORM: S Y="/es/ "_$$DECODE^PRPFSIG1(D0)
+              LAST EDITED:      MAY 09, 1995 
+              HELP-PROMPT:      ANSWER MUST BE 1-30 CHARACTERS IN LENGTH 
+
+470.1,15      REMARKS                0;16 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<1) X
+              HELP-PROMPT:      ANSWER MUST BE 1-35 CHARACTERS IN LENGTH 
+
+470.1,16      BALANCE CARRIED FORWARD AMT 0;18 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:+X'=X&(X'?."-".N1"."2N)!(X>9999999)!(X<-9999999) X
+              LAST EDITED:      APR 02, 1987 
+              HELP-PROMPT:      TYPE A NUMBER BETWEEN -9999999 AND 9999999 
+
+470.1,17      PVT SOURCE BAL CARRIED FWD 0;19 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:+X'=X&(X'?."-".N1"."2N)!(X>9999999)!(X<-9999999) X
+              HELP-PROMPT:      TYPE A NUMBER BETWEEN -9999999 AND 9999999 
+
+470.1,18      GRATUITOUS BAL CARRIED FWD 0;20 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:+X'=X&(X'?."-".N1"."2N)!(X>9999999)!(X<-9999999) X
+              HELP-PROMPT:      TYPE A NUMBER BETWEEN -9999999 AND 9999999 
+
+470.1,19      DEFERRAL DATE          0;21 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 26, 1988 
+              HELP-PROMPT:        
+
+470.1,20      SIG CONVERSION COMPLETED 0;22 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 09, 1991 
+
+470.1,21      SIGNATURE CODE DATE/TIME 0;23 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 02, 1993 
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 PATIENT FUNDS CLERK (#13)
+
+PATIENT FUNDS (#470)              PATIENT NAME (#1)
+
+PATIENT FUNDS FORMS (#470.2)      FORM (#10)
+
+
+
+INPUT TEMPLATE(S):
+PRPF POST TRANSACTION         APR 02, 1987        USER #0    
+
+PRINT TEMPLATE(S):
+PRPF CLERK STAT HDR           AUG 19, 1987        USER #0                                                                                                                                                                                                    @
+PRPF DAILY ACTIVITY           MAY 04, 2002@14:39  USER #0                                                                                                                                                         PATIENT FUNDS DAILY ACTIVITY (AUDIT) LISTING
+PRPF DAILY TRANSACTION SUMMARYAPR 29, 2002@17:20  USER #0                                                                                                                                                              PATIENT FUNDS DAILY TRANSACTION LISTING
+PRPF DAYS BETWEEN DATES       MAR 18, 1997@15:34  USER #0                                                                                                                                              PATIENT FUNDS MASTER TRANSACTION LIST OF DATE VARIANCES
+PRPF FISCAL ACTIVITY REPORT   MAY 14, 2002@00:48  USER #0                                                                                                                                                 PATIENT FUNDS END OF MONTH REPORT FOR FISCAL SERVICE
+PRPF FISCAL TRANS SUMMARY     APR 29, 2002@14:13  USER #0                                                                                                                                                           PATIENT FUNDS - FISCAL TRANSACTION SUMMARY
+
+SORT TEMPLATE(S):
+PRPF DAILY ACTIVITY           NOV 29, 1990@16:21  USER #0    
+SORT BY: +DATE TRANSACTION ENTERED;S2//    (User is asked range)
+  WITHIN DATE TRANSACTION ENTERED, SORT BY: +DEPOSIT/WITHDRAWAL;S// (DEPOSIT/WITHDRAWAL not null)
+    WITHIN DEPOSIT/WITHDRAWAL, SORT BY: +CASH/CHECK/OTHER;S// (CASH/CHECK/OTHER not null)
+      WITHIN CASH/CHECK/OTHER, SORT BY: +FORM;S// (FORM not null)
+        WITHIN FORM, SORT BY: @REFERENCE// (REFERENCE not null)
+
+PRPF DAILY TRANSACTION SUMMARYNOV 29, 1990@16:19  USER #0    
+SORT BY: +DATE TRANSACTION ENTERED;S2;"DATE ENTERED: "//    (User is asked range)
+
+PRPF DAYS BETWEEN DATES       MAR 18, 1997@15:33  USER #0    
+SORT BY: DATE TRANSACTION ENTERED//    (User is asked range)
+  WITHIN DATE TRANSACTION ENTERED, SORT BY: 'DAYS BETWEEN DATES'=0;L1// (DAYS BETWEEN DATES'=0)
+     This template allows the supervisor/fiscal auditor to examine transactions
+     which have differing values for the transaction date and the date the
+     transaction was entered.
+
+PRPF FISCAL ACTIVITY REPORT   JUL 13, 1988        USER #0    
+SORT BY: +TRANSACTION DATE;S2//    (User is asked range)
+  WITHIN TRANSACTION DATE, SORT BY: +DEPOSIT/WITHDRAWAL;S// (DEPOSIT/WITHDRAWAL not null)
+    WITHIN DEPOSIT/WITHDRAWAL, SORT BY: +FORM;S// (FORM not null)
+      WITHIN FORM, SORT BY: @REFERENCE// (REFERENCE not null)
+
+PRPF FISCAL TRANS SUMMARY     JUL 13, 1988        USER #0    
+SORT BY: ]+TRANSACTION DATE;S2//    (User is asked range)
+
+
+FORM(S)/BLOCK(S):

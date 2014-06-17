@@ -1,0 +1,846 @@
+STANDARD DATA DICTIONARY #356 -- CLAIMS TRACKING FILE                                                                                                                                                                             MAY 20,2014@15:35:48  PAGE 1
+STORED IN ^IBT(356,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file may contain entries of all type of billable events that need to be tracked by MCCR.  The information in this file is used for MCCR and or UR purposes.  It is information about the event itself not otherwise stored or pertinent for MCCR
+purposes.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: PATIENT (#.02), EPISODE DATE (#.06), ADMISSION TYPE (#.07), EVENT TYPE (#.18)
+      "WRITE": D ID^IBTRE20
+
+POINTED TO BY: TRACKING ID field (#.02) of the HOSPITAL REVIEW File (#356.1) 
+               TRACKING ID field (#.02) of the INSURANCE REVIEW File (#356.2) 
+               CLAIM TRACKING ID field (#.01) of the CLAIMS TRACKING/BILL File (#356.399) 
+               CLAIMS TRACKING ID field (#.02) of the IB AUTOMATED BILLING COMMENTS File (#362.1) 
+               
+
+CROSS
+REFERENCED BY: EARLIEST AUTO BILL DATE(ABD), OTHER TYPE OF BILL(AC), ADMISSION(AD), PATIENT(ADFN), ACUTE CARE DISCHARGE DATE(ADIS), ADMISSION(ADM), PATIENT(ADM1), ECME NUMBER(AE), OUTPATIENT ENCOUNTER(AENC), PATIENT(AENC1), 
+               TRACKED AS INSURANCE CLAIM?(AI), PROSTHETIC ITEM(APRO), EPISODE DATE(APTDT), PATIENT(APTDT1), PATIENT(APTY), EPISODE DATE(APTY1), EVENT TYPE(APTY2), REASON NOT BILLABLE(AR), REFILL DATE(ARXFL), PRESCRIPTION(ARXFL1), 
+               OUTPATIENT ENCOUNTER(ASCE), SCHEDULED ADMISSION(ASCH), OTHER TYPE OF BILL(ASPC), PATIENT(ASPC1), PATIENT(ATOBIL), EARLIEST AUTO BILL DATE(ATOBIL1), EVENT TYPE(ATOBIL2), VISIT(AVCNT), VISIT(AVSIT), ENTRY ID(B), PATIENT(C), 
+               EPISODE DATE(D), INITIAL BILL NUMBER(E), EVENT TYPE(EVNT)
+
+356,.01       ENTRY ID               0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999999)!(X<1001)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 09, 1993 
+              HELP-PROMPT:      Type a Number between 1001 and 99999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is a unique number assigned to this entry.  The first 3 characters of the number are the station number.  
+
+              DELETE TEST:      1,0)= I $P(^IBT(356,DA,0),U,2) W *7,!,"Only can be deleted from Menus"
+
+              CROSS-REFERENCE:  356^B 
+                                1)= S ^IBT(356,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"B",$E(X,1,30),DA)
+
+
+356,.02       PATIENT                0;2 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      AUG 31, 1993 
+              DESCRIPTION:      Enter the patient that this Claims Tracking entry is for.  This is the patient whose admission, outpatient visit, prescription refill, prosthetic device or other encounter for medical care or services is being tracked.  
+                                 
+
+              CROSS-REFERENCE:  356^C 
+                                1)= S ^IBT(356,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356^ADM1^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),"^",5) ^IBT(356,"ADM",X,+$P(^(0),"^",5),DA)=""
+                                2)= K ^IBT(356,"ADM",X,+$P(^IBT(356,DA,0),"^",5),DA)
+                                Cross-reference of all admissions by patient.  
+
+
+              CROSS-REFERENCE:  356^APTDT1^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,6) ^IBT(356,"APTDT",X,-($P(^(0),U,6)),DA)=""
+                                2)= K ^IBT(356,"APTDT",X,-($P(^IBT(356,DA,0),U,6)),DA)
+                                Cross reference of all episodes of care by patient by date, in inverse date order so can list most recent first.  
+
+
+              CROSS-REFERENCE:  356^ASPC1^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,12) ^IBT(356,X,+$P(^(0),U,12),DA)=""
+                                2)= K ^IBT(356,X,+$P(^IBT(356,DA,0),U,12),DA)
+                                Cross-reference of special types of bills by patient.  
+
+
+              CROSS-REFERENCE:  356^ADFN^MUMPS 
+                                1)= S ^IBT(356,"ADFN"_X,+^IBT(356,DA,0),DA)=""
+                                2)= K ^IBT(356,"ADFN"_X,+^IBT(356,DA,0),DA)
+                                Cross-reference by patient dfn for fast look-up.  
+
+
+              CROSS-REFERENCE:  356^ATOBIL^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,17)&($P(^(0),U,18)) ^IBT(356,"ATOBIL",+X,+$P(^(0),U,18),+$P(^(0),U,17),DA)=""
+                                2)= K ^IBT(356,"ATOBIL",+X,+$P(^IBT(356,DA,0),U,18),+$P(^(0),U,17),DA)
+                                This is a cross-reference of all active billable events that have not already been billed.  It is used by the autobilling software to determine the next autobill date for a patient by type of event.  
+
+
+              CROSS-REFERENCE:  356^APTY^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,6)&($P(^(0),U,18)) ^IBT(356,"APTY",X,+$P(^(0),U,18),+$P(^(0),U,6),DA)=""
+                                2)= K ^IBT(356,"APTY",X,+$P(^IBT(356,DA,0),U,18),+$P(^(0),U,6),DA)
+                                Cross-reference of all entries by patient by event type, by episode date.  
+
+
+              CROSS-REFERENCE:  356^AENC1^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,4) ^IBT(356,"AENC",X,+$P(^(0),U,4),DA)=""
+                                2)= K ^IBT(356,"AENC",X,+$P(^IBT(356,DA,0),U,4),DA)
+                                Cross reference of all outpatient encounters by patient 
+
+
+
+356,.03       VISIT                  0;3 POINTER TO VISIT FILE (#9000010)
+
+              LAST EDITED:      SEP 24, 1996 
+              HELP-PROMPT:        
+              DESCRIPTION:      This is the visit for the patient that is being tracked in this entry.  
+                                 
+                                This field is a place holder for when visit tracking is implemented.  It will point to the visit that is being tracked.  
+
+              CROSS-REFERENCE:  356^AVSIT 
+                                1)= S ^IBT(356,"AVSIT",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"AVSIT",$E(X,1,30),DA)
+                                Regular cross-reference of claim by visit.  
+
+
+              CROSS-REFERENCE:  356^AVCNT^MUMPS 
+                                1)= N IBX S IBX=X,X="VSIT" X ^%ZOSF("TEST") I $T S X=IBX D ADD^VSIT
+                                2)= N IBX S IBX=X,X="VSIT" X ^%ZOSF("TEST") I $T S X=IBX D SUB^VSIT
+                                This cross reference calls Visit Tracking code to increment and decrement the VISIT file's DEPENDENT ENTRY COUNT field.  
+
+
+
+356,.04       OUTPATIENT ENCOUNTER   0;4 POINTER TO OUTPATIENT ENCOUNTER FILE (#409.68)
+
+              LAST EDITED:      AUG 31, 1993 
+              DESCRIPTION:
+                                This is the outpatient encounter that is being tracked.  If this is entered and the provider and/or diagnosis for the encounter are entered then the inforamation will be extracted from the encounter file.  
+
+              CROSS-REFERENCE:  356^ASCE 
+                                1)= S ^IBT(356,"ASCE",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"ASCE",$E(X,1,30),DA)
+                                Regular cross-reference of claims by outpatient encounters.  
+
+
+              CROSS-REFERENCE:  356^AENC^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,2) ^IBT(356,"AENC",+$P(^(0),U,2),X,DA)=""
+                                2)= K ^IBT(356,"AENC",+$P(^IBT(356,DA,0),U,2),X,DA)
+                                Cross reference of outpatient encounters by patient.  
+
+
+
+356,.05       ADMISSION              0;5 POINTER TO PATIENT MOVEMENT FILE (#405)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 18, 1993 
+              DESCRIPTION:
+                                This is the admission that is being tracked.  When an entry is added for inpatient care for any date the software will find the current admission for that date and use the current admission from the patient movement file.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,2)=1"
+              EXPLANATION:      Only admissions for this patient.
+              CROSS-REFERENCE:  356^ADM^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),"^",2) ^IBT(356,"ADM",+$P(^(0),"^",2),X,DA)=""
+                                2)= K ^IBT(356,"ADM",+$P(^IBT(356,DA,0),"^",2),X,DA)
+                                Cross reference of all admissions by patient.  
+
+
+              CROSS-REFERENCE:  356^AD 
+                                1)= S ^IBT(356,"AD",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"AD",$E(X,1,30),DA)
+                                Regular x-ref of admission movement ifn 
+
+
+
+356,.06       EPISODE DATE           0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 08, 1993 
+              DESCRIPTION:      This is the date of the episode of care or services that is being tracked.  For admissions, it is the admission date.  For outpatient visits it is the visit date.  For prescription refills it is the refill date.  For 
+                                prosthetic items it is the date that the prosthetic item was issued.  
+                                 
+                                The data in this field is entered by the Claims tracking event tracker routines.  
+
+              CROSS-REFERENCE:  356^D 
+                                1)= S ^IBT(356,"D",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"D",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356^APTDT^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,2) ^IBT(356,"APTDT",+$P(^(0),U,2),-X,DA)=""
+                                2)= K ^IBT(356,"APTDT",+$P(^IBT(356,DA,0),U,2),-X,DA)
+                                Cross reference of all episodes of care by patient by date, in inverse date order so can list most recent first.  
+
+
+              CROSS-REFERENCE:  356^APTY1^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,2)&($P(^(0),U,18)) ^IBT(356,"APTY",+$P(^(0),U,2),+$P(^(0),U,18),X,DA)=""
+                                2)= K ^IBT(356,"APTY",+$P(^IBT(356,DA,0),U,2),+$P(^(0),U,18),X,DA)
+                                Cross-reference of all entries by patient by event type, by episode date.  
+
+
+
+356,.07       ADMISSION TYPE         0;7 SET
+
+                                '1' FOR SCHEDULED; 
+                                '2' FOR URGENT; 
+                                '3' FOR EMERGENT; 
+                                '4' FOR UNSCHEDULED; 
+                                '5' FOR COURT ORDERED; 
+              LAST EDITED:      AUG 20, 1993 
+              DESCRIPTION:      Enter whether this admission was a scheduled admission, a direct admission from the outpatient area, or whether this was an urgent or emergent admission.  The type of admission will impact whether pre-certification reviews
+                                should be done and the impact on reimbursements.  
+
+              NOTES:            TRIGGERED by the EVENT TYPE field of the CLAIMS TRACKING File 
+
+
+356,.08       PRESCRIPTION           0;8 POINTER TO PRESCRIPTION FILE (#52)
+
+              LAST EDITED:      AUG 13, 1993 
+              DESCRIPTION:
+                                If the entry that is being tracked is a prescription refill then this field should point to the entry in the prescription file.  
+
+              CROSS-REFERENCE:  356^ARXFL1^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,10) ^IBT(356,"ARXFL",X,+$P(^(0),U,10),DA)=""
+                                2)= K ^IBT(356,"ARXFL",X,+$P(^IBT(356,DA,0),U,10),DA)
+                                This is a cross reference of all prescriptions and refills.  It is used to ensure that only 1 entry for each refill is created.  
+
+
+
+356,.09       PROSTHETIC ITEM        0;9 POINTER TO RECORD OF PROS APPLIANCE/REPAIR FILE (#660)
+
+              LAST EDITED:      JAN 31, 1994 
+              DESCRIPTION:
+                                If this tracking entry is for a prothetic item, this is the pointer to the prosthetic item file.  
+
+              CROSS-REFERENCE:  356^APRO 
+                                1)= S ^IBT(356,"APRO",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"APRO",$E(X,1,30),DA)
+
+
+356,.1        REFILL DATE            0;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 12, 2001 
+              HELP-PROMPT:      Type a Number between 0 and 99, 0 Decimal Digits 
+              DESCRIPTION:      This is a free text pointer to the REFILL multiple (subfile #52.1) in the PRESCRIPTION file (#52).  The top-level pointer for the prescription entry in the PRESCRIPTION file (#52) can be found in the PRESCRIPTION field
+                                (#.08) of the CLAIMS TRACKING file (#356). The refill date is found at the first '^' piece of the REFILL multiple of the PRESCRIPTION file.  Original Fills will be added as of July 2001.  The Refill Date for these will be
+                                '0'.  
+
+              CROSS-REFERENCE:  356^ARXFL^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,8) ^IBT(356,"ARXFL",$P(^(0),U,8),X,DA)=""
+                                2)= K ^IBT(356,"ARXFL",+$P(^IBT(356,DA,0),U,8),X,DA)
+                                This is a cross reference of all prescriptions and refills.  It is used to ensure that only 1 entry for each refill is created.  
+
+
+
+356,.11       INITIAL BILL NUMBER    0;11 POINTER TO BILL/CLAIMS FILE (#399)
+
+              LAST EDITED:      JUN 10, 2004 
+              DESCRIPTION:
+                                This is the bill number in the BILL/CLAIMS file for the initial bill number for this entry.  It is the bill to the third party for this claim.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the BILL NUMBER field of the CLAIMS TRACKING/BILL File 
+
+              CROSS-REFERENCE:  356^E 
+                                1)= S ^IBT(356,"E",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"E",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^356^.17 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X=DIV S X=$$BILL^IBTUTL(DA) S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X=DIV S X=$$BILL^IBTUTL(DA) S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                CREATE VALUE)= S X=$$BILL^IBTUTL(DA)
+                                DELETE VALUE)= S X=$$BILL^IBTUTL(DA)
+                                FIELD)= EARLIEST AUTO BILL DATE
+                                Re-sets Earliest Auto Bill Date each time Initial Bill Number is modified.  
+
+
+
+356,.12       OTHER TYPE OF BILL     0;12 SET
+
+                                '1' FOR TORT FEASOR; 
+                                '2' FOR FEDERAL OWCP; 
+                                '3' FOR WORKMAN'S COMP; 
+                                '4' FOR OTHER; 
+              LAST EDITED:      JUN 10, 2004 
+              DESCRIPTION:      If this claims tracking entry can be billed as other than an insurance claim or a patient bill enter the type of claim.  If a patient has ever had a claim type other than insurance then special warnings may be given in the
+                                billing and claims tracking package.  
+
+              WRITE AUTHORITY:  @
+              CROSS-REFERENCE:  356^AC 
+                                1)= S ^IBT(356,"AC",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"AC",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356^ASPC^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,2) ^IBT(356,"ASPC",+$P(^(0),U,2),X,DA)=""
+                                2)= K ^IBT(356,"ASPC",+$P(^IBT(356,DA,0),U,2),X,DA)
+                                Cross reference of special types of bills by patient.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^356^.17 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X="" S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X=DIV S X=$$BILL^IBTUTL(DA) S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                CREATE VALUE)= @
+                                DELETE VALUE)= S X=$$BILL^IBTUTL(DA)
+                                FIELD)= EARLIEST AUTO BILL DATE
+                                Deletes the Earliest Auto Bill Date (.17) if an Other Type of Bill is entered, the event may need a rate type other than reimbursable ins.  and therefore should not be billed by the automated biller.  Re-sets EABD if Other
+                                Type of Bill is deleted.  
+
+
+
+356,.14       SECOND OPINION REQUIRED 0;14 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 09, 1993 
+              DESCRIPTION:
+                                If this patient insurance policy requires a second opinion enter 'YES'.  If a second opinion is not required then enter 'NO'.  
+
+
+356,.15       SECOND OPINION OBTAINED 0;15 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 09, 1993 
+              DESCRIPTION:      If a second opinion was required by this patients' insurance policy, enter 'YES' if it was obtained or 'NO' if it was not obtained.  If a second opinion was obtained but did not meet the insurance companies criteria for
+                                any reason, enter 'NO'.  
+                                 
+                                This field will be used to help determine the estimated reimbursement from the insurance carrier.  If a second opinion was not obtained certain denials and penalties may be assessed.  
+
+
+356,.17       EARLIEST AUTO BILL DATE 0;17 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 24, 1993 
+              HELP-PROMPT:      Enter the date the autobiller will first try and create a bill for this visit.  Delete this date if the visit is not billable. 
+              DESCRIPTION:      This is the earliest date that this visit can be automatically billed.  The automatic billing software will use this date when searching for events to bill.  All events with an Earliest Auto Bill Date on or before the run 
+                                date of the automatic biller will be considered for inclusion on a bill.  
+                                 
+                                This field may be set in one of two ways.  If AUTOMATE BILLING is on for the Event Type then this field will be automatically set when apparently billable events are added to the claims tracking module.  This field can
+                                also be directly set by a user, AUTOMATE BILLING does not need to be on for the Event Type.  When the automated biller runs it will attempt to add the event to a bill.  
+                                 
+                                This date should be deleted if the event turns out not to be suitable for a reimbursable insurance bill.  This field will automatically be deleted if the event is added to a bill or a reason not-billable is entered.  
+
+              TECHNICAL DESCR:  If and only if this field is set will the event be considered by the automatic biller.  This will be set to the date the event was entered into claims tracking plus the number of days delay for the event type.  
+                                 
+                                Setting of this field may be automatic, ie. all by triggers, if automated billing is turned on for the event type.  Initially set by triggers on Event  Type (.18) and Date Entered (1.01).  
+                                 
+                                This may also be set by user.  
+                                 
+                                There is no checking to determine if the event is actually billable when the date is added.  Instead, if one of the fields that makes an event not billable is entered this field is deleted.  
+
+              NOTES:            TRIGGERED by the INITIAL BILL NUMBER field of the CLAIMS TRACKING File 
+                                TRIGGERED by the OTHER TYPE OF BILL field of the CLAIMS TRACKING File 
+                                TRIGGERED by the EVENT TYPE field of the CLAIMS TRACKING File 
+                                TRIGGERED by the REASON NOT BILLABLE field of the CLAIMS TRACKING File 
+                                TRIGGERED by the INACTIVE field of the CLAIMS TRACKING File 
+                                TRIGGERED by the DATE ENTERED field of the CLAIMS TRACKING File 
+
+              CROSS-REFERENCE:  356^ABD 
+                                1)= S ^IBT(356,"ABD",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"ABD",$E(X,1,30),DA)
+                                Regular cross reference of auto bill date field.  
+
+
+              CROSS-REFERENCE:  356^ATOBIL1^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,2)&($P(^(0),U,18)) ^IBT(356,"ATOBIL",+$P(^(0),U,2),+$P(^(0),U,18),+X,DA)=""
+                                2)= K ^IBT(356,"ATOBIL",+$P(^IBT(356,DA,0),U,2),+$P(^(0),U,18),+X,DA)
+                                Cross-reference of all billable, non-billed events by patient, event type, and earliest auto bill date.  Only events with entries in this x-ref will be considered for inclusion on a bill by the automated biller.  
+
+
+
+356,.18       EVENT TYPE             0;18 POINTER TO CLAIMS TRACKING TYPE FILE (#356.6)
+
+              LAST EDITED:      JUN 10, 2004 
+              DESCRIPTION:      This is the type of event that is being tracked.  This field is automatically stored when an entry is created.  Scheduled admissions are tracked to allow for precertification reviews.  When an admission occurs within 7
+                                days of a scheduled admission the scheduled admission will be updated to an inpatient care event type automatically.  
+                                 
+                                Choose an event type of Scheduled Admission only for future scheduled admissions and choose an event type of admission for past admissions.  If you are using the scheduled admissions portion of the MAS package then
+                                scheduled admissions will automatically be added to claims tracking 7 days before the scheduled admission and automatically converted to an event type of admission after the patient has been admitted.  
+                                 
+                                For admissions you will be able to specify the type of admission in another field.  
+
+              CROSS-REFERENCE:  356^EVNT 
+                                1)= S ^IBT(356,"EVNT",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"EVNT",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356^ATOBIL2^MUMPS 
+                                1)= S:$P(^IBT(356,+DA,0),U,2)&($P(^(0),U,17)) ^IBT(356,"ATOBIL",+$P(^(0),U,2),+X,+$P(^(0),U,17),DA)=""
+                                2)= K ^IBT(356,"ATOBIL",+$P(^IBT(356,+DA,0),U,2),+X,+$P(^(0),U,17),DA)
+                                Cross reference of all active billable events that have not been billed.  The auto biller will attempt to create a bill for each entry in this xref.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^356^.17 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X=DIV S X=$$EABD^IBTUTL($P($G(^IBT(356,+DA,0)),U,18),+$G(^IBT(356,+DA,1))) X ^DD(356,.18,1,3,1.4)
+                                1.4)= S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X="" S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                CREATE VALUE)= S X=$$EABD^IBTUTL($P($G(^IBT(356,+DA,0)),U,18),+$G(^IBT(356,+DA,1)))
+                                DELETE VALUE)= @
+                                FIELD)= EARLIEST AUTO BILL DATE
+                                Sets the Earliest Auto Bill Date whenever Event Type is set.  Does not check if event is billable.  
+
+
+              CROSS-REFERENCE:  356^APTY2^MUMPS 
+                                1)= S:$P(^IBT(356,DA,0),U,2)&($P(^(0),U,6)) ^IBT(356,"APTY",+$P(^(0),U,2),X,+$P(^(0),U,6),DA)=""
+                                2)= K ^IBT(356,"APTY",+$P(^IBT(356,DA,0),U,2),X,+$P(^(0),U,6),DA)
+                                Cross-reference of all entries by patient by event type, by episode date.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^356^.07 
+                                1)= X ^DD(356,.18,1,5,1.3) I X S X=DIV S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X=$$ADT^IBTRE0(DA) S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,7)=DIV,DIH=356,DIG=.07 D ^DICR
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(2)=$C(59)_$P($G(^DD(356,.07,0)),U,3),Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P($P(Y(2),$C(59)_$P(Y(1),U,7)_":",2),$C(59))=""
+                                2)= Q
+                                CREATE CONDITION)= #.07=""
+                                CREATE VALUE)= S X=$$ADT^IBTRE0(DA)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #.07
+
+
+356,.19       REASON NOT BILLABLE    0;19 POINTER TO CLAIMS TRACKING NON-BILLABLE REASONS FILE (#356.8)
+
+              NOT BILLABLE REASON                                                                                              
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,5)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 14, 2008 
+              HELP-PROMPT:      Enter the primary reason this episode of care should not be billed to an insurance company. 
+              DESCRIPTION:      This is the primary reason this episode of care should not be billed to an insurance company.  
+                                 
+                                If a reason not billable is entered, then this episode will no longer appear on reports as billable and will not be used by the automated biller as a billable event.  
+
+              SCREEN:           S DIC("S")="I '$P(^(0),U,5)"
+              EXPLANATION:      Only Active Reasons Allowed.
+              CROSS-REFERENCE:  356^AR 
+                                1)= S ^IBT(356,"AR",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"AR",$E(X,1,30),DA)
+                                Regular cross reference of reason not billable 
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^356^.17 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X="" S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X=DIV S X=$$BILL^IBTUTL(DA) S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                CREATE VALUE)= @
+                                DELETE VALUE)= S X=$$BILL^IBTUTL(DA)
+                                FIELD)= EARLIEST AUTO BILL DATE
+                                Deletes the Earliest Auto Bill Date (.17) when Reason Not Billable is set, event is no longer billable.  Re-sets EABD if Reason Not Billable is deleted.  
+
+
+
+356,.2        INACTIVE               0;20 SET
+
+                                '0' FOR INACTIVE; 
+                                '1' FOR ACTIVE; 
+              LAST EDITED:      JUN 10, 2004 
+              DESCRIPTION:      An entry is automatically inactived if the parent event that is being tracked is either deleted or edited so that it no longer is a valid tracking entry.  
+                                 
+                                Inactivating an entry has the same affect as deleting an entry except that the activity is left as a history.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^356^.17 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X=DIV S X=$$BILL^IBTUTL(DA) S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X="" S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                CREATE VALUE)= S X=$$BILL^IBTUTL(DA)
+                                DELETE VALUE)= @
+                                FIELD)= EARLIEST AUTO BILL DATE
+                                Re-sets Earliest Auto Bill Date whenever Status is modified.  
+
+
+
+356,.21       ESTIMATED INS. PAYMENT (PRI) 0;21 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      JUL 12, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the estimated amount that the primary insurance carrier is expected to pay on this claim.  
+
+
+356,.22       ESTIMATED INS. PAYMENT (SEC) 0;22 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      JUL 12, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This the the estimated amount that the secondary insurance carrier is expected to pay on this claim.  
+
+
+356,.23       ESTIMATED INS. PAYMENT (TER) 0;23 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      JUL 12, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the estimated amount that the tertiary insurance carrier is expected to pay on this claim.  
+
+
+356,.24       TRACKED AS INSURANCE CLAIM? 0;24 SET
+
+              INSURANCE CLAIM?                                                                                                 
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      AUG 27, 1993 
+              DESCRIPTION:      Enter 'YES' if the patient is insured for this event.  Enter 'No' if the patient is not insured for this event.  If this event is not tracked as an insurance claim, the field REASON NOT BILLABLE will automatically have
+                                entered "NOT INSURED" if it is not otherwise entered.  
+
+              SCREEN:           S DIC("S")="I $S(Y=0:1,$$INSURED^IBCNS1($P(^IBT(356,DA,0),U,2),$P(^(0),U,6)):1,1:0)"
+              EXPLANATION:      Only patients who have active insurance for the episode
+              CROSS-REFERENCE:  356^AI 
+                                1)= S ^IBT(356,"AI",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"AI",$E(X,1,30),DA)
+
+
+356,.25       TRACKED AS RANDOM SAMPLE? 0;25 SET
+
+              RANDOM SAMPLE?                                                                                                   
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUL 12, 1993 
+              DESCRIPTION:      Enter if this is to be tracked as a Random Sample for UR purposes.  The Claims tracking module is designed to flag one admission per week each from the 3 major bedsections, Medicine, Surgery, and Psychiatry, as a random
+                                sample that is to have utilization review follow-up.  If there is not sufficient activity in your facility for the automated tracker to set up the minimum random sample, then you may manually add entires to be tracked for
+                                UR purposes.  
+
+
+356,.26       TRACKED AS SPECIAL CONDITION 0;26 SET
+
+              SPECIAL CONDITION?                                                                                               
+                                '1' FOR TURP; 
+                                '2' FOR COPD; 
+                                '3' FOR CVD; 
+                                '0' FOR NONE; 
+              LAST EDITED:      JAN 24, 1994 
+              DESCRIPTION:      If you are tracking special conditions for follow up by UR then indicate that this is a special condition UR case and UR will be required and the information about this case will appear on special condition reports.  
+                                 
+                                The choices are:   TURP -- Transurethral Prostatectomy 
+                                                   COPD -- Chronic Obstructive Pulmonary Disease 
+                                                   CVD  -- Cerebrovascular Disease 
+
+
+356,.27       TRACKED AS A LOCAL ADDITION? 0;27 SET
+
+              LOCAL ADDITION?                                                                                                  
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 24, 1993 
+              DESCRIPTION:
+                                If this is being track as a local addition for UR purposes then enter 'YES'.  
+
+
+356,.28       ESTIMATED MT CHARGES   0;28 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      JUL 12, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                Enter the estimated amount of Means Test copayment charges that are to be paid by the patient for this case.  
+
+
+356,.29       ESTIMATED TOTAL CHARGES 0;29 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      JUL 12, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:      Enter the estimated total charges from this case.  This is the estimated total amount due the government.  
+                                 
+                                The total estimated charges minus the estimated payments from all sources will be the amount not anticipated to be reimbursed from this case.  Comparing estimated receipt versus the actual amount received will help
+                                determine if all payers have sufficiently re-imbursed the government.  
+
+
+356,.3        ADMITTING REASON (ICD-9) 0;30 POINTER TO INPATIENT DIAGNOSIS FILE (#356.9)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,4)=3" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 01, 1993 
+              DESCRIPTION:
+                                This is the ICD9 diagnosis code for the admitting diagnosis.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,4)=3"
+              EXPLANATION:      Must be the admitting diagnosis for this admission movement.
+
+356,.31       SPECIAL CONSENT ROI    0;31 SET
+
+                                '1' FOR NOT REQUIRED; 
+                                '2' FOR OBTAINED; 
+                                '3' FOR REQUIRED; 
+                                '4' FOR REFUSED; 
+              LAST EDITED:      AUG 24, 1993 
+              DESCRIPTION:      Enter whether or not a special consent release of information form for this patient for this episode of care is required, obtained, or not necessary.  If ROI is required but not obtained, certain clinical information may
+                                not be released to Insurance carriers.  This will affect contacts with insurance companies and bill preparation.  
+                                 
+                                Generally a special consent is required if the patient has or was treated for Drug and Alcohol, HIV, and sickle cell anemia.  
+
+
+356,.32       SCHEDULED ADMISSION    0;32 POINTER TO SCHEDULED ADMISSION FILE (#41.1)
+
+              INPUT TRANSFORM:  S DIC("S")="I +^(0)=$P(^IBT(356,DA,0),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 09, 1993 
+              DESCRIPTION:      If this claims tracking entry is for a scheduled admission, this is the scheduled admission.  
+                                 
+                                This field points to the entry in the Scheduled Admissions file that is being tracked.  When this scheduled admission is acutally admitted, it will be converted to an inpatient admission tracking record automatically.  
+
+              SCREEN:           S DIC("S")="I +^(0)=$P(^IBT(356,DA,0),U,2)"
+              EXPLANATION:      You can only select scheduled admissions for the same patient.
+              CROSS-REFERENCE:  356^ASCH 
+                                1)= S ^IBT(356,"ASCH",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"ASCH",$E(X,1,30),DA)
+                                Regular index of scheduled admissions 
+
+
+
+356,1.01      DATE ENTERED           1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 10, 2004 
+              DESCRIPTION:
+                                Enter the date that this entry was created.  This will usually be the date that the automated tracker created this entry on.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^356^.17 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X=DIV S X=$$EABD^IBTUTL($P($G(^IBT(356,+DA,0)),U,18),+$G(^IBT(356,+DA,1))) X ^DD(356,1.01,1,1,1.4)
+                                1.4)= S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356,D0,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X="" S DIH=$G(^IBT(356,DIV(0),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=356,DIG=.17 D ^DICR
+                                CREATE VALUE)= S X=$$EABD^IBTUTL($P($G(^IBT(356,+DA,0)),U,18),+$G(^IBT(356,+DA,1)))
+                                DELETE VALUE)= @
+                                FIELD)= EARLIEST AUTO BILL DATE
+                                Sets the Earliest Auto Bill Date whenever Date Entered is set.  Does not check if event is billable.  
+
+
+
+356,1.02      ENTERED BY             1;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 09, 1993 
+              DESCRIPTION:
+                                Enter the name of the user who first created this entry.  This is most important if this entry was not created by the automated tracker.  
+
+
+356,1.03      DATE LAST EDITED       1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 06, 1993 
+              DESCRIPTION:
+                                Enter the date that this claim was last edited.  
+
+
+356,1.04      LAST EDITED BY         1;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 09, 1993 
+              DESCRIPTION:
+                                Enter the user who last edited this claim tracking entry.  
+
+
+356,1.05      HOSPITAL REVIEWS ASSIGNED TO 1;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 25, 1993 
+              DESCRIPTION:      Enter the UR person that this case is assigned to if it is assigned to an individual for hospital Reviews.  
+                                 
+                                Cases may be assigned for an individual to follow for the length of their admission.  If viewing pending work by who it is assigned to then this field is used to sort the pending work.  
+
+
+356,1.06      INS. REVIEWS ASSIGNED TO 1;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 25, 1993 
+              DESCRIPTION:      Enter the Insurance UR person that this case is assigned to if it is assigned to an individual for Insurance UR.  
+                                 
+                                Cases may be assigned for an individual to follow for the length of their admission.  If viewing pending work by who it is assigned to then this field is used to sort the pending work.  
+
+
+356,1.07      FOLLOW-UP TYPE         1;7 SET
+
+                                '1' FOR NONE; 
+                                '2' FOR ADMISSION NOTIFICATION; 
+                                '3' FOR ADMISSION AND DISCHARGE NOTIFICATION; 
+                                '4' FOR PRE-CERTIFICATION; 
+                                '5' FOR PRE-CERT AND CONT. STAY; 
+                                '6' FOR PRE-CERT AND DISCH.; 
+                                '7' FOR PRE-CERT, CONT. STAY AND DISCH.; 
+              LAST EDITED:      JAN 28, 1994 
+              DESCRIPTION:
+                                Enter type of follow that the insurance company requires for this visit.  This information will be used by the reports to determine if the case requires pre-cert or not, or pre-cert and continued stay.  
+
+
+356,1.08      ADDITIONAL COMMENT     1;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+              LAST EDITED:      DEC 28, 2007 
+              HELP-PROMPT:      If necessary, use this field for a brief additional explanation of why this case isn't billable.  Answer must be 3-80 characters in length. 
+              DESCRIPTION:
+                                Enter any brief comment about this episode that may explain why a case is not billable.  
+
+
+356,1.09      ACUTE CARE DISCHARGE DATE 1;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 06, 1995 
+              HELP-PROMPT:      Date entered by trigger from ACUTE CARE DISCHARE DATE of the HOSPITAL REVIEW File (#356.1). 
+              DESCRIPTION:
+                                This date is filled by ACUTE CARE DISCHARGE DATE of the HOSPITAL REVIEW File (#356.1) when a discharge is entered.  Used by UTILIZATION MANAGEMENT ROLLUP in association with the ADIS cross-reference. 
+
+              NOTES:            TRIGGERED by the ACUTE CARE DISCHARGE DATE field of the HOSPITAL REVIEW File 
+
+              CROSS-REFERENCE:  356^ADIS 
+                                1)= S ^IBT(356,"ADIS",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"ADIS",$E(X,1,30),DA)
+                                Updated by ACUTE CARE DISCHARGE DATE field (#1.17) in HOSPITAL REVIEW File (#356.1).  
+
+
+
+356,1.1       ECME NUMBER            1;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:'($L(X)=7)&'($L(X)=12) X
+              LAST EDITED:      OCT 20, 2010 
+              HELP-PROMPT:      Answer must be 7 or 12 characters. 
+              DESCRIPTION:
+                                This is the ECME NUMBER associated with the e-Pharmacy Claim. This field may only be set for e-pharmacy prescriptions and refills.  
+
+              TECHNICAL DESCR:  ECME NUMBER is used to link the CT record to the ECME claim. After the ECME package successfully submitted e-Pharmacy claim it calls IB and it creates the CT record accociated with the claim, whether it is rejected by the
+                                Payer or approved. This field is especially important for the rejected e-Pharmacy claims, because IB does not create bills for rejects. The field ECME NUMBER in CT is the only means AR can recognize EOBs sent for rejected
+                                claims.  
+                                 
+                                The length of the ECME # for vD.0 has increased to 12 characters, from 7 in v5.1.  
+
+              SOURCE OF DATA:   ECME PACKAGE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  356^AE 
+                                1)= S ^IBT(356,"AE",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356,"AE",$E(X,1,30),DA)
+                                The cross-reference is important to identify CT billable episodes related to the ECME number. It will be used for EDI matching purposes.  
+
+
+
+356,1.11      ECME REJECT            1;11 SET
+
+                                '0' FOR NO; 
+                                '1' FOR REJECTED; 
+                                '2' FOR CLOSED; 
+              LAST EDITED:      FEB 19, 2006 
+              HELP-PROMPT:      Enter "REJECTED" if the e-claim was rejected by the Payer. Enter "CLOSED" if the claim was closed by OPECC. 
+              DESCRIPTION:
+                                This field is a flag to mark ECME claims rejected by the Payer. The field is only meaningful if the field 1.1 "ECME NUMBER" is defined.  
+
+              TECHNICAL DESCR:  This field will be set to "YES" when the ECME calls IB to report that the e-Pharmacy claim has been successfully submitted to the Payer, but rejected due to any reason. If the e-Pharmacy will be re-submitted and finally
+                                approved by the Payer, this field will be changed to "NO".  
+
+
+356,2.01      NON BILLABLE CODER     2;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 29, 2005 
+              HELP-PROMPT:      Enter the person who flagged as not billable who entered comments. 
+              DESCRIPTION:
+                                This field is populated automatically with the logged on user if REASON NOT BILLABLE is non-blank and ADDITIONAL COMMENTS was edited.  
+
+
+356,2.02      LAST REVIEWED BY       2;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 29, 2005 
+              HELP-PROMPT:      Enter the person who last reviewed this episode of care. 
+              DESCRIPTION:
+                                This field is populated automatically with the logged on user reviewing this episode of care.  
+
+
+356,2.03      BILLABLE CODER         2;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 29, 2005 
+              HELP-PROMPT:      Enter the person who last indicated billable with billable findings. 
+              DESCRIPTION:
+                                This field is populated automatically with the logged on user if REASON NOT BILLABLE is blank and BILLABLE FINDINGS TYPEs were changed or added.  
+
+
+356,2.04      CODE VALID BILLABLE DATE 2;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      JUL 29, 2005 
+              HELP-PROMPT:      Enter the last time Billable Finding Types were edited. 
+              DESCRIPTION:
+                                This date/time is automatically populated if BILLABLE FINDING TYPEs are added or edited and the episode is billable.  
+
+
+356,2.05      CODE VALID NON BILLABLE DATE 2;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      JUL 29, 2005 
+              HELP-PROMPT:      Enter the Date/Time a non-billable episode has additional comments edited. 
+              DESCRIPTION:
+                                This date/time field is updated automatically if REASON NOT BILLABLE is blank and ADDITIONAL COMMENTS is edited.  
+
+
+356,3         BILLABLE FINDINGS TYPE 3;0 POINTER Multiple #356.03
+
+
+356.03,.01      BILLABLE FINDINGS TYPE 0;1 POINTER TO CLAIMS TRACKING BILLABLE FINDINGS FILE (#356.85) (Multiply asked)
+
+                LAST EDITED:      JUN 13, 2005 
+                HELP-PROMPT:      Enter the Billable Findings for this claim. 
+                DESCRIPTION:
+                                  If REASON NOT BILLABLE is blank, this is asked to allow input of Billable Findings.  
+
+                CROSS-REFERENCE:  356.03^B 
+                                  1)= S ^IBT(356,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBT(356,DA(1),3,"B",$E(X,1,30),DA)
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILL/CLAIMS (#399)                INITIAL BILL NUMBER (#.11)
+
+CLAIMS TRACKING BILLABLE FINDI 
+                   (#356.85)      BILLABLE FINDINGS TYPE:BILLABLE FINDINGS TYPE (#.01)
+
+CLAIMS TRACKING NON-BILLABLE R 
+                   (#356.8)       REASON NOT BILLABLE (#.19)
+
+CLAIMS TRACKING TYPE (#356.6)     EVENT TYPE (#.18)
+
+INPATIENT DIAGNOSIS (#356.9)      ADMITTING REASON (ICD-9) (#.3)
+
+NEW PERSON (#200)                 ENTERED BY (#1.02)
+                                  LAST EDITED BY (#1.04)
+                                  HOSPITAL REVIEWS ASSIGNED TO (#1.05)
+                                  INS. REVIEWS ASSIGNED TO (#1.06)
+                                  NON BILLABLE CODER (#2.01)
+                                  LAST REVIEWED BY (#2.02)
+                                  BILLABLE CODER (#2.03)
+
+OUTPATIENT ENCOUNTER (#409.68)    OUTPATIENT ENCOUNTER (#.04)
+
+PATIENT (#2)                      PATIENT (#.02)
+
+PATIENT MOVEMENT (#405)           ADMISSION (#.05)
+
+PRESCRIPTION (#52)                PRESCRIPTION (#.08)
+
+RECORD OF PROS APPLIANCE/REPAI 
+                   (#660)         PROSTHETIC ITEM (#.09)
+
+SCHEDULED ADMISSION (#41.1)       SCHEDULED ADMISSION (#.32)
+
+VISIT (#9000010)                  VISIT (#.03)
+
+
+
+INPUT TEMPLATE(S):
+IBT ASSIGN CASE               AUG 25, 1993@06:57  USER #1453 
+IBT BILLING INFO              FEB 23, 2009@12:51  USER #0    
+IBT PRECERT INFO              JUL 13, 1993@14:39  USER #1453 
+IBT QUICK EDIT                FEB 23, 2009@13:30  USER #0    
+IBT STATUS CHANGE             SEP 30, 1997@14:02  USER #0    
+IBT UR INFO                   JAN 28, 1994@11:35  USER #1453 
+
+PRINT TEMPLATE(S):
+IBT LIST VISITS               FEB 23, 1994@08:39  USER #1453                                                                                                                                                                  LIST OF VISITS REQUIRING REVIEWS
+IBT QUICK REV CODING STAT     AUG 15, 2005@17:56  USER #0                                                                                                                                                                           QUICK REVIEW CODING STATUS
+
+SORT TEMPLATE(S):
+IBT LIST VISITS               JAN 24, 1994@09:15  USER #1453 
+SORT BY: ]'EPISODE DATE//    (User is asked range)
+  WITHIN EPISODE DATE, SORT BY: PATIENT//    (User is asked range)
+
+IBT QUICK REV CODING STAT     JUL 17, 2005@03:08  USER #0    
+SORT BY: OUTPATIENT ENCOUNTER//    (User is asked range)
+
+
+FORM(S)/BLOCK(S):

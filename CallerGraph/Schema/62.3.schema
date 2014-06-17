@@ -1,0 +1,200 @@
+STANDARD DATA DICTIONARY #62.3 -- LAB CONTROL NAME FILE                                                                                                                                                                           MAY 20,2014@15:36:46  PAGE 1
+STORED IN ^LAB(62.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 5.2)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the definition of each of the laboratory controls used as part of the laboratory's quality control program.  Every lab control for which data will be gathered, entered, calculated, recorded and/or stored by the system must have an
+entry in this file.  Also to be included as entries in this file are any 'control-like' samples which might appear on any of your load or work lists (see file #68.2 - LOAD/WORK LIST), including references, blanks, water samples or similar priming
+materials.  Each lab control name entry is defined by the file, listing information such as expiration date, lot number, type of specimen the control 'mimics', tests performed on the control, mean and standard deviation values, etc.  
+
+
+IDENTIFIED BY: EXPIRATION DATE (#.02), MIMIC SPECIMEN (#.04), IDENTIFIER/LOT # (#.09)
+
+POINTED TO BY: PARALLEL CONTROL field (#3) of the LAB CONTROL NAME File (#62.3) 
+               PATIENT NAME field (#2) of the WKLD LOG FILE File (#64.03) 
+               PATIENT field (#9) of the ACCESSION WKLD CODE TIME sub-field (#64.1111) of the WKLD CODE sub-field (#64.111) of the DATE sub-field (#64.11) of the WKLD DATA File (#64.1) 
+               CONTROL NAME field (#.01) of the CONTROL NAME sub-field (#68.1) of the INSTRUMENTATION CONTROLS sub-field (#68.09) of the ACCESSION File (#68) 
+               CONTROL NAME field (#.01) of the MULTI-RULE VA QC sub-field (#68.11) of the DATE sub-field (#68.01) of the ACCESSION File (#68) 
+               CONTROL field (#.01) of the CONTROL sub-field (#68.26) of the TRAY # FOR CONTROL sub-field (#68.25) of the PROFILE sub-field (#68.23) of the LOAD/WORK LIST File (#68.2) 
+               CONTROLS TO BEGIN WORKLIST field (#.01) of the CONTROLS TO BEGIN WORKLIST sub-field (#68.28) of the PROFILE sub-field (#68.23) of the LOAD/WORK LIST File (#68.2) 
+               CONTROLS TO END WORKLIST field (#.01) of the CONTROLS TO END WORKLIST sub-field (#68.29) of the PROFILE sub-field (#68.23) of the LOAD/WORK LIST File (#68.2) 
+               
+
+CROSS
+REFERENCED BY: NAME(AC), NAME(B)
+
+62.3,.01      NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(+X=X)!($L(X)<3)!'(X'?1P.E)!(X'?.ANP) X
+              LAST EDITED:      DEC 04, 1984 
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              DESCRIPTION:
+                                These tests are placed on the accession when ever the control is referenced by load or work list.  
+
+              DELETE TEST:      1,0)= I '$D(^XUSEC("LRLIASON",DUZ))
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  62.3^B 
+                                1)= S ^LAB(62.3,"B",$E(X,1,30),DA)=""
+                                2)= K ^LAB(62.3,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  62.3^AC^MUMPS 
+                                1)= S LRDPF="62.3^LAB(62.3,",DFN=DA,PDIC=DIC,PDIC(0)=$S($D(DIC(0)):DIC(0),1:"") D END^LRDPA S X=DFN,DIC=PDIC,DIC(0)=PDIC(0) K PDIC
+                                2)= Q
+
+
+62.3,.02      EXPIRATION DATE        0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 04, 1984 
+              DESCRIPTION:
+                                The expiration date of the control.  
+
+
+62.3,.03      EXCLUDE DATA ENTRY     0;4 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 23, 1984 
+              HELP-PROMPT:      ENTER YES IF NO MORE DATA IS TO BE ALLOWED TO BE ENTERED 
+              DESCRIPTION:
+                                If or when no more data is to be allowed to be entered for this control, this field must contain a YES entry.  
+
+
+62.3,.04      MIMIC SPECIMEN         0;5 POINTER TO TOPOGRAPHY FIELD FILE (#61)
+
+              LAST EDITED:      SEP 12, 1984 
+              DESCRIPTION:
+                                The specimen (topography) that this control imitates.  Points to FILE #61.  
+
+
+62.3,.09      IDENTIFIER/LOT #       0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      JAN 10, 1989 
+              HELP-PROMPT:      ANSWER MUST BE 1-20 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                The lot number or other identifier of this control.  
+
+
+62.3,2        TEST                   1;0 POINTER Multiple #62.31 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                These are all the tests that are done with the "Lab Control" named.  They must be individual tests, i.e. no panels of tests.  
+
+              SCREEN:           S DIC("S")="I $L($P(^(0),U,5))"
+              EXPLANATION:      MUST BE "ATOMIC" TEST
+
+62.31,.01       TEST                   0;1 POINTER TO LABORATORY TEST FILE (#60) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $L($P(^(0),U,5))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 11, 1984 
+                DESCRIPTION:
+                                  This is the individual test for which normal values are going to be entered.  
+
+                CROSS-REFERENCE:  ^^TRIGGER^62.31^3 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^LAB(62.3,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,4) S DIU=X K Y X ^DD(62.31,.01,1,1,1.1) X ^DD(62.31,.01,1,1,1.4)
+                                  1.1)= S Y(1)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^LAB(60,+D0,0)) D0=-1 S Y(102)=$S($D(^LAB(60,D0,0)):^(0),1:""),Y(101)=X S X=$P(Y(102),U,5) S D0=Y(1)
+                                  1.4)= S DIH=$S($D(^LAB(62.3,DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,3,99))  S DIH=DIH_U" S %=$P(DIH,U,5,999),^(0)=$P(DIH,U,1,3)_U_DIV_$S(%]"":U_%,1:""),DIH=62.31,DIG=3 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^LAB(62.3,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,4) S DIU=X K Y X ^DD(62.31,.01,1,1,2.1) X ^DD(62.31,.01,1,1,2.4)
+                                  2.1)= S Y(1)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^LAB(60,+D0,0)) D0=-1 S Y(102)=$S($D(^LAB(60,D0,0)):^(0),1:""),Y(101)=X S X=$P(Y(102),U,5) S D0=Y(1)
+                                  2.4)= S DIH=$S($D(^LAB(62.3,DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,3,99))  S DIH=DIH_U" S %=$P(DIH,U,5,999),^(0)=$P(DIH,U,1,3)_U_DIV_$S(%]"":U_%,1:""),DIH=62.31,DIG=3 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= TEST:(LOCATION)
+                                  DELETE VALUE)= TEST:(LOCATION)
+                                  FIELD)= LOCATI
+
+                CROSS-REFERENCE:  62.31^B 
+                                  1)= S ^LAB(62.3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^LAB(62.3,DA(1),1,"B",$E(X,1,30),DA)
+
+
+62.31,1         MEAN                   0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<-99999999)!(X?.E1"."5N.N) X
+                LAST EDITED:      DEC 24, 1983 
+                HELP-PROMPT:      TYPE A NUMBER BETWEEN -99999999 AND 99999999 
+                DESCRIPTION:
+                                  The mean value, or ideal control value of the test.  This is used to determine the center line in the Levey-Jennings plots.  
+
+
+62.31,2         1 SD                   0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<-99999999)!(X?.E1"."5N.N) X
+                LAST EDITED:      DEC 24, 1983 
+                HELP-PROMPT:      TYPE A NUMBER BETWEEN -99999999 AND 99999999 
+                DESCRIPTION:
+                                  Enter the expected value for one standard deviation on the test.  This value is used to compute the 2 standard deviation lines in the Levey-Jennings plots.  It is also used in the Multirule-Shewhart.  
+
+
+62.31,3         LOCATION               0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      AUG 17, 1984 
+                HELP-PROMPT:      ANSWER MUST BE 1-10 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  These are the "internal" subscripts for the Lab Data file.  This way we don't have to look all over DD to find its home! 
+
+                WRITE AUTHORITY:  ^
+                                  UNEDITABLE
+                NOTES:            TRIGGERED by the TEST field of the TEST sub-field of the LAB CONTROL NAME File 
+
+
+
+
+62.3,3        PARALLEL CONTROL       0;3 POINTER TO LAB CONTROL NAME FILE (#62.3)
+
+              LAST EDITED:      DEC 26, 1983 
+              DESCRIPTION:
+                                This indicates what other control is to be used for paired controls in the Multirule-Shewhart.  
+
+
+62.3,4        ACCESSION TEST         2;0 POINTER Multiple #62.32 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Entries here are used when controls are accessioned into the laboratory.  
+
+
+62.32,.01       ACCESSION TEST         0;1 POINTER TO LABORATORY TEST FILE (#60) (Multiply asked)
+
+                LAST EDITED:      APR 03, 1984 
+                DESCRIPTION:
+                                  Entries here are used when controls are accessioned into the laboratory.  
+
+
+
+
+62.3,63       LABORATORY REFERENCE   LR;1 POINTER TO LAB DATA FILE (#63)
+
+              INPUT TRANSFORM:  K X
+              LAST EDITED:      MAY 10, 1984 
+              DESCRIPTION:
+                                Points to the LAB DATA file.  Cannot be altered except by programmer.  This is the INTERNAL pointer to the lab data file. (LRDFN) 
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+      FILES POINTED TO                      FIELDS
+
+LAB CONTROL NAME (#62.3)          PARALLEL CONTROL (#3)
+
+LAB DATA (#63)                    LABORATORY REFERENCE (#63)
+
+LABORATORY TEST (#60)             TEST:TEST (#.01)
+                                  ACCESSION TEST:ACCESSION TEST (#.01)
+
+TOPOGRAPHY FIELD (#61)            MIMIC SPECIMEN (#.04)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

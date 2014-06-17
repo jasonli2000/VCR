@@ -1,0 +1,1303 @@
+STANDARD DATA DICTIONARY #50.9 -- DRUG COST FILE                                                                                                                                                                                  MAY 20,2014@15:39:16  PAGE 1
+STORED IN ^PSCST(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                (VERSION 7.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds information extracted nightly by a special pharmacy program to allow easier and quicker reporting of pharmacy activity the next day.  When the daily information accumulates in excess of one month's information, it is condensed into a
+monthly total and the daily information is purged.  
+ 
+This file serves as the principal database for the cost analysis programs.  
+
+
+
+CROSS
+REFERENCED BY: FILLED DATE(B)
+
+50.9,.01      FILLED DATE            0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:(Y<1)!(+$E(Y,6,7)'=0)!(+$E(Y,4,5)=0) X S:$D(X) DINUM=X
+              LAST EDITED:      FEB 28, 1984 
+              HELP-PROMPT:      Enter the date the prescription was filled. 
+              DESCRIPTION:
+                                This field is used to enter the date that the prescription was filled.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  50.9^B 
+                                1)= S ^PSCST("B",$E(X,1,30),DA)=""
+                                2)= K ^PSCST("B",$E(X,1,30),DA)
+
+
+50.9,.02      # ORG FILLS            0;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+              DESCRIPTION:
+                                Respond with the total number of prescriptions filled on the specified date.  -- Should not include any refills -- 
+
+                                UNEDITABLE
+
+50.9,.03      # REFILLS              0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+              DESCRIPTION:
+                                Respond with the total number of refills for the specified date.  
+
+                                UNEDITABLE
+
+50.9,.035     TOTAL FILLS             ;  COMPUTED
+
+              MUMPS CODE:       S Y(50.9,.035,1)=$S($D(^PSCST(D0,0)):^(0),1:"") S X=$P(Y(50.9,.035,1),U,2)+$P(Y(50.9,.035,1),U,3) S X=$J(X,0,0)
+              ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+              DESCRIPTION:
+                                Respond by adding all new fills with all refills.  
+
+
+50.9,.04      TOTAL COST             0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."5N.N) X
+              LAST EDITED:      MAR 23, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 4 Decimal Digits 
+              DESCRIPTION:
+                                Respond by entering the total dollar cost of prescriptions.  
+
+                                UNEDITABLE
+
+50.9,.045     AVE COST/FILL           ;  COMPUTED
+
+              MUMPS CODE:       X $P(^DD(50.9,.035,0),U,5,99) S Y(50.9,.045,2)=X S Y(50.9,.045,1)=$S($D(^PSCST(D0,0)):^(0),1:"") S X=$P(Y(50.9,.045,1),U,4),X=$S(Y(50.9,.045,2):X/Y(50.9,.045,2),1:"*******") S X=$J(X,0,2)
+              ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+              DESCRIPTION:
+                                Average prescription cost is found by dividing total prescription cost by total number of prescriptions filled.  
+
+              SUM:              S X=S("50.9^.04"),X=$S(S("50.9^.035"):X/S("50.9^.035"),1:"*******") S Y=X
+
+50.9,.05      TOTAL QTY DISPENSED    0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+              DESCRIPTION:
+                                Respond by entering the actual number of pills dispensed.  
+
+                                UNEDITABLE
+
+50.9,.055     AVE QTY DISPENSED/FILL  ;  COMPUTED
+
+              MUMPS CODE:       X $P(^DD(50.9,.035,0),U,5,99) S Y(50.9,.055,2)=X S Y(50.9,.055,1)=$S($D(^PSCST(D0,0)):^(0),1:"") S X=$P(Y(50.9,.055,1),U,5),X=$S(Y(50.9,.055,2):X/Y(50.9,.055,2),1:"*******") S X=$J(X,0,0)
+              ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+              DESCRIPTION:
+                                Divide the total number of pills dispensed by the total number of prescriptions to find the average quantity dispensed.  
+
+              SUM:              S X=S("50.9^.05"),X=$S(S("50.9^.035"):X/S("50.9^.035"),1:"*******") S Y=X
+
+50.9,.06      MAILS                  0;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+              DESCRIPTION:
+                                Respond with the number of prescriptions distributed by mail.  
+
+                                UNEDITABLE
+
+50.9,.07      WINDOWS                0;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+              DESCRIPTION:
+                                Respond with the number of prescriptions distributed on site.  
+
+                                UNEDITABLE
+
+50.9,.11      COMPILE DATE           1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              HELP-PROMPT:      Enter the date the proceeding data was gathered. 
+              DESCRIPTION:
+                                Enter the date that the proceeding data was gathered.  
+
+                                UNEDITABLE
+
+50.9,.12      REQUESTS               1;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+              DESCRIPTION:
+                                Enter the number of different patients seen per day.  
+
+                                UNEDITABLE
+
+50.9,.125     AVE COST/REQUEST        ;  COMPUTED
+
+              MUMPS CODE:       S Y(50.9,.125,1)=$S($D(^PSCST(D0,0)):^(0),1:""),Y(50.9,.125,2)=$S($D(^(1)):^(1),1:"") S X=$P(Y(50.9,.125,1),U,4),X=$S($P(Y(50.9,.125,2),U,2):X/$P(Y(50.9,.125,2),U,2),1:"*******") S X=$J(X,0,2)
+              ALGORITHM:        TOTAL COST/REQUESTS  (ALWAYS 2 DECIMAL DIGITS)
+              DESCRIPTION:
+                                Enter the total cost divided by the number of patients for that day.  
+
+              SUM:              S X=S("50.9^.04"),X=$S(S("50.9^.12"):X/S("50.9^.12"),1:"*******") S Y=X
+
+50.9,.126     AVE FILLS/REQUEST       ;  COMPUTED
+
+              MUMPS CODE:       X $P(^DD(50.9,.035,0),U,5,99) S Y(50.9,.126,1)=X S Y(50.9,.126,2)=$S($D(^PSCST(D0,1)):^(1),1:"") S X=Y(50.9,.126,1),X=$S($P(Y(50.9,.126,2),U,2):X/$P(Y(50.9,.126,2),U,2),1:"*******") S X=$J(X,0,2)
+              ALGORITHM:        TOTAL FILLS/REQUESTS  (ALWAYS 2 DECIMAL DIGITS)
+              DESCRIPTION:
+                                To find the average fill, divide the total fills by the number of patients for a given day.  
+
+              SUM:              S X=S("50.9^.035"),X=$S(S("50.9^.12"):X/S("50.9^.12"),1:"*******") S Y=X
+
+50.9,1        PHYSICIAN DATA         P;0 POINTER Multiple #50.9001 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This sub-file is used to store prescription costs as it relates to the prescribing physician.  
+
+
+50.9001,.01     PHYSICIAN              0;1 POINTER TO NEW PERSON FILE (#200)
+
+                INPUT TRANSFORM:  S DINUM=X Q
+                HELP-PROMPT:      Enter the name of the physician. 
+                DESCRIPTION:
+                                  This field is used to enter the name of the physician.  
+
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.9001,1       DRUG                   D;0 POINTER Multiple #50.9002 (Add New Entry without Asking)
+
+                DESCRIPTION:
+                                  This sub-file is used to show cost by drug under individual providers.  
+
+
+50.9002,.01       DRUG                   0;1 POINTER TO DRUG FILE (#50)
+
+                  INPUT TRANSFORM:  S DINUM=X Q
+                  HELP-PROMPT:      Enter the name of the dispensed drug. 
+                  DESCRIPTION:
+                                    This field is used to indicate the drug dispensed.  
+
+                                    UNEDITABLE
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.9002,2         # ORG FILLS            0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:      Respond with the total number of prescriptions filled on the specific date.  
+                                             --Should not include any refills-- 
+
+                                    UNEDITABLE
+
+50.9002,3         # REFILLS              0;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond with the total number of refills for the specified date.  
+
+                                    UNEDITABLE
+
+50.9002,3.5       TOTAL FILLS             ;  COMPUTED
+
+                  MUMPS CODE:       S Y(50.9002,3.5,1)=$S($D(^PSCST(D0,"P",D1,"D",D2,0)):^(0),1:"") S X=$P(Y(50.9002,3.5,1),U,2)+$P(Y(50.9002,3.5,1),U,3) S X=$J(X,0,0)
+                  ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    Respond by adding all new fills with all refills.  
+
+
+50.9002,4         TOTAL COST             0;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                  HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond by entering the total dollar cost of prescriptions.  
+
+                                    UNEDITABLE
+
+50.9002,4.5       AVE COST/FILL           ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.9002,3.5,0),U,5,99) S Y(50.9002,4.5,2)=X S Y(50.9002,4.5,1)=$S($D(^PSCST(D0,"P",D1,"D",D2,0)):^(0),1:"") S X=$P(Y(50.9002,4.5,1),U,4),X=$S(Y(50.9002,4.5,2):X/Y(50.9002,4.5,2),1:"*******") S X=$J(X,0,2)
+                  ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    Average prescription cost is found by dividing total prescription cost by total number of prescriptions filled.  
+
+                  SUM:              S X=S("50.9002^4"),X=$S(S("50.9002^3.5"):X/S("50.9002^3.5"),1:"*******") S Y=X
+
+50.9002,5         TOTAL QTY DISPENSED    0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond by entering the actual number of pills dispensed for that particular day.  
+
+                                    UNEDITABLE
+
+50.9002,5.5       AVE QTY DISPENSED/FILL  ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.9002,3.5,0),U,5,99) S Y(50.9002,5.5,2)=X S Y(50.9002,5.5,1)=$S($D(^PSCST(D0,"P",D1,"D",D2,0)):^(0),1:"") S X=$P(Y(50.9002,5.5,1),U,5),X=$S(Y(50.9002,5.5,2):X/Y(50.9002,5.5,2),1:"*******") S X=$J(X,0,0)
+                  ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    This field is used to inidcate the average quantity dispensed per fill.  
+
+                  SUM:              S X=S("50.9002^5"),X=$S(S("50.9002^3.5"):X/S("50.9002^3.5"),1:"*******") S Y=X
+
+50.9002,6         MAILS                  0;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond with the number of prescriptions distributed by mail.  
+
+                                    UNEDITABLE
+
+50.9002,7         WINDOWS                0;7 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond with the number of prescriptions distributed on site.  
+
+                                    UNEDITABLE
+
+
+
+50.9001,2       # ORG FILLS              0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used for the total number of prescriptions filled on the specified date.  --Should not include any refills-- 
+
+                  TECHNICAL DESCR:
+                                    numeric 
+
+                                    UNEDITABLE
+
+50.9001,3       # REFILLS                0;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond with the total number of refills for the specified date.  
+
+                                    UNEDITABLE
+
+50.9001,3.5     TOTAL FILLS               ;  COMPUTED
+
+                  MUMPS CODE:       S Y(50.9001,3.5,1)=$S($D(^PSCST(D0,"P",D1,0)):^(0),1:"") S X=$P(Y(50.9001,3.5,1),U,2)+$P(Y(50.9001,3.5,1),U,3) S X=$J(X,0,0)
+                  ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    This field is used to compute the total number of fills.  The total fills are fills plus refils.  
+
+
+50.9001,4       TOTAL COST               0;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                  HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond by entering the actual number of pills dispensed for that particular day.  
+
+                                    UNEDITABLE
+
+50.9001,4.5     AVE COST/FILL             ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.9001,3.5,0),U,5,99) S Y(50.9001,4.5,2)=X S Y(50.9001,4.5,1)=$S($D(^PSCST(D0,"P",D1,0)):^(0),1:"") S X=$P(Y(50.9001,4.5,1),U,4),X=$S(Y(50.9001,4.5,2):X/Y(50.9001,4.5,2),1:"*******") S X=$J(X,0,2)
+                  ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    This field computes the average of medication dispensed.  
+
+                  SUM:              S X=S("50.9001^4"),X=$S(S("50.9001^3.5"):X/S("50.9001^3.5"),1:"*******") S Y=X
+
+50.9001,5       TOTAL QTY DISPENSED      0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to indicate the total quantity of medication dispensed.  
+
+                                    UNEDITABLE
+
+50.9001,5.5     AVE QTY DISPENSED/FILL    ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.9001,3.5,0),U,5,99) S Y(50.9001,5.5,2)=X S Y(50.9001,5.5,1)=$S($D(^PSCST(D0,"P",D1,0)):^(0),1:"") S X=$P(Y(50.9001,5.5,1),U,5),X=$S(Y(50.9001,5.5,2):X/Y(50.9001,5.5,2),1:"*******") S X=$J(X,0,0)
+                  ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    Divide the total number of pills dispensed by the total number of prescriptions to find the average quantity dispensed.  
+
+                  SUM:              S X=S("50.9001^5"),X=$S(S("50.9001^3.5"):X/S("50.9001^3.5"),1:"*******") S Y=X
+
+50.9001,6       MAILS                    0;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Enter the number of prescriptions distributed by mail.  
+
+                                    UNEDITABLE
+
+50.9001,7       WINDOWS                  0;7 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond with the number of prescriptions distributed on site.  
+
+                                    UNEDITABLE
+
+
+
+50.9,2        DRUG DATA              D;0 POINTER Multiple #50.9003 (Add New Entry without Asking)
+
+              LAST EDITED:      FEB 28, 1984 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+              DESCRIPTION:
+                                This sub-file is used to store costs of drugs dispensed.  
+
+
+50.9003,.01     DRUG                   0;1 POINTER TO DRUG FILE (#50)
+
+                INPUT TRANSFORM:  S DINUM=X Q
+                HELP-PROMPT:      Enter the name of the prescribed drug. 
+                DESCRIPTION:
+                                  Enter the name of the prescribed drug.  
+
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.9003,1       PHYSICIAN              P;0 POINTER Multiple #50.9004 (Add New Entry without Asking)
+
+                DESCRIPTION:
+                                  This sub-file is used to store drug cost by provider.  
+
+
+50.9004,.01       PHYSICIAN              0;1 POINTER TO NEW PERSON FILE (#200)
+
+                  INPUT TRANSFORM:  S DINUM=X Q
+                  DESCRIPTION:
+                                    This field is used to indicate the proviver cost sorted by drug dispensed.  
+
+                                    UNEDITABLE
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.9004,2         # ORG FILLS            0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:      Respond with the total number of prescriptions filled on the specified date.  
+                                                 --Should not include any refills-- 
+
+                                    UNEDITABLE
+
+50.9004,3         # REFILLS              0;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond with the total number of refills for the specified date.  
+
+                                    UNEDITABLE
+
+50.9004,3.5       TOTAL FILLS             ;  COMPUTED
+
+                  MUMPS CODE:       S Y(50.9004,3.5,1)=$S($D(^PSCST(D0,"D",D1,"P",D2,0)):^(0),1:"") S X=$P(Y(50.9004,3.5,1),U,2)+$P(Y(50.9004,3.5,1),U,3) S X=$J(X,0,0)
+                  ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    Respond by adding all new fills with all refills.  
+
+
+50.9004,4         TOTAL COST             0;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                  HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond by entering the total dollar cost of prescriptions.  
+
+                                    UNEDITABLE
+
+50.9004,4.5       AVE COST/FILL           ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.9004,3.5,0),U,5,99) S Y(50.9004,4.5,2)=X S Y(50.9004,4.5,1)=$S($D(^PSCST(D0,"D",D1,"P",D2,0)):^(0),1:"") S X=$P(Y(50.9004,4.5,1),U,4),X=$S(Y(50.9004,4.5,2):X/Y(50.9004,4.5,2),1:"*******") S X=$J(X,0,2)
+                  ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    Average prescription cost is found by dividing total prescription cost by total number of prescriptions filled.  
+
+                  SUM:              S X=S("50.9004^4"),X=$S(S("50.9004^3.5"):X/S("50.9004^3.5"),1:"*******") S Y=X
+
+50.9004,5         TOTAL QTY DISPENSED    0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond by entering the total dollar cost of prescriptions.  
+
+                                    UNEDITABLE
+
+50.9004,5.5       AVE QTY DISPENSED       ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.9004,3.5,0),U,5,99) S Y(50.9004,5.5,2)=X S Y(50.9004,5.5,1)=$S($D(^PSCST(D0,"D",D1,"P",D2,0)):^(0),1:"") S X=$P(Y(50.9004,5.5,1),U,5),X=$S(Y(50.9004,5.5,2):X/Y(50.9004,5.5,2),1:"*******") S X=$J(X,0,0)
+                  ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    This filed is used to compute the average quantity dispensed for this provider sorted by drug.  
+
+                  SUM:              S X=S("50.9004^5"),X=$S(S("50.9004^3.5"):X/S("50.9004^3.5"),1:"*******") S Y=X
+
+50.9004,6         MAILS                  0;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to indicate the number of prescriptions dispensed by mail.  
+
+                                    UNEDITABLE
+
+50.9004,7         WINDOWS                0;7 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to indicate the number of prescriptions dispensed at the window.  
+
+                                    UNEDITABLE
+
+
+
+50.9003,2       # ORG FILLS              0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:      Respond with the total number of prescriptions filled on the specified date.  
+                                             --Should not include any refills-- 
+
+                                    UNEDITABLE
+
+50.9003,3       # REFILLS                0;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond with the total number of refills for the specified date.  
+
+                                    UNEDITABLE
+
+50.9003,3.5     TOTAL FILLS               ;  COMPUTED
+
+                  MUMPS CODE:       S Y(50.9003,3.5,1)=$S($D(^PSCST(D0,"D",D1,0)):^(0),1:"") S X=$P(Y(50.9003,3.5,1),U,2)+$P(Y(50.9003,3.5,1),U,3) S X=$J(X,0,0)
+                  ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    Respond by adding all new fills with all refills.  
+
+
+50.9003,4       TOTAL COST               0;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                  HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond by entering the total dollar cost of prescriptions.  
+
+                                    UNEDITABLE
+
+50.9003,4.5     AVE COST/FILL             ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.9003,3.5,0),U,5,99) S Y(50.9003,4.5,2)=X S Y(50.9003,4.5,1)=$S($D(^PSCST(D0,"D",D1,0)):^(0),1:"") S X=$P(Y(50.9003,4.5,1),U,4),X=$S(Y(50.9003,4.5,2):X/Y(50.9003,4.5,2),1:"*******") S X=$J(X,0,2)
+                  ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    Average prescription cost is found by dividing total prescription cost by total number of prescriptions filled.  
+
+                  SUM:              S X=S("50.9003^4"),X=$S(S("50.9003^3.5"):X/S("50.9003^3.5"),1:"*******") S Y=X
+
+50.9003,5       TOTAL QTY DISPENSED      0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Respond by entering the actual number of pills dispensed for that particular day.  
+
+                                    UNEDITABLE
+
+50.9003,5.5     AVE QTY DISPENSED/FILL    ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.9003,3.5,0),U,5,99) S Y(50.9003,5.5,2)=X S Y(50.9003,5.5,1)=$S($D(^PSCST(D0,"D",D1,0)):^(0),1:"") S X=$P(Y(50.9003,5.5,1),U,5),X=$S(Y(50.9003,5.5,2):X/Y(50.9003,5.5,2),1:"*******") S X=$J(X,0,0)
+                  ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    Divide the total number of pills dispensed by the total number of prescriptions to find the average quantity dispensed.  
+
+                  SUM:              S X=S("50.9003^5"),X=$S(S("50.9003^3.5"):X/S("50.9003^3.5"),1:"*******") S Y=X
+
+50.9003,6       MAILS                    0;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to show the number of prescriptions distributed by mail.  
+
+                  TECHNICAL DESCR:
+                                    numeric 
+
+                                    UNEDITABLE
+
+50.9003,7       WINDOWS                  0;7 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to show the number of prescriptions distributed on site.  
+
+                  TECHNICAL DESCR:
+                                    numeric 
+
+                                    UNEDITABLE
+
+
+
+50.9,3        PATIENT STATUS DATA    PS;0 POINTER Multiple #50.9005 (Add New Entry without Asking)
+
+              LAST EDITED:      FEB 28, 1984 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+              DESCRIPTION:
+                                This sub-file is used to store drug costs associated with the clinical status of the patient.  
+
+
+50.9005,.01     PATIENT STATUS         0;1 POINTER TO RX PATIENT STATUS FILE (#53)
+
+                INPUT TRANSFORM:  S DINUM=X Q
+                HELP-PROMPT:      Enter the prescription status of the patient. 
+                DESCRIPTION:
+                                  This field is used to show the status of the patient.  
+
+                TECHNICAL DESCR:
+                                  pointer 
+
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.9005,2       # ORG FILLS            0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:      Respond with the total number of prescriptions filled on the specified date.  
+                                           --Should not include any refills-- 
+
+                                  UNEDITABLE
+
+50.9005,3       # REFILLS              0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond with the total number of refills for the specified date.  
+
+                                  UNEDITABLE
+
+50.9005,3.5     TOTAL FILLS             ;  COMPUTED
+
+                MUMPS CODE:       S Y(50.9005,3.5,1)=$S($D(^PSCST(D0,"PS",D1,0)):^(0),1:"") S X=$P(Y(50.9005,3.5,1),U,2)+$P(Y(50.9005,3.5,1),U,3) S X=$J(X,0,0)
+                ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  Respond by adding all new fills to all refills.  
+
+
+50.9005,4       TOTAL COST             0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond by entering the dollar cost of prescriptions.  
+
+                                  UNEDITABLE
+
+50.9005,4.5     AVE COST/FILL           ;  COMPUTED
+
+                MUMPS CODE:       X $P(^DD(50.9005,3.5,0),U,5,99) S Y(50.9005,4.5,2)=X S Y(50.9005,4.5,1)=$S($D(^PSCST(D0,"PS",D1,0)):^(0),1:"") S X=$P(Y(50.9005,4.5,1),U,4),X=$S(Y(50.9005,4.5,2):X/Y(50.9005,4.5,2),1:"*******") S X=$J(X,0,2)
+                ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  Average prescription cost is found by dividing total prescription cost by total number of prescriptions filled.  
+
+                SUM:              S X=S("50.9005^4"),X=$S(S("50.9005^3.5"):X/S("50.9005^3.5"),1:"*******") S Y=X
+
+50.9005,5       TOTAL QTY DISPENSED    0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond by entering the actual number of pills dispensed.  
+
+                                  UNEDITABLE
+
+50.9005,5.5     AVE QTY DISPENSED/FILL  ;  COMPUTED
+
+                MUMPS CODE:       X $P(^DD(50.9005,3.5,0),U,5,99) S Y(50.9005,5.5,2)=X S Y(50.9005,5.5,1)=$S($D(^PSCST(D0,"PS",D1,0)):^(0),1:"") S X=$P(Y(50.9005,5.5,1),U,5),X=$S(Y(50.9005,5.5,2):X/Y(50.9005,5.5,2),1:"*******") S X=$J(X,0,0)
+                ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  This field is used to compute the average quantity dispensed per fill/ 
+
+                SUM:              S X=S("50.9005^5"),X=$S(S("50.9005^3.5"):X/S("50.9005^3.5"),1:"*******") S Y=X
+
+50.9005,6       MAILS                  0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond with the number of prescriptions distributed by mail.  
+
+                                  UNEDITABLE
+
+50.9005,7       WINDOWS                0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond with the number of prescriptions distributed on site.  
+
+                                  UNEDITABLE
+
+50.9005,100     AMIS GROUP              ;  COMPUTED
+
+                MUMPS CODE:       X ^DD(50.9005,100,9.3) S X=$P($P(Y(50.9005,100,102),$C(59)_$P(Y(50.9005,100,101),U,6)_":",2),$C(59),1) S D0=Y(50.9005,100,2)
+                                  9.2 = S Y(50.9005,100,2)=$S($D(D0):D0,1:""),Y(50.9005,100,1)=$S($D(^PSCST(D0,"PS",D1,0)):^(0),1:""),D0=$P(Y(50.9005,100,1),U,1) S:'$D(^DIC(53,+D0,0)) D0=-1
+                                  9.3 = X ^DD(50.9005,100,9.2) S Y(50.9005,100,102)=$C(59)_$S($D(^DD(53,6,0)):$P(^(0),U,3),1:""),Y(50.9005,100,101)=$S($D(^DIC(53,D0,0)):^(0),1:"")
+                ALGORITHM:        .01:6
+                DESCRIPTION:
+                                  Contains Amis group data.  
+
+
+
+
+50.9,4        CLINIC DATA            S;0 POINTER Multiple #50.9008
+
+              LAST EDITED:      FEB 28, 1984 
+              HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+              DESCRIPTION:
+                                This sub-file is used to store drug cost data associated with clinics.  
+
+
+50.9008,.01     CLINIC                 0;1 POINTER TO HOSPITAL LOCATION FILE (#44) (Multiply asked)
+
+                INPUT TRANSFORM:  S DINUM=X Q
+                LAST EDITED:      OCT 17, 1983 
+                HELP-PROMPT:      Enter the name of the outpatient clinic. 
+                DESCRIPTION:
+                                  Enter the name of the outpatient clinic.  
+
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.9008,2       # ORG FILLS            0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:      Respond with the total number of prescriptions filled on the specified date.  
+                                           --SHOULD NOT INCLUDE REFILLS-- 
+
+                                  UNEDITABLE
+
+50.9008,3       # REFILLS              0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond with the total number of refills on the specified date.  
+
+                                  UNEDITABLE
+
+50.9008,3.5     TOTAL FILLS             ;  COMPUTED
+
+                MUMPS CODE:       S Y(50.9008,3.5,1)=$S($D(^PSCST(D0,"S",D1,0)):^(0),1:"") S X=$P(Y(50.9008,3.5,1),U,2)+$P(Y(50.9008,3.5,1),U,3) S X=$J(X,0,0)
+                ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  Respond by adding all new fills with all refills.  
+
+
+50.9008,4       TOTAL COST             0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond by entering the total dollar cost of prescriptions.  
+
+                                  UNEDITABLE
+
+50.9008,4.5     AVE COST/FILL           ;  COMPUTED
+
+                MUMPS CODE:       X $P(^DD(50.9008,3.5,0),U,5,99) S Y(50.9008,4.5,2)=X S Y(50.9008,4.5,1)=$S($D(^PSCST(D0,"S",D1,0)):^(0),1:"") S X=$P(Y(50.9008,4.5,1),U,4),X=$S(Y(50.9008,4.5,2):X/Y(50.9008,4.5,2),1:"*******") S X=$J(X,0,2)
+                ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  Average prescription cost is found by dividing total prescription costs by total number of prescriptions filled.  
+
+                SUM:              S X=S("50.9008^4"),X=$S(S("50.9008^3.5"):X/S("50.9008^3.5"),1:"*******") S Y=X
+
+50.9008,5       TOTAL QTY DISPENSED    0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond by entering the actual number of pills dispensed for that particular day.  
+
+                                  UNEDITABLE
+
+50.9008,5.5     AVE QTY DISPENSED/FILL  ;  COMPUTED
+
+                MUMPS CODE:       X $P(^DD(50.9008,3.5,0),U,5,99) S Y(50.9008,5.5,2)=X S Y(50.9008,5.5,1)=$S($D(^PSCST(D0,"S",D1,0)):^(0),1:"") S X=$P(Y(50.9008,5.5,1),U,5),X=$S(Y(50.9008,5.5,2):X/Y(50.9008,5.5,2),1:"*******") S X=$J(X,0,2)
+                ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  This field is used to indicate the average quantity dispensed per fill.  
+
+                SUM:              S X=S("50.9008^5"),X=$S(S("50.9008^3.5"):X/S("50.9008^3.5"),1:"*******") S Y=X
+
+50.9008,6       MAILS                  0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond with the number of prescriptions distributed by mail.  
+
+                                  UNEDITABLE
+
+50.9008,7       WINDOWS                0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Respond with the number of prescriptions distributed on site.  
+
+                                  UNEDITABLE
+
+
+
+50.9,5        CLASS DATA             C;0 POINTER Multiple #50.9009 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This sub-file is used to store drug cost data associated with drug class.  
+
+
+50.9009,.01     CLASS                  0;1 POINTER ** TO AN UNDEFINED FILE ** 
+
+                INPUT TRANSFORM:  S DINUM=X Q
+                LAST EDITED:      FEB 29, 1984 
+                DESCRIPTION:
+                                  This field contains the drug classification.  
+
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.9009,2       # ORG FILLS            0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                DESCRIPTION:
+                                  Total number of prescriptions filled on the specified date, not including refills.  
+
+                                  UNEDITABLE
+
+50.9009,3       # REFILLS              0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                DESCRIPTION:
+                                  Total number of refills for the specified date.  
+
+                                  UNEDITABLE
+
+50.9009,3.5     TOTAL FILLS             ;  COMPUTED
+
+                MUMPS CODE:       S Y(50.9009,3.5,1)=$S($D(^PS(50.9,D0,"C",D1,0)):^(0),1:"") S X=$P(Y(50.9009,3.5,1),U,2)+$P(Y(50.9009,3.5,1),U,3) S X=$J(X,0,0)
+                ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  Total fills for the specified date.  
+
+
+50.9009,4       TOTAL COST             0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                DESCRIPTION:
+                                  Total dollar cost of the prescriptions.  
+
+                                  UNEDITABLE
+
+50.9009,4.5     AVE COST/FILL           ;  COMPUTED
+
+                MUMPS CODE:       X $P(^DD(50.9009,3.5,0),U,5,99) S Y(50.9009,4.5,2)=X S Y(50.9009,4.5,1)=$S($D(^PS(50.9,D0,"C",D1,0)):^(0),1:"") S X=$P(Y(50.9009,4.5,1),U,4),X=$S(Y(50.9009,4.5,2):X/Y(50.9009,4.5,2),1:"*******") S X=$J(X,0,2)
+                ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  Average cost/fill of the prescriptions.  
+
+                SUM:              S X=S("50.9009^4"),X=$S(S("50.9009^3.5"):X/S("50.9009^3.5"),1:"*******") S Y=X
+
+50.9009,5       TOTAL QTY DISPENSED    0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      FEB 28, 1984 
+                HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Actual amount of medication dispensed that day.  
+
+                                  UNEDITABLE
+
+50.9009,5.5     AVE QTY DISPENSED/FILL  ;  COMPUTED
+
+                MUMPS CODE:       X $P(^DD(50.9009,3.5,0),U,5,99) S Y(50.9009,5.5,2)=X S Y(50.9009,5.5,1)=$S($D(^PS(50.9,D0,"C",D1,0)):^(0),1:"") S X=$P(Y(50.9009,5.5,1),U,5),X=$S(Y(50.9009,5.5,2):X/Y(50.9009,5.5,2),1:"*******") S X=$J(X,0,2)
+                ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  Average quantity per fill for that day.  
+
+                SUM:              S X=S("50.9009^5"),X=$S(S("50.9009^3.5"):X/S("50.9009^3.5"),1:"*******") S Y=X
+
+50.9009,6       MAILS                  0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 28, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Number of prescriptions distributed by mail.  
+
+                                  UNEDITABLE
+
+50.9009,7       WINDOWS                0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 28, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  Number of prescriptions distributed by window.  
+
+                                  UNEDITABLE
+
+
+
+50.9,6        DIVISION DATA          V;0 POINTER Multiple #50.9006 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This sub-file is used to store drug costs associated with divisions within pharmacy.  
+
+
+50.9006,.01     DIVISION               0;1 POINTER TO OUTPATIENT SITE FILE (#59)
+
+                INPUT TRANSFORM:  S DINUM=X Q
+                LAST EDITED:      FEB 29, 1984 
+                HELP-PROMPT:      Enter the division number within pharmacy. 
+                DESCRIPTION:
+                                  This field is used to indicate the division within pharmacy.  
+
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.9006,.02     # ORG FILLS            0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 29, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  This field is used to indicate the number of original fills for a division.  
+
+                                  UNEDITABLE
+
+50.9006,.03     # REFILLS              0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 29, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  This field is used to indicate the number of refills for a division within pharmacy.  
+
+                                  UNEDITABLE
+
+50.9006,.035    TOTAL FILLS             ;  COMPUTED
+
+                MUMPS CODE:       S Y(50.9006,.035,1)=$S($D(^PSCST(D0,"V",D1,0)):^(0),1:"") S X=$P(Y(50.9006,.035,1),U,2)+$P(Y(50.9006,.035,1),U,3) S X=$J(X,0,0)
+                ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  This field is used to indicate the total number of fills (fills+refills).  
+
+
+50.9006,.04     TOTAL COST             0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      FEB 29, 1984 
+                HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  This field is used to indicate the total cost per division by patient status.  
+
+                                  UNEDITABLE
+
+50.9006,.045    AVE COST/FILL           ;  COMPUTED
+
+                MUMPS CODE:       X $P(^DD(50.9006,.035,0),U,5,99) S Y(50.9006,.045,2)=X S Y(50.9006,.045,1)=$S($D(^PSCST(D0,"V",D1,0)):^(0),1:"") S X=$P(Y(50.9006,.045,1),U,4),X=$S(Y(50.9006,.045,2):X/Y(50.9006,.045,2),1:"*******") S X=$J(X,0,2)
+                ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  This field is used to indicate the average cost per fill.  
+
+                SUM:              S X=S("50.9006^.04"),X=$S(S("50.9006^.035"):X/S("50.9006^.035"),1:"*******") S Y=X
+
+50.9006,.05     TOTAL QTY DISPENSED    0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 29, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  This field is used to indicate the total quantity dispensed per prescription.  
+
+                                  UNEDITABLE
+
+50.9006,.055    AVE QTY DISPENSED/FILL  ;  COMPUTED
+
+                MUMPS CODE:       X $P(^DD(50.9006,.035,0),U,5,99) S Y(50.9006,.055,2)=X S Y(50.9006,.055,1)=$S($D(^PSCST(D0,"V",D1,0)):^(0),1:"") S X=$P(Y(50.9006,.055,1),U,5),X=$S(Y(50.9006,.055,2):X/Y(50.9006,.055,2),1:"*******") S X=$J(X,0,0)
+                ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  This field is used to indicate the average quantity dispensed per fill.  
+
+                SUM:              S X=S("50.9006^.05"),X=$S(S("50.9006^.035"):X/S("50.9006^.035"),1:"*******") S Y=X
+
+50.9006,.06     MAILS                  0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 29, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  This field is used to indicate the number of prescriptions dispensed by mail sorted by patient status.  
+
+                                  UNEDITABLE
+
+50.9006,.07     WINDOWS                0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 29, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                DESCRIPTION:
+                                  This field is used to indicate the number of prescription dispensed by mail sorted by patient status.  
+
+                                  UNEDITABLE
+
+50.9006,.08     REQUESTS               0;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 22, 1999 
+                HELP-PROMPT:      Type a Number between 0 and 99999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  These are the number of unique patients seen for the day associated with divisions within pharmacy.  
+
+
+50.9006,1       PHYSICIAN DATA         P;0 POINTER Multiple #50.901 (Add New Entry without Asking)
+
+                DESCRIPTION:
+                                  This sub-file contains fill data for physicians.  
+
+
+50.901,.01        PHYSICIAN              0;1 POINTER TO NEW PERSON FILE (#200)
+
+                  INPUT TRANSFORM:  S DINUM=X Q
+                  LAST EDITED:      FEB 29, 1984 
+                  DESCRIPTION:
+                                    This field is used to indicate the provider.  
+
+                                    UNEDITABLE
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.901,2          # ORG FILLS            0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 29, 1984 
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to indicate the number of original fills.  
+
+                                    UNEDITABLE
+
+50.901,3          # REFILLS              0;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 29, 1984 
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to indicate The number of refills.  
+
+                                    UNEDITABLE
+
+50.901,3.5        TOTAL FILLS             ;  COMPUTED
+
+                  MUMPS CODE:       S Y(50.901,3.5,1)=$S($D(^PSCST(D0,"V",D1,"P",D2,0)):^(0),1:"") S X=$P(Y(50.901,3.5,1),U,2)+$P(Y(50.901,3.5,1),U,3) S X=$J(X,0,0)
+                  ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    This field is used to indicate the total number of fills (org. fills+refills).  
+
+
+50.901,4          TOTAL COST             0;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      FEB 29, 1984 
+                  HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to indicate total cost.  
+
+                                    UNEDITABLE
+
+50.901,4.5        AVE COST/FILL           ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.901,3.5,0),U,5,99) S Y(50.901,4.5,2)=X S Y(50.901,4.5,1)=$S($D(^PSCST(D0,"V",D1,"P",D2,0)):^(0),1:"") S X=$P(Y(50.901,4.5,1),U,4),X=$S(Y(50.901,4.5,2):X/Y(50.901,4.5,2),1:"*******") S X=$J(X,0,2)
+                  ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    This field is used to indicate the average cost per fill.  
+
+                  SUM:              S X=S("50.901^4"),X=$S(S("50.901^3.5"):X/S("50.901^3.5"),1:"*******") S Y=X
+
+50.901,5          TOTAL QTY DISPENSED    0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 29, 1984 
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to indicate the total quantity dispensed.  
+
+                                    UNEDITABLE
+
+50.901,5.5        AVE QTY DISPENSED/FILL  ;  COMPUTED
+
+                  MUMPS CODE:       X $P(^DD(50.901,3.5,0),U,5,99) S Y(50.901,5.5,2)=X S Y(50.901,5.5,1)=$S($D(^PSCST(D0,"V",D1,"P",D2,0)):^(0),1:"") S X=$P(Y(50.901,5.5,1),U,5),X=$S(Y(50.901,5.5,2):X/Y(50.901,5.5,2),1:"*******") S X=$J(X,0,0)
+                  ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    This field is used to indicate the average quantity dispensed per fill.  
+
+                  SUM:              S X=S("50.901^5"),X=$S(S("50.901^3.5"):X/S("50.901^3.5"),1:"*******") S Y=X
+
+50.901,6          MAILS                  0;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 29, 1984 
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field indicates the number of prescriptions dispensed by mail.  
+
+                                    UNEDITABLE
+
+50.901,7          WINDOWS                0;7 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 29, 1984 
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    This field is used to indicate the number of prescriptions dispensed by window.  
+
+                                    UNEDITABLE
+
+
+
+50.9006,2       DRUG DATA                D;0 POINTER Multiple #50.9007 (Add New Entry without Asking)
+
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                  DESCRIPTION:
+                                    Enter the name of drug prescribed.  
+
+
+50.9007,.01       DRUG                     0;1 POINTER TO DRUG FILE (#50)
+
+                    INPUT TRANSFORM:  S DINUM=X Q
+                    LAST EDITED:      FEB 29, 1984 
+                    DESCRIPTION:
+                                      This field is used to indicate the drug dispensed within division sorted by patient status.  
+
+                                      UNEDITABLE
+                    NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.9007,2         # ORG FILLS              0;2 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      FEB 29, 1984 
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:      Respond with the total number of prescriptions filled on the specified date.  
+                                               --SHOULD NOT INCLUDE ANY REFILLS-- 
+
+                                      UNEDITABLE
+
+50.9007,3         # REFILLS                0;3 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      FEB 29, 1984 
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      This field is used to indicate the number of refills sorted by patient status.  
+
+                                      UNEDITABLE
+
+50.9007,3.5       TOTAL FILLS               ;  COMPUTED
+
+                    MUMPS CODE:       S Y(50.9007,3.5,1)=$S($D(^PSCST(D0,"V",D1,"D",D2,0)):^(0),1:"") S X=$P(Y(50.9007,3.5,1),U,2)+$P(Y(50.9007,3.5,1),U,3) S X=$J(X,0,0)
+                    ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                    DESCRIPTION:
+                                      This field is used to indicate the total number of fills.  
+
+
+50.9007,4         TOTAL COST               0;4 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                    LAST EDITED:      FEB 29, 1984 
+                    HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      This field is used to indicate the total cost of medication dispensed within division sorted by patient status.  
+
+                                      UNEDITABLE
+
+50.9007,4.5       AVE COST/FILL             ;  COMPUTED
+
+                    MUMPS CODE:       X $P(^DD(50.9007,3.5,0),U,5,99) S Y(50.9007,4.5,2)=X S Y(50.9007,4.5,1)=$S($D(^PSCST(D0,"V",D1,"D",D2,0)):^(0),1:"") S X=$P(Y(50.9007,4.5,1),U,4),X=$S(Y(50.9007,4.5,2):X/Y(50.9007,4.5,2),1:"*******") S X=$J(X,0,2)
+                    ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                    DESCRIPTION:
+                                      This field is used to indicate the average cost per fill within division sorted by patient status.  
+
+                    SUM:              S X=S("50.9007^4"),X=$S(S("50.9007^3.5"):X/S("50.9007^3.5"),1:"*******") S Y=X
+
+50.9007,5         TOTAL QTY DISPENSED      0;5 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      FEB 29, 1984 
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      This field is used to indicate the total quantity dispensed within division sorted by patient status.  
+
+                                      UNEDITABLE
+
+50.9007,5.5       AVE QTY DISPENSED         ;  COMPUTED
+
+                    MUMPS CODE:       X $P(^DD(50.9007,3.5,0),U,5,99) S Y(50.9007,5.5,2)=X S Y(50.9007,5.5,1)=$S($D(^PSCST(D0,"V",D1,"D",D2,0)):^(0),1:"") S X=$P(Y(50.9007,5.5,1),U,5),X=$S(Y(50.9007,5.5,2):X/Y(50.9007,5.5,2),1:"*******") S X=$J(X,0,0)
+                    ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+                    DESCRIPTION:
+                                      This field is used to indicate the average quantity dispensed within division sorted by patient status.  
+
+                    SUM:              S X=S("50.9007^5"),X=$S(S("50.9007^3.5"):X/S("50.9007^3.5"),1:"*******") S Y=X
+
+50.9007,6         MAILS                    0;6 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      FEB 29, 1984 
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      This field is used to indicate the number of prescriptions dispensed by mail sorted by patient status.  
+
+                                      UNEDITABLE
+
+50.9007,7         WINDOWS                  0;7 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      FEB 29, 1984 
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      This field is used to indicate the number of prescriptions dispensed by window wthin division sorted by patient status.  
+
+                                      UNEDITABLE
+
+
+
+50.9006,3       # REFILLS                  0;3 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      Respond with the total number of refills for the specified date.  
+
+                                      UNEDITABLE
+
+50.9006,3.5     TOTAL FILLS                 ;  COMPUTED
+
+                    MUMPS CODE:       S Y(50.9006,3.5,1)=$S($D(^PSCST(D0,"PS",D1,"D",D2,0)):^(0),1:"") S X=$P(Y(50.9006,3.5,1),U,2)+$P(Y(50.9006,3.5,1),U,3) S X=$J(X,0,0)
+                    ALGORITHM:        # ORG FILLS+# REFILLS  (ALWAYS 0 DECIMAL DIGITS)
+                    DESCRIPTION:
+                                      Respond by adding all new fills with all refills.  
+
+
+50.9006,4       TOTAL COST                 0;4 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                    HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      Respond by entering the total dollar cost of precriptions.  
+
+                                      UNEDITABLE
+
+50.9006,4.5     AVE COST/FILL               ;  COMPUTED
+
+                    MUMPS CODE:       X $P(^DD(50.9006,3.5,0),U,5,99) S Y(50.9006,4.5,2)=X S Y(50.9006,4.5,1)=$S($D(^PSCST(D0,"PS",D1,"D",D2,0)):^(0),1:"") S X=$P(Y(50.9006,4.5,1),U,4),X=$S(Y(50.9006,4.5,2):X/Y(50.9006,4.5,2),1:"*******") S X=$J(X,0,2)
+                    ALGORITHM:        TOTAL COST/TOTAL FILLS  (ALWAYS 2 DECIMAL DIGITS)
+                    DESCRIPTION:
+                                      Average prescription cost is found by dividing total prescription costs by total number of prescriptions filled.  
+
+                    SUM:              S X=S("50.9006^4"),X=$S(S("50.9006^3.5"):X/S("50.9006^3.5"),1:"*******") S Y=X
+
+50.9006,5       TOTAL QTY DISPENSED        0;5 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      Respond by entering the actual number of pills dispensed.  
+
+                                      UNEDITABLE
+
+50.9006,5.5     AVE QTY DISPENSED/FILL      ;  COMPUTED
+
+                    MUMPS CODE:       X $P(^DD(50.9006,3.5,0),U,5,99) S Y(50.9006,5.5,2)=X S Y(50.9006,5.5,1)=$S($D(^PSCST(D0,"PS",D1,"D",D2,0)):^(0),1:"") S X=$P(Y(50.9006,5.5,1),U,5),X=$S(Y(50.9006,5.5,2):X/Y(50.9006,5.5,2),1:"*******") S X=$J(X,0,0)
+                    ALGORITHM:        TOTAL QTY DISPENSED/TOTAL FILLS  (ALWAYS 0 DECIMAL DIGITS)
+                    DESCRIPTION:
+                                      This field is used to indicate the average quantity dispensed per fill.  
+
+                    SUM:              S X=S("50.9006^5"),X=$S(S("50.9006^3.5"):X/S("50.9006^3.5"),1:"*******") S Y=X
+
+50.9006,6       MAILS                      0;6 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      Respond with the number of prescriptions distributed by mail.  
+
+                                      UNEDITABLE
+
+50.9006,7       WINDOWS                    0;7 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999 
+                    DESCRIPTION:
+                                      Respond with the number of prescriptions distributed on site.  
+
+                                      UNEDITABLE
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DRUG (#50)                        DRUG:DRUG (#.01)
+                                  DRUG DATA:DRUG (#.01)
+                                  DRUG DATA:DRUG (#.01)
+
+HOSPITAL LOCATION (#44)           CLINIC DATA:CLINIC (#.01)
+
+NEW PERSON (#200)                 PHYSICIAN DATA:PHYSICIAN (#.01)
+                                  PHYSICIAN:PHYSICIAN (#.01)
+                                  PHYSICIAN DATA:PHYSICIAN (#.01)
+
+OUTPATIENT SITE (#59)             DIVISION DATA:DIVISION (#.01)
+
+RX PATIENT STATUS (#53)           PATIENT STATUS DATA:PATIENT STATUS (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PSO COST STAT                 JUN 22, 1999@09:40  USER #0                                                                                                                                                                                       DRUG COST LIST
+PSO PHARMACY STATS            OCT 25, 1994@10:22  USER #0                                                                                                                                                                                  PHARMACY STATISTICS
+PSO REQUEST STATISTICS        MAR 30, 1993@15:32  USER #0                                                                                                                                                                                   REQUEST STATISTICS
+
+SORT TEMPLATE(S):
+PSO COST STAT                 JUN 29, 1998@12:44  USER #0    
+SORT BY: +DIVISION DATA//
+DIVISION DATA SUB-FIELD: DIVISION//    (User is asked range)
+  WITHIN DIVISION, SORT BY: @FILLED DATE;//    (User is asked range)
+     This sort template is used to print Rx cost data sorted by Outpatient
+     Pharmacy division.
+
+
+FORM(S)/BLOCK(S):

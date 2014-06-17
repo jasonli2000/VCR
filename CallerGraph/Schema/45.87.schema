@@ -1,0 +1,163 @@
+STANDARD DATA DICTIONARY #45.87 -- PTF TRANSACTION REQUEST LOG FILE                                                                                                                                                               MAY 20,2014@15:41:14  PAGE 1
+STORED IN ^DGP(45.87,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is a log of special PTF transactions submitted to Austin.  The following PTF transactions are logged in this file: 
+              o  N099 for PTF record deletion 
+              o  N150 for RPO of a specific admission 
+              o  N151 for RPO of all admissions at a VAMC 
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+
+CROSS
+REFERENCED BY: DATE INITIATED(B)
+
+45.87,.01     DATE INITIATED         0;1 DATE (Required) (Multiply asked)
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                This field contains the date and time the user initially submitted the transaction.  
+
+              CROSS-REFERENCE:  45.87^B 
+                                1)= S ^DGP(45.87,"B",$E(X,1,30),DA)=""
+                                2)= K ^DGP(45.87,"B",$E(X,1,30),DA)
+
+
+45.87,.02     USER                   0;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 01, 1991 
+              DESCRIPTION:
+                                This field contains the user name who submitted the transaction.  
+
+
+45.87,.03     MAIL MSG #             0;3 POINTER TO MESSAGE FILE (#3.9)
+
+              OUTPUT TRANSFORM: S Y=+Y
+              LAST EDITED:      MAR 01, 1991 
+              DESCRIPTION:
+                                This field contains the Mailman message number which contains the transaction that was sent to Austin.  
+
+
+45.87,.04     BLOCK                  0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<4) X
+              LAST EDITED:      FEB 13, 1991 
+              HELP-PROMPT:      Answer must be 4 characters in length. 
+              DESCRIPTION:      This field contains the transaction type for the request.  For example, it can contain the following: 
+                                            o  N099 for PTF record deletion 
+                                            o  N150 for RPO of a specific admission at a VAMC 
+                                            o  N151 for RPO of all admissions at a VAMC 
+
+
+45.87,.05     SSN                    0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<9)!'(X?0.1"P"9N) X
+              LAST EDITED:      FEB 13, 1991 
+              HELP-PROMPT:      SSN must be in the form 123456789 or P123456789. 
+              DESCRIPTION:
+                                Enter the Social Security Number(SSN) of the patient for which you desire information.  
+
+              NOTES:            TRIGGERED by the PATIENT field of the PTF TRANSACTION REQUEST LOG File 
+
+
+45.87,.06     ADMISSION DATE/TIME    0;6 DATE (Multiply asked)
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 22, 1991 
+              HELP-PROMPT:      DATE/TIME of Patient Admission. 
+              DESCRIPTION:
+                                Enter the date/time of an admission for the patient(SSN) selected.  
+
+
+45.87,.07     ADMITTING FACILITY/SUFFIX 0;7 FREE TEXT
+
+              INPUT TRANSFORM:  S:$L(X)<6 X=X_$E("   ",1,6-$L(X)) K:$L(X)>6!($L(X)<3)!'(X?3N.3NA.3" ") X
+              LAST EDITED:      SEP 19, 1994 
+              HELP-PROMPT:      Answer must be 3-digit facility number, followed immediately by OPTIONAL 1-3 character suffix. 
+              DESCRIPTION:      This field contains the facility number and suffix of the VAMC that has admitted the patient in the past.  
+                                 
+                                This field is filled in by the user when sending a N150 transaction.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the ADMITTING INSTITUTION field of the PTF TRANSACTION REQUEST LOG File 
+
+
+45.87,.08     REQUESTING FACILITY/SUFFIX 0;8 FREE TEXT
+
+              INPUT TRANSFORM:  S:$L(X)<6 X=X_$E("   ",1,6-$L(X)) K:$L(X)>6!($L(X)<3)!'(X?3N.3NA.3" ") X
+              LAST EDITED:      SEP 19, 1994 
+              HELP-PROMPT:      Answer must be 3-digit facility number, followed immediately by OPTIONAL 1-3 character suffix. 
+              DESCRIPTION:
+                                This field contains the facility number and the suffix of the VAMC requesting information.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+45.87,.09     PATIENT                0;9 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      FEB 21, 1991 
+              DESCRIPTION:      This field contains the patient associated with the transaction submitted.  However, it is not required.  If filled in then the SSN field will automatically be updated with the patient's SSN, as it appears in the PATIENT
+                                file.  
+                                 
+                                If the user has an SSN of a patient not in the site's PATIENT file, the user can enter that SSN directly into the SSN field.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^45.87^.05 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGP(45.87,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y X ^DD(45.87,.09,1,1,1.1) X ^DD(45.87,.09,1,1,1.4)
+                                1.1)= S X=DIV S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^DPT(+D0,0)) D0=-1 S Y(101)=$S($D(^DPT(D0,0)):^(0),1:"") S X=$P(Y(101),U,9) S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^DGP(45.87,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,5)=DIV,DIH=45.87,DIG=.05 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGP(45.87,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X="" X ^DD(45.87,.09,1,1,2.4)
+                                2.4)= S DIH=$S($D(^DGP(45.87,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,5)=DIV,DIH=45.87,DIG=.05 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= .09:#.09
+                                DELETE VALUE)= @
+                                FIELD)= #.05
+
+
+45.87,.1      ADMITTING INSTITUTION  0;10 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      FEB 21, 1991 
+              DESCRIPTION:      This field allows the user to select the VAMC from which admission information is desired.  This field is optional but if filled in, the VAMC's station number, as it appears in the INSTITUTION file, will be stuffed into
+                                the ADMITTING FACILITY/SUFFIX field as a default.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^45.87^.07 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGP(45.87,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y X ^DD(45.87,.1,1,1,1.1) X ^DD(45.87,.1,1,1,1.4)
+                                1.1)= S X=DIV X ^DD(45.87,.1,1,1,49.2) S Y(104)=X S X=6,X=$E(Y(103),Y(104),X) S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^DGP(45.87,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=45.87,DIG=.07 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGP(45.87,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X="" X ^DD(45.87,.1,1,1,2.4)
+                                2.4)= S DIH=$S($D(^DGP(45.87,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=45.87,DIG=.07 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                49.2)= S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^DIC(4,+D0,0)) D0=-1 S Y(102)=$S($D(^DIC(4,D0,99)):^(99),1:""),Y(101)=X S X=$P(Y(102),U,1)_"      ",Y(103)=X S X=1
+                                CREATE VALUE)= .1:$E(#99_"      ",1,6)
+                                DELETE VALUE)= @
+                                FIELD)= #.07
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  ADMITTING INSTITUTION (#.1)
+
+MESSAGE (#3.9)                    MAIL MSG # (#.03)
+
+NEW PERSON (#200)                 USER (#.02)
+
+PATIENT (#2)                      PATIENT (#.09)
+
+
+
+INPUT TEMPLATE(S):
+DGPT 099                      FEB 25, 1991@12:16  USER #0    
+DGPT 150                      FEB 25, 1991@14:55  USER #0    
+DGPT 151                      FEB 25, 1991@12:03  USER #0    
+
+PRINT TEMPLATE(S):
+DGPT PRINT                    FEB 25, 1991@10:05  USER #0                                                                                                                                                                     SPECIAL TRANSACTION REQUEST LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

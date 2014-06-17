@@ -1,0 +1,215 @@
+STANDARD DATA DICTIONARY #26.11 -- PRF LOCAL FLAG FILE                                                                                                                                                                            MAY 20,2014@15:40:44  PAGE 1
+STORED IN ^DGPF(26.11,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains Category II (Local) Patient Record Flags that can be assigned to a patient.  Use the Record Flag Management [DGPF RECORD FLAG MANAGEMENT] option to create/edit entries in this file.  
+ 
+Records in this file should not be added, edited, or deleted except through the use of the Patient Record Flag software that is part of Registration.  Doing so would likely cause the Patient Record Flag database to become corrupted.  
+
+
+IDENTIFIED BY: STATUS (#.02)[R], TYPE (#.03)[R]
+
+POINTED TO BY: FLAG NAME field (#.01) of the PRF LOCAL FLAG HISTORY File (#26.12) 
+               FLAG NAME field (#.02) of the PRF ASSIGNMENT File (#26.13) 
+               
+
+CROSS
+REFERENCED BY: NAME(B)
+
+INDEXED BY:    STATUS (AINACT), STATUS & NAME (ASTAT), TIU PN TITLE & NAME (ATIU), TYPE & NAME (ATYP), PRINCIPAL INVESTIGATOR(S) (C)
+
+
+26.11,.01     NAME                   0;1 FREE TEXT (Required)
+
+              PATIENT RECORD FLAG NAME                                                                                         
+              INPUT TRANSFORM:  S X=$$UP^XLFSTR(X) K:$E(X)'?1U!($E(X,$L(X))?1P)!($L(X)>30)!($L(X)<3)!'($TR(X," ","")?1U.UN) X
+              LAST EDITED:      MAR 31, 2004 
+              HELP-PROMPT:      Answer must be 3-30 characters in length.  No punctuation characters except spaces may be used.  No leading or trailing spaces.  Can contain numbers but not in the first position. 
+              DESCRIPTION:
+                                This field contains the locally assigned name of the Patient Record Flag.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  26.11^B 
+                                1)= S ^DGPF(26.11,"B",$E(X,1,30),DA)=""
+                                2)= K ^DGPF(26.11,"B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   ASTAT (#256), ATIU (#644), ATYP (#257)
+
+26.11,.02     STATUS                 0;2 SET (Required)
+
+                                '0' FOR INACTIVE; 
+                                '1' FOR ACTIVE; 
+              LAST EDITED:      APR 23, 2003 
+              HELP-PROMPT:      Enter the status of the patient record flag. 
+              DESCRIPTION:
+                                This field contains the ACTIVE or INACTIVE status of the Patient Record Flag.  Changing this field from ACTIVE to INACTIVE will inactivate all patient record flag assignments associated with this flag.  
+
+              TECHNICAL DESCR:  This field contains the Active or Inactive status of the Patient Record Flag as a set of codes.  This field will be used as a trigger that will be fired when the Status of either a LOCAL (#26.11) or a NATIONAL (#26.15)
+                                Patient Record Flag is changed from Active to Inactive.  The trigger process will Inactivate ALL active Patient Record Flag Assignment records in the PRF ASSIGNMENT (#26.13) file associated with this flag.  
+
+                                UNEDITABLE
+              FIELD INDEX:      AINACT (#255)    MUMPS    I    ACTION
+                  Short Descr:  Trigger for Status change to all Assignments.
+                  Description:  The trigger process will Inactivate ALL active Patient Record Flag Assignment records in the PRF ASSIGNMENT (#26.13) file associated with this flag.  
+                    Set Logic:  I X(1)=0,X1(1)=1 D INACT^DGPFDD(DA,X(1),26.11,DUZ)
+                   Kill Logic:  Q
+                         X(1):  STATUS  (26.11,.02)  (forwards)
+
+              RECORD INDEXES:   ASTAT (#256)
+
+26.11,.03     TYPE                   0;3 POINTER TO PRF TYPE FILE (#26.16) (Required)
+
+              LAST EDITED:      APR 23, 2003 
+              HELP-PROMPT:      Enter the Patient Record Flag Type. 
+              DESCRIPTION:
+                                This field identifies the usage classification of the Patient Record Flag.  
+
+              TECHNICAL DESCR:
+                                This field identifies the usage classification of the Patient Record Flag as a pointer to the PRF TYPE file (#26.16).  
+
+                                UNEDITABLE
+              RECORD INDEXES:   ATYP (#257)
+
+26.11,.04     REVIEW FREQUENCY DAYS  0;4 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 31, 2003 
+              HELP-PROMPT:      Enter a number of days from 0 to 9999. (ex: 730 days = 2 years) 
+              DESCRIPTION:
+                                This field represents the number of days that may elapse between reviews of a Patient Record Flag Assignment.  A value of zero ("0") indicates that no automatic review will occur. (example: 730 = 2 years) 
+
+                                UNEDITABLE
+
+26.11,.05     NOTIFICATION DAYS      0;5 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9998)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 23, 2003 
+              HELP-PROMPT:      Enter a Number between 0 and 9998, 0 Decimal Digits 
+              DESCRIPTION:      This field contains the number of days prior to a patient record flag assignment's Review date that a review notification is sent to the flag's Review Mail Group.  A value of zero ("0") indicates that NO prior notification
+                                is required. This field should always be less than the Review Frequency field value.  
+
+                                UNEDITABLE
+
+26.11,.06     REVIEW MAIL GROUP      0;6 POINTER TO MAIL GROUP FILE (#3.8)
+
+              INPUT TRANSFORM:  S DIC("S")="I $E($P(^(0),""^""),1,4)=""DGPF""" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      APR 25, 2003 
+              HELP-PROMPT:      Enter the mail group that will receive review notifications. 
+              DESCRIPTION:      This field contains the name of the mail group whose members will receive MailMan notification of Patient Record Flag Assignments that are due for review.  
+                                 
+                                The mail group name must begin with 'DGPF' and it is further recommended that locally-defined flag mail group names begin with 'DGPFZ' to prevent conflicts with nationally-released patient record flags.  
+
+              SCREEN:           S DIC("S")="I $E($P(^(0),""^""),1,4)=""DGPF"""
+              EXPLANATION:      Allows only mail group names that begin with DGPF.
+                                UNEDITABLE
+
+26.11,.07     TIU PN TITLE           0;7 POINTER TO TIU DOCUMENT DEFINITION FILE (#8925.1) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$TIULIST^DGPFDD(Y)" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      JUN 07, 2004 
+              HELP-PROMPT:      Enter the associated Category II Progress Note Title. 
+              DESCRIPTION:
+                                This field contains the Category II Progress Note Title that is associated with this Patient Record Flag.  
+
+              TECHNICAL DESCR:
+                                This field contains the pointer to the TIU DOCUMENT DEFINITION file (#8925.1).  This field is used to link a Progress Note Title to the Patient Record Flag.  DBIA Reference: (#4386) 
+
+              SCREEN:           S DIC("S")="I $$TIULIST^DGPFDD(Y)"
+              EXPLANATION:      Allows only Category II Progress Note Titles to be displayed.
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              RECORD INDEXES:   ATIU (#644)
+
+26.11,1       DESCRIPTION            1;0   WORD-PROCESSING #26.111   (NOWRAP)
+
+              LAST EDITED:      DEC 26, 2002 
+              DESCRIPTION:
+                                This field contains the text that describes the purpose and instructions for application of this local Patient Record Flag to a patient.  
+
+
+26.11,2       PRINCIPAL INVESTIGATOR(S) 2;0 POINTER Multiple #26.112 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple field contains the principal investigator(s) names when the Flag TYPE is RESEARCH.  
+
+              TECHNICAL DESCR:
+                                This multiple field contains the principal investigator(s) names as a pointer to the NEW PERSON file (#200).  This field is only used when the Flag TYPE is RESEARCH.  
+
+
+26.112,.01      PRINCIPAL INVESTIGATOR(S) 0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                LAST EDITED:      MAR 08, 2004 
+                HELP-PROMPT:      Enter the Principal Investigator name. 
+                DESCRIPTION:
+                                  This field contains the name of the Principal Investigator associated with the Research Type of this Patient Record Flag.  
+
+                EXECUTABLE HELP:  I $D(DGLKUP) D PIHELP^DGPFDD
+                                  UNEDITABLE
+                CROSS-REFERENCE:  26.112^B 
+                                  1)= S ^DGPF(26.11,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DGPF(26.11,DA(1),2,"B",$E(X,1,30),DA)
+
+                FIELD INDEX:      C (#645)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#26.11)
+                    Short Descr:  Lookup & Sort by PRINCIPAL INVESTIGATOR and NAME fields.
+                      Set Logic:  S ^DGPF(26.11,"C",X,DA(1),DA)=""
+                     Kill Logic:  K ^DGPF(26.11,"C",X,DA(1),DA)
+                     Whole Kill:  K ^DGPF(26.11,"C")
+                           X(1):  PRINCIPAL INVESTIGATOR(S)  (26.112,.01)  (Subscr 1)  (forwards)
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MAIL GROUP (#3.8)                 REVIEW MAIL GROUP (#.06)
+
+NEW PERSON (#200)                 PRINCIPAL INVESTIGATOR(S):PRINCIPAL INVESTIGATOR(S) (#.01)
+
+PRF TYPE (#26.16)                 TYPE (#.03)
+
+TIU DOCUMENT DEFINITION (#8925.1)  TIU PN TITLE (#.07)
+
+
+File #26.11
+
+  Record Indexes:
+
+  ASTAT (#256)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  This is a sort only index of the STATUS & NAME fields.
+        Set Logic:  S ^DGPF(26.11,"ASTAT",X(1),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^DGPF(26.11,"ASTAT",X(1),$E(X(2),1,30),DA)
+       Whole Kill:  K ^DGPF(26.11,"ASTAT")
+             X(1):  STATUS  (26.11,.02)  (Subscr 1)  (forwards)
+             X(2):  NAME  (26.11,.01)  (Subscr 2)  (Len 30)  (forwards)
+
+  ATIU (#644)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  This is a sort only index of the TIU PN TITLE and NAME fields.
+      Description:  This cross reference will enable quick lookups to find associated TIU PN Titles that are linked with Patient Record Flag names.  
+        Set Logic:  S ^DGPF(26.11,"ATIU",$E(X(1),1,99),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^DGPF(26.11,"ATIU",$E(X(1),1,99),$E(X(2),1,30),DA)
+       Whole Kill:  K ^DGPF(26.11,"ATIU")
+             X(1):  TIU PN TITLE  (26.11,.07)  (Subscr 1)  (Len 99)  (forwards)
+             X(2):  NAME  (26.11,.01)  (Subscr 2)  (Len 30)  (forwards)
+
+  ATYP (#257)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  This is a sort only index of the TYPE and NAME fields.
+        Set Logic:  S ^DGPF(26.11,"ATYP",X(1),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^DGPF(26.11,"ATYP",X(1),$E(X(2),1,30),DA)
+       Whole Kill:  K ^DGPF(26.11,"ATYP")
+             X(1):  TYPE  (26.11,.03)  (Subscr 1)  (forwards)
+             X(2):  NAME  (26.11,.01)  (Subscr 2)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

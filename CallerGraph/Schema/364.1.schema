@@ -1,0 +1,351 @@
+STANDARD DATA DICTIONARY #364.1 -- EDI TRANSMISSION BATCH FILE                                                                                                                                                                       MAY 20,2014@15:36  PAGE 1
+STORED IN ^IBA(364.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains a record for each 'batch' created for EDI transmission.  It is used to track batch activity and to record statistics on number of bills in a batch that were rejected and accepted and to record the message number in Mailman that the
+batch is stored in for inquiry access.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: DESCRIPTION (#.08)
+
+POINTED TO BY: BATCH NUMBER field (#.05) of the BILL STATUS MESSAGE File (#361) 
+               BATCH NUMBER field (#100.01) of the EXPLANATION OF BENEFITS File (#361.1) 
+               BATCH # field (#.02) of the TRANSMIT DATE/TIME sub-field (#361.41) of the EDI TEST CLAIM STATUS MESSAGE File (#361.4) 
+               BATCH NUMBER field (#.02) of the EDI TRANSMIT BILL File (#364) 
+               RESUBMIT BATCH NUMBER field (#.06) of the EDI TRANSMIT BILL File (#364) 
+               PREVIOUS BATCH field (#.15) of the EDI TRANSMISSION BATCH File (#364.1) 
+               BATCH NUMBER field (#.04) of the EDI MESSAGES File (#364.2) 
+               
+
+CROSS
+REFERENCED BY: BATCH RESUBMIT INCOMPLETE(AINC), DATE LAST SENT(ALT), LATEST RECEIPT STATUS(ASTAT), BATCH TYPE(ATYP), BATCH NUMBER(B), BATCH NUMBER(C), MAIL MESSAGE(MSG)
+
+364.1,.01     BATCH NUMBER           0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 10, 1996 
+              HELP-PROMPT:      Type a Number between 1 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The number of the batch for EDI transmissions.  
+
+              CROSS-REFERENCE:  364.1^B 
+                                1)= S ^IBA(364.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(364.1,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  364.1^C^MUMPS 
+                                1)= S ^IBA(364.1,"C",+$E(X,4,$L(X)),DA)=""
+                                2)= K ^IBA(364.1,"C",+$E(X,4,$L(X)),DA)
+                                3)= DO NOT DELETE
+                                Lookup batch number without station prefix.  
+
+
+
+364.1,.02     LATEST RECEIPT STATUS  0;2 SET
+
+                                'P' FOR PENDING AUSTIN RECEIPT; 
+                                'A0' FOR RECEIVED IN AUSTIN; 
+              LAST EDITED:      SEP 13, 2001 
+              HELP-PROMPT:      Enter the latest receipt status tracked for this batch 
+              DESCRIPTION:
+                                This field indicates where the last receipt for this batch came from.  It is used in tracking how far a batch has gone in the transmission path for as long as it can be tracked with electronic receipt messages.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^364.1^1.06 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(364.1,D0,1)):^(1),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y X ^DD(364.1,.02,1,1,1.1) X ^DD(364.1,.02,1,1,1.4)
+                                1.1)= S X=DIV N %I,%H,% D NOW^%DTC S X=%
+                                1.4)= S DIH=$S($D(^IBA(364.1,DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,6)=DIV,DIH=364.1,DIG=1.06 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= NOW
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #1.06
+
+              CROSS-REFERENCE:  364.1^ASTAT 
+                                1)= S ^IBA(364.1,"ASTAT",$E(X,1,30),DA)=""
+                                2)= K ^IBA(364.1,"ASTAT",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+                                Xref by status 
+
+
+
+364.1,.03     NUMBER OF BILLS        0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 05, 1999 
+              HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the total number of bills currently under the control of this batch.  
+
+
+364.1,.04     MAIL MESSAGE           0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 23, 2002 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of the mail message that was generated for this batch.  
+
+              CROSS-REFERENCE:  364.1^MSG 
+                                1)= S ^IBA(364.1,"MSG",$E(X,1,30),DA)=""
+                                2)= K ^IBA(364.1,"MSG",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+
+
+364.1,.05     BATCH REJECTED         0;5 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      APR 11, 1996 
+              HELP-PROMPT:      Enter 0 (NO) if batch has not been rejected, 1 (YES) if it has 
+              DESCRIPTION:
+                                This field indicates whether or not a batch has been rejected at any point in the transmission path.  
+
+              NOTES:            TRIGGERED by the REJECT MESSAGE field of the EDI TRANSMISSION BATCH File 
+
+
+364.1,.06     BILL TYPE              0;6 SET
+
+                                '2' FOR CMS-1500 (PROF); 
+                                '3' FOR UB-04 (INST); 
+              LAST EDITED:      JAN 16, 2007 
+              HELP-PROMPT:      ENTER THE TYPE OF BILL CONTAINED IN THIS BATCH 
+              DESCRIPTION:
+                                THIS IS THE TYPE OF BILL THAT IS CONTAINED IN THIS BATCH 
+
+
+364.1,.07     BATCH TYPE             0;7 SET
+
+                                '1' FOR EDI 837 BILL SUBMISSION; 
+              LAST EDITED:      OCT 02, 1996 
+              HELP-PROMPT:      Enter the code that corresponds to the type of data in the batch. 
+              DESCRIPTION:
+                                This identifies the type of ANSI X12 data contained in the batch.  
+
+              CROSS-REFERENCE:  364.1^ATYP 
+                                1)= S ^IBA(364.1,"ATYP",$E(X,1,30),DA)=""
+                                2)= K ^IBA(364.1,"ATYP",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+                                Xref by batch type 
+
+
+
+364.1,.08     DESCRIPTION            0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      SEP 05, 1996 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                This is a free text description to identify the contents of the batch.  
+
+
+364.1,.09     BATCH RESUBMIT TASK    0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      SEP 16, 1996 
+              HELP-PROMPT:      Answer must be 1-15 characters in length. 
+              DESCRIPTION:
+                                If the batch is being resubmitted, this is the task # of the task that is doing the resubmission if the job is queued.  No entry is made here if the task is not queued.  
+
+
+364.1,.1      BATCH RESUBMIT INCOMPLETE 0;10 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      SEP 26, 1996 
+              HELP-PROMPT:      Enter YES if batch resubmit was incomplete. 
+              DESCRIPTION:
+                                This field is 0 or null if batch either was not resubmitted or if all bills in the batch have been resubmitted.  It is a 1 (YES) if any bills in the batch were not resubmitted, but the batch itself was.  
+
+              CROSS-REFERENCE:  364.1^AINC^MUMPS 
+                                1)= S:X=1 ^IBA(364.1,"AINC",1,DA)=""
+                                2)= K:X=1 ^IBA(364.1,"AINC",1,DA)
+                                3)= DO NOT DELETE
+                                Xref used to track batches not completely resubmitted.  
+
+
+
+364.1,.11     REJECT MESSAGE         0;11 POINTER TO EDI MESSAGES FILE (#364.2)
+
+              LAST EDITED:      SEP 19, 1996 
+              HELP-PROMPT:      Enter the number of the reject message for this batch 
+              DESCRIPTION:
+                                Pointer to the reject message received for this batch.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^364.1^.05 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$S('$D(^IBA(364.2,+Y(0),0)):"",1:$P(^(0),U,1))'="" I X S X=DIV S Y(1)=$S($D(^IBA(364.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X=1 X ^DD(364.1,.11,1,1,1.4
+                                )
+
+                                1.4)= S DIH=$S($D(^IBA(364.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,5)=DIV,DIH=364.1,DIG=.05 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                2)= Q
+
+                                CREATE CONDITION)= REJECT MESSAGE'=""
+                                CREATE VALUE)= S X=1
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= BATCH REJECTED
+
+
+364.1,.12     INSURANCE COMPANY      0;12 POINTER TO INSURANCE COMPANY FILE (#36)
+
+              LAST EDITED:      NOV 13, 1998 
+              HELP-PROMPT:      ENTER THE NAME OF THE INSURANCE COMPANY WHOSE BILLS ARE CONTAINED IN THIS BATCH 
+              DESCRIPTION:
+                                This is the insurance company associated with this batch.  
+
+
+364.1,.13     BATCH RESUBMIT DATE    0;13 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X I $D(X) S X=$E(X,1,12)
+              LAST EDITED:      OCT 03, 1996 
+              HELP-PROMPT:      Enter the date/time the batch was last resubmitted. 
+              DESCRIPTION:
+                                This is the last date/time the batch was resubmitted.  It is set when the resubmit process is done.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+364.1,.14     TEST BATCH             0;14 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 02, 1997 
+              HELP-PROMPT:      Enter YES (1) indicate a test batch in a production environment  
+              DESCRIPTION:
+                                This field indicates the batch is a test batch in a production environment.  All bills in this batch will have also been printed.  
+
+
+364.1,.15     PREVIOUS BATCH         0;15 POINTER TO EDI TRANSMISSION BATCH FILE (#364.1)
+
+              INPUT TRANSFORM:  S DIC("S")="I +Y'=DA" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 05, 1999 
+              HELP-PROMPT:      Enter the number of the batch that was resubmitted in this batch 
+              DESCRIPTION:
+                                If this data exists, this batch was created as a result of another batch being resubmitted.  This data references the original batch that contained the bills that are now contained in this batch.  
+
+              SCREEN:           S DIC("S")="I +Y'=DA"
+              EXPLANATION:      Cannot point to itself
+
+364.1,1.01    DATE FIRST SENT        1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X I $D(X) S X=$E(X,1,12)
+              LAST EDITED:      OCT 02, 1996 
+              HELP-PROMPT:      Enter the first date/time that the batch was transmitted. 
+              DESCRIPTION:
+                                This is the date/time that this batch was first transmitted.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^364.1^1.03 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBA(364.1,D0,1)):^(1),1:"") S X=$P(Y(1),U,3)="" I X S X=DIV S Y(1)=$S($D(^IBA(364.1,D0,1)):^(1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=DIV X ^DD(364.1,1.
+                                01,1,1,1.4)
+
+                                1.4)= S DIH=$S($D(^IBA(364.1,DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,3)=DIV,DIH=364.1,DIG=1.03 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(364.1,D0,1)):^(1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(364.1,1.01,1,1,2.4)
+
+                                2.4)= S DIH=$S($D(^IBA(364.1,DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,3)=DIV,DIH=364.1,DIG=1.03 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                CREATE CONDITION)= DATE LAST SENT=""
+                                CREATE VALUE)= DATE FIRST SENT
+                                DELETE VALUE)= @
+                                FIELD)= DATE LAST SENT
+
+
+364.1,1.02    FIRST SENT BY          1;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 03, 1999 
+              HELP-PROMPT:      Enter the name of the user responsible for the first transmission of this batch. 
+              DESCRIPTION:
+                                The name of the user who was responsible for the first transmission of this batch.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^364.1^1.04 
+                                1)= X ^DD(364.1,1.02,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(364.1,D0,1)):^(1),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X=DIV,X=X X ^DD(364.1,1.02,1,1,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBA(364.1,D0,1)):^(1),1:"") S X=$S('$D(^VA(200,+$P(Y(1),U,4),0)):"",1:$P(^(0),U,1))=""
+                                1.4)= S DIH=$S($D(^IBA(364.1,DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,4)=DIV,DIH=364.1,DIG=1.04 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(364.1,D0,1)):^(1),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(364.1,1.02,1,1,2.4)
+                                2.4)= S DIH=$S($D(^IBA(364.1,DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,4)=DIV,DIH=364.1,DIG=1.04 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE CONDITION)= LAST SENT BY=""
+                                CREATE VALUE)= INTERNAL(FIRST SENT BY)
+                                DELETE VALUE)= @
+                                FIELD)= LAST SENT BY
+
+
+364.1,1.03    DATE LAST SENT         1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X I $D(X) S X=$E(X,1,12)
+              LAST EDITED:      OCT 02, 1996 
+              HELP-PROMPT:      Enter the last date/time that the batch was transmitted. 
+              DESCRIPTION:
+                                This is the date/time that the batch was last transmitted.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the DATE FIRST SENT field of the EDI TRANSMISSION BATCH File 
+
+              CROSS-REFERENCE:  364.1^ALT 
+                                1)= S ^IBA(364.1,"ALT",$E(X,1,30),DA)=""
+                                2)= K ^IBA(364.1,"ALT",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+                                Xref by last transmit date 
+
+
+
+364.1,1.04    LAST SENT BY           1;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JAN 21, 1997 
+              HELP-PROMPT:      Enter the name of the user responsible for the last transmission of this batch. 
+              DESCRIPTION:
+                                The name of the user who was responsible for the last transmission of this batch.  
+
+              NOTES:            TRIGGERED by the FIRST SENT BY field of the EDI TRANSMISSION BATCH File 
+
+
+364.1,1.05    LATEST STATUS DATE     1;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X I $D(X) S X=$E(X,1,12)
+              LAST EDITED:      OCT 02, 1996 
+              HELP-PROMPT:      Enter the date and time associated with the latest status. 
+              DESCRIPTION:
+                                This is the date and time contained on the latest receipt message for this batch.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+364.1,1.06    DATE LATEST STATUS RECORDED 1;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X I $D(X) S X=$E(X,1,12)
+              LAST EDITED:      OCT 02, 1996 
+              HELP-PROMPT:      Enter the date and time that the latest status was recorded in this file 
+              DESCRIPTION:
+                                This is the date and time the latest status was recorded in this file.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the LATEST RECEIPT STATUS field of the EDI TRANSMISSION BATCH File 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+EDI MESSAGES (#364.2)             REJECT MESSAGE (#.11)
+
+EDI TRANSMISSION BATCH (#364.1)   PREVIOUS BATCH (#.15)
+
+INSURANCE COMPANY (#36)           INSURANCE COMPANY (#.12)
+
+NEW PERSON (#200)                 FIRST SENT BY (#1.02)
+                                  LAST SENT BY (#1.04)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

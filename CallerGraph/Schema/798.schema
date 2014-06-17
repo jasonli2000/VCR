@@ -1,0 +1,583 @@
+STANDARD DATA DICTIONARY #798 -- ROR REGISTRY RECORD FILE                                                                                                                                                                         MAY 20,2014@15:31:10  PAGE 1
+STORED IN ^RORDATA(798,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 1.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The ROR REGISTRY RECORD file contains records of local registries. Each record associates a patient with a registry and contains registry-specific and additional service information (when the patient was added to the registry, if they were confirmed, 
+etc).  
+ 
+Records of the file are uniquely identified by the patient and the registry (the "A" primary key and the uniqueness index "KEY" are used for that purpose).  
+ 
+When the record of this file is deleted, the logic of the ADELETE cross-reference tries to delete the associated records from the ROR HIV RECORD (#799.4), ROR PATIENT (#798.4), and ROR PATIENT EVENTS (#798.3) files.  
+ 
+A permanent screen (the ^DD(798,0,"SCR") node) restricts access to records of this file. Users can only access records of those registries that they have the security key(s) for. Users with the ROR VA IRM security key can access all records of the file.  
+ 
+If you want the changes in the security keys allocation to have an effect immediately, you should rebuild the "ACL" cross-reference of the .01 field of the SECURITY KEY multiple of the ROR REGISTRY PARAMETERS file (#798.1). See the description of the
+cross-reference for more details.  
+
+
+FILE SCREEN (SCR-node) : I $$ACCESS^RORDD(798,+$P($G(^(0)),U,2))
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: 
+
+PRIMARY KEY:        A (#3)
+  Uniqueness Index: KEY (#150)
+       File, Field: 1) PATIENT NAME (798,.01)  2) REGISTRY (798,.02)
+
+POINTED TO BY: REGISTRY RECORD field (#.01) of the ROR HIV RECORD File (#799.4) 
+               
+
+CROSS
+REFERENCED BY: REGISTRY(AC), LOCAL FIELD(ALF), MESSAGE ID(AM), PATIENT NAME(B)
+
+INDEXED BY:    PATIENT NAME (ADELETE), UPDATE DEMOGRAPHICS (ADEM), UPDATE LOCAL REGISTRY DATA (ALOC), REGISTRY & DATE CONFIRMED & PATIENT NAME (ARCP), REGISTRY & DATE ENTERED (ARD), REGISTRY & PATIENT NAME (ARP), STATUS & PATIENT NAME (ASTATUS), PATIENT
+               NAME & REGISTRY (KEY)
+
+
+798,.01       PATIENT NAME           0;1 POINTER TO ROR PATIENT FILE (#798.4) (Required) (Key field)
+
+              LAST EDITED:      JAN 23, 2006 
+              DESCRIPTION:      The PATIENT NAME field identifies a patient in the registry. You can select a patient either from the local registry or the ROR PATIENT file, or you can add a new patient from the PATIENT file.  
+                                 
+                                You can only select records of those registries that you have appropriate security key(s) for.  
+
+              TECHNICAL DESCR:  An internal value of this field is the patient IEN in the PATIENT file (#2) because records in the ROR PATIENT file (#798.4) have the same internal entry numbers as corresponding records in the PATIENT file.  Patient
+                                records in all registries can be found by traditional "B" cross-reference.  
+                                 
+                                When value of this field is deleted (which means deletion of the whole record), the logic of the ADELETE cross-reference tries to delete associated records from the ROR HIV STUDY (#799.4), ROR PATIENT (#798.4), and ROR
+                                PATIENT EVENTS (#798.3) files.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            ENTRY
+              CROSS-REFERENCE:  798^B 
+                                1)= S ^RORDATA(798,"B",$E(X,1,30),DA)=""
+                                2)= K ^RORDATA(798,"B",$E(X,1,30),DA)
+                                3)= Do not delete!
+                                Patient records in all defined registries can be found using this cross-reference.  
+
+
+              FIELD INDEX:      ADELETE (#100)    MUMPS        ACTION
+                  Short Descr:  Deletes the data associated with the registry record
+                  Description:  The "ADELETE" cross-reference is used to delete the records of other files associated with the main registry record being deleted from the ROR REGISTRY RECORD file (#798).  
+                                 
+                                The cross-reference logic calls the DEL798^RORDD01 procedure, which tries to delete the corresponding records from the ROR HIV RECORD (#799.4), ROR PATIENT (#798.4) and ROR PATIENT EVENTS (#798.3) files.  
+                    Set Logic:  Q
+                   Kill Logic:  D DEL798^RORDD01(DA,X1(1))
+                    Kill Cond:  S X=($G(X2(1))="")
+                         X(1):  PATIENT NAME  (798,.01)  (forwards)
+
+              RECORD INDEXES:   ARCP (#158), ARP (#366), ASTATUS (#374), KEY (#150)
+
+798,.02       REGISTRY               0;2 POINTER TO ROR REGISTRY PARAMETERS FILE (#798.1) (Required) (Key field)
+
+              LAST EDITED:      AUG 04, 2005 
+              DESCRIPTION:
+                                The REGISTRY field identifies the registry that the record belongs to.  
+
+              TECHNICAL DESCR:
+                                Traditional cross-reference "AC" is used to link all records of the registry together.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            ENTRY
+                                UNEDITABLE
+              CROSS-REFERENCE:  798^AC 
+                                1)= S ^RORDATA(798,"AC",$E(X,1,30),DA)=""
+                                2)= K ^RORDATA(798,"AC",$E(X,1,30),DA)
+                                3)= Do not delete!
+                                This cross-reference is used to link all records of the registry together.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^798^1 
+                                1)= X ^DD(798,.02,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^RORDATA(798,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC S X=% X ^DD(798,.02,1,2,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^RORDATA(798,D0,0)):^(0),1:"") S X='$P(Y(1),U,3)
+                                1.4)= S DIH=$G(^RORDATA(798,DIV(0),0)),DIV=X S $P(^(0),U,3)=DIV,DIH=798,DIG=1 D ^DICR
+                                2)= Q
+                                3)= Do not delete!
+                                CREATE CONDITION)= 'DATE ENTERED
+                                CREATE VALUE)= NOW
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= DATE
+                                This trigger populates the DATE ENTERED field when the patient is added to the registry.  
+
+
+              RECORD INDEXES:   ARCP (#158), ARD (#363), ARP (#366), KEY (#150)
+
+798,1         DATE ENTERED           0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 27, 2003 
+              DESCRIPTION:
+                                The DATE ENTERED field is automatically populated by the trigger associated with the REGISTRY field when the patient is added to the registry.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            ENTRY
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the REGISTRY field of the ROR REGISTRY RECORD File 
+
+              RECORD INDEXES:   ARD (#363)
+
+798,2         DATE CONFIRMED         0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 04, 2005 
+              DESCRIPTION:
+                                A trigger associated with the STATUS field automatically populates the DATE CONFIRMED field with the current date and time when the patient is confirmed in the registry.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            ENTRY
+              RECORD INDEXES:   ARCP (#158)
+
+798,2.1       CONFIRMED BY           0;10 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 27, 2005 
+              DESCRIPTION:
+                                A trigger associated with the STATUS field automatically populates this field with a pointer to the record of the user who confirmed the patient.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+
+798,3         STATUS                 0;5 SET
+
+                                '0' FOR Confirmed; 
+                                '4' FOR Pending; 
+                                '5' FOR Deleted; 
+              LAST EDITED:      JAN 23, 2006 
+              DESCRIPTION:
+                                The STATUS field indicates current status of the registry record.  
+
+              TECHNICAL DESCR:  When a patient is deleted from the registry, the internal value of this field is changed to 5. This record will be deleted during the next run of the nightly task and the corresponding HL7 messages will instruct the
+                                national database software to delete the patient data as well.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+              CROSS-REFERENCE:  ^^TRIGGER^798^5 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RORDATA(798,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X="1" S DIH=$G(^RORDATA(798,DIV(0),0)),DIV=X S $P(^(0),U,7)=DIV,DIH=798,DIG=5 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RORDATA(798,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X="1" S DIH=$G(^RORDATA(798,DIV(0),0)),DIV=X S $P(^(0),U,7)=DIV,DIH=798,DIG=5 D ^DICR
+                                3)= Do not delete!
+                                CREATE VALUE)= "1"
+                                DELETE VALUE)= "1"
+                                FIELD)= UPDATE LOCAL REGISTRY DATA
+                                This trigger sets the UPDATE LOCAL REGISTRY DATA flag when status of the record is changed.  
+
+
+              RECORD INDEXES:   ASTATUS (#374)
+
+798,3.1       SELECTION RULE         1;0 POINTER Multiple #798.01
+
+              DESCRIPTION:
+                                The SELECTION RULE multiple contains a list of selection rules that the patient passed when added to the registry.  
+
+              TECHNICAL DESCR:
+                                The list is automatically populated by the registry update.  
+
+              GROUP:            ENTRY
+
+798.01,.01      SELECTION RULE         0;1 POINTER TO ROR SELECTION RULE FILE (#798.2) (Multiply asked)
+
+                LAST EDITED:      OCT 09, 2001 
+                DESCRIPTION:
+                                  This field identifies the selection rule that caused addition of the patient to the registry.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                CROSS-REFERENCE:  798.01^B 
+                                  1)= S ^RORDATA(798,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^RORDATA(798,DA(1),1,"B",$E(X,1,30),DA)
+                                  3)= Do not delete!
+
+
+798.01,1        DATE                   0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 26, 2000 
+                DESCRIPTION:
+                                  The DATE field contains the date when the patient passed the rule for the first time.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                CROSS-REFERENCE:  798.01^AD 
+                                  1)= S ^RORDATA(798,DA(1),1,"AD",$E(X,1,30),DA)=""
+                                  2)= K ^RORDATA(798,DA(1),1,"AD",$E(X,1,30),DA)
+                                  3)= Do not delete!
+
+
+798.01,2        LOCATION               0;3 POINTER TO INSTITUTION FILE (#4)
+
+                LAST EDITED:      AUG 02, 2005 
+                DESCRIPTION:
+                                  Location where the selection rule was triggered.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+
+
+
+798,3.2       DATE SELECTED           ;  COMPUTED DATE
+
+              MUMPS CODE:       S X=$$DTSEL^RORDD01(D0)
+              ALGORITHM:        S X=$$DTSEL^RORDD01(D0)
+              DESCRIPTION:
+                                Value of this field is calculated as the earliest date of selection rules from the SELECTION RULE multiple (3.1). If that multiple is empty, then the date part of the DATE ENTERED field (1) will be used.  
+
+
+798,3.3       LOCATION SELECTED       ;  COMPUTED POINTER
+
+              MUMPS CODE:       S X=$$LOCSEL^RORDD01(D0)
+              ALGORITHM:        S X=$$LOCSEL^RORDD01(D0)
+              LAST EDITED:      AUG 03, 2005 
+              DESCRIPTION:
+                                Computation algorithm of this field returns the LOCATION field (2) value of the earliest selection rules from the SELECTION RULE multiple (3.1).  
+
+
+798,4         UPDATE DEMOGRAPHICS    0;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      NOV 29, 2005 
+              DESCRIPTION:
+                                Usually, you should not edit this field. Set the value of this field to "YES" if you want patient demographic data to be sent to the AAC.  
+
+              TECHNICAL DESCR:  During the registry update, demographic fields of each record of the ROR PATIENT file (#798.4) are compared with corresponding fields of the PATIENT file (#2).  
+                                 
+                                If any of the fields have different values, the internal value of 1 is assigned to the UPDATE DEMOGRAPHICS field of all active patient records in local registries. As a result, demographic data is transmitted to the
+                                national registries.  
+                                 
+                                After acknowledgement of the successful processing of transmitted data, the value of this field is deleted.  
+
+              GROUP:            STATE
+              FIELD INDEX:      ADEM (#153)    MUMPS        ACTION
+                  Short Descr:  Sets the date of last demographic update
+                    Set Logic:  D FILE^RORDD01(798,DA_",",4.1,$$NOW^XLFDT)
+                     Set Cond:  S X=(X2(1)>0)
+                   Kill Logic:  Q
+                         X(1):  UPDATE DEMOGRAPHICS  (798,4)
+
+
+798,4.1       DEMOGRAPHICS UPDATED   0;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 17, 2003 
+              DESCRIPTION:
+                                The DEMOGRAPHICS UPDATED field stores the date/time of the last change in the patient's demographic data that was detected by the Clinical Case Registries software.  
+
+              TECHNICAL DESCR:
+                                This field is populated by the "ADEM" index/trigger associated with the UPDATE DEMOGRAPHICS field (4).  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+
+798,5         UPDATE LOCAL REGISTRY DATA 0;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      NOV 29, 2005 
+              DESCRIPTION:
+                                Usually, you should not edit this field. Set the value of this field to "YES" if you have changed any local registry data of the patient and want this data to be sent to the AAC.  
+
+              TECHNICAL DESCR:  Any changes of local registry data result in assignment of 1 as an internal value of the UPDATE LOCAL REGISTRY DATA field (by registry update process or remote procedures). This is the indication to transmit local data to
+                                the national registry.  
+                                 
+                                After acknowledgement of the successful processing of transmitted data, the value of this field is deleted.  
+
+              GROUP:            STATE
+              NOTES:            TRIGGERED by the STATUS field of the ROR REGISTRY RECORD File 
+
+              FIELD INDEX:      ALOC (#157)    MUMPS        ACTION
+                  Short Descr:  Sets the date of last local data modification
+                    Set Logic:  D FILE^RORDD01(798,DA_",",5.1,$$NOW^XLFDT)
+                     Set Cond:  S X=(X2(1)>0)
+                   Kill Logic:  Q
+                         X(1):  UPDATE LOCAL REGISTRY DATA  (798,5)
+
+
+798,5.1       LOCAL DATA UPDATED     0;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 17, 2003 
+              DESCRIPTION:
+                                The LOCAL DATA UPDATED field stores the date/time of the last change in the patient's local registry data.  
+
+              TECHNICAL DESCR:
+                                This field is populated by the "ALOC" index/trigger associated with the UPDATE LOCAL REGISTRY DATA field (5).  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+
+798,6         DATE DELETED           0;11 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 30, 2005 
+              DESCRIPTION:
+                                Trigger associated with the STATUS field (3) automatically populates this field with the current date and time when the patient is deleted from the registry.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+
+798,6.1       DELETED BY             0;12 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 30, 2005 
+              DESCRIPTION:
+                                Trigger associated with the STATUS field (3) automatically populates this field with a pointer to the record of the user who deleted the patient from the registry.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+
+798,8         ACTIVE                  ;  COMPUTED
+
+              MUMPS CODE:       S X=$$ACTIVE^RORDD(D0)
+              ALGORITHM:        S X=$$ACTIVE^RORDD(D0)
+              LAST EDITED:      APR 26, 2005 
+              DESCRIPTION:
+                                This is a computed field that indicates if the patient's record in the registry is active and should be considered by the software.  
+
+              TECHNICAL DESCR:
+                                Pending records and records marked for deletion are considered inactive and are ignored (except in some special cases like confirming a pending patient, list of pending patients, etc.).  
+
+              GROUP:            STATE
+
+798,9.1       DATA ACKNOWLEDGED UNTIL 2;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 30, 2001 
+              DESCRIPTION:
+                                The DATA ACKNOWLEDGED UNTIL field contains a date that the patient data has been extracted up to and successfully transmitted.  
+
+              TECHNICAL DESCR:  A regular data extraction for the patient in the registry starts from this date.  
+                                 
+                                This field is empty for the patients added by the nightly task.  
+                                 
+                                The nightly task checks status of the last HL7 batches and copies the value of the DATA EXTRACTED UNTIL field into this field for the patients whose data was included in the successfully transmitted batches.  
+
+              GROUP:            STATE
+
+798,9.2       DATA EXTRACTED UNTIL   2;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 30, 2001 
+              DESCRIPTION:
+                                This field contains a date that registry data of the patient has been extracted up to. Actual transmission of this data is not confirmed.  
+
+              TECHNICAL DESCR:  The field is automatically populated by the regular data extraction process if the data is extracted successfully.  
+                                 
+                                The nightly task copies the value of this field into the DATA ACKNOWLEDGED UNTIL field upon verification of the transmission status of the corresponding HL7 batch.  
+
+              GROUP:            STATE
+
+798,10        MESSAGE ID             2;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>20!(X'?1.E1"-"1.N) X
+              LAST EDITED:      OCT 05, 2001 
+              HELP-PROMPT:      The unique ID of the latest HL7 message (1-20 characters). 
+              DESCRIPTION:      The MESSAGE ID field contains the identifier of latest individual HL7 message created for this registry record.  
+                                 
+                                Value of this field should have the following format: BatchID-N, where BatchID is the identifier of the HL7 batch message (see the INTERNAL BATCH ID field of the LAST BATCH CONTROL ID multiple of the ROR REGISTRY
+                                PARAMETERS file), and N is the sequential number of the message in the batch.  
+
+              TECHNICAL DESCR:  This field is automatically populated by the regular data extraction process when the individual message is generated.  
+                                 
+                                If the sequential number of the message in the batch is zero, then the data for this patient was not included in this batch. This "fake" message ID is assigned in order to correctly update the DATA EXTRACTED UNTIL and DATA
+                                ACKNOWLEDGED UNTIL fields.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            HL7
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  798^AM 
+                                1)= S ^RORDATA(798,"AM",$E(X,1,30),DA)=""
+                                2)= K ^RORDATA(798,"AM",$E(X,1,30),DA)
+                                3)= Do not delete!
+                                The cross-reference allows the software to find either a registry record (using the ID of the HL7 message sent to the national registry) or all registry records included in the particular batch (using partial match).  
+
+
+
+798,11        DON'T SEND             2;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      NOV 17, 2009 
+              DESCRIPTION:
+                                Set this field to "YES" if you do not want any data to be sent to the national registry for this record.  
+
+              TECHNICAL DESCR:
+                                Usually, this field is populated only automatically by the registry update processing if a patient is defined in the PATIENT file as a "test patient" (internal value of the TEST PATIENT INDICATOR field equals to 1).  
+
+              GROUP:            ENTRY
+
+798,12        PENDING PATIENT COMMENT 3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+              LAST EDITED:      MAY 21, 2009 
+              HELP-PROMPT:      Answer must be 1-100 characters in length. 
+              DESCRIPTION:
+                                This is any user input concerning a patient who hasn't been confirmed into a registry.  
+
+
+798,20        LOCAL FIELD            20;0 POINTER Multiple #798.02
+
+              DESCRIPTION:
+                                The LOCAL FIELD multiple contains a list of local field values for the registry patient along with the corresponding dates and comments.  
+
+              GROUP:            ENTRY
+
+              SECONDARY KEY:    B (#8)
+              Uniqueness Index: B (#159)
+                   File, Field: 1) LOCAL FIELD (798.02,.01)
+
+              INDEXED BY:       LOCAL FIELD (B)
+
+798.02,.01      LOCAL FIELD            0;1 POINTER TO ROR LOCAL FIELD FILE (#799.53) (Multiply asked) (Key field)
+
+                INPUT TRANSFORM:  S Y=$P($G(^RORDATA(798,DA,0)),U,2),DIC("S")=$S(Y>0:"I $P($G(^(0)),U,3)="_Y,1:"Q") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      AUG 18, 2005 
+                DESCRIPTION:
+                                  This field stores a pointer to the local field definition. You can only select from the local fields associated with the registry.  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,3)="_$P($G(^RORDATA(798,DA,0)),U,2)
+                EXPLANATION:      Only registry-specific records can be selected.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  798^ALF 
+                                  1)= S ^RORDATA(798,"ALF",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RORDATA(798,"ALF",$E(X,1,30),DA(1),DA)
+                                  3)= Do not delete!
+
+                FIELD INDEX:      B (#159)    REGULAR    IR    LOOKUP & SORTING
+                     Unique for:  Key B (#8), File #798.02
+                    Short Descr:  Uniqueness Index for Key 'B' of Subfile #798.02
+                      Set Logic:  S ^RORDATA(798,DA(1),20,"B",X,DA)=""
+                     Kill Logic:  K ^RORDATA(798,DA(1),20,"B",X,DA)
+                     Whole Kill:  K ^RORDATA(798,DA(1),20,"B")
+                           X(1):  LOCAL FIELD  (798.02,.01)  (Subscr 1)
+
+
+798.02,.02      DATE                   0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 13, 2005 
+                DESCRIPTION:
+                                  This field stores the date associated with the registry-specific local field value.  
+
+
+798.02,1        COMMENT                1;E1,250 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                LAST EDITED:      AUG 12, 2005 
+                HELP-PROMPT:      Answer must be 1-200 characters in length. 
+                DESCRIPTION:
+                                  This field stores the comment associated with the registry-specific local field value.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  SELECTION RULE:LOCATION (#2)
+
+NEW PERSON (#200)                 CONFIRMED BY (#2.1)
+                                  DELETED BY (#6.1)
+
+ROR LOCAL FIELD (#799.53)         LOCAL FIELD:LOCAL FIELD (#.01)
+
+ROR PATIENT (#798.4)              PATIENT NAME (#.01)
+
+ROR REGISTRY PARAMETERS (#798.1)  REGISTRY (#.02)
+
+ROR SELECTION RULE (#798.2)       SELECTION RULE:SELECTION RULE (#.01)
+
+
+File #798
+
+  Record Indexes:
+
+  ARCP (#158)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Registry, Date Confirmed, Patient
+      Description:  This index sorts registry patients by their confirmation dates. It has the following structure: 
+                                         
+                      ^RORDATA(798,"ARCP",<Registry>, 
+                        <Date Confirmed>,<Patient>,IEN) = "" 
+                                         
+                    The <Registry> is the registry IEN (IEN of the registry parameters record in the ROR REGISTRY PARAMETERS file) concatenated with the "#" so that the LIST^DIC can be used to retrieve the records associated with the specified registry.  
+                                         
+                    The <Patient> is the IEN of the patient's record in the ROR PATIENT file (#798.4).  
+        Set Logic:  S ^RORDATA(798,"ARCP",X(2),X(3),X(4),DA)=""
+       Kill Logic:  K ^RORDATA(798,"ARCP",X(2),X(3),X(4),DA)
+       Whole Kill:  K ^RORDATA(798,"ARCP")
+             X(1):  REGISTRY  (798,.02)  (forwards)
+             X(2):  Computed Code: S X=$S(X(1)'="":X(1)_"#",1:"")
+                      (Subscr 1)
+             X(3):  DATE CONFIRMED  (798,2)  (Subscr 2)  (forwards)
+             X(4):  PATIENT NAME  (798,.01)  (Subscr 3)  (forwards)
+
+  ARD (#363)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Registry & Date Entered
+      Description:  This cross-reference can be used to search for recently added patients.  
+        Set Logic:  S ^RORDATA(798,"ARD",X(2),X(3),DA)=""
+       Kill Logic:  K ^RORDATA(798,"ARD",X(2),X(3),DA)
+       Whole Kill:  K ^RORDATA(798,"ARD")
+             X(1):  REGISTRY  (798,.02)  (forwards)
+             X(2):  Computed Code: S X=$S(X(1)'="":X(1)_"#",1:"")
+                      (Subscr 1)
+             X(3):  DATE ENTERED  (798,1)  (Subscr 2)  (forwards)
+
+  ARP (#366)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Registry & Patient
+      Description:  This cross-reference lists the registry patients. It has the following structure: 
+                     
+                     ^RORDATA(798,"ARP",<Registry>,<Patient>,IEN) 
+                     
+                    The <Registry> is the registry IEN (IEN of the registry parameters record in the ROR REGISTRY PARAMETERS file) concatenated with the "#" so that the LIST^DIC can be used to retrieve the records associated with the specified registry.  
+                     
+                    The <Patient> is the IEN of the patient's record in the ROR PATIENT file.  
+        Set Logic:  S ^RORDATA(798,"ARP",X(2),X(3),DA)=""
+       Kill Logic:  K ^RORDATA(798,"ARP",X(2),X(3),DA)
+       Whole Kill:  K ^RORDATA(798,"ARP")
+             X(1):  REGISTRY  (798,.02)
+             X(2):  Computed Code: S X=$S(X(1)'="":X(1)_"#",1:"")
+                      (Subscr 1)  (forwards)
+             X(3):  PATIENT NAME  (798,.01)  (Subscr 2)  (forwards)
+
+  ASTATUS (#374)    RECORD    MUMPS        ACTION
+      Short Descr:  Reacts on record status changes
+      Description:  This trigger reacts on status changes of the registry records (confirmed, deleted, etc.). 
+                     
+                    According to the nature of the change, the $$RST798^RORDD01 function populates the corresponding fields of the registry record (DATE CONFIRMED, DATE DELETED, etc.).  
+        Set Logic:  D RST798^RORDD01(1,DA,+$G(X1(1)),+$G(X2(1)))
+       Kill Logic:  D RST798^RORDD01(2,DA,+$G(X1(1)),+$G(X2(1)))
+        Kill Cond:  S X=($G(X2(2))'="")
+             X(1):  STATUS  (798,3)  (forwards)
+             X(2):  PATIENT NAME  (798,.01)  (forwards)
+
+  KEY (#150)    RECORD    REGULAR    IR    LOOKUP & SORTING
+       Unique for:  Key A (#3), File #798
+      Short Descr:  Uniqueness Index for Key 'A' of File #798
+      Description:  This index guarantees uniqueness of the patient record in the particular registry and allows users to easily find this record.  
+        Set Logic:  S ^RORDATA(798,"KEY",X(1),X(2),DA)=""
+       Kill Logic:  K ^RORDATA(798,"KEY",X(1),X(2),DA)
+       Whole Kill:  K ^RORDATA(798,"KEY")
+             X(1):  PATIENT NAME  (798,.01)  (Subscr 1)
+             X(2):  REGISTRY  (798,.02)  (Subscr 2)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

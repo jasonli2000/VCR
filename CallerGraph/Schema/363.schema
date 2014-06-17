@@ -1,0 +1,190 @@
+STANDARD DATA DICTIONARY #363 -- RATE SCHEDULE FILE                                                                                                                                                                               MAY 20,2014@15:35:57  PAGE 1
+STORED IN ^IBE(363,  (62 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+A Rate Schedule defines a specific type of service that may be billed to a specific payer.  This links all elements necessary to define exactly what events are billed (Charge Set) to which payers (Rate Type).  
+ 
+There should be a unique Rate Schedule for each type of service billable to a payer.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: RATE TYPE(ARB), BILL TYPE(ARB1), NAME(B), CHARGE SET(C)
+
+363,.01       NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      JUL 01, 1996 
+              HELP-PROMPT:      Answer must be 3-20 characters in length.  Enter a descriptive name for the payer and service. 
+              DESCRIPTION:
+                                A Rate Schedule which defines a set of charges billable to a payer for a specific type of service.  This is a free text short description that should identify who and what is being billed.  
+
+              CROSS-REFERENCE:  363^B 
+                                1)= S ^IBE(363,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(363,"B",$E(X,1,30),DA)
+
+
+363,.02       RATE TYPE              0;2 POINTER TO RATE TYPE FILE (#399.3) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 01, 1996 
+              HELP-PROMPT:      Enter the Rate Type this schedule applies to. 
+              DESCRIPTION:
+                                The Rate Type of the bills the charges of this schedule should be applied to.  
+
+              SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+              EXPLANATION:      Only Active Rate Types!
+              CROSS-REFERENCE:  363^ARB^MUMPS 
+                                1)= I +X,+$P($G(^IBE(363,DA,0)),U,3) S ^IBE(363,"ARB",+X,+$P(^(0),U,3),DA)=""
+                                2)= I +X,+$P($G(^IBE(363,DA,0)),U,3) K ^IBE(363,"ARB",+X,+$P(^(0),U,3),DA)
+                                Cross reference by Rate Type and Bill Type.  
+
+
+
+363,.03       BILL TYPE              0;3 SET (Required)
+
+                                '1' FOR INPATIENT; 
+                                '3' FOR OUTPATIENT; 
+              LAST EDITED:      AUG 01, 1996 
+              HELP-PROMPT:      The type of bill this schedule can be used for. 
+              DESCRIPTION:
+                                The type of care being billed or type of bill the charges of this schedule are for.  
+
+              CROSS-REFERENCE:  363^ARB1^MUMPS 
+                                1)= I +X,+$P($G(^IBE(363,DA,0)),U,2) S ^IBE(363,"ARB",+$P(^(0),U,2),+X,DA)=""
+                                2)= I +X,+$P($G(^IBE(363,DA,0)),U,2) K ^IBE(363,"ARB",+$P(^(0),U,2),+X,DA)
+                                Cross reference by Rate Type and Bill Type.  
+
+
+
+363,.04       BILLABLE SERVICE       0;4 POINTER TO MCCR UTILITY FILE (#399.1)
+
+              INPUT TRANSFORM:  S DIC("S")="I +$P(^(0),U,13)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 03, 1996 
+              HELP-PROMPT:      Enter the type of service this schedule covers. 
+              DESCRIPTION:
+                                The type of service covered by the charges of this Rate Schedule.  
+
+              SCREEN:           S DIC("S")="I +$P(^(0),U,13)"
+              EXPLANATION:      Pre-defined Billable Services Only!
+
+363,.05       EFFECTIVE DATE         0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 01, 1996 
+              HELP-PROMPT:      The first date this schedule can be used. 
+              DESCRIPTION:
+                                The first date the charges associated with this Rate Schedule may be billed to a payer.  
+
+
+363,.06       INACTIVE DATE          0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 01, 1996 
+              HELP-PROMPT:      Enter the last date this schedule is effective. 
+              DESCRIPTION:
+                                This is the last date this Rate Schedule may be used to bill a payer.  
+
+
+363,1.01      DISPENSING FEE         1;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<.01)!(X?.E1"."3.N) X
+              LAST EDITED:      JUN 17, 2003 
+              HELP-PROMPT:      Enter the dispensing fee part of the rate schedule adjustment. 
+              DESCRIPTION:
+                                This dollar amount is the dispensing fee component of the rate schedule adjustment that was entered.  
+
+
+363,1.02      ADMINISTRATIVE FEE     1;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<.01)!(X?.E1"."3.N) X
+              LAST EDITED:      JUN 17, 2003 
+              HELP-PROMPT:      Enter the administrative fee part of the rate schedule adjustment. 
+              DESCRIPTION:
+                                This dollar amount is the administrative fee component of the rate schedule adjustment that was entered.  
+
+
+363,10        ADJUSTMENT             10;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      AUG 22, 1996 
+              HELP-PROMPT:      This is Standard MUMPS code.  Enter M code that will modify the charge in X. 
+              DESCRIPTION:      This allows the base charges of a rate to be adjusted for specific types of payers.  
+                                 
+                                Modifies the Unit Charge of all items assigned to this Rate Schedule.  For Example, this would be used to bill a certain type of payer only 80% of the CMAC.  Or to add a $2.50 fee to each prescription.  
+                                 
+                                This is a line of M code and should only be modified by an M programmer.  
+                                 
+                                Once the Unit Charge is determined for a billable item, this code is executed to modify that charge.  This modified charge is what will be added to the bill.  
+                                 
+                                When this code is executed: - the original value of the Unit Charge will be in variable X - the modified charge to be billed should be returned in variable X Use the local namespace for any other variables needed and kill
+                                them.  
+                                 
+                                          To charge 80% of the Unit Charge:        S X=X*.8 
+                                          To add a $2.50 fee to the Unit Charge:   S X=X+2.5 
+
+              WRITE AUTHORITY:  @
+
+363,11        CHARGE SET             11;0 POINTER Multiple #363.0011
+
+              DESCRIPTION:
+                                All Charge Sets for this Rate Schedule.  These define all the charges that may be billable to the payors for a specific type of bill.  
+
+
+363.0011,.01    CHARGE SET             0;1 POINTER TO CHARGE SET FILE (#363.1) (Multiply asked)
+
+                LAST EDITED:      AUG 26, 1996 
+                HELP-PROMPT:      Enter the Charge Set that defines the rate and charges to be billed for this schedule. 
+                DESCRIPTION:
+                                  The Charge Sets whose rates should be billed to the payers defined by this Rate Schedule.  
+
+                CROSS-REFERENCE:  363.0011^B 
+                                  1)= S ^IBE(363,DA(1),11,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBE(363,DA(1),11,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  363^C 
+                                  1)= S ^IBE(363,"C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBE(363,"C",$E(X,1,30),DA(1),DA)
+                                  3)= Do Not Delete
+                                  All Charge Sets that have been assigned to a Rate Schedule.  
+
+
+
+363.0011,.02    AUTO ADD               0;2 SET
+
+                                  '1' FOR YES; 
+                LAST EDITED:      AUG 29, 1996 
+                HELP-PROMPT:      Enter YES if the charges for this rate should be automatically added to bills. 
+                DESCRIPTION:      If answered Auto the charges for this rate will be automatically added to all bills with this Rate Schedule.  Generally, this should be Auto Add.  
+                                    
+                                  If a Rate Schedule has multiple Charge Sets for the same billable items then it may be desirable to chose the Set used most often and have it automatically added to the bills.  If one of the other Sets is needed on a 
+                                  bill then it can be manually added to the bill.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CHARGE SET (#363.1)               CHARGE SET:CHARGE SET (#.01)
+
+MCCR UTILITY (#399.1)             BILLABLE SERVICE (#.04)
+
+RATE TYPE (#399.3)                RATE TYPE (#.02)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

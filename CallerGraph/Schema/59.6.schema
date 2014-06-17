@@ -1,0 +1,368 @@
+STANDARD DATA DICTIONARY #59.6 -- INPATIENT WARD PARAMETERS FILE                                                                                                                                                                  MAY 20,2014@15:35:24  PAGE 1
+STORED IN ^PS(59.6,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  This file is used to tailor various aspects of the Inpatient Medications package with regards to specific wards.  
+
+
+              DD ACCESS: @
+              WR ACCESS: ^
+             DEL ACCESS: ^
+           LAYGO ACCESS: ^
+
+POINTED TO BY: LABEL WARD field (#1) of the ORDER NUMBER sub-field (#53.4104) of the TYPE OF ORDER sub-field (#53.4103) of the PATIENT sub-field (#53.4102) of the USER OR WARD sub-field (#53.4101) of the MAR LABELS File (#53.41) 
+               DEFAULT WARD field (#20.6) of the PHARMACY SYSTEM File (#59.7) 
+               
+
+CROSS
+REFERENCED BY: START TIME FOR 24 HOUR MAR(AC), WARD(B)
+
+59.6,.01      WARD                   0;1 POINTER TO WARD LOCATION FILE (#42) (Required)
+
+              LAST EDITED:      APR 22, 1994 
+              HELP-PROMPT:      Enter a ward for which you want to tailor the Inpatient Medication package. 
+              DESCRIPTION:
+                                  This is a ward for which the site wants to tailor specific aspects of the Inpatient Medications package.  
+
+              LAYGO TEST:       1,0)= S X(1)=$D(^PS(59.6,"B",$E(X,1,30))) S:X(1) X(2)=$P($G(^DIC(42,+X,0)),"^") S:$S(X(1):X(2)="",1:0) X(2)=X D:X(1) EN^DDIOL("But an entry for "_X(2)_" already exists!") I 'X(1)
+
+              GROUP:            PSJ
+              CROSS-REFERENCE:  59.6^B 
+                                1)= S ^PS(59.6,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(59.6,"B",$E(X,1,30),DA)
+
+
+59.6,.03      DAYS UNTIL STOP DATE/TIME 0;3 NUMBER
+
+              How many days should a standard order last?                                                                      
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 18, 1985 
+              HELP-PROMPT:      Enter the number (1-100) of days that an order will last. 
+              DESCRIPTION:        This is the number of days a standard order should last.  The first order entered for a patient uses this number to calculate a default value for the order's STOP DATE/TIME.  This number is also used if SAME STOP DATE 
+                                has no entry, or an entry of "NO".  
+
+              GROUP:            PSJU
+
+59.6,.04      SAME STOP DATE ON ALL ORDERS 0;4 SET
+
+              Should all of a patient's orders be given the same stop date?                                                    
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 18, 1985 
+              HELP-PROMPT:      Answer 'YES' (or '1') if all of a patient's orders are to stop on the same date/time. 
+              DESCRIPTION:
+                                  This is a flag, that if found to be YES, uses the STOP DATE/TIME from the patient's first order as a default value for the STOP DATE/TIME of all of the patient's following orders.  
+
+              GROUP:            PSJU
+
+59.6,.05      DEFAULT START DATE CALCULATION 0;5 SET
+
+              ORDER DEFAULT START DATE                                                                                         
+                                '0' FOR USE CLOSEST ADMIN TIME AS DEFAULT; 
+                                '1' FOR USE NEXT ADMIN TIME AS DEFAULT; 
+                                '2' FOR USE NOW AS DEFAULT; 
+              LAST EDITED:      JAN 20, 1994 
+              HELP-PROMPT:      Enter "0" to use the closest admin time, "1" to use the next admin time, or "2" to use "now" as the default start time for orders. 
+              DESCRIPTION:      This field allows the ward to tell the package how the default start date for orders should be calculated. The default may use the next admin time, the closest admin time, or the current time (now) as the default start
+                                date for Unit Dose and IV orders.  
+
+              GROUP:            PSJ
+
+59.6,.07      TIME OF DAY THAT ORDERS STOP 0;7 NUMBER
+
+              Time of day that orders stop                                                                                     
+              INPUT TRANSFORM:  K:X'?4N!(X>2400)!(X<1)!(X#100>59) X
+              LAST EDITED:      NOV 30, 1986 
+              HELP-PROMPT:      Enter the time of day that orders stop for this ward (military time). 
+              DESCRIPTION:
+                                  This is a time of day that, if found, will be used in calculating the default value for the STOP DATE/TIME of patients' orders.  
+
+              EXECUTABLE HELP:  D EN^DDIOL("ENTER A NUMBER BETWEEN 0001 AND 2400.  THE ZEROS ARE NEEDED.","","!!")
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+59.6,.08      START TIME FOR 24 HOUR MAR 0;8 NUMBER
+
+              Start time of day for 24 hour MAR                                                                                
+              INPUT TRANSFORM:  K:X>2400!(X<1)!(X'?4N)!(X#100>59) X
+              LAST EDITED:      SEP 06, 1985 
+              HELP-PROMPT:      Enter the time of day (0001-2400) that the 24 MAR is to start. 
+              DESCRIPTION:        This is the start time for the 24 hour MAR.  It is used whenever a user enters a start date without a time when running the 24 hour MAR.  This time should be in military time format, with leading and trailing zeros.  
+                                (Entering '0001' would be seen as 1 minute after midnight.) 
+
+              EXECUTABLE HELP:  D EN^DDIOL("PLEASE USE MILITARY TIME WITH LEADING AND TRAILING ZEROS.","","!")
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  59.6^AC^MUMPS 
+                                1)= S Y=X-1 S:'Y Y=2400 S Y=$E("000",1,4-$L(Y))_Y S:$E(Y,3)=9 Y=$E(Y,1,2)_"59" S $P(^PS(59.6,DA,0),"^",9)=Y
+                                2)= S $P(^PS(59.6,DA,0),"^",9)=""
+                                3)= Used by the Unit Dose Medications package.
+                                  This is used to automatically update the STOP TIME FOR MAR field (.09).  
+                                  S $P(^PS(59.6,Internal Entry number,0),"^",9)=STOP TIME FOR MAR 
+
+
+
+59.6,.09      STOP TIME FOR MAR      0;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>2400)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 06, 1985 
+              DESCRIPTION:
+                                  This is the stop time for the 24 hour MAR.  It is automatically calculated when the START TIME FOR MAR is entered.  
+
+              EXECUTABLE HELP:  D EN^DDIOL("THIS FIELD IS NOT TO BE CHANGED!!","","!")
+              WRITE AUTHORITY:  ^
+              GROUP:            PSJU
+
+59.6,.11      DAYS NEW LABELS LAST   0;11 NUMBER
+
+              How many days should new labels last?                                                                            
+              INPUT TRANSFORM:  K:+X'=X!(X>35)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 25, 1986 
+              HELP-PROMPT:      Enter a whole number between 0 and 35. 
+              DESCRIPTION:        The Unit Dose package will run a background job once a day that will delete all unprinted new labels older than the number of days specified here.  If no days are specified here, any unprinted new labels for this site
+                                will be purged at the end of the day.  
+                                  **PLEASE NOTE - A label can still be printed for an order even though its new label record has been purged.  
+
+              EXECUTABLE HELP:  D LBLS^PSJDDUT
+              GROUP:            PSJU
+
+59.6,.12      LABEL FOR WARD STAFF   0;12 SET
+
+              When should the first label print for ward staff?                                                                
+                                '0' FOR NO LABELS; 
+                                '1' FOR FIRST LABEL ON ORDER ENTRY/EDIT; 
+                                '2' FOR LABEL ON ENTRY/EDIT AND VERIFICATION; 
+                                '3' FOR FIRST LABEL ON NURSE VERIFICATION; 
+              LAST EDITED:      JUL 27, 1991 
+              DESCRIPTION:        Select from one of the following: NO LABELS - Labels will not be created when ward staff (nurses, clerks, physicians, etc.) take an action on an order.  FIRST LABEL ON ORDER ENTRY/EDIT - Labels will be created whenever
+                                ward staff enter an order or edit a non-verified order, but not when the nurse verifies the order.  FIRST LABEL ON NURSE VERIFICATION - Labels will not be created for ward staff until a nurse has verified the order.  LABEL
+                                ON ENTRY/EDIT AND VERIFICATION - Labels are created whenever the order is entered/edited and verified.  
+                                 
+                                  Labels are always created for actions taken on orders after they are verified, unless NO LABELS is selected.  
+
+              TECHNICAL DESCR:
+                                  This is used by the order entry, edit, and verify routines to determine if a label should be created for the order whenever these action take place on the order by ward staff personnel.  
+
+              GROUP:            PSJU
+
+59.6,.13      *WARD LABEL PRINTER    0;13 FREE TEXT
+
+              INPUT TRANSFORM:  D ENDL^PSJUTL
+              LAST EDITED:      APR 08, 1998 
+              HELP-PROMPT:      Enter the device to which labels created by ward staff will be printed. 
+              DESCRIPTION:
+                                  If a device is entered here, labels created by ward staff due to actions taken on orders will print automatically to the device entered.  
+
+              TECHNICAL DESCR:
+                                  This is used to automatically print labels on the ward whenever ward staff create labels due to their actions on orders.  The input transform call to ENDLP^PSGSET makes a call to %ZIS to get ION (the device name).  
+
+              EXECUTABLE HELP:  D ENDH^PSJUTL(DZ)
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+59.6,.14      *PHARMACY LABEL PRINTER 0;14 FREE TEXT
+
+              INPUT TRANSFORM:  D ENDL^PSJUTL
+              LAST EDITED:      APR 08, 1998 
+              HELP-PROMPT:      Enter the device to which labels created by pharmacy staff will be printed. 
+              DESCRIPTION:
+                                  If a device is entered here, labels created by pharmacy staff due to actions taken on orders will print automatically to the device entered.  
+
+              TECHNICAL DESCR:
+                                  This is used to automatically print labels in the pharmacy whenever pharmacy staff create labels due to their actions on orders.  The input transform call to ENDL^PSJUTL makes a call to %ZIS to get ION (the device name).  
+
+              EXECUTABLE HELP:  D ENDH^PSJUTL(DZ)
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+59.6,.15      LABEL ON AUTO-DISCONTINUE 0;15 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUL 09, 1992 
+              HELP-PROMPT:      Answer 'YES' to have labels created when this ward's patients' orders are auto-discontinued. 
+              DESCRIPTION:
+                                  This is used to determine if labels should be created when orders for a patient from this ward are auto-d/c'd due a patient movement. Patient movements include discharges and transfers.  
+
+              TECHNICAL DESCR:
+                                  Used by the auto-d/c routines (PSJADT*) to determine if labels should be created for orders that are auto-d/c'd due to patient movements from this ward.  
+
+              GROUP:            PSJ
+
+59.6,.16      LABEL FOR PHARMACY     0;16 SET
+
+              When should the first label print for pharmacists?                                                               
+                                '0' FOR NO LABELS; 
+                                '1' FOR FIRST LABEL ON ORDER ENTRY/EDIT; 
+                                '2' FOR LABEL ON ENTRY/EDIT AND VERIFICATION; 
+                                '3' FOR FIRST LABEL ON PHARMACIST VERIFICATION; 
+              LAST EDITED:      JUL 27, 1991 
+              DESCRIPTION:        Select from the following: NO LABELS - Labels will not be created when pharmacy staff (pharmacists and pharmacy technicians) take an action on an order.  FIRST LABEL ON ORDER ENTRY/EDIT - Labels will be created whenever
+                                pharmacy staff enter an order or edit a non-verified order, but not when the pharmacist verifies the order.  FIRST LABEL ON VERIFICATION - Labels will not be created for pharmacy staff until a pharmacist has verified the
+                                order.  LABEL ON ENTRY/EDIT AND VERIFICATION - Labels are created whenever the order is entered/edited and verified.  
+                                 
+                                  Labels are always created for actions taken on orders after they are verified, unless NO LABELS is selected.  
+
+              TECHNICAL DESCR:
+                                  This is used to determine if a label should be created whenever an action has taken place on an order by pharmacy personnel.  
+
+              GROUP:            PSJU
+
+59.6,.18      MAR HEADER LABELS      0;18 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 07, 1993 
+              HELP-PROMPT:      Enter "YES" if MAR header labels should be generated for this ward. 
+              DESCRIPTION:
+                                This is used to determine if MAR header labels should be generated when MAR order labels are generated for patients on this ward.  
+
+              GROUP:            PSJ
+
+59.6,.19      WARD LABEL PRINTER POINTER 0;19 POINTER TO DEVICE FILE (#3.5)
+
+              LAST EDITED:      APR 08, 1998 
+              HELP-PROMPT:      Enter the device to which labels created by ward staff will be printed. 
+              DESCRIPTION:
+                                If a device is entered here, labels created by ward staff due to actions taken on orders will print automatically to the device entered.  
+
+              TECHNICAL DESCR:
+                                This is used to automatically print labels on the ward whenever ward staff create labels due to their actions on orders.  
+
+
+59.6,.2       PHARMACY LABEL PRINTER POINTER 0;20 POINTER TO DEVICE FILE (#3.5)
+
+              LAST EDITED:      APR 08, 1998 
+              HELP-PROMPT:      Enter the device to which labels created by pharmacy staff will be printed. 
+              DESCRIPTION:
+                                If a device is entered here, labels created by pharmacy staff due to actions taken on orders will print automatically to the device entered.  
+
+              TECHNICAL DESCR:
+                                This is used to automatically print labels in the pharmacy whenever pharmacy staff create labels due to their actions on orders.  
+
+
+59.6,.24      'SELF MED' IN ORDER ENTRY 0;24 SET
+
+              Should the 'SELF MED' prompts be included in order entry?                                                        
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      AUG 21, 1987 
+              HELP-PROMPT:      Answer 'YES' to have the prompts for patient self-medication included in the order entry process. 
+              DESCRIPTION:        If `YES' (or a 1) is entered here, the regular order entry process will prompt the user for SELF MED and HOSPITAL SUPPLIED SELF MED for each order entered.  The abbreviated processes and ward order entry and order sets
+                                are not affected in any way by this site parameter.  
+
+              GROUP:            PSJU
+
+59.6,.27      *PRE-EXCHANGE ENVELOPES 0;27 SET
+
+              Are you using pre-exchange envelopes?                                                                            
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      NOV 19, 1992 
+              HELP-PROMPT:      Answer 'YES' to have the package print the Pre-Exchange information using the envelope format instead of the regular report format. 
+              DESCRIPTION:        This is a flag that tells the package that the pharmacy is using special envelopes for their pre-exchange needs report, and will print the pre-exchange needs information accordingly.  PLEASE NOTE that the package expects
+                                the envelopes to be at least 4 inches long and at least 8 1/2 inches wide.  
+
+              GROUP:            PSJU
+
+59.6,1        MAR ORDER SELECTION DEFAULT 0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:'$$ENMARD^PSJDDUT2() X
+              LAST EDITED:      JUN 19, 1997 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is the default value for the type of orders to be included on the Medication Due Worksheet, MAR and Action Profiles.  Multiple order types may be selected using "-" or ","  (Example: 2-4 or 2,3,4).  
+
+              TECHNICAL DESCR:
+                                This field contains information used by reports in the Inpatient Medications package to determine what type of orders to include on the report, as specified by the Pharmacy Supervisor in the Inpatient Ward Parameters.  
+
+              EXECUTABLE HELP:  D ENMARDH^PSJDDUT2
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+59.6,2        PRINT PENDING ORDERS ON MAR 0;6 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 06, 1996 
+              HELP-PROMPT:      Enter YES to include acknowledged pending orders on the MARs 
+              DESCRIPTION:
+                                Enter YES to include the pending orders that were acknowledged by a nurse on the MARs and the Medication Due Worksheet.  
+
+
+59.6,3        DAYS UNTIL STOP FOR ONE-TIME 0;28 NUMBER
+
+              How many days should a one-time order last?                                                                      
+              INPUT TRANSFORM:  D ENOSD^PSGFILD0
+              LAST EDITED:      SEP 07, 2001 
+              HELP-PROMPT:      Enter the number of days a one-time order should last.  The number can be from 1-100, however, it cannot exceed the number of days that standard orders last (DAYS UNTIL STOP DATE/TIME). 
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+59.6,4        PRE-EXCHANGE REPORT DEVICE 0;29 POINTER TO DEVICE FILE (#3.5)
+
+              On what DEVICE should the PRE-EXCHANGE REPORT print?                                                             
+              LAST EDITED:      JAN 24, 2003 
+              HELP-PROMPT:      Enter a device on which the Pre-Exchange Report may be printed. 
+              DESCRIPTION:      Enter the name of the device that will be used most frequently to print the Pre-Exchange Report for this WARD. This field will be shown as the default for the 'Select DEVICE for PRE-EXCHANGE UNITS REPORT:' prompt when
+                                printing the Pre-Exchange Report.  
+
+
+59.6,5        STAT NOW MAIL GROUP    0;30 POINTER TO MAIL GROUP FILE (#3.8)
+
+              LAST EDITED:      DEC 28, 2004 
+              DESCRIPTION:
+                                A notification will be sent to this mail group for each new STAT and NOW order that is received from CPRS.  
+
+
+59.6,6        PRIORITIES FOR NOTIFICATION 0;32 SET
+
+                                'S' FOR STAT; 
+                                'SA' FOR STAT/ASAP; 
+                                'SAN' FOR STAT/ASAP/NOW; 
+                                'A' FOR ASAP; 
+                                'AN' FOR ASAP/NOW; 
+                                'N' FOR NOW; 
+                                'SN' FOR STAT/NOW; 
+              LAST EDITED:      JUL 27, 2005 
+              DESCRIPTION:
+                                Enter the priorities of STAT, ASAP, or the schedule of NOW, or any combination the three to be used to send a notification of orders with these priorities to the mail group defined in the STAT NOW MAIL GROUP parameter.  
+
+
+59.6,7        HOURS OF RECENTLY DC/EXPIRED 0;33 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>120)!(X<1)!(X?.E1"."1.N) X
+              LAST EDITED:      JAN 21, 2009 
+              HELP-PROMPT:      Enter a number between 1 and 120.  Any orders discontinued/expired within the hours specified here will be displayed on the patient profile. 
+              DESCRIPTION:      The Inpatient Meds profiles will display the recently discontinued/expired orders that fall within the hours specified in this field.  The value defined in this field will take precedence over the Inpatient System
+                                parameter.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DEVICE (#3.5)                     WARD LABEL PRINTER POINTER (#.19)
+                                  PHARMACY LABEL PRINTER POINTER (#.2)
+                                  PRE-EXCHANGE REPORT DEVICE (#4)
+
+MAIL GROUP (#3.8)                 STAT NOW MAIL GROUP (#5)
+
+WARD LOCATION (#42)               WARD (#.01)
+
+
+
+INPUT TEMPLATE(S):
+PSJ IWP EDIT                  MAR 06, 2007@15:45  USER #0    
+       Used by the Inpatient Medications package to allow the Inpatient
+     Supervisor to tailor various aspects of the package on a ward-by-ward
+     basis.
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

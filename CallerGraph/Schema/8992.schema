@@ -1,0 +1,341 @@
+STANDARD DATA DICTIONARY #8992 -- ALERT FILE                                                                                                                                                                                      MAY 20,2014@15:36:37  PAGE 1
+STORED IN ^XTV(8992,  (3 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                            (VERSION 8.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to keep track of alerts pending processing for each user.  The main entry for each record is a pointer to the NEW PERSON file.  
+ A multiple under each user is used to record the date and time an alert was generated, the unique ID associated with the alert, the text for display, and an optional routine entry point or option for use in processing the alert, and an optional data
+string associated with the alert.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: SURROGATE FOR ALERTS(AC), ALERT ID(AXQA), ALERT ID(AXQAN), RECIPIENT(B)
+
+8992,.01      RECIPIENT              0;1 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X
+              LAST EDITED:      DEC 15, 1994 
+              HELP-PROMPT:      This is the individual who is to receive the alert 
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  8992^B 
+                                1)= S ^XTV(8992,"B",$E(X,1,30),DA)=""
+                                2)= K ^XTV(8992,"B",$E(X,1,30),DA)
+
+
+8992,.02      SURROGATE FOR ALERTS   0;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 02, 2001 
+              HELP-PROMPT:      Enter an individual name who will be designated to receive alerts for this user until the specified end date/time or until this surrogate is removed. 
+              DESCRIPTION:      This field may contain a pointer to the NEW PERSON file who has been designated as a SURROGATE recipient.  That individual will receive alerts designated for the current user during the period of time specified by the 
+                                entries in SURROGATE START DATE/TIME field [#.03] and the SURROGATE END DATE/TIME field [#.04] or, if one or both of those fields is not specified, until the SURROGATE entry is removed.  If the SURROGATE END DATE/TIME
+                                field [#.04] is populated, the SURROGATE data will be removed automatically the first time an alert is sent to the current USER after the specified date and time.  
+
+              CROSS-REFERENCE:  8992^AC 
+                                1)= S ^XTV(8992,"AC",$E(X,1,30),DA)=""
+                                2)= K ^XTV(8992,"AC",$E(X,1,30),DA)
+                                3)= TRACKS WHO A USER IS ACTING AS SURROGATES FOR
+                                This cross-reference is used to be able to rapidly determine which users a specified user is acting as surrogate for.  
+
+
+
+8992,.03      SURROGATE START DATE/TIME 0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 27, 1999 
+              HELP-PROMPT:      Enter the earliest date and time that the SURROGATE should start receiving alerts.  If no date/time is entered, the sending of alerts to the SURROGATE will begin immediately. 
+              DESCRIPTION:      This field may contain a date and time which will specify when forwarding of alerts to the SURROGATE specified in field #.02 will begin.  If there is no entry in this field, and field #.02 is populated, alerts will be sent
+                                to the surrogate immediately.  
+
+
+8992,.04      SURROGATE END DATE/TIME 0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 27, 1999 
+              HELP-PROMPT:      Enter the date and time when alerts should no longer be sent to the SURROGATE.  If no date and time is entered, then the alerts will be sent to the SURROGATE until the SURROGATE entry is removed. 
+              DESCRIPTION:      This field may contain a date and time.  If data is present, it indicates the time at which sending of alerts to the individual specified in the SURROGATE field (#.02) should be terminated.  If no data is present, and the
+                                SURROGATE field is populated, then alerts will be sent to the SURROGATE until that entry is removed.  
+
+
+8992,1        ALERT DATE/TIME        XQA;0 DATE Multiple #8992.01 (Add New Entry without Asking)
+
+
+8992.01,.01     ALERT DATE/TIME        0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This is the date and time that the alert was generated. 
+                DESCRIPTION:
+                                  This is the date and time when the alert was generated.  
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  8992.01^B^MUMPS 
+                                  1)= Q
+                                  2)= Q
+                                  3)= This cross-reference will prevent a 'B' cross-reference from being built.
+
+
+8992.01,.02     ALERT ID               0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+                LAST EDITED:      NOV 10, 1999 
+                HELP-PROMPT:      This is the package identification used to identify this particular alert.  Answer must be 2-50 characters in length. 
+                DESCRIPTION:      This is a field in which the package id passed during alert filing.  This id may simply be a package namespace, or it may be a namespace followed by additional data to more accurately identify the type or purpose of the 
+                                  alert.  
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  8992^AXQA^MUMPS 
+                                  1)= S ^XTV(8992,"AXQA",X,DA(1),DA)=""
+                                  2)= K ^XTV(8992,"AXQA",X,DA(1),DA)
+                                   This is a cross-reference on the complete XQAID value for this alert, which can be used to identify those individuals who received this particular instance of the alert, and could be used to delete other entries which 
+                                  had received the alert.  
+
+
+                CROSS-REFERENCE:  8992^AXQAN^MUMPS 
+                                  1)= S ^XTV(8992,"AXQAN",$P(X,";"),DA(1),DA)=""
+                                  2)= K ^XTV(8992,"AXQAN",$P(X,";"),DA(1),DA)
+                                   This cross-reference may be used to identify those users who received the alert with the application package specified XQAID (the first ";"-piece of the complete XQAID value) for those cases in which the full XQAID
+                                  value may not be known, e.g., an application which was selected by the user without selecting the ALERT ACTION option to process the alert.  
+
+
+
+8992.01,.03     MESSAGE TEXT           0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This is the text which will be displayed to the user at the time the alert is first shown and when the user selects the alert.nswer must be 3-60 characters in length. 
+                DESCRIPTION:      This field contains the text of the message to be presented to the user at the time when he cycles through the menu system the first time after the alert has been filed for the user, and when the user selects the VIEW 
+                                  ALERTS option.  
+
+                                  UNEDITABLE
+
+8992.01,.04     NEW ALERT FLAG         0;4 SET
+
+                                  '1' FOR NEW; 
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This flag is set when the alert has not been displayed to the user previously. 
+                DESCRIPTION:      This flag is used by the alert processing to indicate a new alert which has not previously been presented to the user.  After the alert message text has been shown to the user, this flag is cleared and the user must then
+                                  select the VIEW ALERTS option to process the alert.  
+
+                                  UNEDITABLE
+
+8992.01,.05     ACTION FLAG            0;5 SET
+
+                                  'D' FOR DELETE; 
+                                  'R' FOR RUN ROUTINE; 
+                                  'I' FOR IMMEDIATE RUN; 
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This flag indicates how the alert should be processed. 
+                DESCRIPTION:
+                                  This flag is optional at the present time, since the need for action processing can be determined by the presence of an option name or a routine name for use during alert processing.  
+
+                                  UNEDITABLE
+
+8992.01,.06     RESERVED1              0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This is a reserved field for future use. 
+                DESCRIPTION:
+                                  This field is reserved for future use by the alert system.  
+
+                                  UNEDITABLE
+
+8992.01,.07     ENTRY POINT            0;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1)!'(X?.UN) X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This is the tag or entry point into the routine if one is used (it may also hold the name of an option).  Answer must be 1-8 characters in length. 
+                DESCRIPTION:      While named ENTRY POINT, this is a dual function field.  If the next field (#.08, AROUTINE NAME) contains a routine name, this field contains the desired entry point within that routine (this field may also be null, 
+                                  indicating that the entry point should be at the top of the routine).  If field #.08 is null, then the contents of this field is interpreted as the name of an option which is to be entered when the alert is processed.  
+
+                                  UNEDITABLE
+
+8992.01,.08     AROUTINE NAME          0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>8!($L(X)<2)!'(X?1U.UN) X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This is the routine name to be called when the alert is selected for processing.  Answer must be 2-8 characters in length. 
+                DESCRIPTION:      If this field is not null, it contains the name of a routine which is to be used when the alert is processed.  If there is also a value in field #.07, that value is used as an entry point into the routine specified in 
+                                  this field.  
+                                   
+                                  If this field is null, field #.07 is interpreted as an option name which is to be used when the alert is processed.  
+                                   
+                                  If both this field and field #.07 are null, the alert is processed as an information only alert.  
+
+                                  UNEDITABLE
+
+8992.01,.09     RESERVED               0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      Answer must be 2-30 characters in length. 
+                DESCRIPTION:
+                                  This field is reserved for future use in the alert processing system.  
+
+                                  UNEDITABLE
+
+8992.01,.1      CAN DELETE WITHOUT PROCESSING 0;10 SET
+
+                                  '1' FOR YES; 
+                LAST EDITED:      FEB 02, 1999 
+                HELP-PROMPT:      A value in this field indicates that the alert may be deleted by the user without having processed it. 
+                DESCRIPTION:      This field was added as a flag to identify alerts which the packages indicate may be deleted by the user without processing the alert.  The value is optional and is passed by the package which generates the alert if they
+                                  want to give permission for users to be able to delete the alert.  The flag is checked in the code handling user deletion of alerts.  If an alert involves an action (via an option or routine) it may not be deleted by the
+                                  user unless this flag is set.  
+
+
+8992.01,.13     DAYS FOR SURROGATE     0;13 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>30)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This is the number of days before the alert is forwarded to the recipient's surrogate(s). 
+                                  UNEDITABLE
+
+8992.01,.14     DAYS FOR SUPERVISOR    0;14 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>30)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This is the number of days (1 to 30) to pass before the alert is forwarded to the recipient's supervisor. 
+                                  UNEDITABLE
+
+8992.01,.15     DAYS FOR BACKUP REVIEWER 0;15 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>15)!(X<1)!(X?.E1"."1.N) X
+                LAST EDITED:      JUL 03, 2001 
+                HELP-PROMPT:      Enter a number of days (1 to 15) if the alert has not been processed it will be forwarded to the designated BACKUP REVIEWER in the KERNEL SYSTEM PARAMETERS file. 
+                DESCRIPTION:      The 'DAYS FOR BACKUP REVIEWER' field contains a number of days, which if exceeded without the alert being processed will cause the alert to be forwarded to the designated 'XQAL BACKUP REVIEWER' in the PARAMETER file with
+                                  a comment indicating that the alert had not been reviewed by the original recipient.  
+                                   
+                                  This forwarding option is in addition to the SUPERVISOR (based on entries for CHIEF in the SECTION/SERVICE file) or e-mail surrogates, and was requested by sites to be able to forward unprocessed alerts to a known, 
+                                  interested individual.  This could be someone in Quality Assurance or a specific nurse responsible for handling overdue unprocessed alerts.  
+
+
+8992.01,1       DATA FOR ALERT         1;E1,245 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<2) X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This character sequence will be returned to the application when the alert is selected.  Answer must be 2-245 characters in length. 
+                DESCRIPTION:      This field and all following ^-separated fields are processed as a single entity and are returned in the variable XQADATA for use by the application which generated the alert.  The package may pass a series of variables 
+                                  using any desired separator in the variable XQADATA at the time the alert is setup.  When the alert is processed the value of XQADATA is returned to the application and may be used to establish parameters related to the 
+                                  alert without requiring interaction or provision of information by the user.  In this way information related to patient entry number, specific internal numbers for the desired data, etc may be stored and returned.  
+
+                                  UNEDITABLE
+
+8992.01,2.01    COMMENT FOR DISPLAY    2;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<2) X
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This field is entered during forwarding of an alert to a new recipient. 
+                                  UNEDITABLE
+
+8992.01,3.01    GUID FOR GUI           3;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>38!($L(X)<38) X
+                LAST EDITED:      JAN 26, 2000 
+                HELP-PROMPT:      Answer must be a GUID - 38 characters in length 
+                DESCRIPTION:      This field contains a Globally Unique IDentifier (GUID) which is used to identify the application which should be used in a graphical user interface environment (windows) to process the alert.  This application must
+                                  implement the IVAlert interface.  The GUID should be of the form 
+                                   
+                                    {xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx} 
+                                   
+                                  where each x is a hexadecimal digit (0 through 9 or A through F).  
+
+
+8992.01,3.02    PATIENT                3;2 POINTER TO PATIENT FILE (#2)
+
+                LAST EDITED:      OCT 12, 2001 
+                HELP-PROMPT:      If this is a PATIENT-related alert, this field identifies the PATIENT associated with the alert. 
+                DESCRIPTION:
+                                  This field is a pointer value to the PATIENT file, if the alert is patient related.  It is not a required field for non-patient related alerts.  
+
+
+8992.01,4       LONG INFO TEXT         4;0   WORD-PROCESSING #8992.04
+
+
+
+
+8992,2        SURROGATE              2;0 DATE Multiple #8992.02
+
+              DESCRIPTION:      This field is a multiple based on the start date/time for a surrogate relationship.  This will permit multiple surrogate relationships to be scheduled.  
+                                 
+                                Since a start date/time for the surrogate relationship is required, if the user does not enter one, then the NOW as the current date/time will be used.  
+
+
+8992.02,.01     SURROGATE START DATE/TIME 0;1 DATE (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 12, 2004 
+                HELP-PROMPT:      This is the START DATE/TIME for the surrogate 
+                DESCRIPTION:
+                                  This is the starting date and time for a surrogate relationship.  
+
+                CROSS-REFERENCE:  8992.02^B 
+                                  1)= S ^XTV(8992,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^XTV(8992,DA(1),2,"B",$E(X,1,30),DA)
+
+
+8992.02,.02     SURROGATE USER         0;2 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      NOV 12, 2004 
+                HELP-PROMPT:      This is the user who will be the surrogate during the time period specified 
+                DESCRIPTION:
+                                  This is a pointer to the user in the NEW PERSON file who will be acting as the surrogate for the time period specified.  
+
+
+8992.02,.03     END DATE TIME          0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 12, 2004 
+                HELP-PROMPT:      This is an optional date/time for when the surrogate relationship will be terminated. 
+                DESCRIPTION:
+                                  This is an optional date/time for when the surrogate relationship will be terminated.  If there is no value entered, then the relationship will continue until it is specifically terminated.  
+
+
+8992.02,.04     NEEDS RETURN           0;4 SET
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      MAR 16, 2005 
+                HELP-PROMPT:      This is a flag which is used to determine whether alerts have been returned to the intended recipient or not 
+                DESCRIPTION:
+                                  This field is used as a flag to indicate whether the alerts have been returned to the intended recipient or not.  
+
+                CROSS-REFERENCE:  8992.02^AC 
+                                  1)= S ^XTV(8992,DA(1),2,"AC",$E(X,1,30),DA)=""
+                                  2)= K ^XTV(8992,DA(1),2,"AC",$E(X,1,30),DA)
+                                  3)= This x-ref is used to track alerts needing return from surrogates
+                                  This cross reference is used to identify periods for which any alerts forwarded to a surrogate have not been returned to the intended recipient.  
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 RECIPIENT (#.01)
+                                  SURROGATE FOR ALERTS (#.02)
+                                  SURROGATE:SURROGATE USER (#.02)
+
+PATIENT (#2)                      ALERT DATE/TIME:PATIENT (#3.02)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+ORB RECIP TOTALS              SEP 22, 1995@14:52  USER #0                                                                                                                                                                                           ALERT LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,237 @@
+STANDARD DATA DICTIONARY #.31 -- KEY FILE                                                                                                                                                                                          APR 3,2014@10:34:50  PAGE 1
+STORED IN ^DD("KEY",  (117 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                         (VERSION 22.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file stores information about keys on a file or subfile. A key is a set of one or more fields that uniquely identifies a record in a file. If more than one set of fields can uniquely identify a record, one of those sets should be designated the
+primary key; all others should be designated secondary keys. The primary key is the principal means of identifying records in the file.  
+ 
+To allow FileMan to enforce key uniqueness, the database designer must define a regular index that consists of all the fields that make up the key. This index is called the uniqueness index.  
+ 
+All key fields must have values. They cannot be null.  
+
+
+              DD ACCESS: ^
+              WR ACCESS: ^
+             DEL ACCESS: ^
+           LAYGO ACCESS: ^
+
+PRIMARY KEY:        A (#.3101)
+  Uniqueness Index: BB (#.3101)
+       File, Field: 1) FILE (.31,.01)  2) NAME (.31,.02)
+
+CROSS
+REFERENCED BY: FILE(B)
+
+INDEXED BY:    FILE & PRIORITY (AP), UNIQUENESS INDEX (AU), FILE & NAME (BB), FILE & FIELD (F)
+
+
+.31,.01       FILE                   0;1 NUMBER (Required) (Key field)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<0)!(X?.E1"."8N.N) X
+              LAST EDITED:      JUN 11, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999, 7 Decimal Digits. Answer '??' for more help. 
+              DESCRIPTION:
+                                Answer should be the number of the file or subfile identified by this key.  A file may have more than one key, but only one primary key.  
+
+              CROSS-REFERENCE:  .31^B 
+                                1)= S ^DD("KEY","B",$E(X,1,30),DA)=""
+                                2)= K ^DD("KEY","B",$E(X,1,30),DA)
+                                3)= Lets developers pick keys by their file number
+                                The B index on the .01 (File) of the Key file lets developers pick keys by the file whose records they uniquely distinguish.  
+
+
+              RECORD INDEXES:   AP (#.3102), BB (#.3101)
+
+.31,.02       NAME                   0;2 FREE TEXT (Required) (Key field)
+
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1)!'(X?1U) X
+              LAST EDITED:      JAN 22, 1996 
+              HELP-PROMPT:      Answer must be 1 upper case letter. Answer '??' for more help. 
+              DESCRIPTION:
+                                Answer must be the name of this key. The name of a file's primary key should be A, with subsequent keys for the same file named B, C, and so on.  
+
+              RECORD INDEXES:   BB (#.3101)
+
+.31,1         PRIORITY               0;3 SET (Required)
+
+                                'P' FOR PRIMARY; 
+                                'S' FOR SECONDARY; 
+              LAST EDITED:      JUL 25, 1997 
+              HELP-PROMPT:      Answer '??' for more help. 
+              DESCRIPTION:
+                                Answer 'PRIMARY' if this is the primary key of the file, the key that will usually be used for identifying entries. Otherwise, answer 'SECONDARY'.  
+
+              RECORD INDEXES:   AP (#.3102)
+
+.31,2         FIELD                  2;0 Multiple #.312 (Add New Entry without Asking)
+
+              LAST EDITED:      MAR 10, 1998 
+              IDENTIFIED BY:    
+                    "WRITE":    D EN^DDIOL("   "_$P(^(0),U,2),"","?0")
+
+              PRIMARY KEY:      A (#.31201)
+              Uniqueness Index: BB (#.31201)
+                   File, Field: 1) FIELD (.312,.01)  2) FILE (.312,.02)
+
+              INDEXED BY:       FIELD & FILE (BB), SEQUENCE NUMBER & FIELD & FILE (S)
+
+.312,.01        FIELD                  0;1 FREE TEXT (Required) (Multiply asked) (Key field)
+
+                INPUT TRANSFORM:  D ITFLD^DIKKDD I $D(X) K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUN 11, 1998 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. Answer '??' for more help. 
+                DESCRIPTION:
+                                  Answer must be the number of one of this key's fields.  
+
+                EXECUTABLE HELP:  D EHFLD^DIKKDD
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  .312^B 
+                                  1)= S ^DD("KEY",DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DD("KEY",DA(1),2,"B",$E(X,1,30),DA)
+                                  3)= LETS DEVELOPER PICK KEY FIELDS BY NUMBER
+                                  The B index, on the .01 (Field) of the Fields multiple, lets the developer pick key fields by field number.  
+
+
+                CROSS-REFERENCE:  ^^TRIGGER^.312^.02 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^DD("KEY",D0,2,D1,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y X ^DD(.312,.01,1,2,1.1) X ^DD(.312,.01,1,2,1.4)
+                                  1.1)= S X=DIV S X=$P(^DD("KEY",DA(1),0),U)
+                                  1.4)= S DIH=$S($D(^DD("KEY",DIV(0),2,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=.312,DIG=.02 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= Q
+                                  CREATE VALUE)= S X=$P(^DD("KEY",DA(1),0),U)
+                                  DELETE VALUE)= NO EFFECT
+                                  FIELD)= FILE
+
+                RECORD INDEXES:   BB (#.31201), F (#.31202) (WHOLE FILE #.31), S (#.31203)
+
+.312,.02        FILE                   0;2 NUMBER (Required) (Key field)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<0)!(X?.E1"."8N.N) X
+                LAST EDITED:      SEP 08, 1998 
+                HELP-PROMPT:      Type a Number between 0 and 999999999999, 7 Decimal Digits. Answer '??' for more help. 
+                DESCRIPTION:
+                                  Answer must be the number of the file that holds this key field. It must equal the number of the file whose records are uniquiely identified by this key.  
+
+                                  UNEDITABLE
+                NOTES:            TRIGGERED by the FIELD field of the FIELD sub-field of the KEY File 
+
+                RECORD INDEXES:   BB (#.31201), F (#.31202) (WHOLE FILE #.31), S (#.31203)
+
+.312,1          SEQUENCE NUMBER        0;3 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>125)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 11, 1998 
+                HELP-PROMPT:      Answer must be between 1 and 125, with no decimal digits. Answer '??' for more help. 
+                DESCRIPTION:      Answer will determine the order in which this field appears within the key. This affects the order of prompts, subscripts, and returned values throughout FileMan. The first field of every key should receive sequence 
+                                  number 1, the second 2, and so on.  
+
+                RECORD INDEXES:   S (#.31203)
+
+
+
+.31,3         UNIQUENESS INDEX       0;4 POINTER TO INDEX FILE (#.11)
+
+              INPUT TRANSFORM:  S DIC("S")="I 1 Q:'$D(DDS)!'$D(DIKKEY)  I $P(^(0),U,9)=$P(^DD(""KEY"",DIKKEY,0),U)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUN 11, 1998 
+              HELP-PROMPT:      Answer '??' for more help. 
+              DESCRIPTION:
+                                Answer with the index that FileMan should use to ensure that new key values are unique. It must be a new-style index that resides in the Index file, and must cross-reference the key fields in proper sequence.  
+
+              SCREEN:           S DIC("S")="I 1 Q:'$D(DDS)!'$D(DIKKEY)  I $P(^(0),U,9)=$P(^DD(""KEY"",DIKKEY,0),U)"
+              EXPLANATION:      Root File of Index must equal File of Key.
+              FIELD INDEX:      AU (#.3103)    REGULAR    IR    SORTING ONLY
+                  Short Descr:  Lets FileMan determine whether an index is a uniqueness index for a key
+                    Set Logic:  S ^DD("KEY","AU",X,DA)=""
+                   Kill Logic:  K ^DD("KEY","AU",X,DA)
+                   Whole Kill:  K ^DD("KEY","AU")
+                         X(1):  UNIQUENESS INDEX  (.31,3)  (Subscr 1)  (forwards)
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INDEX (#.11)                      UNIQUENESS INDEX (#3)
+
+
+File #.31
+
+  Record Indexes:
+
+  AP (#.3102)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Lets FileMan determine the primary key of a file
+        Set Logic:  S ^DD("KEY","AP",X(1),X(2),DA)=""
+         Set Cond:  S X=X(2)="P"
+       Kill Logic:  K ^DD("KEY","AP",X(1),X(2),DA)
+        Kill Cond:  S X=X(2)="P"
+       Whole Kill:  K ^DD("KEY","AP")
+             X(1):  FILE  (.31,.01)  (Subscr 1)
+             X(2):  PRIORITY  (.31,1)  (Subscr 2)
+
+  BB (#.3101)    RECORD    REGULAR    IR    LOOKUP & SORTING
+       Unique for:  Key A (#.3101), File #.31
+      Short Descr:  The uniqueness index for the Key file
+      Description:  The BB index, the uniqueness index for the Key file's key, lets FileMan test potential key values for uniqueness. It is a regular compound index with two fields, the .01 (File) and .02 (Key Name).  
+        Set Logic:  S ^DD("KEY","BB",X(1),X(2),DA)=""
+       Kill Logic:  K ^DD("KEY","BB",X(1),X(2),DA)
+       Whole Kill:  K ^DD("KEY","BB")
+             X(1):  FILE  (.31,.01)  (Subscr 1)
+             X(2):  NAME  (.31,.02)  (Subscr 2)
+
+Subfile #.312
+
+  Record Indexes:
+
+  BB (#.31201)    RECORD    REGULAR    IR    LOOKUP & SORTING
+       Unique for:  Key A (#.31201), File #.312
+      Short Descr:  The uniqueness index for Field multiple of the Key file.
+      Description:  The BB index, on the key of the Field multiple of the Key file, lets FileMan test potential key values for uniqueness. It is a regular compound index with two fields, the .01 (Field) and .02 (File).  
+        Set Logic:  S ^DD("KEY",DA(1),2,"BB",X(1),X(2),DA)=""
+       Kill Logic:  K ^DD("KEY",DA(1),2,"BB",X(1),X(2),DA)
+       Whole Kill:  K ^DD("KEY",DA(1),2,"BB")
+             X(1):  FIELD  (.312,.01)  (Subscr 1)
+             X(2):  FILE  (.312,.02)  (Subscr 2)
+
+  F (#.31202)    RECORD    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#.31)
+      Short Descr:  Lets FileMan find the Keys that include each field
+      Description:  The F index, a whole file compound cross-reference on the key of the Fields multiple of the Key file, lets FileMan determine the keys a field is part of. This is essential for identifying the key value uniqueness tests that must be
+                    done when a field value changes.  
+        Set Logic:  S ^DD("KEY","F",X(1),X(2),DA(1),DA)=""
+       Kill Logic:  K ^DD("KEY","F",X(1),X(2),DA(1),DA)
+       Whole Kill:  K ^DD("KEY","F")
+             X(1):  FILE  (.312,.02)  (Subscr 1)
+             X(2):  FIELD  (.312,.01)  (Subscr 2)
+
+  S (#.31203)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Lets FileMan step through Key fields in sequence
+      Description:  The S index, a compound index on all fields of the Fields multiple of the Key file, lets FileMan step through the key fields in sequence. This is essential for prompting, returning values, as well as for the generation of each key's
+                    uniqueness index.  
+        Set Logic:  S ^DD("KEY",DA(1),2,"S",X(1),X(2),X(3),DA)=""
+       Kill Logic:  K ^DD("KEY",DA(1),2,"S",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^DD("KEY",DA(1),2,"S")
+             X(1):  SEQUENCE NUMBER  (.312,1)  (Subscr 1)
+             X(2):  FIELD  (.312,.01)  (Subscr 2)
+             X(3):  FILE  (.312,.02)  (Subscr 3)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+DIKK EDIT                     JUL 21, 1997@14:40  USER #0
+  DIKK EDIT HDR                 DD #.31
+  DIKK EDIT MAIN                DD #.31
+  DIKK EDIT FIELD HDR           DD #.31
+  DIKK EDIT FIELD               DD #.312
+  DIKK EDIT UI IDENTIFIER       DD #.11
+  DIKK EDIT UNIQUENESS INDEX    DD #.31
+  DIKK EDIT UI HDR              DD #.11
+  DIKK EDIT UI                  DD #.11
+  DIKK EDIT UI FIELD COLUMN HDR DD #.31
+  DIKK EDIT UI FIELD REP        DD #.114
+  DIKK EDIT UI FIELD CRV        DD #.114
+

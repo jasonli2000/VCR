@@ -1,0 +1,982 @@
+STANDARD DATA DICTIONARY #3.7 -- MAILBOX FILE                                                                                                                                                                                     MAY 20,2014@15:37:17  PAGE 1
+STORED IN ^XMB(3.7,  (29 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                            (VERSION 8.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds pointers to the message file, according to users.  Each mailbox entry corresponds to a user.  POSTMASTER is a special user who controls the network communications queues.  Each user is automatically given two baskets: IN and  WASTE.  All
+incoming messages go into the users IN basket.  When the user deletes them, they are temporarily stored in the WASTE basket.   Users may create new baskets as they wish.  
+
+
+
+CROSS
+REFERENCED BY: SURROGATE(AB), AUTOMATIC DELETE DATE(AC), MESSAGE BEING EDITED(AD), NAME(B), MAIL NAME(C), FORWARDING ADDRESS(F), MESSAGE(M)
+
+3.7,.001      NUMBER                     NUMBER
+
+              The number of the mailbasket                                                                                     
+              INPUT TRANSFORM:  K:+X'=X!(X>1000000)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 22, 2002 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 1000000 
+              DESCRIPTION:
+                                This number is used internally to match mailboxes to users in the NEW PERSON file.  It is not seen by users.  Postmaster has been given the special number of .5.  
+
+                                UNEDITABLE
+
+3.7,.01       NAME                   0;1 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              The user who owns this mail box.                                                                                 
+              INPUT TRANSFORM:  S DINUM=+X
+              LAST EDITED:      OCT 03, 1985 
+              DESCRIPTION:
+                                This is the name of the user who has this mail box.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  3.7^B 
+                                1)= S ^XMB(3.7,"B",$E(X,1,30),DA)=""
+                                2)= K ^XMB(3.7,"B",$E(X,1,30),DA)
+
+
+3.7,.3        MAIL NAME              .3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<3) X I $D(X) D MNAME^XMA21C
+              LAST EDITED:      NOV 27, 1992 
+              HELP-PROMPT:      Answer with a name that will be used for your return address on messages sent to other sites. 
+              DESCRIPTION:
+                                This is a name that the user assigns to his mail-box on this system.  It is guaranteed to be unique for each user.  
+
+              EXECUTABLE HELP:  D HELP^XMA21C
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  3.7^C 
+                                1)= S ^XMB(3.7,"C",$E(X,1,30),DA)=""
+                                2)= K ^XMB(3.7,"C",$E(X,1,30),DA)
+                                This cross reference is used to ensure that names for this field will be unique.  It is also used for look-up by the name-server for incoming network mail and local mail.  
+
+
+
+3.7,1         BASKET                 2;0 Multiple #3.701
+
+              LAST EDITED:      FEB 26, 1995 
+              DESCRIPTION:      This is where users store their messages.  Each user is automatically given an IN basket (#1), and a WASTE basket (#.5) when they first use MailMan.  These are permanent, and may not be deleted by the user.  Other baskets
+                                may be created by the user, and also deleted. 
+                                 
+                                Deleted messages are placed in the WASTE basket temporarily.  Every evening the WASTE basket is emptied.  
+                                 
+                                USERS SHOULD MANIPULATE BASKETS ONLY WITH MAILMAN; NOT TRY TO DO IT MANUALLY WITH FILEMAN. 
+
+
+3.701,.01       BASKET                 0;1 FREE TEXT (Required) (Multiply asked)
+
+                User's Mail Basket                                                                                             
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<2) X
+                LAST EDITED:      AUG 11, 1997 
+                HELP-PROMPT:      Answer must be 2-30 characters in length. 
+                DESCRIPTION:
+                                  The basket is the place where messages are delivered and/or stored.  
+
+                CROSS-REFERENCE:  3.701^B 
+                                  1)= S ^XMB(3.7,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^XMB(3.7,DA(1),2,"B",$E(X,1,30),DA)
+
+
+3.701,1         MESSAGE                1;0 POINTER Multiple #3.702
+
+                DESCRIPTION:
+                                  This is a list of pointers to messages which are in this basket.  Note that the basket contains only pointers.  The text of the message is held only once in the Message file.  
+
+
+                INDEXED BY:       NETWORK PRIORITY TRANSMISSION? (AC)
+
+3.702,.01         MESSAGE                0;1 POINTER TO MESSAGE FILE (#3.9)
+
+                  A pointer to each message in this basket                                                                     
+                  INPUT TRANSFORM:  S DINUM=+X
+                  LAST EDITED:      JUL 30, 1997 
+                  HELP-PROMPT:      Users may not enter messages except through the SEND A MESSAGE option. 
+                  DESCRIPTION:
+                                    Messages exist in the MESSAGE file and are pointed to by multiple RECIPIENTS.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  3.7^M 
+                                    1)= S ^XMB(3.7,"M",$E(X,1,30),DA(2),DA(1),DA)=""
+                                    2)= K ^XMB(3.7,"M",$E(X,1,30),DA(2),DA(1),DA)
+
+                  CROSS-REFERENCE:  ^^TRIGGER^3.702^2 
+                                    1)= K DIV S DIV=X,D0=DA(2),DIV(0)=D0,D1=DA(1),DIV(1)=D1,D2=DA,DIV(2)=D2 S Y(1)=$S($D(^XMB(3.7,D0,2,D1,1,D2,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y X ^DD(3.702,.01,1,3,1.1) X ^DD(3.702,.01,1,3,1.4)
+                                    1.1)= S X=DIV S X=$O(^XMB(3.7,DA(2),2,DA(1),1,"C",""),-1)+1
+                                    1.4)= S DIH=$S($D(^XMB(3.7,DIV(0),2,DIV(1),1,DIV(2),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=3.702,DIG=2 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                    2)= Q
+                                    CREATE VALUE)= XM NEXT SEQUENCE NUMBER
+                                    DELETE VALUE)= NO EFFECT
+                                    FIELD)= MAILBOX INDEX
+                                    This trigger gives a new message the next sequence number in the mail basket.  
+
+
+
+3.702,2           MAILBOX INDEX          0;2 NUMBER (Required)
+
+                  Index number of message in mail basket                                                                       
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUL 25, 1997 
+                  HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field is used to help the user choose a message.  It is assigned when a message is delivered into a MailBox.  
+
+                  NOTES:            TRIGGERED by the MESSAGE field of the MESSAGE sub-field of the BASKET sub-field of the MAILBOX File 
+
+                  CROSS-REFERENCE:  3.702^C 
+                                    1)= S ^XMB(3.7,DA(2),2,DA(1),1,"C",$E(X,1,30),DA)=""
+                                    2)= K ^XMB(3.7,DA(2),2,DA(1),1,"C",$E(X,1,30),DA)
+
+
+3.702,3           NEW FLAG               0;3 SET
+
+                  A flag which indicates NEW status for message                                                                
+                                    '0' FOR NOT NEW; 
+                                    '1' FOR NEW; 
+                  LAST EDITED:      JUN 11, 1999 
+                  HELP-PROMPT:      If this message is new, set it to 1, otherwise delete it. 
+                  DESCRIPTION:
+                                    This field indicates to the user and to MailMan whether or not a message is new. 
+
+                  TECHNICAL DESCR:  While it is proper to set this field to 0 when the message is no longer new, the preferred method is to delete the field (=@).  
+                                     
+                                    Please note that the cross references on this field, N and N0, are not standard FileMan.  
+                                     
+                                    They should be:  ^XMB(3.7,duz,2,"N",X,xmk,xmz)="" But they are:    ^XMB(3.7,duz,"N",xmk,xmz)="" 
+
+                  CROSS-REFERENCE:  3.701^N0^MUMPS 
+                                    1)= S:X=1 ^XMB(3.7,DA(2),"N0",DA(1),DA)=""
+                                    2)= K ^XMB(3.7,DA(2),"N0",DA(1),DA)
+                                    This x-ref is for new messages.  
+
+
+                  CROSS-REFERENCE:  3.701^N^MUMPS 
+                                    1)= I X=1,$$PRIORITY^XMXSEC($G(^XMB(3.9,DA,0))) N % S %=$G(^XMB(3.9,DA,1,+$O(^XMB(3.9,DA,1,"C",DA(2),0)),0)) I '($P(%,U,9)&$P(%,U,10)) S ^XMB(3.7,DA(2),"N",DA(1),DA)=""
+                                    2)= K ^XMB(3.7,DA(2),"N",DA(1),DA)
+                                    This x-ref is for priority messages.  If the message is priority, this x-ref is set if the message is a new message or if the message has a new reply, and the user has chosen to have replies priority, too. 
+
+
+
+3.702,4           LAST READ DATE/TIME    0;4 DATE
+
+                  Date/time the message was last referenced                                                                    
+                  INPUT TRANSFORM:  S %DT="ETR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      JUL 25, 1997 
+                  HELP-PROMPT:      Enter the date & time. 
+                  DESCRIPTION:
+                                    This is the last date/time the message was read, printed.  
+
+                  TECHNICAL DESCR:
+                                    This field is used during the 'in basket purge' to identify messages which haven't been read in a while.  
+
+
+3.702,5           AUTOMATIC DELETE DATE  0;5 DATE
+
+                  INPUT TRANSFORM:  S %DT="FEST" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      OCT 25, 2000 
+                  HELP-PROMPT:      Enter the date (in the future) when this message should be deleted from your basket. 
+                  DESCRIPTION:
+                                    This is the date at which this message will be 'vaporized', deleted from this mail basket for this user.  
+
+                  WRITE AUTHORITY:  ^
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  3.7^AC 
+                                    1)= S ^XMB(3.7,"AC",$E(X,1,30),DA(2),DA(1),DA)=""
+                                    2)= K ^XMB(3.7,"AC",$E(X,1,30),DA(2),DA(1),DA)
+
+
+3.702,6           NETWORK PRIORITY TRANSMISSION? 0;6 SET
+
+                                    '1' FOR HIGH PRIORITY; 
+                                    '0' FOR REGULAR PRIORITY; 
+                                    '2' FOR LOW PRIORITY; 
+                  LAST EDITED:      FEB 22, 2002 
+                  HELP-PROMPT:      How should this message be handled during transmission? 
+                  DESCRIPTION:      This field is used to flag messages that need to be transmitted before or after all other messages in a queue.  
+                                     
+                                    Messages in the queue which are flagged as HIGH priority are transmitted before all other messages.  
+                                     
+                                    Messages in the queue which are flagged as REGULAR priority (default) are transmitted next.  
+                                     
+                                    Messages in the queue which are flagged as LOW priority are transmitted after all other messages.  
+                                     
+                                    Messages with the same priority are transmitted in IEN order, which is not necessarily the order in which they appear in the transmit queue.  
+                                     
+                                    Only the POSTMASTER (or surrogate) may change the priority of a message in a transmit queue.  If, during a transmission, MailMan has problems with a particular message, MailMan may flag that message as LOW priority, so
+                                    that other messages in the queue will transmit, before the problem message is attempted again.  
+                                     
+                                    Changes to message priorities can be made even while a queue is being transmitted.  
+
+                  FIELD INDEX:      AC (#170)    REGULAR    IR    SORTING ONLY
+                      Short Descr:  Transmission Priority Cross Reference
+                      Description:  This xref is used by MailMan during message transmission to identify messages which should be transmitted first (high priority) or last (low priority).  Messages with regular priority are not xref'd.  
+                        Set Logic:  S ^XMB(3.7,DA(2),2,DA(1),1,"AC",$E(X,1,1),DA)=""
+                         Set Cond:  S X=X
+                       Kill Logic:  K ^XMB(3.7,DA(2),2,DA(1),1,"AC",$E(X,1,1),DA)
+                        Kill Cond:  S X=X
+                       Whole Kill:  K ^XMB(3.7,DA(2),2,DA(1),1,"AC")
+                             X(1):  NETWORK PRIORITY TRANSMISSION?  (3.702,6)  (Subscr 1)  (Len 1)  (forwards)
+
+
+3.702,7           DELETE DATE SET BY MAILMAN? 0;7 SET
+
+                                    '0' FOR NO; 
+                                    '1' FOR YES; 
+                  LAST EDITED:      JUN 13, 1997 
+                  HELP-PROMPT:      Did MailMan set the automatic delete date for this message? 
+                  DESCRIPTION:      When the IN BASKET PURGE sets a delete date for a message, it sets this field to 1.  
+                                     
+                                    If a user sets a delete date for a message, this field is set to 0.  
+
+
+
+
+3.701,2         # NEW MESSAGES IN BASKET 0;2 NUMBER
+
+                Number of NEW messages in mail basket                                                                          
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUL 25, 1997 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the field that is displayed during look-ups and lists of baskets.  Holds a count of the number of messages which are flagged as NEW for this basket.  
+
+
+3.701,3         DELIVERY BASKET?         0;3 SET
+
+                                    'Y' FOR YES; 
+                                    'N' FOR NO; 
+                  LAST EDITED:      MAY 18, 1998 
+                  HELP-PROMPT:      Accept delivery to this basket? 
+                  DESCRIPTION:      The sender of a message may specify the *basket* into which the message should be delivered for all recipients.  
+                                     
+                                    This field is relevant only if you have set ACCEPT DELIVERY BASKET? to 'SELECTED baskets only'.  
+                                     
+                                    Is this basket one of those baskets which will accept messages from senders who have specified target delivery baskets? 
+
+
+3.701,4         READ NEW MSGS BASKET PRIORITY 0;4 NUMBER
+
+                Read new messages basket priority                                                                              
+                  INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUL 19, 2000 
+                  HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                  DESCRIPTION:      When you read new messages by basket, MailMan suggests the IN basket to read first.  If you want MailMan to suggest other basket(s) before suggesting the IN basket, then fill in this field with a priority order number. 
+                                    MailMan will suggest the basket(s) in the priority order set by you.  The IN basket will be suggested last.  (You will not be able to choose the IN basket.)  Once all the priority baskets have been read, MailMan will
+                                    suggest baskets in alphabetical order. 
+
+                  CROSS-REFERENCE:  3.701^AP 
+                                    1)= S ^XMB(3.7,DA(1),2,"AP",$E(X,1,30),DA)=""
+                                    2)= K ^XMB(3.7,DA(1),2,"AP",$E(X,1,30),DA)
+
+
+
+
+3.7,1.1       # NEW MESSAGES FOR USER 0;6 NUMBER
+
+              Total number of NEW messages for this user.                                                                      
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 19, 1987 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 99999 
+              DESCRIPTION:
+                                A counter for the number of new messages in this MailBox 
+
+
+3.7,1.11      LAST MSG RECEIVED DATE/TIME 0;14 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 03, 1996 
+              HELP-PROMPT:      This is the date/time that the latest message was received. 
+              DESCRIPTION:
+                                This field is displayed when the user has new messages, and the user is told how many, and when the last one was received.  
+
+
+3.7,1.12      LAST NEW MSG NOTIFY DATE/TIME 0;15 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 22, 2002 
+              HELP-PROMPT:      This is the last new message arrival date of which the user was notified. 
+              DESCRIPTION:      This field is used during logon to determine whether or not to display to the user the time that the last new message arrived. 
+                                 
+                                When the user logs on and has new messages, he is told how many, and when the last one arrived.  If he logs off without reading those messages and logs on again, and hasn't received any further new messages, he is told how
+                                many new messages he has, but is not told when the last one arrived. 
+
+
+3.7,1.2       DATE @ REINSTATEMENT   0;7 DATE
+
+              Date for the user at the time of reinstatement.                                                                  
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 17, 1998 
+              HELP-PROMPT:      If you want to restrict the user's access regarding messages originating before a certain date, enter that date. 
+              DESCRIPTION:      When a user is reinstated, the current date may be stored here if IRM wants to make sure that the reinstated user may not read any messages whose local create date is before the reinstatement date.  The user may not access
+                                such messages unless the messages are in one of his mail baskets or the message is forwarded to him. 
+
+
+3.7,2         FORWARDING ADDRESS     0;2 FREE TEXT
+
+              Remote address to which mail is routed                                                                           
+              INPUT TRANSFORM:  D XMFWD^XMVVITA(.X,$G(XMIA)) I $D(X) K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      APR 23, 2002 
+              HELP-PROMPT:      Enter a forwarding address (name@domain) of up to 50 characters. 
+              DESCRIPTION:      This field names an additional address to which any messages addressed to you are routed.  This address must be a remote address or a local device.  
+                                 
+                                If you want a local user to see your messages, make that user a surrogate.  
+                                 
+                                See the LOCAL DELIVERY FLAG.  If you do not edit this field to 'ON', then mail will only be delivered to your FORWARDING ADDRESS and not to your Mailbox.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^BULLETIN MESSAGE 
+                                1)= S Y(0)=X,D0=DA X "N DIIND F DIIND=1.001:.001 Q:$D(^DD(3.7,2,1,1,DIIND))[0  X ^(DIIND)" K XMY S XMB="XM FWD ADDRESS CHANGE" D ^XMB:$D(^XMB(3.7,"B",XMB)),ENT^XMUT7(DA) K Y,XMB
+                                1.001)= S X=Y(0) S Y(1)=$S($D(^XMB(3.7,D0,0)):^(0),1:"") S X=$S('$D(^VA(200,+$P(Y(1),U,1),0)):"",1:$P(^(0),U,1)) S XMB(1)=X
+                                1.002)= S X=Y(0) S Y(1)=$S($D(^XMB(3.7,D0,0)):^(0),1:"") S X=$P(Y(1),U,2) S XMB(2)=X
+                                2)= Q
+                                CREATE PARAMETER #1)= NAME
+                                CREATE PARAMETER #2)= FORWARDING ADDRESS
+                                CREATE VALUE)= XM FWD ADDRESS CHANGE
+                                DELETE VALUE)= NO EFFECT
+                                This cross reference sends two bulletins.  
+                                 
+                                The first, XM FWD ADDRESS CHANGE, notifies responsible individuals (belonging to the mail group associated with the bulletin) that a user has changed his forwarding address.  This is the "official" bulletin of this cross
+                                reference.  
+                                 
+                                The second, XM FWD ADDRESS CHECK, is sent to the user's new forwarding address as test to see if the address is valid.  If it's not valid, the sender (the Postmaster) will receive an error message.  This bulletin has been
+                                piggy-backed onto the "official" bulletin.  FileMan is not aware of this.  
+
+
+              CROSS-REFERENCE:  3.7^F 
+                                1)= S ^XMB(3.7,"F",$E(X,1,30),DA)=""
+                                2)= K ^XMB(3.7,"F",$E(X,1,30),DA)
+                                This cross reference enables the site manager to easily find a user who enters a bad forwarding address.  
+
+
+
+3.7,2.1       LOCAL DELIVERY FLAG    0;8 SET
+
+              LOCAL DELIVERY                                                                                                   
+                                '0' FOR NO LOCAL DELIVERY; 
+                                '1' FOR LOCAL DELIVERY ON; 
+              LAST EDITED:      JUL 25, 1997 
+              HELP-PROMPT:      If this field is not set to 'ON' and the FORWARDING ADDRESS field is filled in, then messages will only be forwarded, not delivered locally. 
+              DESCRIPTION:      This field only applies if you have a FORWARDING ADDRESS.  
+                                 
+                                If you have a FORWARDING ADDRESS and you want your messages delivered locally, too, select 1 or LOCAL DELIVERY ON.  Your messages will be delivered to both your local and remote addresses.  
+                                 
+                                If you have a FORWARDING ADDRESS and you do not want your messages delivered locally, too, select 0 or NO LOCAL DELIVERY.  Your messages will be delivered only to your remote addresses.  
+
+
+3.7,2.21      NETWORK SIGNATURE LINE 1 OF 3 NS1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>70!($L(X)<3) X
+              LAST EDITED:      MAR 26, 1993 
+              HELP-PROMPT:      Answer must be 3-70 characters in length. 
+              DESCRIPTION:      This field is used when a user chooses to 'Answer' a message rather than 'Reply' to a message.  While a 'reply' chains the new message to the original one, an 'answer' creates a new message to send to the sender of the
+                                original message, a new message which will not be chained to the original message.  The new message is created with a copy of the message being answered, along with the text of the answer, followed by this field and the
+                                next two NETWORK SIGNATURE LINE fields.  
+                                 
+                                Your network signature might contain your name, who you are, where you work, how you can be contacted, a favorite quote, or whatever you like.  
+                                 
+                                So the final message, sent only to the sender will look like this: 
+                                 
+                                    Original text 
+                                    .
+                                    .
+                                    Answer 
+                                    .
+                                    .
+                                    Network signature (preceeded by a line of "-"s) 
+
+
+3.7,2.22      NETWORK SIGNATURE LINE 2 OF 3 NS1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>70!($L(X)<3) X
+              LAST EDITED:      MAR 26, 1993 
+              HELP-PROMPT:      Answer must be 3-70 characters in length. 
+              DESCRIPTION:
+                                See field 2.21 'NETWORK SIGNATURE LINE 1 OF 3'.  
+
+
+3.7,2.23      NETWORK SIGNATURE LINE 3 OF 3 NS1;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>70!($L(X)<3) X
+              LAST EDITED:      MAR 26, 1993 
+              HELP-PROMPT:      Answer must be 3-70 characters in length. 
+              DESCRIPTION:
+                                See field 2.21 'NETWORK SIGNATURE LINE 1 OF 3'.  
+
+
+3.7,3         LATEST MAILMAN ACCESS  L;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>64!($L(X)<2) X
+              LAST EDITED:      JUL 25, 1997 
+              HELP-PROMPT:      Answer must be 2-64 characters in length. 
+              DESCRIPTION:      This field holds the time of last use of MailMan by this user.  It is in an external date/time format and may include a parenthesized surrogate's name (if it was the surrogate that last accessed MailMan).  
+                                 
+                                It is displayed when you address a message to a local user so that you know when the user "last used MailMan".  
+
+
+3.7,3.1       LATEST MAILMAN ACCESS DATE L;2 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 19, 1990 
+              DESCRIPTION:      The Latest Date Accessed (7N) is in FileMan format and is the same as the portion of the LATEST ACCESS field that excludes time and text.  
+                                 
+                                CAUTION: 
+                                 
+                                This field does not exist for a NEW USER until he signs into MailMan.  
+
+
+3.7,3.2       LAST MAILMAN ACCESS USER ID L;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 23, 1991 
+              HELP-PROMPT:      Enter the DUZ of the user. 
+              DESCRIPTION:
+                                This field is used to record the DUZ of the last user to sign onto the system and use a particular Mail Box.  
+
+
+3.7,4         BANNER                 B;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<2) X
+              LAST EDITED:      AUG 04, 1997 
+              HELP-PROMPT:      ANSWER MUST BE 2-200 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                The banner is displayed to others whenever they address mail to you.  
+
+              CROSS-REFERENCE:  ^^BULLETIN MESSAGE 
+                                1)= S Y(0)=X,D0=DA S X=Y(0) S Y(1)=$S($D(^XMB(3.7,D0,"B")):^("B"),1:"") S X=$P(Y(1),U,1) S XMB(1)=X X ^DD(3.7,4,1,1,1.2) K XMY S XMB="XM BANNER MESSAGE" D ^XMB:$D(^XMB(3.6,"B",XMB)) K Y,XMB
+                                1.2)= S X=Y(0) S Y(1)=$S($D(^XMB(3.7,D0,0)):^(0),1:"") S X=$S('$D(^VA(200,+$P(Y(1),U,1),0)):"",1:$P(^(0),U,1)) S XMB(2)=X
+                                2)= Q
+                                CREATE PARAMETER #1)= BANNER
+                                CREATE PARAMETER #2)= NAME
+                                CREATE VALUE)= XM BANNER MESSAGE
+                                DELETE VALUE)= NO EFFECT
+                                Sends a bulletin whenever a banner is created or changed.  
+
+
+
+3.7,4.5       INTRODUCTION           1;0   WORD-PROCESSING #3.704
+
+              DESCRIPTION:
+                                This field will be displayed upon fetching the data of a user during the help functions.  
+
+
+3.7,5         MESSAGE BEING EDITED   T;1 POINTER TO MESSAGE FILE (#3.9)
+
+              LAST EDITED:      OCT 02, 1990 
+              DESCRIPTION:
+                                When the user is interupted while entering a message, this field holds the message number of the message being edited.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  3.7^AD^MUMPS 
+                                1)= S ^XMB(3.7,"AD",DA,X)=""
+                                2)= K ^XMB(3.7,"AD",DA,X)
+                                This cross reference is used to keep track of the message currently being editted.  
+
+
+
+3.7,6         SHOW MESSAGE PREVIEW   0;4 SET
+
+                                'Y' FOR YES, SHOW MESSAGE PREVIEW; 
+                                'N' FOR NO, DO NOT SHOW IT; 
+              LAST EDITED:      FEB 23, 1999 
+              HELP-PROMPT:      Do you want to see a preview of the message subject and sender? 
+              DESCRIPTION:      This applies to the Classic reader only.  
+                                 
+                                When you are scrolling through the messages in a basket, you can choose whether or not MailMan should display (preview) the message subject and sender before you read the message.  
+                                 
+                                Enter Y to see the preview; N not to.  If you don't enter anything, you will not see a preview.  
+                                 
+                                Seeing the message subject and sender may help you decide whether or not you wish to read the message.  If you decide not to read the message, you can "Ignore" it and move on to the next message.  
+                                 
+                                The following is a sample dialogue showing message preview: 
+                                 
+                                Select MailMan Menu Option: R  Read/Manage Messages Select message reader:  Detailed Full Screen// Classic Read mail in MAIL BASKET: IN//       (199 messages, 1 new) Last message number: 248    Messages in basket: 199 (1
+                                new) Enter ??? for help.  
+                                 
+                                Subj: MESSAGE A   From: USER,ONE IN Basket Message: 248// I 
+                                 
+                                Subj: MESSAGE B   From: USER,TWO IN Basket Message: 247// I 
+                                 
+                                Subj: MESSAGE C   From: USER,THREE IN Basket Message: 246// 
+                                 
+                                The following is a sample dialogue without message preview.  It is more difficult to decide whether to read the message or to ignore it.  
+                                 
+                                Select MailMan Menu Option: R  Read/Manage Messages Select message reader:  Detailed Full Screen// Classic Read mail in MAIL BASKET: IN//       (199 messages, 1 new) Last message number: 248    Messages in basket: 199 (1
+                                new) Enter ??? for help.  
+                                 
+                                IN Basket Message: 248// I 
+                                 
+                                IN Basket Message: 247// I 
+                                 
+                                IN Basket Message: 246// 
+
+
+3.7,7         MESSAGE BEING RESPONDED TO T;3 POINTER TO MESSAGE FILE (#3.9)
+
+              LAST EDITED:      APR 22, 2002 
+              DESCRIPTION:
+                                When the user is interrupted while responding to a message, this field holds the message number of the original message being responded to.  
+
+                                UNEDITABLE
+
+3.7,7.5       BLOB MESSAGE           T;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 21, 1997 
+              HELP-PROMPT:      Are attachments (BLOBs) being added to this message? 
+              DESCRIPTION:
+                                When the user is interrupted while creating a message, this field serves to remind us whether or not the message was being created with attachments (through the Imaging Package).  
+
+
+3.7,8         SURROGATE              9;0 POINTER Multiple #3.703
+
+              DESCRIPTION:      This field lists all of the users who have the ability to act as a surrogate for this user.  A surrogate may read or send mail for someone else, and is listed as the "sender" of the message, while the message is "from" the 
+                                original user.  
+
+
+3.703,.01       SURROGATE              0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I Y'=D0" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      MAY 11, 2010 
+                HELP-PROMPT:      Select a surrogate. 
+                DESCRIPTION:
+                                  A user who has the ability to act as a surrogate for this user. A surrogate may read or send mail for someone else, and is listed as the "sender" of the message, while the message is "from" the original user.  
+
+                SCREEN:           S DIC("S")="I Y'=D0"
+                EXPLANATION:      You can't be your own surrogate.
+                CROSS-REFERENCE:  3.7^AB 
+                                  1)= S ^XMB(3.7,"AB",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^XMB(3.7,"AB",$E(X,1,30),DA(1),DA)
+
+
+3.703,1         READ PRIVILEGE         0;2 SET
+
+                                  'y' FOR YES; 
+                                  'n' FOR NO; 
+                LAST EDITED:      DEC 02, 1984 
+                DESCRIPTION:
+                                  This flag controls whether the surrogate may read the mail of this user.  
+
+
+3.703,2         SEND PRIVILEGE         0;3 SET
+
+                                  'y' FOR YES; 
+                                  'n' FOR NO; 
+                LAST EDITED:      DEC 02, 1984 
+                DESCRIPTION:
+                                  This flag controls whether the surrogate may send messages while acting as a surrogate of this user.  If so, the surrogate is named as "sender".  
+
+
+
+
+3.7,9         MAILMAN INSTITUTION    6000;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      OCT 24, 1989 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:      The MailMan Institution is shown in MailMan when the 'Show Institution in MailMan?' field in the MailMan Site Parameters file indicates so.  
+                                 
+                                It is shown in parentheses following your name and title in the heading of every local message or response which you send.  
+                                 
+                                It helps to further identify you.  It is usually the office or site where you are located, and is most useful in systems such as FORUM, where people from many different sites interact.  
+
+
+3.7,11        MESSAGE ACTION DEFAULT 0;9 SET
+
+                                'I' FOR IGNORE; 
+                                'D' FOR DELETE; 
+              LAST EDITED:      OCT 02, 1990 
+              HELP-PROMPT:      Enter an 'I' for 'Ignore' or a 'D' for 'Delete'. 
+              DESCRIPTION:      This field overrides the field of the same name in the MailMan Site Parameters file.  Whatever you fill into this field will control the default for the "Message Action" prompt that you answer after reading each message in
+                                your IN basket.  For all other baskets, your message action default will be "Ignore".  
+
+
+3.7,12        ASK BASKET?            0;5 SET
+
+                                'y' FOR YES; 
+                                'n' FOR NO; 
+              LAST EDITED:      APR 23, 1985 
+              HELP-PROMPT:      If no, MailMan will not ask basket name when user sends message to himself. 
+              DESCRIPTION:      When you send a message to yourself, MailMan will ask you to which basket to deliver the message.  
+                                 
+                                Answer YES (this is the default) if this is what you want.  
+                                 
+                                Answer NO if you do not want MailMan to ask you.  In this case, your message will be filtered to the correct basket, with the IN basket being the default delivery basket.  
+
+
+3.7,13        SHOW TITLES            0;10 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 26, 1991 
+              HELP-PROMPT:      Enter 'Yes' if you want to see senders' and recipients' titles. 
+              DESCRIPTION:
+                                This field controls whether or not senders of messages and responses, and members of groups will be seen with their 'title' as recorded in the NEW PERSON file (200).  
+
+
+3.7,14        PRIORITY RESPONSES FLAG 0;11 SET
+
+                                '0' FOR Responses are PRIORITY; 
+                                '1' FOR Responses are ORDINARY; 
+              LAST EDITED:      OCT 09, 1992 
+              DESCRIPTION:
+                                This field allows users to decide whether or not they want to receive responses to their priority mail as priority.  It may be overridden by setting a flag in a message that they are the sender or recipient of.  
+
+
+3.7,14.1      PRIORITY RESPONSES PROMPT 0;12 SET
+
+                                '0' FOR ASK EACH TIME MESSAGE IS READ; 
+                                '1' FOR DO NOT ASK EACH TIME MESSAGE IS READ; 
+              LAST EDITED:      SEP 30, 1992 
+              HELP-PROMPT:      Enter 'Ask' or 'Do not ask'. 
+              DESCRIPTION:      Answer 'Ask', and MailMan will prompt you each time you read a PRIORITY mail message, to find out if you want the future responses to that message to be delivered as PRIORITY mail.  The default answer will be whatever you
+                                answered before for that message, or if it's a new message, whatever you have entered in PRIORITY RESPONSES FLAG.  
+                                 
+                                Answer 'Do not ask', and MailMan will not bother you with such requests for information, but will use whatever you have entered in PRIORITY RESPONSES FLAG.  
+                                 
+                                In either case you may toggle the value of this field by typing KPRIORITY at the message action prompt.  
+
+
+3.7,15        FILTER                 15;0 Multiple #3.715
+
+
+3.715,.01       FILTER                 0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      APR 22, 2002 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                DESCRIPTION:      This is the name of your filter.  The filter is used by MailMan to determine into which basket to place a message.  Messages can be filtered based on up to three criteria which must all be true: 
+                                   - Subject contains 
+                                   - Message is from 
+                                   - Message is to 
+                                   
+                                  For example, if you specify 'subject contains' and 'message is from', the filter takes effect only if the subject contains the string you specify AND the message is from the person you specify. 
+                                   
+                                  If you wish the filter to take effect upon 'subject contains' OR 'message is from' you must create two filters, one with 'subject contains', and the other with 'message is from'.  
+                                   
+                                  Filtering takes place during message delivery and can also be selected as a basket action.  The filter is ignored during delivery under the following conditions: 
+                                   - The message already exists in one of your baskets.  
+                                   - The message is from you, and you specified a basket (other than the IN basket) at the transmit prompt.  
+                                   - The sender has specified a delivery basket and you have allowed it.  
+
+                CROSS-REFERENCE:  3.715^B 
+                                  1)= S ^XMB(3.7,DA(1),15,"B",$E(X,1,30),DA)=""
+                                  2)= K ^XMB(3.7,DA(1),15,"B",$E(X,1,30),DA)
+
+
+3.715,1         ORDER                  0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAY 20, 1997 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:      This is the order in which you wish to have your filters checked.  
+                                   
+                                  A message may match several filters, depending on the conditions you have set.  It is here that you specify relative filter priority.  If several filters have the same order, then the first one you entered receives 
+                                  priority.  
+                                   
+                                  If you aren't sure, enter 100.  You can always change it later.  
+
+                CROSS-REFERENCE:  3.715^AF^MUMPS 
+                                  1)= N XMSTAT S XMSTAT=$P($G(^XMB(3.7,DA(1),15,DA,0)),U,4) I XMSTAT S ^XMB(3.7,DA(1),15,"AF",X,DA)=""
+                                  2)= N XMSTAT S XMSTAT=$P($G(^XMB(3.7,DA(1),15,DA,0)),U,4) I XMSTAT K ^XMB(3.7,DA(1),15,"AF",X,DA)
+
+
+3.715,2         BASKET                 0;3 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  D BASKET^XMTDF(.X)
+                LAST EDITED:      MAY 21, 1997 
+                HELP-PROMPT:      Answer must be a valid basket name (not the IN basket). 
+                DESCRIPTION:      This is the basket you want any messages to go into if they match all of the conditions you specify for this filter.  
+                                   
+                                  The basket may not be the "IN" basket, because that is the default basket.  
+                                   
+                                  The basket must exist (or be created) at the time you specify it.  You may delete this basket later.  If a message filters to this basket, and the basket does not exist, the basket will be created.  
+
+                EXECUTABLE HELP:  D BSKTHELP^XMTDF
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  3.715^C 
+                                  1)= S ^XMB(3.7,DA(1),15,"C",$E(X,1,30),DA)=""
+                                  2)= K ^XMB(3.7,DA(1),15,"C",$E(X,1,30),DA)
+
+
+3.715,3         STATUS                 0;4 SET (Required)
+
+                                  '0' FOR OFF; 
+                                  '1' FOR ON; 
+                LAST EDITED:      MAY 20, 1997 
+                DESCRIPTION:
+                                  If the filter is active, it will be used.  If the filter is not active, it will be ignored.  
+
+                CROSS-REFERENCE:  3.715^AC^MUMPS 
+                                  1)= Q:'X  N XMORDER S XMORDER=$P($G(^XMB(3.7,DA(1),15,DA,0)),U,2) I XMORDER S ^XMB(3.7,DA(1),15,"AF",XMORDER,DA)=""
+                                  2)= Q:'X  N XMORDER S XMORDER=$P($G(^XMB(3.7,DA(1),15,DA,0)),U,2) I XMORDER K ^XMB(3.7,DA(1),15,"AF",XMORDER,DA)
+
+
+3.715,4         SUBJECT CONTAINS       0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>25!($L(X)<3) X S:$D(X) X=$$UP^XLFSTR(X)
+                LAST EDITED:      AUG 06, 1997 
+                HELP-PROMPT:      Answer must be 3-25 characters in length. 
+                DESCRIPTION:      If the subject contains the string you specify AND if the message matches the other conditions (if any), then the message matches this filter.  
+                                   
+                                  The subject is capitalized automatically to facilitate filtering.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+3.715,5         FROM                   0;6 FREE TEXT
+
+                INPUT TRANSFORM:  D FROM^XMTDF(.X)
+                OUTPUT TRANSFORM: S:+Y=Y Y=$$NAME^XMXUTIL(Y)
+                LAST EDITED:      APR 22, 2002 
+                HELP-PROMPT:      Who is the sender of the message? 
+                DESCRIPTION:      This is the person who sent the message.  
+                                   
+                                  If it's a local person, just enter the name.  
+                                   
+                                  If it's a remote person, enter name@site.  MailMan will match any sender whose name contains 'name' and whose site contains 'site'.  'Name' may be null, in which case, MailMan will match any sender whose site contains
+                                  'site'.  'Site' may be null, in which case, MailMan will match any sender whose name contains 'name'.  In any event, the string must be from 2 to 45 characters and must contain '@'.  
+                                   
+                                  If it's a local message from a VISTA package/fake sender, put '@' at the end, like ACCOUNTS RECEIVABLE@ 
+                                   
+                                  The sender's name is capitalized automatically to facilitate filtering.  
+                                   
+                                  For this filter to activate, its STATUS must be on, this condition and the other conditions (if any) must match the message, and it must be the first filter (as controlled by its ORDER) to match the message.  Finally,
+                                  filtering must be turned on.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+3.715,6         ADDRESSED TO           0;7 FREE TEXT
+
+                INPUT TRANSFORM:  D TO^XMTDF(.X)
+                LAST EDITED:      MAY 21, 1997 
+                HELP-PROMPT:      Answer must be 1-55 characters in length. 
+                DESCRIPTION:      Enter the person or group to whom the message is addressed.  If the person is remote, enter name@site.  MailMan will match any sender whose name contains 'name' and whose site contains 'site'.  'name' or 'site' may be
+                                  null.  
+                                   
+                                  The addressee's name may be automatically capitalized to facilitate filtering.  
+                                   
+                                  MailMan will check the addressees that you see when you Query (Q) the message.  MailMan will NOT check the expanded list of addresses that you see when you Query Detailed (QD) the message.  
+                                   
+                                  For this filter to activate, its STATUS must be on, this condition and the other conditions (if any) must match the message, and it must be the first filter (as controlled by its ORDER) to match the message.  Finally, 
+                                  filtering must be turned on. 
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+3.715,7         VAPORIZE DAYS          0;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<7)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 22, 2002 
+                HELP-PROMPT:      Type a Number between 7 and 365, 0 Decimal Digits 
+                DESCRIPTION:      The message will be set to vaporize (be deleted from your mailbox) this many days after it is delivered to you.  This date will override any vaporize date set by the sender. You will be able to change or delete the
+                                  vaporize date at the message action prompt whenever you read the message. 
+                                   
+                                  If this field is null, the filter will not set any vaporize date.  
+                                   
+                                  This will only apply to new messages and responses which are put into your mailbox (includes moving from the WASTE basket) as a result of delivery or latering.  It won't apply to messages which are already in your
+                                  mailbox.  It won't apply when you filter messages which are already in your mailbox. 
+
+
+3.715,8         DELIVER NEW?           0;9 SET
+
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      MAY 05, 2000 
+                HELP-PROMPT:      Answer YES or NO. 
+                DESCRIPTION:      If you don't answer, or delete the answer, the default is YES.  
+                                   
+                                  YES means that the message will be delivered as usual, and made new as usual.  
+                                   
+                                  NO means that the message will be delivered as usual, but it won't be made new, so you won't know it's arrived unless you check. 
+                                   
+                                  This will only apply to new messages which you have not seen before.  It won't apply to responses or forwarded messages with responses.  It won't apply when you filter messages which are already in your mailbox. 
+
+
+3.715,9         FORWARD TO             1;0 Multiple #3.7159
+
+
+3.7159,.01        FORWARD TO             0;1 FREE TEXT (Multiply asked)
+
+                  INPUT TRANSFORM:  D FWDTO^XMTDF(.X,$G(XMIA)) I $D(X) K:$L(X)>50!($L(X)<1) X
+                  LAST EDITED:      OCT 17, 2000 
+                  HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                  DESCRIPTION:      Enter the person, group, device, or server to whom or to which the message is to be forwarded.  The message will be forwarded under the following conditions, and you will be listed as the forwarder.  
+                                     
+                                    This will only apply when: 
+                                     - delivering a message to you for the first time.  
+                                     
+                                    This will not apply when: 
+                                     - you sent the message.  
+                                     - the message is already in your mailbox.  
+                                     - delivering replies.  
+                                     - the message is closed, confidential, or otherwise sensitive.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  3.7159^B 
+                                    1)= S ^XMB(3.7,DA(2),15,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^XMB(3.7,DA(2),15,DA(1),1,"B",$E(X,1,30),DA)
+
+
+
+
+
+
+3.7,16        FILTER MESSAGES?       16;1 SET
+
+                                'N' FOR NO; 
+                                'Y' FOR YES; 
+              LAST EDITED:      MAY 15, 1998 
+              HELP-PROMPT:      If you have mail filters set up, do you want to use them? 
+              DESCRIPTION:      If you don't answer, or if you delete the answer, the default is 'no'.  
+                                 
+                                Answer 'yes' if you want MailMan to deliver your messages to your baskets based on the filtering criteria (if any) you've set up.  
+                                 
+                                Answer 'no' if you have no filtering criteria set up, or if you want MailMan to ignore your filtering criteria and deposit all your messages in your IN basket.  
+
+
+3.7,16.2      ACCEPT DELIVERY BASKET? 16;2 SET
+
+                                'Y' FOR YES, ACCEPT IT; 
+                                'N' FOR NO, DON'T ACCEPT IT; 
+                                'E' FOR EXISTING BASKETS ONLY; 
+                                'S' FOR SELECTED BASKETS ONLY; 
+              LAST EDITED:      MAY 18, 1998 
+              HELP-PROMPT:      Accept message delivery into sender-specified baskets? 
+              DESCRIPTION:      The sender of a message may specify the *basket* into which the message should be delivered for all recipients.  You may decide whether to accept delivery to the target basket.  
+                                 
+                                Answer 'NO' if you don't accept it.  This is the default.  
+                                 - The message will be delivered as usual.  Answer 'YES' if you accept it.  
+                                 - If the basket does not exist, it will be created.  
+                                 - The message will be delivered to the specified basket.  Answer 'EXIST' if you accept it only if that basket already exists.  
+                                 - If the basket exists, the message will be delivered to it.  
+                                 - If the basket doesn't exist, it will not be created, and the message 
+                                   will be delivered as usual.  Answer 'SELECT' if you accept it only if that basket already exists and you have specified that the basket will accept such messages.  
+                                 - If the basket exists and accepts, the message will be delivered to it.  
+                                 - If the basket doesn't exist or doesn't accept, 
+                                   the message will be delivered as usual.  
+
+
+3.7,16.3      P-MESSAGE FROM         16;3 SET
+
+                                'M' FOR ME; 
+                                'P' FOR POSTMASTER; 
+              LAST EDITED:      FEB 27, 1999 
+              HELP-PROMPT:      From whom should your P-MESSAGEs be? 
+              DESCRIPTION:      This pertains to anything you may print to the P-MESSAGE device.  The result is a message sent to you.  The question is, "From whom should the message be?" 
+                                 
+                                Answer ME if the message should be from you.  It will not be delivered new to you, but you will be able to edit it.  (If this field has nothing in it, the default is ME.) 
+                                 
+                                Answer POSTMASTER if the message should be from the Postmaster.  It will be delivered new to you, but you will not be able to edit it.  
+                                 
+                                If you queue the print, this is from whom the message will be.  If you don't queue the print, this is the default which will appear in a dialog with MailMan to determine from whom the message will be.  
+
+
+3.7,17        MESSAGE ORDER          0;13 SET
+
+                                'N' FOR Newest First; 
+                                'O' FOR Oldest First; 
+              LAST EDITED:      MAY 11, 1998 
+              HELP-PROMPT:      In which order do you want your messages to appear? 
+              DESCRIPTION:
+                                'Newest First' means messages are displayed in reverse message number order.  'Oldest First' means messages are displayed in message number order.  
+
+
+3.7,18        MESSAGE READER         0;16 SET
+
+                                'C' FOR Classic; 
+                                'D' FOR Detailed Full Screen; 
+                                'S' FOR Summary Full Screen; 
+              LAST EDITED:      APR 22, 2002 
+              HELP-PROMPT:      What should your default message reader be? 
+              DESCRIPTION:      There are several ways to read and manage your messages: 
+                                 
+                                 Classic              - the one that has been around for years.  
+                                 Detailed Full Screen - full screen, with a detailed message list.  
+                                 Summary Full Screen  - full screen, with a summary message list.  
+                                 
+                                'Classic' is the default, if you don't choose any.  
+                                 
+                                In the next prompt, 'message reader prompt', you will be able to specify whether the reader you choose should be used all the time or whether you want to be asked each time.  
+
+
+3.7,19        MESSAGE READER PROMPT  0;17 SET
+
+                                'Y' FOR Yes, ask me; 
+                                'N' FOR No, don't ask me, just use the default; 
+              LAST EDITED:      DEC 04, 1997 
+              HELP-PROMPT:      Should MailMan ask you which message reader to use every time you go to read messages? 
+              DESCRIPTION:      You have chosen a default 'message reader' in the previous selection.  You chose either the 'classic' reader or one of the 'full-screen' readers.  (If you didn't choose, then your default is the 'classic' reader.) 
+                                 
+                                In this selection, you must decide whether you want MailMan to ask you every time you use the message reader which reader to use, or not to ask you and just go ahead and use your default message reader.  
+                                 
+                                Answer 'Yes' if you want to be prompted for your reader choice every time you go to read messages in a basket.  This is the default answer, and is recommended until you have tried all the readers and decided that you want 
+                                to settle on using just one.  
+                                 
+                                Answer 'No' if you don't want to be prompted, and you just want to use your default reader every time.  
+
+
+3.7,20        NEW MESSAGES DEFAULT OPTION 0;18 SET
+
+                                'LB' FOR LIST BASKETS WITH NEW MAIL; 
+                                'LN' FOR LIST ALL NEW MESSAGES; 
+                                'P' FOR PRINT ALL NEW MESSAGES; 
+                                'R' FOR READ NEW MAIL BY BASKET; 
+              LAST EDITED:      JUL 17, 2000 
+              HELP-PROMPT:      Select default new messages option 
+              DESCRIPTION:      This is the default choice which will appear when you select the 'New Messages and Responses' option.  
+                                 
+                                If you don't choose a default, the default will be 'Read new mail by basket'.  
+
+
+3.7,21        NEW MESSAGES READ ORDER 0;19 SET
+
+                                'N' FOR Newest First; 
+                                'O' FOR Oldest First; 
+              LAST EDITED:      JUL 19, 2000 
+              HELP-PROMPT:      In which order do you want to read your new messages? 
+              DESCRIPTION:      'Newest First' means new messages are read in reverse order.  'Oldest First' means new messages are read in the order in which they were sent.  
+                                 
+                                If you don't choose, your new messages will be read 'Oldest First'.  
+                                 
+                                Note: When you display a list of new messages, they will be displayed in the order you selected in the previous field 'MESSAGE ORDER'.  
+
+
+3.7,99        RETENTION DAYS         0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<30)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 01, 1987 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 30 AND 999 
+              DESCRIPTION:      This field is not in service currently, but has been reserved here to facilitate differing retention dates by user.  Currently the retention date (number of days to retain messages in the IN basket) is in the Kernel Site
+                                Parameters file.  This would continue to be the default for all users that do not have this field filled in.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MESSAGE (#3.9)                    MESSAGE BEING EDITED (#5)
+                                  MESSAGE BEING RESPONDED TO (#7)
+                                  MESSAGE:MESSAGE (#.01)
+
+NEW PERSON (#200)                 NAME (#.01)
+                                  LAST MAILMAN ACCESS USER ID (#3.2)
+                                  SURROGATE:SURROGATE (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

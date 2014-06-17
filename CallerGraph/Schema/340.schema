@@ -1,0 +1,609 @@
+STANDARD DATA DICTIONARY #340 -- AR DEBTOR FILE                                                                                                                                                                                   MAY 20,2014@15:30:01  PAGE 1
+STORED IN ^RCD(340,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 4.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file should **NOT** be edited directly by FileMan.  By editing this file directly data corruption can occur.  
+ 
+This file holds information pertaining to debtor accounts.  A debtor can be an insurance company, patient, person, institution, or vendor.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+
+POINTED TO BY: DEBTOR field (#.05) of the AR EVENT File (#341) 
+               PATIENT field (#.01) of the AR CCPC STATEMENTS File (#349.2) 
+               DEBTOR field (#9) of the ACCOUNTS RECEIVABLE File (#430) 
+               
+
+CROSS
+REFERENCED BY: DEBTOR(AB), STATEMENT DAY(AC), DEBTOR(B), ACCOUNT AT DMC?(DMC), DATE DEBTOR REFERRED TO TOP(TOP)
+
+340,.01       DEBTOR                 0;1          VARIABLE POINTER (Required)
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 2    1    P            n   PATIENT 
+                 200  2    O            y   OTHER (PERSON) 
+                 36   4    I            n   3RD PARTY 
+                 4    5    N            n   INSTITUTION 
+                 440  3    V            n   VENDOR 
+                                         
+              LAST EDITED:      OCT 10, 1996 
+              DESCRIPTION:      This field contains the debtor to which this account belongs to.  An account can belong to an insurance company, vendor, institution, person, or patient.  Accounts can be set up for Medical Care Cost Recovery charges and
+                                also for non-benefit debts, such as: Employee bills, Ex-employee bills, and Vendor bills.  
+
+              PRE-LOOKUP:       S:$D(PRCABT) DIC("V")="I +Y(0)="_$P("440!(+Y(0)=4)^440!(+Y(0)=4)^440!(+Y(0)=200)",U,PRCABT) S:$D(PRCAT) DIC("V")="I +Y(0)="_$S("CP"[PRCAT:2,"FV"[PRCAT:440,"T"[PRCAT:36,"N"[PRCAT:4,"O"[PRCAT:200,1:"200!(+Y(0)=440)")
+              CROSS-REFERENCE:  340^B 
+                                1)= S ^RCD(340,"B",$E(X,1,30),DA)=""
+                                2)= K ^RCD(340,"B",$E(X,1,30),DA)
+                                3)= Needed for look-up of information by Debtor
+                                This is the regular FileMan 'B' cross-reference and is used throughout the AR package for users to look up information by debtor.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^340^.03 
+                                1)= X ^DD(340,.01,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^RCD(340,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(340,.01,1,2,1.1) X ^DD(340,.01,1,2,1.4)
+                                1.1)= S X=DIV S X=$P($G(^RC(342,1,0)),"^",11) S:X X=+X
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^RCD(340,D0,0)):^(0),1:"") S X=$P(Y(1),U,3)="",Y(2)=X,Y(3)=X S X=Y(0),X=X S X=X[";DPT(",Y=X,X=Y(2),X=X&Y
+                                1.4)= S DIH=$S($D(^RCD(340,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=340,DIG=.03 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                3)= Needed for assigning statement days for patients
+                                CREATE CONDITION)= STATEMENT DAY=""&(INTERNAL(DEBTOR)[";DPT(")
+                                CREATE VALUE)= S X=$P($G(^RC(342,1,0)),"^",11) S:X X=+X
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= STATEMENT DAY
+                                This cross-reference sets the statement day for new patients to the site's statement day.  
+
+
+              CROSS-REFERENCE:  340^AB^MUMPS 
+                                1)= S ^RCD(340,"AB",$P(X,";",2),DA)=""
+                                2)= K ^RCD(340,"AB",$P(X,";",2),DA)
+                                3)= Needed to cross-reference debtor file by 'type' of debtor
+                                This cross-reference allows rapid look-up of debtors in the debtor file by the 'type' of debtor.  There are five types of debtors (Patient, Insurance Company, Institution, Vendor, and Person).  This allows the AR software
+                                to scan the file for only a specific type of debtor rather than having to look at each entry.  
+
+
+
+340,.02       PATIENT STATEMENT DETAIL 0;2 SET
+
+                                '0' FOR USE SITE DEFAULT; 
+                                '1' FOR BRIEF; 
+                                '2' FOR EXPANDED; 
+              LAST EDITED:      FEB 15, 1993 
+              DESCRIPTION:      This field is used to determine the amount of detail to be displayed on the patient statement for RX Copay charges.  A site can define brief or detailed information for each patient to be displayed on the statement.  Brief
+                                information consists only of the RX # and Fill date, while the expanded information consists of much more (Physician, drug name, etc.).  
+
+
+340,.03       STATEMENT DAY          0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>28)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 09, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 28, 0 Decimal Digits 
+              DESCRIPTION:      A statement day is assigned to all types of debtors, except insurance companies.  A statement day is the day that a patient statement is generated or a follow-up letter is generated for non-benefit debts.  The AR package
+                                will hold 'notifications' from being sent until the debtors 'statement day' arrives.  This allows all activity since the previous statement to print and update the debtor on the account activity.  
+                                 
+                                Patient statement days never change, but Institution, Person, and Vendor statement days are changed by the AR software.  When these type debtors have a new active bill, the date the new active bill is created becomes their
+                                'statement day'.  This statement day remains in effect until no active bills exist for the debtor, at which time the statement day is 'deleted'.  
+                                 
+                                Insurance companies are notified based on a bill-specific date.  Since insurance companies have much more activity, they are notified on a constant basis depending on each individual bill 'due-date'.  
+
+              NOTES:            TRIGGERED by the DEBTOR field of the AR DEBTOR File 
+
+              CROSS-REFERENCE:  340^AC 
+                                1)= S ^RCD(340,"AC",$E(X,1,30),DA)=""
+                                2)= K ^RCD(340,"AC",$E(X,1,30),DA)
+                                3)= Needed for printing of patient statements and follow-up letters
+                                This cross-reference is used to print patient statements and Vendor, Person, and Institution follow-up letters.  Since these type of debtors get notified based on their statement day, this cross-reference allows rapid
+                                look-up of which debtor is due a notification on a particular day.  
+
+
+
+340,.05       RECEIVABLE CODE        0;5 SET
+
+                                '0' FOR DEFAULT; 
+                                '1' FOR FEDERAL; 
+                                '2' FOR NON-FEDERAL; 
+                                '3' FOR OWCP; 
+              LAST EDITED:      AUG 13, 1997 
+              DESCRIPTION:
+                                This field identifies the type of of debtor 
+
+
+340,.06       VENDOR LINK            0;6 POINTER TO VENDOR FILE (#440)
+
+              LAST EDITED:      SEP 01, 1998 
+              HELP-PROMPT:      Enter the vendor from file 440 (IFCAP Vendor File). 
+              DESCRIPTION:
+                                This field is used to link a vendor from file 440 to a debtor that is not a vendor debtor.   It is used to get the vendor ID to send to FMS on Billing Documents (BDs).  
+
+
+340,.08       ACCT. PROCESSED (KATRINA) 0;8 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 13, 2005 
+              DESCRIPTION:      This field will be set by the software whenever a debtor is processed for a possible refund of payments made to interest and/or administrative charges that were charged inappropriately during the Hurricane Katrina 
+                                emergency period.  A '1' in this field indicates that the account was already processed and should not be processed again.  
+
+              TECHNICAL DESCR:
+                                The software automatically sets this field to 1 whenever a veteran's account is processed by the AR hurricane Katrina software.  It prevents this account from being processed again.  
+
+
+340,.09       COPAY CHARGES CANCELLED? 0;9 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 07, 2006 
+              DESCRIPTION:
+                                This field is used to flag debtors, who were affected by Hurricane Katrina, who had copay charges from 8/29/05 through 2/28/06 cancelled by patch PRCA*4.5*241.  
+
+              TECHNICAL DESCR:
+                                This field will be automatically set by routine RCKATP during the patch PRCA*4.5*241 post initialization, when copay charges for veterans affected by Hurricane Katrina are being cancelled.  
+
+
+340,.12       LAST DATE ACCT CHARGED ADMIN .1;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 19, 2000 
+              HELP-PROMPT:      This field is internally populated by AR.  This field contains the date the account was last charged an administrative fee. 
+              DESCRIPTION:
+                                This field is used to track the last date the account was charged an administrative charge.  
+
+
+340,1.01      STREET ADDRESS #1      1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      FEB 15, 1993 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:      For patients, the MCCR/Fiscal staff can enter a 'billing address' that will over-ride the address fields in the patient file.  This is necessary for patients that may be incompetent and may need to have a separate billing
+                                address from their home address.  Once the MAS package supports 'billing addresses', then the AR software will incorporate this functionality from the MAS package.  
+                                 
+                                This field will be displayed as the first address field on patient statements and profiles.  
+
+
+340,1.02      STREET ADDRESS #2      1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:      For patients, the MCCR/Fiscal staff can enter a 'billing address' that will over-ride the address fields in the patient file.  This is necessary for patients that may be incompetent and may need to have a separate billing
+                                address from their home address.  Once the MAS package supports 'billing addresses', then the AR software will incorporate this functionality from the MAS package.  
+                                 
+                                This field will be displayed as the second address field on patient statements and profiles.  
+
+
+340,1.03      STREET ADDRESS #3      1;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:      For patients, the MCCR/Fiscal staff can enter a 'billing address' that will over-ride the address fields in the patient file.  This is necessary for patients that may be incompetent and may need to have a separate billing
+                                address from their home address.  Once the MAS package supports 'billing addresses', then the AR software will incorporate this functionality from the MAS package.  
+                                 
+                                This field will be displayed as the third address field on patient statements and profiles.  
+
+
+340,1.04      CITY                   1;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      FEB 15, 1993 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:      For patients, the MCCR/Fiscal staff can enter a 'billing address' that will over-ride the address fields in the patient file.  This is necessary for patients that may be incompetent and may need to have a separate billing
+                                address from their home address.  Once the MAS package supports 'billing addresses', then the AR software will incorporate this functionality from the MAS package.  
+                                 
+                                This field will be displayed as the city field on patient statements and profiles.  
+
+
+340,1.05      STATE                  1;5 POINTER TO STATE FILE (#5)
+
+              LAST EDITED:      FEB 15, 1993 
+              DESCRIPTION:      For patients, the MCCR/Fiscal staff can enter a 'billing address' that will over-ride the address fields in the patient file.  This is necessary for patients that may be incompetent and may need to have a separate billing
+                                address from their home address.  Once the MAS package supports 'billing addresses', then the AR software will incorporate this functionality from the MAS package.  
+                                 
+                                This field will be displayed as the state address field on patient statements and profiles.  
+
+
+340,1.06      ZIP CODE               1;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5)!'(X?5N!(X?5N1"-"4N)!(X?9N)) X S:$D(X) X=$S(X?5N1"-"4N:$P(X,"-")_$P(X,"-",2),1:X)
+              OUTPUT TRANSFORM: S:Y?9N Y=$E(Y,1,5)_"-"_$E(Y,6,9)
+              LAST EDITED:      FEB 17, 1993 
+              HELP-PROMPT:      Answer must be 5-9 characters in length. 
+              DESCRIPTION:      For patients, the MCCR/Fiscal staff can enter a 'billing address' that will over-ride the address fields in the patient file.  This is necessary for patients that may be incompetent and may need to have a separate billing
+                                address from their home address.  Once the MAS package supports 'billing addresses', then the AR software will incorporate this functionality from the MAS package.  
+                                 
+                                This field will be displayed as the Zip Code address field on patient statements and profiles.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+340,1.07      PHONE NUMBER           1;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<4) X
+              LAST EDITED:      SEP 09, 1993 
+              HELP-PROMPT:      Answer must be 4-20 characters in length. 
+              DESCRIPTION:      For patients, the MCCR/Fiscal staff can enter a "billing phone number" that will over-ride the address fields in the Patient file.  This is necessary for patients that may be incompetent and may need to have a separate 
+                                phone number from their home phone number.  Once the MAS package supports "billing phone numbers", then the AR software will incorporate this functionality from the MAS package.  
+                                 
+                                This field will be displayed as the phone number on the patient account profiles and bill profiles.  
+
+
+340,1.08      FOREIGN COUNTRY CODE   1;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      OCT 08, 1996 
+              HELP-PROMPT:      Answer must be 1-15 characters in length. 
+              DESCRIPTION:
+                                This field will be used for foreign addresses where the state is a foreign country.  
+
+
+340,1.09      ADDRESS UNKNOWN        1;9 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 09, 1996 
+              DESCRIPTION:
+                                This field will indicate whether the address is unknown or not.  
+
+
+340,2         COMMENT                2;0   WORD-PROCESSING #340.02
+
+              DESCRIPTION:
+                                This field should contain any necessary "general" comments about the debtor.  This information will be displayed at the top of the Account Profile.  
+
+
+340,3.01      ACCOUNT AT DMC?        3;1 SET
+
+                                '1' FOR ACCOUNT FORWARDED TO DMC; 
+              LAST EDITED:      AUG 29, 1997 
+              DESCRIPTION:
+                                This field will contain a '1' if this account has been referred to the Debt Management Center (DMC).  It will be automatically set by the AR software upon creation of the DMC Master Record.  
+
+              CROSS-REFERENCE:  340^DMC 
+                                1)= S ^RCD(340,"DMC",$E(X,1,30),DA)=""
+                                2)= K ^RCD(340,"DMC",$E(X,1,30),DA)
+                                This cross-reference will be sent if follow-up on an account is being done by the Debt Management Center (DMC).  
+
+
+
+340,3.02      DATE SENT TO DMC       3;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 31, 1996 
+              DESCRIPTION:
+                                This is the date the DMC Master Record was created and transmitted.  
+
+
+340,3.03      DMC DISCOVERY DATE     3;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 31, 1996 
+              DESCRIPTION:
+                                This is the date bill established of the oldest bill referred to DMC.  
+
+
+340,3.05      CURRENT TOTAL AT DMC   3;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+              LAST EDITED:      AUG 29, 1996 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the current amount of the debt that has been referred to DMC.  This field will be updated by the DMC weekly transmission.  
+
+
+340,3.06      CURRENT PRINCIPAL AT DMC 3;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+              LAST EDITED:      AUG 29, 1996 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the current principal amount of the debt that has been referred to DMC. This field will be updated by the DMC weekly transmission.  
+
+
+340,3.07      CURRENT INTEREST AT DMC 3;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+              LAST EDITED:      AUG 29, 1996 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the current interest amount of the debt that has been referred to DMC. This field will be updated by the DMC weekly transmission.  
+
+
+340,3.08      CURRENT ADMIN AT DMC   3;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+              LAST EDITED:      AUG 29, 1996 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the current admin amount of the debt that has been referred to DMC. This field will be updated by the DMC weekly transmission.  
+
+
+340,3.09      LESSER WITHHOLDING AMOUNT 3;9 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      AUG 07, 1997 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:      This field is used to enter a lesser withholding amount for DMC (Debt Management Center).  Currently, when a debtor is identified for withholding by DMC, the full amount that the debtor holds is withheld.  An amount in
+                                this field will allow the DMC to take a lesser amount monthly until the full debt is paid.  
+
+
+340,3.1       SITE DELETION FLAG     3;10 SET
+
+                                '1' FOR DELETED BY SITE; 
+              LAST EDITED:      AUG 12, 1997 
+              DESCRIPTION:      This field will be sent whenever a site deletes a debtor from DMC.  When the weekly updates encounters this flag, a '0' balance code sheet will be sent to DMC to delete the debtor from their files.  However, the debtor 
+                                could be resent with the next master record run.  
+
+
+340,4.01      ORIGINAL TOP TIN       4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<9) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 9 characters in length. 
+              DESCRIPTION:
+                                This is the SSN or Tax ID number sent to TOP on the original referral document.  
+
+              TECHNICAL DESCR:
+                                This field stores the debtor's original SSN or TID sent to TOP.  It is necessary because a change in the TIN will cause a type 4 document (Alias name, Alias TIN) to be sent to TOP.  
+
+
+340,4.02      ORIGINAL TOP DEBTOR NAME 4;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>71!($L(X)<71) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 71 characters in length. 
+              DESCRIPTION:
+                                This is the name as sent on the original TOP referral document.  
+
+              TECHNICAL DESCR:
+                                 This field stores the debtor's original name sent to TOP.  It is necessary because a change in the name will cause a type 4 document (Alias name, Alias TIN) to be sent to TOP.  
+
+
+340,4.03      CURRENT TOP DEBT AMOUNT 4;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999.99)!(X<0) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999.99, 2 Decimal Digits 
+              TECHNICAL DESCR:  This field stores the debt amount currently referred to TOP.  This field is used to compare the current amount at TOP with the amount currently eligible for referral.   It then sends increases or decreases to TOP.  This
+                                field also appears on the TOP report.  
+
+
+340,4.04      ALIAS TOP TIN          4;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<9) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 9 characters in length. 
+              DESCRIPTION:
+                                This field contains the most current "Alias" TIN sent to TOP.  
+
+              TECHNICAL DESCR:
+                                This field contains the current 'Alias' TIN at TOP.  This field is set/modified whenever there is a change to the debtor's TIN.   A new/modified entry in this field causes a type 4 document to be sent to TOP.  
+
+
+340,4.05      ALIAS TOP NAME         4;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>71!($L(X)<71) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 71 characters in length. 
+              DESCRIPTION:
+                                This field contains the most current "Alias" name sent to TOP 
+
+              TECHNICAL DESCR:
+                                This field contains the current 'Alias' name at TOP.  This field is set/modified whenever there is a change to the debtor's name.  A new/modified entry in this field causes a type 4 document to be sent to TOP.  
+
+
+340,4.06      TOP DELINQUENCY DATE   4;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 22, 1999 
+              DESCRIPTION:      This is the date of the oldest active bill currently sent to TOP.  This is initially entered upon creation of the master documents and may be changed during the creation of the update documents.The date in this field is 
+                                placed on Recertification and Refund/ Refund Reversal documents.  
+
+              TECHNICAL DESCR:  This date is initially stored with the master documents and is the date account activated of the earliest bill submitted to TOP.  This field may be updated during the compilation of update documents.  It will be also 
+                                placed on the recertification, refund, and refund reversal documents.  
+
+
+340,5.01      TOP DEBTOR ADDRESS, LINE 1 5;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This contains the 1st line of the current debtor address transmitted to TOP.  
+
+              TECHNICAL DESCR:  This field (along with the other TOP address fields) is stored when the initial TOP type 2 (address) document is sent to TOP.  This (and the other address fields) are checked whenever the TOP udpates are sent.  If there is
+                                a change in address, an updated type 2 document is sent to TOP and the new address is stored in these fields.  
+
+
+340,5.02      TOP DEBTOR ADDRESS, LINE 2 5;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This contains the 2nd line of the current debtor address transmitted to TOP.  
+
+              TECHNICAL DESCR:  This field (along with the other TOP address fields) is stored when the initial TOP type 2 (address) document is sent to TOP.  This (and the other address fields) are checked whenever the TOP udpates are sent.  If there is
+                                a change in address, an updated type 2 document is sent to TOP and the new address is stored in these fields.  
+
+
+340,5.03      TOP DEBTOR ADDRESS, CITY 5;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 1-25 characters in length. 
+              DESCRIPTION:
+                                This contains the city included in the current debtor address transmitted to TOP.  
+
+              TECHNICAL DESCR:  This field (along with the other TOP address fields) is stored when the initial TOP type 2 (address) document is sent to TOP.  This (and the other address fields) are checked whenever the TOP udpates are sent.  If there is
+                                a change in address, an updated type 2 document is sent to TOP and the new address is stored in these fields.  
+
+
+340,5.04      TOP DEBTOR ADDRESS, STATE 5;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2) X
+              LAST EDITED:      FEB 08, 2000 
+              HELP-PROMPT:      Answer must be 2 characters in length. 
+              DESCRIPTION:
+                                This field is a pointer to the State file.  It includes the state from the current address sent to TOP.  
+
+              TECHNICAL DESCR:  This field (along with the other TOP address fields) is stored when the initial TOP type 2 (address) document is sent to TOP.  This (and the other address fields) are checked whenever the TOP udpates are sent.  If there is
+                                a change in address, an updated type 2 document is sent to TOP and the new address is stored in these fields.  
+
+
+340,5.05      TOP DEBTOR ADDRESS, ZIP CODE 5;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<5) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 5-9 characters in length. 
+              DESCRIPTION:
+                                This contains the Zip Code included in the current debtor address transmitted to TOP.  
+
+              TECHNICAL DESCR:  This field (along with the other TOP address fields) is stored when the initial TOP type 2 (address) document is sent to TOP.  This (and the other address fields) are checked whenever the TOP udpates are sent.  If there is
+                                a change in address, an updated type 2 document is sent to TOP and the new address is stored in these fields.  
+
+
+340,6.01      DATE DEBTOR REFERRED TO TOP 6;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 30, 1999 
+              DESCRIPTION:
+                                This contains the date the account was 1st referred to TOP.  
+
+              TECHNICAL DESCR:
+                                This is the date that the original Type 1 (Debtor Name, Debtor TIN, Debt number) document was sent to TOP.  It is entered automatically by the system when the initial document is generated.  
+
+              CROSS-REFERENCE:  340^TOP^MUMPS 
+                                1)= S ^RCD(340,"TOP",DA,$E(X,1,30))=""
+                                2)= K ^RCD(340,"TOP",DA)
+                                This Cross-Reference indicates whether a debtor has been sent to TOP and the date of the reference.  
+
+
+
+340,6.02      STOP TOP REFERRAL FLAG 6;2 SET
+
+                                '1' FOR STOP TOP REFERRAL FLAG SET; 
+              LAST EDITED:      JUN 09, 1999 
+              DESCRIPTION:
+                                This flag is set whenver a 'Stop TOP Referral' is entered by the user through the menu option RCTOP STOP REFERRAL.  
+
+              TECHNICAL DESCR:  This field is set whenever a Stop Referral is entered through the user option.  This flag is also deleted by the user option.  If the debtor has already been referred to TOP, entry of this field will 'zero out' the account
+                                at TOP with the next update.  
+
+
+340,6.03      STOP TOP REFERRAL EFF. DATE 6;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 09, 1999 
+              DESCRIPTION:
+                                This field contains a date, for which bills generated after, are eligible for TOP referral.  
+
+              TECHNICAL DESCR:  This field is optionally set whenever a Stop Referral is entered through the user option.  It allows for the referral to TOP of future bills.  Bills generated after this effective date will be eligible for referral to TOP. 
+                                 To 'Stop TOP Referral' indefinitely, no entry should be made in this field.  
+
+
+340,6.04      STOP TOP REFERRAL REASON 6;4 SET
+
+                                'W' FOR WAIVER; 
+                                'B' FOR BANKRUPTCY; 
+                                'N' FOR NOT FORWARDED BY AAC; 
+                                'O' FOR OTHER; 
+                                'R' FOR REJECTED BY TOP; 
+              LAST EDITED:      FEB 08, 2000 
+              DESCRIPTION:
+                                This field contains a code ,detailing the reason TOP referral was stopped.  
+
+              TECHNICAL DESCR:  This field is set whenever a Stop Referral is entered through the user option.   The user must enter one of the codes.  
+                                 
+                                It contains one of 4 codes:  Waiver ("W"), Bankruptcy ("B"), Not Forwarded by AAC ("N") or Other("O").  
+
+
+340,6.05      STOP TOP REFERRAL COMMENT 6;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                This field must be answered whenever a reason of 'Other' is entered for stopping TOP referral.  
+
+              TECHNICAL DESCR:
+                                This field is set whenever a Stop Referral is entered through the user option with a referral reason of Other.  It contains a free text comment, detailing the reason for Stopping Referral.  
+
+
+340,6.06      TOP REFERRAL HOLD DATE 6;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 09, 1999 
+              DESCRIPTION:
+                                This field contains the date the Vendor or Ex-Employee referral will be forwarded to TOP by the AAC.  
+
+              TECHNICAL DESCR:
+                                This field is set for a vendor or ex-employee referral, since the AAC will hold the referral for 60 days before referring the debt to TOP.  
+
+
+340,6.07      CURRENT TOP TRACE NUMBER 6;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<10) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 10 characters in length. 
+              DESCRIPTION:
+                                This is the number assigned by TOP to the last payment from the debtor.  
+
+              TECHNICAL DESCR:  This field is set/modified whenever a TOP payment is entered.  It contains the number assigned  by TOP to the payment.  This field will be used if it is necessary to send a refund document to TOP.  It will store the last
+                                trace number provided by TOP..  
+
+
+340,110       SSN                     ;  COMPUTED
+
+              MUMPS CODE:       S X=$$SSN^RCFN01($P(^RCD(340,D0,0),"^"))
+              ALGORITHM:        S X=$$SSN^RCFN01($P(^RCD(340,D0,0),"^"))
+              LAST EDITED:      FEB 12, 1993 
+              DESCRIPTION:
+                                This field is used to display the SSN of patient and persons on AR reports or local reports.  
+
+
+340,111       LARGE PRINT NEEDED ON STMT 0;7 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      NOV 15, 2004 
+              DESCRIPTION:
+                                This field will identify 1st party debtors requiring statements with large print.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  DEBTOR (#.01)
+
+INSURANCE COMPANY (#36)           DEBTOR (#.01)
+
+NEW PERSON (#200)                 DEBTOR (#.01)
+
+PATIENT (#2)                      DEBTOR (#.01)
+
+STATE (#5)                        STATE (#1.05)
+
+VENDOR (#440)                     DEBTOR (#.01)
+                                  VENDOR LINK (#.06)
+
+
+
+INPUT TEMPLATE(S):
+RCAM ADDRESS EDIT             NOV 10, 2004@15:33  USER #0    
+
+PRINT TEMPLATE(S):
+PRCA DISCREPANCY              MAR 12, 2001@10:33  USER #0                                                                                                                                                                  ACCOUNT BALANCE DISCREPANCY LISTING
+RCAM ADDRESS UNKNOWN          AUG 29, 2000@14:11  USER #0                                                                                                                                                                        PATIENTS WITH UNKNOWN ADDRESS
+RCDMC90A                      SEP 10, 1997@11:53  USER #0                                                                                                                                                                                          [RCDMC90AH]
+RCDMC90AH                     NOV 19, 1996@07:43  USER #0                                                                                                                                                                                                    @
+RCDMC90B                      NOV 10, 1997@15:26  USER #0                                                                                                                                                                           SUMMARY OF ACCOUNTS AT DMC
+RCTOP REPORT                  OCT 02, 2000@10:01  USER #0                                                                                                                                                                                             [RCTOPH]
+RCTOPH                        OCT 02, 2000@10:02  USER #0                                                                                                                                                                                                    @
+
+SORT TEMPLATE(S):
+RCAM ADDRESS UNKNOWN          AUG 30, 2000@09:37  USER #0                                                                                                                                                    'RCAM ADDRESS UNKNOWN' Print Template always used
+SORT BY: @ADDRESS UNKNOWN// (ADDRESS UNKNOWN equals 1 (YES))
+  WITHIN ADDRESS UNKNOWN, SORT BY: @DEBTOR// (DEBTOR not null)
+     This template will identify patients with the address unknown field marked
+     as "Yes".
+
+
+FORM(S)/BLOCK(S):

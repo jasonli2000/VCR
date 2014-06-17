@@ -1,0 +1,706 @@
+STANDARD DATA DICTIONARY #58.1 -- PHARMACY AOU STOCK FILE                                                                                                                                                                         MAY 20,2014@15:30:29  PAGE 1
+STORED IN ^PSI(58.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file defines the items, their location, and quantity for each area of use (AOU) in the hospital.  Additionally, information for each inventory, by item, is stored for an audit trail of usage.  
+
+
+IDENTIFIED BY: 
+      "WRITE": I $D(^("I")),^("I")]"",^("I")'>DT W "    *** INACTIVE ***" 
+
+POINTED TO BY: AREA OF USE (AOU) field (#.01) of the AREA OF USE (AOU) sub-field (#58.21) of the AOU INVENTORY GROUP File (#58.2) 
+               AREA OF USE (AOU) field (#.01) of the AREA OF USE sub-field (#58.24) of the PHARMACY AOU INVENTORY File (#58.19) 
+               AOU field (#.01) of the AOU sub-field (#58.31) of the PHARMACY BACKORDER File (#58.3) 
+               AR/WS AOU  field (#.01) of the PBM AR/WS AOU MAPPINGS sub-field (#59.79001) of the PHARMACY SYSTEM File (#59.7) 
+               
+
+CROSS
+REFERENCED BY: INACTIVATION DATE(AD), EXPIRATION DATE(AEXP), INPATIENT SITE(ASITE), AREA OF USE (AOU)(B), WARD (FOR ITEM)(D), ON-DEMAND REQUEST DATE/TIME(OND)
+
+58.1,.01      AREA OF USE (AOU)      0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      SEP 20, 1989 
+              HELP-PROMPT:      Answer must be 2-30 characters in length 
+              DESCRIPTION:      This is the name of the Area Of Use.  The AOU may represent a single ward or a combination of wards and their percentages of the total use.  Areas of Use may also represent an area of the hospital with no affiliated wards,
+                                i.e. cardiac cath lab or dental clinic.  
+
+              DELETE TEST:      13000,0)= I $O(^PSI(58.1,DA,1,0)) W !,"AOUs CANNOT BE DELETED IF THERE ARE ITEMS DEFINED!"
+
+              CROSS-REFERENCE:  58.1^B 
+                                1)= S ^PSI(58.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^PSI(58.1,"B",$E(X,1,30),DA)
+
+
+58.1,.5       RETURNS CREDITED TO    0;2 SET
+
+                                'A' FOR AUTOMATIC REPLENISHMENT; 
+                                'W' FOR WARD STOCK - ON DEMAND; 
+              LAST EDITED:      JUN 03, 1987 
+              HELP-PROMPT:      Enter "A" or "W". 
+              DESCRIPTION:
+                                For returns purposes, identify the "usual" method of drug distribution for this Area of Use.  
+
+
+58.1,.75      COUNT ON AMIS?         0;3 SET
+
+                                '0' FOR YES; 
+                                '1' FOR NO; 
+              LAST EDITED:      AUG 14, 1987 
+              HELP-PROMPT:      Enter "yes" or "no". 
+              DESCRIPTION:      Some AOUs are created for internal Inpatient Pharmacy inventory purposes and should not be included in AMIS counts.  "COUNT ON AMIS?" will be checked when quantity dispensed is entered to determine if the data should be
+                                added to the AR/WS Stats File.  If answered "NO", then NO data is collected for AMIS calculation for this AOU.  
+
+
+58.1,1        ITEM                   1;0 POINTER Multiple #58.11
+
+              IDENTIFIED BY:    STOCK LEVEL(#1)[R], LOCATION(#10)
+
+58.11,.01       ITEM                   0;1 POINTER TO DRUG FILE (#50) (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="D DRGSCRN^PSGWUTL" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X) D EDCHK^PSGWUTL
+                LAST EDITED:      JUN 03, 1993 
+                DESCRIPTION:
+                                  ITEM defines the name of the drug stocked in this Area of Use.  
+
+                SCREEN:           S DIC("S")="D DRGSCRN^PSGWUTL"
+                EXPLANATION:      Do not select INACTIVE or NON-PHARMACY items.                             NOTE: Items containing significant data can not be modified.
+                DELETE TEST:      13000,0)= I 1 W !,"ITEMS CANNOT BE DELETED,MUST BE INACTIVATED!"
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  58.11^B 
+                                  1)= S ^PSI(58.1,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSI(58.1,DA(1),1,"B",$E(X,1,30),DA)
+
+
+58.11,1         STOCK LEVEL            0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 27, 1985 
+                HELP-PROMPT:      Type a whole number between 0 and 9999 
+                DESCRIPTION:
+                                  This contains the quantity that is the required stock level for the item in the Area of Use.  
+
+                CROSS-REFERENCE:  ^^TRIGGER^58.11^11 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^PSI(58.1,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,5) S DIU=X K Y S X=DIV S X="Y" X ^DD(58.11,1,1,1,1.4)
+                                1.4)= S DIH=$S($D(^PSI(58.1,DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,4,99))  S DIH=DIH_U" S %=$P(DIH,U,6,999),DIU=$P(DIH,U,5),^(0)=$P(DIH,U,1,4)_U_DIV_$S(%]"":U_%,1:""),DIH=58.11,DIG=11 D ^DICR:$N(^DD(
+                                DIH,DIG,1,0))>0
+
+                                2)= Q
+
+                                CREATE VALUE)= "Y"
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= LEVEL CHG
+                                This cross-reference sets a flag in the LEVEL CHG field (58.11,11) if there has been any change to the stock level for an item.  
+
+
+
+58.11,2         INVENTORY            1;0 POINTER Multiple #58.12
+
+                DESCRIPTION:
+                                This allows selection of inventory by entering a unique key of DATE AND TIME.  
+
+
+58.12,.01         DATE/TIME FOR INVENTORY 0;1 POINTER TO PHARMACY AOU INVENTORY FILE (#58.19)
+
+                  INPUT TRANSFORM:S:$D(X) DINUM=X
+                  LAST EDITED:    FEB 13, 1990 
+                  DESCRIPTION:
+                                  This contains the DATE/TIME of the inventory.  
+
+                  NOTES:          XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:58.12^C^MUMPS 
+                                  1)= S $P(^(1,DA,0),"^",2)=$P(^PSI(58.1,DA(2),1,DA(1),0),"^",2)
+                                  2)= S $P(^PSI(58.1,DA(2),1,DA(1),1,DA,0),"^",2)=""
+                                  This cross-reference automatically sets the field LEVEL (58.12,1) equal to whatever is in the field STOCK LEVEL (58.11,1).  
+
+
+
+58.12,1           LEVEL                0;2 NUMBER (Required)
+
+                  INPUT TRANSFORM:K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:    FEB 27, 1985 
+                  HELP-PROMPT:    Type a whole number between 0 and 9999 
+                  DESCRIPTION:
+                                  This contains the stock level of the item for the inventory DATE/TIME.  
+
+                  WRITE AUTHORITY:^
+
+58.12,3           COMPILED INTO AMIS?  0;4 SET
+
+                  COMPILED FLAG                                                                                                
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                  LAST EDITED:    JAN 26, 1988 
+                  DESCRIPTION:    A TaskMan background routine ^PSGWUAS (option PSGW UPDATE AMIS STATS) runs each night.  As the data for an inventory transaction is completed, this "COMPILED FLAG" will be set to "1".  This will enable the
+                                  cross-reference ^PSI(58.5,"AMIS") to be recompiled via the option PSGW RE-INDEX AMIS or via VA FileMan should the need arise.  
+
+
+58.12,3.5         ON HAND              0;6 NUMBER
+
+                  INPUT TRANSFORM:K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:    JUL 18, 1985 
+                  HELP-PROMPT:    Type a whole number between 0 and 9999 
+                  DESCRIPTION:
+                                  This contains the quantity of the item currently in the Area of Use.  
+
+                  CROSS-REFERENCE:^^TRIGGER^58.12^4 
+                                  1)= Q:$D(DIU(0))  K DIV S DIV=X,D0=DA(2),DIV(0)=D0,D1=DA(1),DIV(1)=D1,D2=DA,DIV(2)=D2 S Y(1)=$S($D(^PSI(58.1,D0,1,D1,1,D2,0)):^(0),1:"") S X=$P(Y(1),U,5) S DIU=X K Y X ^DD(58.12,3.5,1,1,1.1) X ^DD(58.12,3.5,1,1,1.4)
+                                  1.1)= S X=DIV X ^DD(58.12,3.5,1,1,1,9.2) S X=$S(Y(2):Y(5),Y(6):X)
+                                1.4)= S DIH=$S($D(^PSI(58.1,DIV(0),1,DIV(1),1,DIV(2),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,4,99))  S DIH=DIH_U" S %=$P(DIH,U,6,999),DIU=$P(DIH,U,5),^(0)=$P(DIH,U,1,4)_U_DIV_$S(%]"":U_%,1:""),DIH=58.12,DIG=4 D ^DICR
+                                :$N(^DD(DIH,DIG,1,0))>0
+
+                                2)= Q
+
+                                CREATE VALUE)= $S((ON-HAND)<LEVEL:(LEVEL-(ON-HAND)),1:0)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= DISPENSE
+                                This cross-reference sets the value of the field DISPENSING QUANTITY (58.12,4) for sites that are NOT merging their pick lists and inventory sheets. This value will be calculated using the following logic: ON HAND<STOCK
+                                LEVEL then DISPENSE QUANTITY=STOCK LEVEL-ON HAND ON HAND>or=STOCK LEVEL then DISPENSE QUANTITY=zero 
+
+
+
+58.12,4           DISPENSE QUANTITY  0;5 NUMBER
+
+                  INPUT TRANSFORM:K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:  FEB 28, 1991 
+                  HELP-PROMPT:  Type a Number between 0 and 9999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                This contains the quantity of the item dispensed to restore stock to the required level.  
+
+                  NOTES:        TRIGGERED by the ON HAND field of the INVENTORY sub-field of the ITEM sub-field of the PHARMACY AOU STOCK File 
+
+                  CROSS-REFERENCE:58.12^AMIS^MUMPS 
+                                1)= Q:$D(PSGWV)  D QD^PSGWUTL
+                                2)= Q:$D(PSGWV)  D KQD^PSGWUTL
+                                This cross-reference is set everytime a quantity greater than zero is dispensed for a stock item. The nightly job "Update AMIS Stats File" will process this cross-reference and store the data in the AR/WS Stats File 
+                                (#58.5). After the cross-reference is processed, it is deleted.  
+
+
+                  CROSS-REFERENCE:58.12^AMISERR^MUMPS 
+                                1)= Q:$D(PSGWV)  D QDERR^PSGWUTL
+                                2)= Q:$D(PSGWV)  D KQDERR^PSGWUTL
+                                This cross-reference is set by the nightly job "Update AMIS Stats file" if an AMIS transaction is found to have invalid or missing Inpatient Site data. Existence of this cross-reference will cause a MailMan message to be
+                                sent to holders of the PSGWMGR security key informing them of the invalid or missing data.  
+
+
+
+58.12,5           PERCENTAGE OF STOCK ON HAND  ;  COMPUTED
+
+                  MUMPS CODE:   S Y(58.12,5,1)=$S($D(^PSI(58.1,D0,1,D1,1,D2,0)):^(0),1:"") S X=$P(Y(58.12,5,1),U,6),X=$S($P(Y(58.12,5,1),U,2):X/$P(Y(58.12,5,1),U,2),1:"*******")*100
+                                9.2 = S Y(58.12,5,1)=$S($D(^PSI(58.1,D0,1,D1,1,D2,0)):^(0),1:"") S X=$P(Y(58.12,5,1),U,2),Y(58.12,5,2)=X S X=$P(Y(58.12,5,1),U,6),Y=X,X=Y(58.12,5,2),X=X-Y,X=$S($P(Y(58.12,5,1),U,2):X/$P(Y(58.12,5,1),U,2),1:"*******")
+                  ALGORITHM:    ON HAND/LEVEL*100
+                  LAST EDITED:  OCT 08, 1987 
+                  DESCRIPTION:
+                                Percentage stock on hand is computed by dividing the amount on hand by the stock level times 100.  
+
+
+
+
+58.11,3         TYPE OF INVENTORY    2;0 POINTER Multiple #58.13 (Add New Entry without Asking)
+
+                  SCREEN:       S DIC("S")="I $P(^(0),""^"",1)'=""ALL"""
+                  EXPLANATION:  Enter type for item
+
+58.13,.01         TYPE                 0;1 POINTER TO AOU INVENTORY TYPE FILE (#58.16) (Multiply asked)
+
+                    INPUT TRANSFORM:S DIC("S")="I $P(^(0),""^"")'=""ALL""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X S:$D(X) DINUM=X
+                    LAST EDITED:  FEB 13, 1990 
+                    DESCRIPTION:
+                                  This points to the types defined in File 58.16 - AOU Inventory Type File.  Inventory types are used to group related items in an Area of Use.  
+
+                    SCREEN:       S DIC("S")="I $P(^(0),""^"")'=""ALL"""
+                    EXPLANATION:  Enter type for item
+                    NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+58.13,1           *TEST                0;2 FREE TEXT
+
+                    INPUT TRANSFORM:K:$L(X)>1!($L(X)<1) X
+                    LAST EDITED:  OCT 30, 1985 
+                    HELP-PROMPT:  ANSWER MUST BE 1 CHARACTER IN LENGTH 
+                    DESCRIPTION:
+                                  NOT CURRENTLY USED.  
+
+
+
+
+58.11,5         WARD (FOR ITEM)        4;0 POINTER Multiple #58.26 (Add New Entry without Asking)
+
+
+58.26,.01         WARD (FOR ITEM)        0;1 POINTER TO WARD LOCATION FILE (#42) (Multiply asked)
+
+                      INPUT TRANSFORM:S:$D(X) DINUM=X
+                      LAST EDITED:  FEB 13, 1990 
+                      HELP-PROMPT:  Enter the ward which uses this item. 
+                      DESCRIPTION:  This contains the pointer to File 42 - Ward Location File.  Names of the ward or wards using this item will be entered.  This is the link between the AR/WS package and the Unit Dose package for determining ward stocked
+                                    items.  
+
+                      NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                      CROSS-REFERENCE:58.1^D^MUMPS 
+                                    1)= I $D(^PSI(58.1,DA(2),1,DA(1),0)),^(0) D INACT^PSGWUTL I $D(PSGWFLG) S ^PSI(58.1,"D",+^(0),DA,DA(2))="" K PSGWFLG
+                                    2)= I $D(^PSI(58.1,DA(2),1,DA(1),0)),^(0) K ^PSI(58.1,"D",+^(0),DA,DA(2))
+                                    This cross-reference is used by the UNIT DOSE package to identify items on the UD pick list that are Ward Stock items. It is also used by the option "Ward (For Item) Conversion".  
+
+
+
+
+
+58.11,10        LOCATION                 0;8 FREE TEXT
+
+                      INPUT TRANSFORM:K:$L(X)>12!($L(X)<1) X
+                      LAST EDITED:  JUN 19, 1984 
+                      HELP-PROMPT:  ANSWER MUST BE 1-12 CHARACTERS IN LENGTH 
+                      DESCRIPTION:  This is the location address of the item in the Area of Use.  It can consist of up to 3 levels, each separated by a comma.  For example, "MR,CA,S3" or "CUR,CB,D1".  This information is used to sort items on inventory
+                                    sheets and other printouts.  
+
+
+58.11,11        LEVEL CHG                0;5 FREE TEXT
+
+                      INPUT TRANSFORM:K:$L(X)>10!($L(X)<1) X
+                      LAST EDITED:  DEC 18, 1984 
+                      HELP-PROMPT:  Answer must be 1-10 characters in length 
+                      DESCRIPTION:
+                                    This contains the change in stock level for the item.  
+
+                      NOTES:        TRIGGERED by the STOCK LEVEL field of the ITEM sub-field of the PHARMACY AOU STOCK File 
+
+
+58.11,12        NON-STANDARD ITEM        0;6 SET
+
+                                    '1' FOR YES; 
+                                    '0' FOR NO; 
+                      LAST EDITED:  FEB 08, 1985 
+                      DESCRIPTION:  This identifies if an item is a standard stocked item in the Area of Use or not.  Enter 1 if the item is not a standard stocked item, but is being added as an on-demand request.  Enter 0 if the item is a standard
+                                    stocked item in the AOU.  
+
+
+58.11,13        REORDER LEVEL            0;11 NUMBER
+
+                      INPUT TRANSFORM:K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                      LAST EDITED:  NOV 01, 1988 
+                      HELP-PROMPT:  Type a Number between 0 and 9999, 0 Decimal Digits 
+                      DESCRIPTION:
+                                    This field contains the on-hand level that must be reached before an item will have replacements dispensed.  
+
+
+58.11,14        MINIMUM QUANTITY TO DISPENSE 0;12 NUMBER
+
+                      INPUT TRANSFORM:K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:  JAN 17, 1991 
+                      HELP-PROMPT:  Type a Number between 1 and 9999, 0 Decimal Digits. 
+                      DESCRIPTION:
+                                    This field contains the minimum quantity that will be dispensed of an item.  
+
+
+58.11,15        RETURNS                  3;0 DATE Multiple #58.15
+
+
+58.15,.01         DATE OF RETURN           0;1 DATE (Multiply asked)
+
+                        INPUT TRANSFORM:S %DT="EX" D ^%DT S X=Y K:Y<1 X S:$D(X) DINUM=X
+                        LAST EDITED:  FEB 13, 1990 
+                        DESCRIPTION:
+                                      This contains the date the item was returned from the Area of Use.  
+
+                        NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+58.15,1           RETURN QUANTITY          0;2 NUMBER
+
+                        INPUT TRANSFORM:K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X D:$D(X) OND^PSGWUTL
+                        LAST EDITED:  FEB 28, 1991 
+                        HELP-PROMPT:  Type a Number between 0 and 9999, 0 Decimal Digits. 
+                        DESCRIPTION:
+                                      This contains the quantity returned from the Area of Use for the item.  
+
+                        NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                        CROSS-REFERENCE:58.15^AMIS^MUMPS 
+                                      1)= Q:$D(PSGWV)  D RET^PSGWUTL
+                                      2)= Q:$D(PSGWV)  D KRET^PSGWUTL
+                                      This cross-reference is set everytime a quantity greater than zero is returned for a stock item. The nightly job "Update AMIS Stats File" will process this cross-reference and store the data in the AR/WS Stats File
+                                      (#58.5). After the cross-reference is processed, it is deleted.  
+
+
+                        CROSS-REFERENCE:58.15^AMISERR^MUMPS 
+                                      1)= Q:$D(PSGWV)  D RETERR^PSGWUTL
+                                      2)= Q:$D(PSGWV)  D KRETERR^PSGWUTL
+                                      This cross-reference is set by the nightly job "Update AMIS Stats File" if an AMIS transaction is found to have invalid or missing Inpatient Site data. Existence of this cross-reference will cause a MailMan message 
+                                      to be sent to holders of the PSGWMGR security key informing them of the invalid or missing data.  
+
+
+
+58.15,2           RETURN REASON            1;0 SET Multiple #58.152
+
+
+
+
+58.15,3           COMPILED INTO AMIS?        0;4 SET
+
+                  COMPILED FLAG                                                                                                
+                                        '1' FOR YES; 
+                                        '0' FOR NO; 
+                          LAST EDITED:  JAN 26, 1988 
+                          DESCRIPTION:  A TaskMan background routine ^PSGWUAS (option PSGW UPDATE AMIS STATS) runs each night.  As the data for a return transaction is completed, this "COMPILED FLAG" will be set to "1".  This will enable the
+                                        cross-reference ^PSI(58.5,"AMIS") to be recompiled via the option PSGW RE-INDEX AMIS or via VA FileMan should the need arise.  
+
+
+
+
+58.11,16        ON-DEMAND REQUEST DATE/TIME  5;0 DATE Multiple #58.28 (Add New Entry without Asking)
+
+
+58.28,.01         ON-DEMAND REQUEST DATE/TIME  0;1 DATE
+
+                            INPUT TRANSFORM:S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                            LAST EDITED:  JUL 03, 1990 
+                            HELP-PROMPT:  Enter the Date/Time for the On-Demand Request 
+                            DESCRIPTION:
+                                          This contains the DATE/TIME of the request for an item which is not currently a standard stocked item in the Area of Use.  
+
+                            CROSS-REFERENCE:58.1^OND 
+                                          1)= S ^PSI(58.1,"OND",$E(X,1,30),DA(2),DA(1),DA)=""
+                                          2)= K ^PSI(58.1,"OND",$E(X,1,30),DA(2),DA(1),DA)
+
+
+58.28,1           ON-DEMAND QUANTITY DISPENSED 0;2 NUMBER
+
+                  ON-DEMAND QUANTITY                                                                                           
+                            INPUT TRANSFORM:K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X D:$D(X) OND^PSGWUTL
+                            LAST EDITED:  FEB 28, 1991 
+                            HELP-PROMPT:  Type a Number between 0 and 9999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                          This contains the quantity dispensed for the on-demand request.  
+
+                            NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                            CROSS-REFERENCE:58.28^AMIS^MUMPS 
+                                          1)= Q:$D(PSGWV)  D OD^PSGWUTL
+                                          2)= Q:$D(PSGWV)  D KOD^PSGWUTL
+                                          This cross-reference is set everytime a quantity greater than zero is dispensed for an On-Demand Request for a stock item. The nightly job "Update AMIS Stats File" will process this cross-reference and store the
+                                          data in the AR/WS Stats File (58.5). After the cross-reference is processed, it is deleted.  
+
+
+                            CROSS-REFERENCE:58.28^AMISERR^MUMPS 
+                                          1)= Q:$D(PSGWV)  D ODERR^PSGWUTL
+                                          2)= Q:$D(PSGWV)  D KODERR^PSGWUTL
+                                          This cross-reference is set by the nightly job "Update AMIS Stats File" if an AMIS transaction is found to have invalid or missing Inpatient Site data. Existence of this cross-reference will cause a MailMan
+                                          message to be sent to holders of the PSGWMGR security key informing them of the invalid or missing data.  
+
+
+
+58.28,2           ON-DEMAND REQUEST ENTERED BY 0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                  REQUEST ENTERED BY:                                                                                          
+                            LAST EDITED:  JUL 12, 1990 
+                            HELP-PROMPT:  Enter the name of the original user for this request. 
+                            DESCRIPTION:
+                                          This points to File 200 - the New Person File.  It contains the pointer number of the person who has entered the on-demand request.  
+
+
+58.28,3           COMPILED INTO AMIS?          0;4 SET
+
+                  COMPILED FLAG                                                                                                
+                                          '1' FOR YES; 
+                                          '0' FOR NO; 
+                            LAST EDITED:  JAN 26, 1988 
+                            DESCRIPTION:  A TaskMan background routine ^PSGWUAS (option PSGW UPDATE AMIS STATS) runs each night.  As the data for an on-demand transaction is completed, this "COMPILED FLAG" will be set to "1".  This will enable the
+                                          cross-reference ^PSI(58.5,"AMIS") to be recompiled via the option PSGW RE-INDEX AMIS or via VA FileMan should the need arise.  
+
+
+58.28,4           ON-DEMAND REQUEST EDITED BY  0;5 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED BY:                                                                                              
+                            LAST EDITED:  JUL 12, 1990 
+                            HELP-PROMPT:  Enter the name of the person who last edited this request. 
+                            DESCRIPTION:
+                                          This points to file #200 (New Person file).  It contains the pointer number to the user who LAST EDITED this request.  
+
+
+58.28,5           DATE/TIME LAST EDITED        0;6 DATE
+
+                            INPUT TRANSFORM:S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                            LAST EDITED:  OCT 27, 1988 
+                            DESCRIPTION:
+                                          This field contains the date/time this on-demand request was last edited.  
+
+
+
+
+58.11,30        INACTIVATION DATE              0;3 DATE
+
+                            INPUT TRANSFORM:S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                            LAST EDITED:  MAY 19, 1993 
+                            HELP-PROMPT:  Enter date when this item is no longer considered a ward stock item. 
+                            DESCRIPTION:
+                                          This contains the date on which the drug/item in the Area of Use was inactivated, and thus is no longer considered part of the standard stock for that Area of Use.  
+
+                            CROSS-REFERENCE:58.11^AC^MUMPS 
+                                          1)= S ^PSI(58.1,DA(1),1,DA,"I",X)=""
+                                          2)= K ^PSI(58.1,DA(1),1,DA,"I",X)
+                                          This cross-reference sets or deletes the "I" node for a stock item.  
+
+
+                            CROSS-REFERENCE:^^TRIGGER^58.11^34 
+                                          1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^PSI(58.1,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,10),X=X S DIU=X K Y S X=DIV S X="Y" X ^DD(58.11,30,1,2,1.4)
+                                1.4)= S DIH=$S($D(^PSI(58.1,DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,9,99))  S DIH=DIH_U" S %=$P(DIH,U,11,999),DIU=$P(DIH,U,10),^(0)=$P(DIH,U,1,9)_U_DIV_$S(%]"":U_%,1:""),DIH=58.11,DIG=34 D ^DICR:$N(^D
+                                D(DIH,DIG,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^PSI(58.1,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,10),X=X S DIU=X K Y S X=DIV S X="N" X ^DD(58.11,30,1,2,2.4)
+
+                                2.4)= S DIH=$S($D(^PSI(58.1,DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,9,99))  S DIH=DIH_U" S %=$P(DIH,U,11,999),DIU=$P(DIH,U,10),^(0)=$P(DIH,U,1,9)_U_DIV_$S(%]"":U_%,1:""),DIH=58.11,DIG=34 D ^DICR:$N(^D
+                                D(DIH,DIG,1,0))>0
+
+                                CREATE VALUE)= "Y"
+                                DELETE VALUE)= "N"
+                                FIELD)= INACTIVE DATE FLAG
+                                This cross-reference sets the field INACTIVE DATE FLAG (58.11,34) to "YES" or "NO".  
+
+
+                            CROSS-REFERENCE:58.1^AD^MUMPS 
+                                1)= I $D(^PSI(58.1,DA(1),1,DA,0)),^(0) S PSGWDRG=+^(0) F W=0:0 S W=$O(^PSI(58.1,DA(1),1,DA,4,W)) Q:'W  K:$P(^PSI(58.1,DA(1),1,DA,0),"^",3)=DT!($P(^(0),"^",3)<DT) ^PSI(58.1,"D",PSGWDRG,W,DA(1))
+                                2)= I $D(^PSI(58.1,DA(1),1,DA,0)),^(0) S PSGWDRG=+^(0) F W=0:0 S W=$O(^PSI(58.1,DA(1),1,DA,4,W)) Q:'W  S ^PSI(58.1,"D",PSGWDRG,W,DA(1))=""
+                                This cross-reference will delete the "D" cross reference on the field WARD (FOR ITEM) for a stock item that has been inactivated. If the INACTIVATION DATE is deleted, the "D" cross-reference is reset.  
+
+
+                            CROSS-REFERENCE:^^TRIGGER^58.11^31 
+                                1)= Q
+                                2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^PSI(58.1,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(58.11,30,1,4,2.4)
+                                2.4)= S DIH=$S($D(^PSI(58.1,DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,3,99))  S DIH=DIH_U" S %=$P(DIH,U,5,999),DIU=$P(DIH,U,4),^(0)=$P(DIH,U,1,3)_U_DIV_$S(%]"":U_%,1:""),DIH=58.11,DIG=31 D ^DICR:$N(^DD(
+                                DIH,DIG,1,0))>0
+
+                                CREATE VALUE)= NO EFFECT
+                                DELETE VALUE)= @
+                                FIELD)= INACTIVATION REASON
+                                This cross-reference will delete the field INACTIVATION REASON (58.11,31) if the INACTIVATION DATE is deleted.  
+
+
+                            CROSS-REFERENCE:^^TRIGGER^58.11^33 
+                                1)= Q
+                                2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^PSI(58.1,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X="" X ^DD(58.11,30,1,5,2.4)
+                                2.4)= S DIH=$S($D(^PSI(58.1,DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,8,99))  S DIH=DIH_U" S %=$P(DIH,U,10,999),DIU=$P(DIH,U,9),^(0)=$P(DIH,U,1,8)_U_DIV_$S(%]"":U_%,1:""),DIH=58.11,DIG=33 D ^DICR:$N(^DD
+                                (DIH,DIG,1,0))>0
+
+                                CREATE VALUE)= NO EFFECT
+                                DELETE VALUE)= @
+                                FIELD)= INACTIVATION REASON (OTHER)
+                                This cross-reference will delete the field INACTIVATION REASON (OTHER) (58.11,33) if the INACTIVATION DATE is deleted.  
+
+
+
+58.11,31        INACTIVATION REASON  0;4 SET
+
+                                'N' FOR NOT USED; 
+                                'O' FOR OTHER; 
+                                'DF' FOR DELETED FROM FORMULARY; 
+                            LAST EDITED: APR 15, 1991 
+                            DESCRIPTION:
+                                This contains the reason that the item has been inactivated from the list of items normally stocked in this Area of Use.  
+
+                            NOTES:TRIGGERED by the INACTIVATION DATE field of the ITEM sub-field of the PHARMACY AOU STOCK File 
+
+
+58.11,33        INACTIVATION REASON (OTHER) 0;9 FREE TEXT
+
+                            INPUT TRANSFORM:K:$L(X)>40!($L(X)<3) X
+                            LAST EDITED: JUN 14, 1984 
+                            HELP-PROMPT:Answer must be 3-40 characters in length 
+                            DESCRIPTION:
+                                This contains the custom reason for inactivating the item from the AOU stock list. An inactivation reason of 'other' should have been entered if a custom reason is to be listed.  
+
+                            NOTES:TRIGGERED by the INACTIVATION DATE field of the ITEM sub-field of the PHARMACY AOU STOCK File 
+
+
+58.11,34        INACTIVE DATE FLAG   0;10 FREE TEXT
+
+                            INPUT TRANSFORM:K:$L(X)>3!($L(X)<1) X
+                            LAST EDITED: DEC 19, 1984 
+                            HELP-PROMPT:Answer must be 1-3 characters in length 
+                            DESCRIPTION:
+                                This flag will be set to "YES" if there is an inactivation date for the item in the AOU.  If there is no inactivation date for the item, then the flag will be set to "NO".  
+
+                            WRITE AUTHORITY:^
+                            NOTES:TRIGGERED by the INACTIVATION DATE field of the ITEM sub-field of the PHARMACY AOU STOCK File 
+
+
+58.11,35        EXPIRATION DATE      EXP;1 DATE
+
+                    EXPIRATION DATE                                                                                            
+                            INPUT TRANSFORM:S %DT="E" D ^%DT S X=Y K:Y<1 X
+                            LAST EDITED: JUN 27, 1990 
+                            HELP-PROMPT:Enter the Expiration Date for this Item. 
+                            DESCRIPTION:
+                                This field contains the expiration date for this item.  
+
+                            CROSS-REFERENCE:58.1^AEXP^MUMPS 
+                                1)= S PSGWDRUG=+^PSI(58.1,DA(1),1,DA,0),^PSI(58.1,"AEXP",$E(X,1,30),PSGWDRUG,DA(1))="" K PSGWDRUG
+                                2)= S PSGWDRUG=+^PSI(58.1,DA(1),1,DA,0) K ^PSI(58.1,"AEXP",$E(X,1,30),PSGWDRUG,DA(1)),PSGWDRUG
+                                This cross-reference is used to sort the expiration dates for stock items for the option "Expiration Date Report".  
+
+
+
+
+
+58.1,2        WARD/LOCATION (FOR PERCENTAGE) 2;0 POINTER Multiple #58.14
+
+
+58.14,.01       WARD/LOCATION (FOR PERCENTAGE) 0;1 POINTER TO HOSPITAL LOCATION FILE (#44) (Required) (Multiply asked)
+
+                LAST EDITED:      OCT 03, 1989 
+                DESCRIPTION:      This points to File 44 - the Hospital Location File.  It contains the name of the ward(s) or location(s) that are served partially or totally by this Area of Use.  If the Area of Use is NOT composed of any wards or
+                                  locations, enter "^"<RETURN> at the WARD/LOCATION (FOR PERCENTAGE) prompt.  
+
+
+58.14,1         WARD/LOCATION % OF USE 0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      SEP 15, 1984 
+                HELP-PROMPT:      Type a whole number between 1 and 100 
+                DESCRIPTION:
+                                  This ward/location uses a percentage of the items in this AOU.  Enter that percentage here.  This is primarily used for report purposes.  
+
+
+58.14,2         SERVICE                1;0 POINTER Multiple #58.27
+
+
+58.27,.01         SERVICE                0;1 POINTER TO SPECIALTY FILE (#42.4) (Multiply asked)
+
+                  LAST EDITED:      AUG 12, 1985 
+                  HELP-PROMPT:      Enter the name of the service that makes up this ward/location. 
+                  DESCRIPTION:
+                                    This points to File 42.4 - the Specialty file.  It contains the service (or services) served partially or totally by this ward/location.  
+
+
+58.27,1           SERVICE % OF USE       0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      AUG 12, 1985 
+                  HELP-PROMPT:      Type a whole number between 1 and 100 
+                  DESCRIPTION:
+                                    This contains the percentage of use for this service. For example 40 beds out of 100 on the ward would be 40%.  
+
+
+
+
+
+
+58.1,3        INACTIVE DATE          I;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 06, 1989 
+              HELP-PROMPT:      Enter date when this AOU is no longer active. 
+              DESCRIPTION:
+                                This contains the date on which the AOU was inactivated.  
+
+
+58.1,4        INPATIENT SITE         SITE;1 POINTER TO INPATIENT SITE FILE (#59.4) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),""^"",26)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUN 27, 1989 
+              HELP-PROMPT:      Enter the INPATIENT SITE that will receive credit for the AMIS statistics for this AOU. Enter "^" to Exit option. 
+              DESCRIPTION:
+                                This field will point to the AR/WS INPATIENT SITE that will receive the credit for the AMIS statistics for this AOU.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),""^"",26)"
+              EXPLANATION:      Select only sites that are 'Selectable for AR/WS' in file #59.4.
+              CROSS-REFERENCE:  58.1^ASITE 
+                                1)= S ^PSI(58.1,"ASITE",$E(X,1,30),DA)=""
+                                2)= K ^PSI(58.1,"ASITE",$E(X,1,30),DA)
+
+
+58.1,5        ASK EXPIRATION DATE?   0;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 05, 1990 
+              HELP-PROMPT:      Enter '1' or 'Y' if you wish to be prompted for Expiration Dates for items in this Area of Use when entering on-demands or quantities dispensed. 
+              DESCRIPTION:      If this field is set to '1' or 'Yes' for the Area of Use, the user will be prompted for Expiration Dates when on-demands or quantities dispensed (for inventories) are entered.  If this field is set to '0' or 'No', 
+                                Expiration Dates can only be entered through the supervisor option 'Expiration Date Enter/Edit'.  
+
+
+58.1,6        CRASH CART FLAG        0;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 03, 1991 
+              HELP-PROMPT:      Enter '1' or 'Y' if this Area of Use is a Crash Cart. 
+              DESCRIPTION:
+                                This field will be set to '1' (for 'yes') if this area of use is a crash cart.  This flag will be used as a screen to list only crash carts for the option 'Update Crash Cart Locations'.  
+
+              GROUP:            PSGW
+              CROSS-REFERENCE:  ^^TRIGGER^58.1^7 
+                                1)= Q
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PSI(58.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X="" S DIH=$S($D(^PSI(58.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,6)=DIV,DIH=58.1,DIG=7 D ^DICR:$N(^DD(DIH,DIG,
+                                1,0))>0
+
+                                CREATE VALUE)= NO EFFECT
+                                DELETE VALUE)= @
+                                FIELD)= CRASH CART LOCATION
+                                This cross-reference deletes any data in the CRASH CART LOCATION field (58.1,7) if the CRASH CART FLAG is set to "NO".  
+
+
+
+58.1,7        CRASH CART LOCATION    0;6 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      MAY 03, 1991 
+              HELP-PROMPT:      Enter the Location of this AOU.  This field should only be used to enter locations for CRASH CARTS. 
+              DESCRIPTION:      This field is meant to be used to record the location of an area of use that is a crash cart.  This field will be printed on the Expiration Date report and will be updated in the option 'Update Crash Cart Locations'. Only
+                                areas of use that have the field CRASH CART FLAG set to '1' (for 'yes') will be selectable in the update option.  
+
+              NOTES:            TRIGGERED by the CRASH CART FLAG field of the PHARMACY AOU STOCK File 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+AOU INVENTORY TYPE (#58.16)       TYPE OF INVENTORY:TYPE (#.01)
+
+DRUG (#50)                        ITEM:ITEM (#.01)
+
+HOSPITAL LOCATION (#44)           CRASH CART LOCATION (#7)
+                                  WARD/LOCATION (FOR PERCENTAGE):WARD/LOCATION (FOR PERCENTAGE) (#.01)
+
+INPATIENT SITE (#59.4)            INPATIENT SITE (#4)
+
+NEW PERSON (#200)                 ON-DEMAND REQUEST DATE/TIME:ON-DEMAND REQUEST ENTERED BY (#2)
+                                  ON-DEMAND REQUEST EDITED BY (#4)
+
+PHARMACY AOU INVENTORY (#58.19)   INVENTORY:DATE/TIME FOR INVENTORY (#.01)
+
+SPECIALTY (#42.4)                 SERVICE:SERVICE (#.01)
+
+WARD LOCATION (#42)               WARD (FOR ITEM):WARD (FOR ITEM) (#.01)
+
+
+
+INPUT TEMPLATE(S):
+PSGW AREA OF USE EDIT         MAY 27, 1993@10:56  USER #0    
+PSGW INACTIVATE ITEM          MAR 30, 1989        USER #0    
+
+PRINT TEMPLATE(S):
+PSGW PERCENTAGE               FEB 11, 1988        USER #0                                                                                                                                                                          PERCENTAGE OF STOCK ON HAND
+PSGW SHOW AREA OF USE         JUN 27, 1989@14:47  USER #0                                                                                                                                                                     AREA OF USE / WARDS AND SERVICES
+
+SORT TEMPLATE(S):
+PSGW PERCENTAGE               FEB 12, 1988        USER #0    
+SORT BY: @ITEM//
+ITEM SUB-FIELD: INVENTORY//
+INVENTORY SUB-FIELD: PERCENTAGE OF STOCK ON HAND//    (User is asked range)
+  WITHIN PERCENTAGE OF STOCK ON HAND, SORT BY: @ITEM//
+  ITEM SUB-FIELD: ITEM//
+    WITHIN ITEM, SORT BY: @ITEM//
+    ITEM SUB-FIELD: INVENTORY//
+    INVENTORY SUB-FIELD: DATE(DATE/TIME FOR INVENTORY)//    (User is asked range)
+
+PSGW SHOW AREA OF USE         JUN 27, 1989@14:55  USER #0    
+SORT BY: #INPATIENT SITE//
+  WITHIN INPATIENT SITE, SORT BY: AREA OF USE (AOU)//
+
+
+FORM(S)/BLOCK(S):

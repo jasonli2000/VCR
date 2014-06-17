@@ -1,0 +1,268 @@
+STANDARD DATA DICTIONARY #113 -- INGREDIENT FILE                                                                                                                                                                                  MAY 20,2014@15:32:08  PAGE 1
+STORED IN ^FHING(  (1012 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                            (VERSION 5.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is the master list of ingredients used in preparing recipes. It contains purchasing information, such as stock number and vendor, issuance data such as the issuing unit, and various conversion factors. Nutritive data such as food group,
+poundage factors, and a pointer to the analogous food nutrient item in File 112 are also included.  
+
+
+FILE SCREEN (SCR-node) : I '$D(^FH(113,+Y,"I"))!$D(^XUSEC("FHMGR",DUZ))!(DUZ(0)["@")
+              DD ACCESS: #
+              RD ACCESS: #F
+              WR ACCESS: #f
+             DEL ACCESS: #f
+           LAYGO ACCESS: #f
+IDENTIFIED BY: 
+      "WRITE": I $D(^("I")) D EN^DDIOL("(** Inactive **)","","?3")
+
+POINTED TO BY: INGREDIENT field (#.01) of the INGREDIENT sub-field (#114.01) of the RECIPE File (#114) 
+               
+
+CROSS
+REFERENCED BY: INACTIVE?(AC), NAME(B), STOCK NUMBER(C)
+
+113,.01       NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3)!'(X'?1P.E) X
+              HELP-PROMPT:      ANSWER MUST BE 3-50 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the name of the ingredient which is an ordered item generally and which is used in the preparation of recipes.  
+
+              DELETE TEST:      1,0)= I 1 D EN^DDIOL("Cannot delete. Inactivate instead.","","?3")
+
+              CROSS-REFERENCE:  113^B 
+                                1)= S ^FHING("B",$E(X,1,30),DA)=""
+                                2)= K ^FHING("B",$E(X,1,30),DA)
+                                This is the normal B cross-reference of the NAME field.  
+
+
+
+113,1         SUPPLY DESCRIPTION     0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>21!($L(X)<3) X
+              LAST EDITED:      FEB 27, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 3-21 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is a short description which will be used on purchase orders.  
+
+
+113,2         STOCK NUMBER           0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>16!($L(X)<1) X
+              LAST EDITED:      FEB 27, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 1-16 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the Federal Stock Number (with hyphens) for items obtained from VA Depots or DLA. It may be the local vendor's number for other items.  
+
+              CROSS-REFERENCE:  113^C^MUMPS 
+                                1)= S ^FHING("C",$E(X,$L(X)-3,$L(X)),DA)=""
+                                2)= K ^FHING("C",$E(X,$L(X)-3,$L(X)),DA)
+                                This cross-reference consists of the last 4 characters of the Stock Number which has been entered.  
+
+
+
+113,3         VENDOR                 0;4 POINTER TO FH VENDOR FILE (#113.2)
+
+              LAST EDITED:      OCT 23, 1986 
+              DESCRIPTION:
+                                This field indicates the current vendor from whom the item is procured.  
+
+
+113,4         UNIT OF PURCHASE (U/P) 0;5 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2) X
+              LAST EDITED:      FEB 08, 1989 
+              HELP-PROMPT:      ANSWER MUST BE 2 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is a two-character abbreviation indicating the unit of purchase and is such things as CN for can, PK for package, CS for case, etc.  
+
+
+113,5         DIETETIC UNIT OF ISSUE 0;6 POINTER TO UNITS FILE (#119.1) (Required)
+
+              INPUT TRANSFORM:  I $D(X) S X=$P(^FH(119.1,+X,0),"^",1)
+              DESCRIPTION:
+                                This is the unit of issue that dietetic personnel or supply personnel use for dispensing the item to ingredient control.  It is generally a #10-can or similar description.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+113,6         ORDERING MULTIPLE (OF U/P) 0;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 27, 1988 
+              HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                If the vendor requires that the unit of purchase be bought in some multiple, like 6 or 12 or 24, then that multiple is indicated here. VA Depot is the most common vendor requiring such multiples.  
+
+
+113,7         NO. OF ISSUE UNITS IN A U/P 0;8 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<.0001)!(X?.E1"."5N.N) X
+              HELP-PROMPT:      TYPE A NUMBER BETWEEN .0001 AND 9999 
+              DESCRIPTION:
+                                This is the number of Dietetic issue units in a unit of purchase. If the U/P (unit of Purchase) is a CS that contains 6 #10-cans and the Dietetic Issue unit is a #10-can then the value is 6.  
+
+
+113,8         PRICE/UNIT OF PURCHASE 0;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."4N.N) X
+              LAST EDITED:      JUL 17, 1992 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 3 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the most recent price of the unit of purchase from the vendor.  
+
+
+113,9         REORDER LEVEL (IN U/P) 0;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 13, 1993 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 99999 
+              DESCRIPTION:
+                                This field indicates that when the on-hand quantity drops below this value (the re-order level), then additional quantities should be ordered.  
+
+
+113,10        ON HAND (IN U/P)       0;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."3N.N) X
+              LAST EDITED:      APR 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 99999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of issue units that are on hand.  
+
+
+113,11        STORAGE LOCATION       0;12 POINTER TO STORAGE LOCATION FILE (#113.1)
+
+              DESCRIPTION:
+                                This field indicates the storage location (File 113.1) where dietetics normally stores the item and where the stockroom requisition clerk will normally obtain it.  
+
+
+113,20        FOOD GROUP             0;13 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>6)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 12, 1989 
+              HELP-PROMPT:      Type a Number between 1 and 6, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the food group designated by the VA for this ingredient item.  
+
+
+113,23        RECIPE UNIT            0;16 SET (Required)
+
+                                'LB' FOR LB; 
+                                'GAL' FOR GAL; 
+                                'EACH' FOR EACH; 
+              INPUT TRANSFORM:  W *7,*7,!!,"BEWARE! a change in the RECIPE UNIT has considerable impact on the RECIPE data!" Q
+              LAST EDITED:      NOV 15, 1987 
+              DESCRIPTION:      This field contains LB, GAL, or EACH and is used to indicate whether weight (LB), volumetric (GAL) or each (EACH) units are to be used in recipes to indicate the quantity required of this item. Amounts are stored in that
+                                file in these units.  
+                                 
+                                It is extremely important that this field NOT be changed unless it is certain that no recipes use this ingredient. Changing the field will invalidate the quantities shown in any recipe using the item.  
+
+              SCREEN:           S DIC("S")="I Y<7"
+              EXPLANATION:      Only Units valid as Recipe Units may be chosen
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+113,24        # OF REC UNITS/ISSUE UNIT 0;17 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<.0001)!(X?.E1"."5N.N) X
+              HELP-PROMPT:      TYPE A NUMBER BETWEEN .0001 AND 9999 
+              DESCRIPTION:
+                                This field indicates the number of recipe units contained in a Dietetic Issue unit.  
+
+
+113,25        INVENTORY?             0;19 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 18, 1987 
+              DESCRIPTION:
+                                This field, when answered YES, will indicate that inventorying of this item is desired. It is often NO for such items as condiment packs in cases of 2000 which are replenished as needed.  
+
+
+113,26        THAW DAYS              0;20 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>3)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 18, 1987 
+              HELP-PROMPT:      Type a Number between 0 and 3, 0 Decimal Digits 
+              DESCRIPTION:
+                                If this is a frozen item requiring thawing before use, then the number of thaw days should be indicated.  
+
+
+113,27        NUTRIENT DATA REFERENCE 0;21 POINTER TO FOOD NUTRIENTS FILE (#112)
+
+              LAST EDITED:      MAR 31, 1993 
+              DESCRIPTION:
+                                This is a pointer to the nutrient in File 112 which most closely approximates the cooked ingredient. It will be used as a default nutrient when performing a nutrient analysis of a recipe containing this ingredient.  
+
+
+113,28        WEIGHT OF RECIPE UNIT IN LBS. 0;22 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."4N.N) X
+              LAST EDITED:      AUG 21, 1991 
+              HELP-PROMPT:      Type a Number between 0 and 999, 3 Decimal Digits 
+              DESCRIPTION:
+                                This value represents the weight of the recipe unit in pounds and is required in performing nutrient analyses of recipes containing this ingredient.  
+
+
+113,29        DATE COST LAST UPDATED 0;23 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 13, 1992 
+              DESCRIPTION:
+                                This field contains the date the cost was last updated.  
+
+
+113,30        DATE QOH LAST UPDATED  0;24 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 13, 1992 
+              DESCRIPTION:
+                                This field contains the date the quantity on hand was last updated.  
+
+
+113,31        MASTER ITEM #          0;25 POINTER TO ITEM MASTER FILE (#441)
+
+              LAST EDITED:      FEB 11, 1993 
+              DESCRIPTION:
+                                This field contains the Master Item number for the ingredient.  
+
+
+113,99        INACTIVE?              I;1 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      SEP 26, 2001 
+              DESCRIPTION:
+                                This field, if answered YES, will prohibit further selection of this entry.  
+
+              CROSS-REFERENCE:  113^AC^MUMPS 
+                                1)= K:X'="Y" ^FHING(DA,"I")
+                                2)= K ^FHING(DA,"I")
+                                This cross-reference is used to create an 'I' node for inactive entries.  
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FH VENDOR (#113.2)                VENDOR (#3)
+
+FOOD NUTRIENTS (#112)             NUTRIENT DATA REFERENCE (#27)
+
+ITEM MASTER (#441)                MASTER ITEM # (#31)
+
+STORAGE LOCATION (#113.1)         STORAGE LOCATION (#11)
+
+UNITS (#119.1)                    DIETETIC UNIT OF ISSUE (#5)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

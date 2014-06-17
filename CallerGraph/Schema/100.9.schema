@@ -1,0 +1,195 @@
+STANDARD DATA DICTIONARY #100.9 -- OE/RR NOTIFICATIONS FILE                                                                                                                                                                       MAY 20,2014@15:39:04  PAGE 1
+STORED IN ^ORD(100.9,  (55 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                          (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains data used to generate notifications.  Packages determine if a notification should be sent then send the patient ID and notification ID (IEN in this file) to order entry routines.  Based on the notification IEN, data from this file is
+used to generate the notification and help determine its recipients.  
+
+
+
+POINTED TO BY: *NOTIFICATION SELECTION field (#.01) of the *NOTIFICATION SELECTION sub-field (#100.21019) of the MEMBER sub-field (#100.2101) of the OE/RR LIST File (#100.21) 
+               NOTIFICATION field (#3) of the RELATION ACTIONS sub-field (#860.22) of the ORDER CHECK RULE File (#860.2) 
+               
+
+CROSS
+REFERENCED BY: NAME(B), PACKAGE ID(C), MESSAGE TEXT(D)
+
+100.9,.001    NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 20, 1991 
+              HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the internal entry number assigned to a notification.  Entries 1 through 999 are reserved for the releasing package, OE/RR Notifications.  
+
+              TECHNICAL DESCR:
+                                This field is used by DHCP packages triggering notifications (Lab, MAS, etc) to send the correct message and parameters to OE/RR.  These numbers must not be altered in any fashion.  
+
+
+100.9,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      MAY 05, 1992 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. Enter the name of the notification.  The name should match the entry in the MESSAGE TEXT field as closely as possible. 
+              DESCRIPTION:      This is the name of the notification.  It should match the text in the MESSAGE TEXT field as closely as possible (it may be an abbreviated version of the entry in MESSAGE TEXT.)  This field is displayed to users when 
+                                selecting or reviewing entries in this file (100.9).  
+
+              CROSS-REFERENCE:  100.9^B 
+                                1)= S ^ORD(100.9,"B",$E(X,1,30),DA)=""
+                                2)= K ^ORD(100.9,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^100.9^.02 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ORD(100.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X="OR" X ^DD(100.9,.01,1,2,1.4)
+                                1.4)= S DIH=$S($D(^ORD(100.9,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=100.9,DIG=.02 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ORD(100.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=X X ^DD(100.9,.01,1,2,2.4)
+                                2.4)= S DIH=$S($D(^ORD(100.9,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=100.9,DIG=.02 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= "OR"
+                                DELETE VALUE)= OLD NAME
+                                FIELD)= PACKAGE ID
+                                Automatically trigger the setting of the PACKAGE ID field with "OR" to indicate ORder entry when a notification is created.  
+
+
+
+100.9,.02     PACKAGE ID             0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  S X="OR" ;K:X[""""!($A(X)=^ X I $D(X) K:$L(X)>20!($L(X)<2) X
+              LAST EDITED:      OCT 08, 1991 
+              HELP-PROMPT:      Always enter "OR" in this field.  This field is used to create the XQAID field passed to the XQALERT entry points.  It will typically be the Package ID.  
+              DESCRIPTION:      This entry should always be "OR" to indicate the alert (notification) is processed by OE/RR.  "OR" is stuffed via a trigger x-ref in field .01.  This Package ID will have ";DFN;NIEN" concatenated to the end of it, to make
+                                the XQAID variable which is used by the XQALERT routine to provide a unique cross-reference.  The order entry notification system will check the New person file to determine if this message is already pending for the user. 
+                                If it already exists, the user will not receive a second message.  
+                                 
+                                DFN is the Patient File internal entry number.  NIEN is the Notification File internal entry number.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the NAME field of the OE/RR NOTIFICATIONS File 
+
+              CROSS-REFERENCE:  100.9^C 
+                                1)= S ^ORD(100.9,"C",$E(X,1,30),DA)=""
+                                2)= K ^ORD(100.9,"C",$E(X,1,30),DA)
+                                This cross-reference provides a way to group notifications by package or other category.  
+
+
+
+100.9,.03     MESSAGE TEXT           0;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>51!($L(X)<3) X
+              LAST EDITED:      OCT 08, 1991 
+              HELP-PROMPT:      Answer must be 3-51 characters in length.  This entry is used as the actual text of the notification (MESSAGE TYPE = 'NOT') or the default text (MESSAGE TEXT = 'PKG'). 
+              DESCRIPTION:      This text will be appended to the Patient last name and last 4 characters of the social security number to create the order notification text.  (e.g., SMITH (4356): Unsigned orders. - Where "Unsigned orders." is the 
+                                content of MESSAGE TEXT.)  Text entered into this field is the default text for notifications where the text message usually comes from the package (MESSAGE TYPE = PKG).  
+
+              CROSS-REFERENCE:  100.9^D 
+                                1)= S ^ORD(100.9,"D",$E(X,1,30),DA)=""
+                                2)= K ^ORD(100.9,"D",$E(X,1,30),DA)
+                                This cross reference provides a look-up based on the Message Text.  
+
+
+
+100.9,.04     MESSAGE TYPE           0;4 SET (Required)
+
+                                'PKG' FOR PACKAGE PROVIDES A VARIABLE MESSAGE; 
+                                'NOT' FOR NOTIFICATION FILE PROVIDES MESSAGE; 
+              LAST EDITED:      JUN 27, 1991 
+              HELP-PROMPT:      Messages can be provided by the NOTIFICATION file where they are defined with the notification 'NOT' or they can be variable messages supplied by the package 'PKG' when the notification is triggered. 
+              DESCRIPTION:
+                                MESSAGE TYPE field is used as a flag to determine where the message text originates.  If from the NOTIFICATION file, MESSAGE TYPE is 'NOT.'  If the message comes from the package, MESSAGE TYPE is 'PKG.' 
+
+
+100.9,.05     ACTION FLAG            0;5 SET (Required)
+
+                                'I' FOR INFORMATION ONLY; 
+                                'R' FOR RUN ROUTINE; 
+              LAST EDITED:      JUN 27, 1991 
+              HELP-PROMPT:      Enter 'I' if the user is to take no follow-up action for this notification.  Enter 'R' if the user is to take a follow-up action after viewing this notification (e.g. Sign an unsigned order.) 
+              DESCRIPTION:      This a mandatory flag used to regulate processing in XQALERT processing.  The flag is set to I to indicate the notification is for INFORMATION ONLY - no follow-up action is to be taken.  'I' notifications are deleted as
+                                each user reviews them.  'R' notifications have a follow-up action associated with them.  The user will be taken to another routine or option when they select a notification with ACTION FLAG = R and a follow-up
+                                routine/option is defined.  
+
+
+100.9,.06     ENTRY POINT            0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      APR 29, 1991 
+              HELP-PROMPT:      Answer must be 1-8 characters in length.  This should be the tag to be concatenated with the ROUTINE NAME (.07) field.  It is the entry point for follow-up action in that routine. 
+              DESCRIPTION:
+                                This is an optional field used to create the XQAROU variable to be used by the XQALERT routine.  This field represents the TAG in tag^routine. 
+
+
+100.9,.07     ROUTINE NAME           0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<2) X
+              LAST EDITED:      APR 29, 1991 
+              HELP-PROMPT:      Answer must be 2-8 characters in length.  This is concatenated with the ENTRY POINT (.06) to create XQAROU.  It is the routine where the follow-up action (if any) for this notification is initiated. 
+              DESCRIPTION:
+                                This is an optional variable identifying a routine or tag(field .06)^routine used to create XQAROU for processing by XQALERT.  
+
+
+100.9,1       NON-MENU TYPE OPTION ACTION 1;1 POINTER TO OPTION FILE (#19)
+
+              LAST EDITED:      APR 29, 1991 
+              HELP-PROMPT:      This field is for future enhancements.  It is currently (5/92) unused. 
+              DESCRIPTION:      This is an optional field used to create the variable XQAOPT for use by XQALERT.  It should indicate a non-menu type option on the user's primary or secondary menu, not on the Common menu.  The phantom jump is used to
+                                navigate to the destination option and will check pathway restrictions in doing so.  
+
+
+100.9,1.5     RELATED PACKAGE        1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      JUN 27, 1991 
+              HELP-PROMPT:      Answer must be 2-30 characters in length.  Enter the appropriate name of the package where the notification originates (e.g., LAB, MAS, Pharmacy.) 
+              DESCRIPTION:
+                                This field contains the name of the package where the notification originates or is triggered (e.g., LAB, MAS, Pharmacy.) 
+
+
+100.9,4       DESCRIPTION            4;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>250!($L(X)<3) X
+              LAST EDITED:      APR 24, 1995 
+              HELP-PROMPT:      Answer must be 3-250 characters in length.  Enter a description of the notification with emphasis on what triggers the notification and what actions delete it. 
+              DESCRIPTION:
+                                This field contains free text describing the notification, how it is trig- gered and what action(s) delete it.  
+
+
+100.9,5       FOLLOW-UP TYPE         3;2 SET
+
+                                '0' FOR REPORT; 
+                                '1' FOR COSIGN_PN; 
+                                '2' FOR EXPIRING_ORDER; 
+                                '3' FOR FLAGGED_ORDER; 
+                                '4' FOR ORDER; 
+                                '5' FOR UNLINKED; 
+                                '6' FOR NEW_CONSULT; 
+                                '7' FOR NEW_ORDER; 
+                                '8' FOR COSIGN_ORDER; 
+                                '9' FOR ES_ORDER; 
+                                '10' FOR UNSIGN_PN; 
+                                '11' FOR UNVERIFIED_MED; 
+              LAST EDITED:      APR 12, 1999 
+              HELP-PROMPT:      Enter the follow-up code correspond to the notification's follow-up action.  If unsure, leave blank. 
+              DESCRIPTION:      This field contains the type of follow-up action to be taken.  It is used by the application managing the follow-up action  (e.g. GUI interface) to initiate the proper follow-up action separate from the underlying data 
+                                base and application layers.  Example follow-up types include: report, e/s, flag.  
+
+              TECHNICAL DESCR:  This field is basically a flag for the environment (e.g. GUI - Delphi) handling notification follow-up to initiate the appropriate action.  For example if the type was report, the data returned in the API call would be 
+                                stuffed into a generic text box for display; whereas if the type was flag, the follow-up action would be to find and display all flagged orders for the patient and allow unflagging.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+OPTION (#19)                      NON-MENU TYPE OPTION ACTION (#1)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+ORY313                        FEB 02, 2012@11:40  USER #0      NAME EQUALS (case-insensitive) "CONSULT/REQUEST UPDATED"   Or NAME EQUALS (case-insensitive) "CONSULT/REQUEST CANCEL/HOLD"
+
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,1786 @@
+STANDARD DATA DICTIONARY #459 -- PAID PAYRUN DATA FILE                                                                                                                                                                            MAY 20,2014@15:39:37  PAGE 1
+STORED IN ^PRST(459,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains PAID accounting data and some master record data for current employees by pay period.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: PAY PERIOD(AB), PAY DATE(AC), PAY PERIOD(B)
+
+459,.01       PAY PERIOD             0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<5) X
+              LAST EDITED:      FEB 06, 1998 
+              HELP-PROMPT:      Answer must be 5 characters in length. 
+              DESCRIPTION:
+                                This field contains the year-pay period in the form of YY-PP where YY represents the year and PP represents the pay period.  
+
+              CROSS-REFERENCE:  459^B 
+                                1)= S ^PRST(459,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRST(459,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  459^AB^MUMPS 
+                                1)= S ^PRST(459,"AB",$$IC^PRSAPPU($P(X,"-"),4,10,)_"-"_$P(X,"-",2),DA)=""
+                                2)= K ^PRST(459,"AB",$$IC^PRSAPPU($P(X,"-"),4,10,)_"-"_$P(X,"-",2),DA)
+                                  This cross reference contains the 4 digit year associated with the .01 field's 2 digit year & pay period #.  The cross reference allows chronological sorting accross centuries.  This is in contrast to the "B" x-ref which
+                                contains a 2 digit year & does not sort chronologically accross new centuries. 
+                                 
+                                  The function call IC^PRSAPPU() infers a four digit year from the 2 digit year of the .01 field.  The inference is based upon the parameters passed to the function.  Namely, a future pivot year (parameter #3 - # of years
+                                from base date) is used to determine the end of the 100 year range that are valid for selection of the matching 4 digit year.  The number of years in parameter 4 are added to the base date (parameter 4 - default of today) 
+                                to determine the end of this range.  Parameter #2 is the format of the year returned (e.g. 4 returns a 4 digit year).  
+
+
+
+459,1         EMPLOYEE               P;0 POINTER Multiple #459.01
+
+              DESCRIPTION:
+                                This subfile contains all the accounting and some master record data on an employee for a particular pay period.  
+
+
+459.01,.01      NAME                   0;1 POINTER TO PAID EMPLOYEE FILE (#450) (Multiply asked)
+
+                INPUT TRANSFORM:  I $D(X) S DINUM=X
+                LAST EDITED:      DEC 27, 1991 
+                DESCRIPTION:
+                                  This field contains the PAID EMPLOYEE (#450) file internal entry number for this employee.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  459.01^B 
+                                  1)= S ^PRST(459,DA(1),"P","B",$E(X,1,30),DA)=""
+                                  2)= K ^PRST(459,DA(1),"P","B",$E(X,1,30),DA)
+
+
+459.01,1        SSN                    0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>9!($L(X)<9) X
+                OUTPUT TRANSFORM: S Y=$E(Y,1,3)_"-"_$E(Y,4,5)_"-"_$E(Y,6,9)
+                LAST EDITED:      MAR 16, 1993 
+                HELP-PROMPT:      Answer must be 9 characters in length. 
+                DESCRIPTION:
+                                  The number used for identifcation and control purposes to refer to an employee. If an employee does not have a valid SSN, a temporary number is assigned.  
+
+
+459.01,2        PAY PLAN               0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                OUTPUT TRANSFORM: S SUB454="PP" D:'$D(DIS(0)) OT^PRSDUTIL K SUB454
+                LAST EDITED:      SEP 30, 1993 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:
+                                  Code identifies the pay system under which the employee's compensation is determined.  
+
+
+459.01,3        GRADE                  0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>2!($L(X)<1) X
+                LAST EDITED:      SEP 16, 1991 
+                HELP-PROMPT:      Answer must be 1-2 characters in length. 
+                DESCRIPTION:
+                                  Code identifies a specific grade in a pay plan system. Ungraded positions are coded 00. An employee's base pay range is determined by this code.  
+
+
+459.01,4        STEP                   0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>2!($L(X)<1) X
+                LAST EDITED:      SEP 16, 1991 
+                HELP-PROMPT:      Answer must be 1-2 characters in length. 
+                DESCRIPTION:
+                                  Code identifies one of the incremental rates of basic pay authorized under a pay plan for a specific grade or level of an employee's position.  
+
+
+459.01,5        DUTY BASIS             0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                OUTPUT TRANSFORM: S SUB454="DB" D:'$D(DIS(0)) OT^PRSDUTIL K SUB454
+                LAST EDITED:      SEP 30, 1993 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:
+                                  Code identifies the time basis that an employee is scheduled to work.  An employee may have a full-time, part-time or intermittent basis work schedule.  
+
+
+459.01,6        8B NORMAL HOURS        0;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+                LAST EDITED:      SEP 24, 1991 
+                HELP-PROMPT:      Answer must be 1-3 characters in length. 
+                DESCRIPTION:
+                                  The number of hours an employee is hired to work each pay period. Hours are established or changed by an official personnel action.  
+
+
+459.01,7        COST CENTER            0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>4!($L(X)<4) X
+                LAST EDITED:      SEP 26, 1991 
+                HELP-PROMPT:      Answer must be 4 characters in length. 
+                DESCRIPTION:      Identifies the Cost Center for fund appropriation accounting.  
+                                   
+
+
+459.01,8        SUBACCT CODE           0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Answer must be 2 characters in length. 
+                DESCRIPTION:
+                                  Identifies a type of cost expenditure such as one of the personal service codes, one of the travel and transportation codes, etc., used for cost accounting purposes.  
+
+
+459.01,9        FUND CONTROL POINT     0;10 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                LAST EDITED:      SEP 16, 1991 
+                HELP-PROMPT:      Answer must be 3 characters in length. 
+                DESCRIPTION:
+                                  A three digit code used in the analysis and control of salary costs.  Code is computer generated, but may be changed by station input.  
+
+
+459.01,10       FTE EQUIVALENT         0;11 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      SEP 16, 1991 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:
+                                  Code represents a numeric factor that is expressed as a decimal. The decimal is applied to the total number of hours actually worked to derive the equivalent number of employees as if each were working full-time.  
+
+
+459.01,11       NORMAL HOURS           0;12 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+                LAST EDITED:      SEP 24, 1991 
+                HELP-PROMPT:      Answer must be 1-3 characters in length. 
+                DESCRIPTION:      This field contains the number of normal hours an employee is scheduled to work in a pay period. For full-time physcians, dentists, career medical and dental staff (subaccounts 71,81 or pay plan Y) full-time hour 
+                                  equivalents are calculated.  
+
+
+459.01,12       T & L UNIT             0;13 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                LAST EDITED:      MAY 19, 1993 
+                HELP-PROMPT:      Answer must be 3 characters in length. 
+                DESCRIPTION:
+                                  The number identifies a specific group of employees for time and leave tracking purposes.  
+
+
+459.01,13       SALARY                 0;14 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999.99)!(X<-9999999.99) X
+                LAST EDITED:      JUN 17, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -9999999.99 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Rate of compensation which is payable to an employee.  The rate is used in computing salary payments.  The rate does not include night differential or other premium pay.  
+
+
+459.01,20       FEDERAL TAX AMT WITHHELD CPPD 1;1 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of federal income tax withheld from an employee's earnings this pay period.  
+
+
+459.01,21       STATE TAX-1 AMT WITHHELD CPPD 1;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<-9999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of primary state income tax withheld from an employee's gross earnings in the current pay period. This amount may include any additional primary state income tax withholding that is authorized by the employee.  
+
+
+459.01,22       STATE TAX-2 AMT WITHHELD CPPD 1;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount of secondary state income tax withheld from an employee's gross earnings in the last pay period processed. This applies when an employee works in one state and resides in another, and the two states have not
+                                  agreed to reciprocity.  
+
+
+459.01,23       CITY TAX-1 AMT WITHHELD CPPD 1;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<-9999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of primary city income tax withheld from an employee's gross earnings in the last pay period processed.  
+
+
+459.01,24       CITY TAX-2 AMT WITHHELD CPPD 1;5 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of secondary city income tax withheld from an employee's gross earnings in the current pay period.  
+
+
+459.01,25       MEDICARE AMT WITHHELD CPPD 1;6 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of tax for Medicare withheld from an employee's gross earnings in the last pay period processed.  
+
+
+459.01,26       MEDICARE GROSS PAY CPPD 1;7 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of an employee's gross earnings that are subject to Medicare tax withholding in the last pay period processed.  
+
+
+459.01,27       OASDI TAX AMT WITHHELD CPPD 1;8 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount withheld from an employee not covered by the Civil Service Retirement System for a portion of the Old Age, Survivors and Disability Insurance tax in the last pay period processed.  
+
+
+459.01,28       OASDI TAX GROSS PAY CPPD 1;9 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of an employee's gross earnings that were subject to Old Age, Survivors and Disability Insurance tax for the last pay period processed.  
+
+
+459.01,29       OASDI TAX VA SHARE CPPD 1;10 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999.99)!(X<-9999999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999999.99 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The government's contribution to the Old Age, Survivors and Disability Insurance for the last pay period processed.  
+
+
+459.01,30       FEGLI ADDNL DEDUCTION CPPD 1;11 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The actual amount of additional optional life insurance premium deducted in the last pay period processed.  
+
+
+459.01,31       FEGLI FAMILY DEDUCTION CPPD 1;12 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of premium for optional family life insurance deducted from an employee's gross earnings in the current pay period processed.  
+
+
+459.01,32       FEGLI AGE CODE CPPD    1;13 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 22, 1991 
+                HELP-PROMPT:      Type a Number between 1 and 9, 0 Decimal Digits 
+                DESCRIPTION:      Code identifies an employee's age group bracket which then determines the Federal Employee Group LIfe Insurance (FEGLI) premium withholding rate for a specific type of optional FEGLI coverage. Also used to report 
+                                  optional life insurance deductions, in the current pay period, to the Office of Personnel Management.  
+
+
+459.01,33       FEGLI BASIC DEDUCTION CPPD 1;14 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's earnings in the current pay period for basic life insurance premiums. This amount is the employee's share of the premium.  
+
+
+459.01,34       FEGLI VA SHARE CPPD    1;15 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The government portion of basic life insurance paid in the current pay period. The employee pays two-thirds of the premium and the government pays one-third.  
+
+
+459.01,35       FEGLI STANDARD DEDUCTION CPPD 1;16 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount deducted from an employee's earnings in the current pay period for the standard optional life insurance premium. This amount is in addition to the basic premium and only applies to the employee who has
+                                  selected standard optional coverage under the Federal Employee Group Life Insurance plan. There is no government contribution for this option.  
+
+
+459.01,36       HEALTH BENEFITS DEDUCTION CPPD 1;17 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of health insurance deducted from an employee's gross earnings in the last pay period processed.  
+
+
+459.01,37       HEALTH BENEFITS VA SHARE CPPD 1;18 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The government portion of health insurance premium paid in the last pay period processed.  
+
+
+459.01,38       CSRS REEMP ANNUITANT DED CPPD 1;19 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The actual amount collected this pay period for Civil Service Retirement System from a reemployed annuitant.  
+
+
+459.01,39       RETIREMENT DED CPPD    1;20 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's earnings for retirement in the last pay period processed.  
+
+
+459.01,40       RETIREMENT VA SHARE CPPD 1;21 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount the government contributed for retirement in the last pay period processed.  
+
+
+459.01,41       GARAGE DEDUCTION CPPD  1;22 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of garage rental fee deducted from an employee's earnings in the last pay period processed.  
+
+
+459.01,42       PARKING DEDUCTION CPPD 1;23 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's pay for parking furnished by the station. This is the actual amount deducted in the last pay period processed.  
+
+
+459.01,43       QUARTERS NON-HSKP DED CPPD 1;24 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's earnings for non-housekeeping quarters in the last pay period processed.  
+
+
+459.01,44       QUARTERS DEDUCTION CPPD 1;25 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's earnings for housekeeping quarters in the last pay period processed.  
+
+
+459.01,45       SUBSISTANCE DEDUCTION CPPD 1;26 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount authorized and collected this pay period from an employee's earnings for subsistance (meals) furnished by the station.  
+
+
+459.01,46       ACSB ACS AMT CPPD      1;27 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount withheld from an employee's earnings for alimony or child support in the current pay period processed.  
+
+
+459.01,47       ACSB BANKRUPTCY AMT CPPD 1;28 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount withheld from an employee's earnings for bankruptcy payment in the current pay period processed.  
+
+
+459.01,48       MSD DEDUCTION CPPD     1;29 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of military service deposit deduction authorized by an employee and deducted from his/her earnings in the current pay period processed. This is for retirement money on post-1956 military service.  
+
+
+459.01,49       DEBT DEPOSIT ACCT 36X6875 CPPD 2;1 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount deducted from an employee's earnings in the last pay period processed for credit of debt due the U.S. government; deposited to the station's suspense account 36X6875 to be disbursed to a non-federal payee.
+                                  SA36X6875 is for bankruptcy, child support, etc.  
+
+
+459.01,50       DEBT REFUND ACCT 36X6875 CPPD 2;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount of a payment that was disbursed from the station suspense account 36X6875, in this pay period or a prior one. The amount is recorded in the last pay period processed. The payment was paid to an employee as an
+                                  out-of-system payment or a cash payment, and may have occurred after the employee separated.  
+
+
+459.01,51       DEBT DEPOSIT ACCT 36F3875 CPPD 2;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's earnings in the current pay period for recovery of debt due the U.S. government; deposited to the station's suspense account 36F3875 for subsequent disbursement or credit.  
+
+
+459.01,52       DEBT REFUND ACCT 36F3875 CPPD 2;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<-9999.99) X
+                LAST EDITED:      SEP 05, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount of a payment that was disbursed to an employee from the station suspense account 36F3875, in this pay period or in a prior one.  The disbursement is recorded in the current pay period processed. The payment
+                                  was paid to the employee as an out-of-system payment, and may have occurred after the employee separated.  
+
+
+459.01,53       UNION DUES-1 DEDUCTION CPPD 2;5 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99.99)!(X<-99.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99.99 and 99.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The actual amount of union dues withheld this pay period for the first union the employee belongs to.  
+
+
+459.01,54       UNION DUES-2 DEDUCTION CPPD 2;6 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99.99)!(X<-99.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99.99 and 99.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The actual amount of union dues withheld this pay period for the second union the employee belongs to.  
+
+
+459.01,55       CFC DEDUCTION CPPD     2;7 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's earnings as a voluntary charitable contribution. This is the actual deduction made for the last pay period processed.  
+
+
+459.01,56       TSP LOAN DED CPPD      2;8 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount withheld from an employee's earnings, at his/her request, to repay a Thrift Savings Plan loan.  
+
+
+459.01,57       TSP PRIOR TAX YEAR ADJ CODE 2;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:
+                                  Code identifies those deductions/adjustments to the Thrift Savings Plan which are being processed this pay period, but which are applicable to a prior tax year.  
+
+
+459.01,58       TSP CSF EMP DED CPPD   2;10 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's earnings and contributed to the Thrift Savings Plan Common Stock Fund in the last pay period processed.  
+
+
+459.01,59       TSP FIF EMP DED CPPD   2;11 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's earnings and contributed to the Thrift Savings Plan Fixed Income Fund in the last pay period processed.  
+
+
+459.01,60       TSP GSF EMP DED CPPD   2;12 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount deducted from an employee's earnings and contributed to the Thrift Savings Plan Government Securities Fund in the last pay period processed.  
+
+
+459.01,61       TSP CSF GOV BASIC CONTRIB 2;13 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The dollar amount of the percentage of the agency basic contribution in the last pay period processed, which the employee has designated for the Common Stock Fund.  
+
+
+459.01,62       TSP FIF GOV BASIC CONTRIB 2;14 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The dollar amount of the percentage of the agency basic contribution in the last pay period processed, which the employee has designated for the Fixed Income Fund.  
+
+
+459.01,63       TSP GSF GOV BASIC CONTRIB 2;15 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The dollar amount of the percentage of the agency basic contribution in the last pay period processed, which the employee has designated for the Government Securities Fund.  
+
+
+459.01,64       TSP CSF GOV MATCH CONTRIB 2;16 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The dollar amount of the percentage of the agency matching contribution in the last pay period processed, which the employee has designated for the Common Stock Fund.  
+
+
+459.01,65       TSP FIF GOV MATCH CONTRIB 2;17 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The dollar amount of the percentage of the agency matching contribution in the last pay period processed, which the employee has designated for the Fixed Income Fund.  
+
+
+459.01,66       TSP GSF GOV MATCH CONTRIB 2;18 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The dollar amount of the percentage of the agency matching contribution in the last pay period processed, which the employee has designated for the Government Securities Fund.  
+
+
+459.01,67       SAVINGS BOND-1 BALANCE 2;19 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999.99)!(X<-9999999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999999.99 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:      The accumulated amount deducted toward the purchase price of the first bond, as of the current pay period. Each time the purchase price is reached, a bond is issued and the balance adjusted. Remaining balances are
+                                  incorporated in future bond purchases. The balance is refunded if the bond is canceled or the employee separates from the agency.  
+
+
+459.01,67.1     SAVINGS BOND-1 TYPE    2;25 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      MAR 14, 2003 
+                HELP-PROMPT:      Answer must be 1 character in length 
+                DESCRIPTION:
+                                  The one character string that identifies the type of the first bond.  
+
+
+459.01,68       SAVINGS BOND-2 BALANCE 2;20 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999.99)!(X<-9999999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999999.99 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:      The accumulated amount deducted toward the purchase price of the second bond, as of the current pay period. Each time the purchase price is reached, a bond is issued and the balance adjusted. Remaining balances are
+                                  incorporated in future bond purchases. The balance is refunded if the bond is canceled or the employee separates from the agency.  
+
+
+459.01,68.1     SAVINGS BOND-2 TYPE    2;26 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      MAR 14, 2003 
+                HELP-PROMPT:      Answer must be 1 character in length 
+                DESCRIPTION:
+                                  The one character string that identifies the type of the second bond.  
+
+
+459.01,68.2     SAVINGS BOND-3 BALANCE 9;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99)!(X?.E1"."3.N) X
+                LAST EDITED:      MAR 24, 2003 
+                HELP-PROMPT:      Type a Dollar amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:      The accumulated amount deducted toward the purchase price of the third bond, as of the current pay period. Each time the purchase price is reached, a bond is issued and the balance adjusted. Remaining balances are
+                                  incorporated in future bond purchases. The balance is refunded if the bond is canceled or the employee separates from the agency.  
+
+
+459.01,68.3     SAVINGS BOND-3 TYPE    9;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      MAR 14, 2003 
+                HELP-PROMPT:      Answer must be 1 character in length 
+                DESCRIPTION:
+                                  The one character string that identifies the type of the third bond.  
+
+
+459.01,68.4     SAVINGS BOND-4 BALANCE 9;5 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99)!(X?.E1"."3.N) X
+                LAST EDITED:      MAR 24, 2003 
+                HELP-PROMPT:      Type a Dollar amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:      The accumulated amount deducted toward the purchase price of the fourth bond, as of the current pay period. Each time the purchase price is reached, a bond is issued and the balance adjusted. Remaining balances are
+                                  incorporated in future bond purchases. The balance is refunded if the bond is canceled or the employee separates from the agency.  
+
+
+459.01,68.5     SAVINGS BOND-4 TYPE    9;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      MAR 14, 2003 
+                HELP-PROMPT:      Answer must be 1 character in length 
+                DESCRIPTION:
+                                  The one character string that identifies the type of the fourth bond.  
+
+
+459.01,69       SAVINGS BOND DED SUM CPPD 2;21 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999.99)!(X<-9999999.99) X
+                LAST EDITED:      NOV 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999999.99 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The total of amounts deducted from an employee's earnings in the current pay period for purchases of U.S. Savings Bonds. The amount may include deductions for one or both bonds.  
+
+
+459.01,70       SAVINGS ALLOTMENT-1 AMT CPPD 2;22 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<-9999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount deducted from earnings that an employee has authorized for deposit to a checking or savings account at a financial institution in the last pay period processed. This field pertains to the first savings
+                                  allotment deduction.  
+
+
+459.01,71       SAVINGS ALLOTMENT-2 AMT CPPD 2;23 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<-9999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount deducted from earnings that an employee has authorized for deposit to a checking or savings account at a financial institution in the last pay period processed. This field pertains to the second savings
+                                  allotment deduction.  
+
+
+459.01,72       VOLUNTARY ALLOTMENT AMT CPPD 2;24 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<-9999999)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Number between -9999999 and 9999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  The actual amount of voluntary allotment withheld in the last pay period processed. This amount was authorized by the employee.  
+
+
+459.01,73       EARNED INCOME CREDIT AMT CPPD 3;1 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount of earned income credit advanced to an employee in the last pay period processed. This is a tax credit against year end federal income tax liability. An employee qualifies for this credit based on income
+                                  level.  
+
+
+459.01,74       SEVERANCE PAY AMT CPPD 3;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      NOV 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of severance pay for an employee whose separation from federal employment is due to certain involuntary conditions. This amount is recorded in the last pay period processed after the employee's separation.  
+
+
+459.01,75       ANNUAL LEAVE USED CPPD 4;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours or days used by an employee for annual leave in the last pay period processed.  
+
+
+459.01,76       TOTAL SICK LEAVE USED CPPD 4;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAY 05, 1995 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours or days used by an employee for sick leave in the last pay period processed.  
+
+
+459.01,77       COMPTIME/CREDIT HRS USED CPPD 4;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      JUN 04, 1998 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of compensatory time and or credit hours used for the last pay period processed. 
+
+
+459.01,78       COMPTIME/CREDIT HRS BALANCE 4;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      JUN 04, 1998 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The balance of compensatory time or credit hours an employee has at the end of the last pay period processed. 
+
+
+459.01,79       LWOP HOURS/DAYS CPPD   4;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      NOV 20, 1991 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The accumulated number of hours or days leave without pay was taken by an employee in the last pay period processed.  
+
+
+459.01,80       NONPAY ANNUAL LEAVE USED CPPD 4;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<-99)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 18, 1991 
+                HELP-PROMPT:      Type a Number between -99 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  The number of non-available annual leave days used by an eligible employee in the last pay period processed.  
+
+
+459.01,80.1     ANNUAL LEAVE USED CPPD (HOURS) 4;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      SEP 24, 1991 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of annual leave used, converted to hours, for the last pay period processed.  
+
+
+459.01,80.2     TOTAL SICK LEAVE HRS USED CPPD 4;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAY 05, 1995 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of sick leave used, converted to hours, for the last pay period processed.  
+
+
+459.01,81       GROSS PAY CPPD         5;1 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999.99)!(X<-9999999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999999.99 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of gross pay an employee was paid for the last pay period processed.  
+
+
+459.01,82       NET PAY CPPD           5;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of net pay an employee received for the last pay period processed.  
+
+
+459.01,83       NET PAY OUT-OF-SYSTEM AMT CPPD 5;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 26, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The net pay amount of an out-of-system payment that is being recovered in the affected employee's master record for income tax and wage reporting purposes.  
+
+
+459.01,84       REEMP ANNUITANT BASE PAY REDUC 5;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<-9999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The actual amount of money a reemployed annuitant's base pay was reduced in the last pay period processed.  
+
+
+459.01,85       BASE PAY CPPD          5;5 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 26, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of base pay an employee was paid for the last pay period processed.  
+
+
+459.01,86       REG HOURS AT OT RATE   5;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours an employee was paid regular hours at the overtime rate, because they are in excess of 8 hours in a day rather than 40 in a week, in the last pay period processed.  
+
+
+459.01,86.1     REG HOURS AT OT RATE WK 1 8;20 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Regular hours at the overtime rate for week-1.  
+
+
+459.01,86.2     REG HOURS AT OT RATE WK 2 8;21 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Regular hours at the overtime rate for week-2.  
+
+
+459.01,86.3     REG HOURS AT OT RATE AMT WK 1 8;22 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999.99)!(X<0) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Regular hours at the overtime rate amount for week-1.  
+
+
+459.01,86.4     REG HOURS AT OT RATE AMT WK 2 8;23 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999.99)!(X<0) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Regular hours at the overtime rate amount for week-2.  
+
+
+459.01,87       ENVIRONMENTAL HAZARD HRS CPPD 5;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99.75)!(X<-99.75)!(X?.E1"."3N.N) X
+                LAST EDITED:      JUL 27, 1993 
+                HELP-PROMPT:      Type a Number between -99.75 and 99.75, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours paid to an employee for environmental differential pay in the last pay period processed.  
+
+
+459.01,88       HOLIDAY AMT            5;8 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount paid to an employee as premium pay for work performed on a holiday. This amount is for the last pay period processed.  
+
+
+459.01,89       HOLIDAY HOURS          5;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours an employee was paid holiday premium pay in the last pay period processed.  
+
+
+459.01,90       NIGHT DIFF AMT CPPD    5;10 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      SEP 16, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount paid to an eligible employee performing duty on a tour of duty, part or all of which qualifies for payment of a night shift differential.  
+
+
+459.01,91       NIGHT DIFF HRS CPPD    5;11 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      SEP 16, 1992 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours an employee was paid night differential, shift differential, or tour differential premium pay in the last pay period processed.  
+
+
+459.01,92       ON CALL HRS CPPD       5;12 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999.99)!(X<-9999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      AUG 08, 1996 
+                HELP-PROMPT:      Type number of hours of On Call Pay, between -9999.99 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of on-call hours an employee was paid for the last pay period processed. This applies only to certain Title 38 medical personnel.  
+
+                TECHNICAL DESCR:
+                                  The size of this field conforms with the size of the field sent by Austin in download messages.  Decimal digits should be only in increments of .25, representing quarter hours.  
+
+
+459.01,93       ON CALL AMT CPPD       5;13 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99)!(X?.E1"."3.N) X
+                LAST EDITED:      APR 27, 2004 
+                HELP-PROMPT:      Type a Dollar amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount paid for hours an employee spent in an on-call status in the last pay period processed. This applies only to certain Title 38 medical personnel.  
+
+
+459.01,94       OVERTIME AMT CPPD      5;14 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      NOV 25, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of overtime premium pay received by an employee for overtime hours worked in the current pay period processed.  
+
+
+459.01,95       OVERTIME HOURS CPPD    5;15 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours for which an employee was paid overtime premium pay in the last pay period processed.  
+
+
+459.01,96       POST DIFF AMT CPPD     5;16 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      SEP 16, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount of differential paid to an employee assigned to a post in Manila in the last pay period processed. Differential is computed as a percentage of base pay, and applies to employees whose parent station is not
+                                  within the U.S. or its territories.  
+
+
+459.01,97       SATURDAY AMT CPPD      5;17 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      NOV 25, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount paid for Saturday premium work hours, paid to a nurse or a physician assistant or extended function dental auxiliary. This amount is for the last pay period processed.  
+
+
+459.01,98       STANDBY AMT CPPD       5;18 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      NOV 25, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount paid to an employee for hours spent in a standby status in the current pay period processed. This applies only to a General Schedule employee whose occupation requires standby duty, such as a firefighter.  
+
+
+459.01,99       SUNDAY AMT CPPD        5;19 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      NOV 25, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount paid for Sunday premium work hours to an employee in the last pay period processed.  
+
+
+459.01,100      SUNDAY HRS CPPD        5;20 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      NOV 25, 1991 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours an employee was paid for Sunday premium pay in the last pay period processed.  
+
+
+459.01,101      FLSA OVERTIME WEEK CODE CPPD 5;21 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      SEP 24, 1991 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:      Code identifies those workweeks in which overtime was paid under the Federal Labor Standards Act (FLSA) regulations for either or both weeks of the pay period. This applies only to Title 5 employees and indicates that
+                                  FLSA overtime pay was greater than Title 5 overtime pay. Codes are applicable to the last pay period processed.  
+
+
+459.01,102      COLA AMT CPPD          5;22 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount of the Cost Of Living Allowance (COLA) paid to an employee in the current pay period. Employees in specific geographic areas with higher cost of living receive a COLA in addition to base pay. The Office of
+                                  Personnel Managememt designates COLA areas within the U.S. and its territories. 
+
+
+459.01,103      AUO AMT CPPD           5;23 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount of administratively uncontrollable overtime received by an employee this pay period. This pay is limited to criminal investigators, grades GS-9 through GS-14, of the Office of the Inspector General assigned to
+                                  Central Office.  
+
+
+459.01,104      INCENTIVE AWARD        5;24 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+                LAST EDITED:      FEB 19, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of an award paid to an employee in the last pay period processed. This award is granted under the Incentive Award Program.  
+
+
+459.01,104.1    PERFORMANCE AWARD      5;31 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+                LAST EDITED:      FEB 19, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of a performance award paid to an employee in the last pay period.  
+
+
+459.01,105      SES PERFORMANCE AWARD AMT CPPD 5;25 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of an award granted to a Senior Executive Service employee for work performance, paid in the current pay period processed.  
+
+
+459.01,106      ANNUAL LEAVE LUMP SUM AMT 5;26 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:      The amount of lump sum annual leave paid an employee in the last pay period processed. This number also includes any hours of restored annual leave. A lump sum is paid at the time of separation from federal service or
+                                  when an employee moves to a position that is not covered by an annual leave system.  
+
+
+459.01,107      ANNUAL LEAVE LUMP SUM HRS/DAYS 5;27 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:      The number of hours or days of annual leave for which an employee is paid a lump sum. This number also includes any hours or days of restored annual leave. A lump sum is paid at the time of separation from federal
+                                  service or when an employee moves to a position that is not covered by an annual leave system.  
+
+
+459.01,108      MOVING EXPENSES CPPD   5;28 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      SEP 22, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:      The moving expenses amount for the current pay period.  
+                                   
+
+
+459.01,109      UNIFORM ALLOWANCE AMT CPPD 5;29 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount paid as uniform allowance to an employee who is required to purchase and wear a uniform at work. The amount paid is for the last pay period processed.  
+
+
+459.01,110      UNSCHEDULED HOURS      5;30 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      DEC 27, 1991 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours or days base pay for which an employee was paid in the last pay period processed.  
+
+
+459.01,111      NEW SSN                6;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>9!($L(X)<9)!'(X?9N) X
+                LAST EDITED:      NOV 22, 1991 
+                HELP-PROMPT:      Answer must be 9 characters in length. 
+                DESCRIPTION:
+                                  This is the social security number that replaces the previous number.  The previous number may have been invalid or a temporarily assigned number while the employee applied for a social security number.  
+
+
+459.01,112      NONPAY HOURS/DAYS CPPD 6;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      NOV 20, 1991 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours or days an employee is not being paid because he/she was not an employee in the last pay period processed.  
+
+
+459.01,113      SPECIAL SALARY ADJUSTMENT 6;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAR 09, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The component annual amount of special pay that applies to an eligible physician or dentist assigned to a specific management position.  
+
+
+459.01,114      SPECIAL PAY RATE DIFFERENCE 6;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The dollar and cents amount the employee receives as special pay.  
+
+
+459.01,115      VCS LEAVE COST ADJUSTMENT AMT 7;1 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<-9999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of salary a pieceworker of the Veteran Canteen Service was paid in the last pay period processed for paid leave.  
+
+
+459.01,116      VCS MINWAGE CD PW CPPD 7;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      NOV 22, 1991 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:
+                                  Code indicates that a pieceworker of the Veterans Canteen Service received payment at the minimum wage rate in the last pay period processed.  
+
+
+459.01,117      VCS SALE SUM PW CPPD   7;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99) X
+                LAST EDITED:      AUG 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The actual sum of all sales by pieceworkers in the Veterans Canteen Service in the last pay period processed.  
+
+
+459.01,118      GROSS PAY PLUS BENEFITS CPPD 8;1 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      NOV 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The total value of the employee's gross pay, uniform allowance, annuity and agency contributions for Medicare, life insurance, health benefits, retirement and Thrift Savings Plan.  
+
+
+459.01,119      TOTAL COMPENSATION CPPD 8;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      NOV 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The total compensation the employee received for the last pay period processed. It is the sum of all pay earned, awards and annuity.  
+
+
+459.01,120      VARIABLE COSTS CPPD    8;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      NOV 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The total amount of variable costs paid to the employee for the last pay period processed. The sum includes overtime pay, holiday pay, awards, moving expenses, lumpsum payments and severance pay.  
+
+
+459.01,121      TOTAL BENEFITS CPPD    8;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      NOV 22, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:      The total amount of benefits paid to the employee for the last pay period processed. The sum includes cost of living allowance, uniform allowance, moving expenses, severance pay, and agency contributions for Medicare, 
+                                  life insurance, health benefits, retirement, social security and Thrift Savings Plan.  
+
+
+459.01,122      LWOP HOURS CPPD        4;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      NOV 21, 1991 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:      This is the number of hours the employee was in a leave without pay status in the last pay period processed. If the employee has his/her leave without pay amount measured in days, then that value is converted to the
+                                  nearest whole hour value.  
+
+
+459.01,123      NONPAY HOURS CPPD      6;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      NOV 21, 1991 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of hours the employee was in a nonpay status in the last pay period processed. If the employee has his/her nonpay status measured in days, then that value is converted to the nearest whole hour value.  
+
+
+459.01,124      GAP AMT CPPD           8;5 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+                LAST EDITED:      JAN 20, 1994 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Geographic Adjustment Pay for the most recently processed pay period.  
+
+
+459.01,125      RELOCATION BONUS       8;6 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+                LAST EDITED:      SEP 16, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999 
+                DESCRIPTION:
+                                  Relocation Bonus amount.  
+
+
+459.01,126      RECRUITMENT BONUS      8;7 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+                LAST EDITED:      SEP 16, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999 
+                DESCRIPTION:
+                                  Recruitment Bonus amount.  
+
+
+459.01,127      RETENTION ALLOWANCE    8;8 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+                LAST EDITED:      SEP 16, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Retention Allowance amount.  
+
+
+459.01,128      HAZARD PAY DIFFERENTIAL 8;9 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+                LAST EDITED:      OCT 16, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Hazard Pay Differential amount.  
+
+
+459.01,129      STAFFING DIFFERENTIAL  8;10 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+                LAST EDITED:      OCT 16, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Staffing Differential amount.  
+
+
+459.01,130      SUPERVISORY DIFFERENTIAL CPPD 8;11 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+                LAST EDITED:      OCT 16, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Supervisory Differential amount.  
+
+
+459.01,131      OVERTIME HOURS WK 1    8;12 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Overtime hours for week-1.  
+
+
+459.01,132      OVERTIME HOURS WK 2    8;13 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Overtime hours for week-2.  
+
+
+459.01,133      OVERTIME AMT WK 1      8;14 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Overtime amount for week-1.  
+
+
+459.01,134      OVERTIME AMT WK 2      8;15 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Overtime amount for week-2.  
+
+
+459.01,135      HRS EXCESS 8 DAY WK 1  8;16 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Hours in excess of 8 in a day for week-1.  
+
+
+459.01,136      HRS EXCESS 8 DAY WK 2  8;17 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Hours in excess of 8 in a day for week-2.  
+
+
+459.01,137      HRS EXCESS 8 DAY AMT WK 1 8;18 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999.99)!(X<0) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Hours in excess of 8 in a day amount for week-1.  
+
+
+459.01,138      HRS EXCESS 8 DAY AMT WK 2 8;19 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999.99)!(X<0) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Hours in excess of 8 in a day amount for week-2.  
+
+
+459.01,139      NON-OVERTIME HOURS     8;24 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Non-overtime hours.  
+
+
+459.01,140      NON-OVERTIME AMT       8;25 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999.99)!(X<0) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Non-overtime amount.  
+
+
+459.01,141      OT ON HOL HOURS        8;26 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Overtime hours on a holiday.  
+
+
+459.01,142      OT ON HOL AMT          8;27 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999.99)!(X<0) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Overtime amount on a holiday.  
+
+
+459.01,143      TRAINING WK 1          8;28 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Training hours for week-1.  
+
+
+459.01,144      TRAINING WK 2          8;29 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Training hours for week-2.  
+
+
+459.01,145      TRAVEL HOURS WK 1      6;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Travel hours for week-1.  
+
+
+459.01,146      TRAVEL HOURS WK 2      6;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Travel hours for week-2.  
+
+
+459.01,147      TRAVEL OVERTIME WK 1   6;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Travel overtime hours for week-1.  
+
+
+459.01,148      TRAVEL OVERTIME WK 2   6;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAR 12, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Travel overtime hours for week-2.  
+
+
+459.01,149      LOCALITY PAY CPPD      8;30 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+                LAST EDITED:      DEC 10, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Locality Pay for the most recently processed pay period.  
+
+
+459.01,150      TAX GARNISHMENT-1      3;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAY 08, 1995 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The first amount deducted for purposes of tax garnishment.  
+
+
+459.01,151      TAX GARNISHMENT-2      3;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAY 08, 1995 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The second amount deducted for purposes of tax garnishment.  
+
+
+459.01,152      COMMERCIAL GARNISHMENT-1 3;5 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAY 08, 1995 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The first amount deducted for purposes for commercial garnishment.  
+
+
+459.01,153      COMMERCIAL GARNISHMENT-2 3;6 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99) X
+                LAST EDITED:      MAY 08, 1995 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The second amount deducted for purposes of commercial garnishment.  
+
+
+459.01,154      CARE/BEREAVE LEAVE USED CPPD 3;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAY 09, 1995 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours or days used by an employee for care and bereavement leave in the last pay period processed.  
+
+
+459.01,155      ADOPTION LEAVE USED CPPD 3;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAY 09, 1995 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours or days used by an employee for adoption leave in the last pay period processed.  
+
+
+459.01,156      OTHER SICK LEAVE USED CPPD 3;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAY 09, 1995 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours or days used by an employee for other sick leave in the last pay period processed.  
+
+
+459.01,157      DONOR LEAVE USED CPPD  3;10 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3N.N) X
+                LAST EDITED:      MAY 09, 1995 
+                HELP-PROMPT:      Type a Number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The total number of hours or days of donor leave used by an employee during the leave year to date.  
+
+
+459.01,158      MILITARY LEAVE USED CPPD 9;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<-999.99)!(X?.E1"."3.N) X
+                LAST EDITED:      MAR 14, 2003 
+                HELP-PROMPT:      Type a number between -999.99 and 999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The number of hours or days used by an employee for Military Leave in the last pay period processed.  
+
+
+459.01,159      FED EMP HLTH BENE CRT ORD IND 9;16 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      DEC 15, 2003 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:      The Federal Employee Health Benefit Court Order Indicator identifies employees who are under court order to pay for Alimony, Child Support or Bankruptcy.  Possible values are C (under court order) or blank (not under
+                                  court order).  
+
+
+459.01,160      EARNINGS & LEAVE PRT SELECTION 9;17 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      DEC 15, 2003 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:
+                                  The Earnings and Leave Print Indicator determines whether or not to print a hardcopy of the employee's Earnings and Leave statement.  Possible values are X (print a hardcopy) or blank (don't print a hardcopy).  
+
+
+459.01,167      FLTCIP CPPD            9;7 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0)!(X?.E1"."3.N) X
+                LAST EDITED:      JUL 22, 2003 
+                HELP-PROMPT:      Type a Dollar amount between 0 and 99999.99, 2 Decimal Digits. 
+                DESCRIPTION:
+                                  The amount to be deducted each pay period from an employee's pay for Federal Long Term Care Insurance Program.  
+
+
+459.01,168      FLTCIP INDICATOR       9;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      AUG 19, 2003 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:
+                                  Indicates whether the employee is eligible to participate in the Federal Long Term Care Insurance Program (FLTCIP).  Possible values are Y or N.  
+
+
+459.01,169      VOLUNTARY ALLOTMENT-3 AMT 9;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<-99999)!(X?.E1"."1.N) X
+                LAST EDITED:      JUL 22, 2003 
+                HELP-PROMPT:      Type a number between -99999 and 99999, 0 Decimal Digits. 
+
+459.01,170      VOLUNTARY ALLOTMENT-4 AMT 9;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<-99999)!(X?.E1"."1.N) X
+                LAST EDITED:      JUL 22, 2003 
+                HELP-PROMPT:      Type a number between -99999 and 99999, 0 Decimal Digits. 
+                DESCRIPTION:
+                                  This field is the whole dollar amount the employee has elected to have deducted from pay each pay period as a voluntary allotment.  
+
+
+459.01,171      VCS ALLOTMENT AMT      9;10 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999.99)!(X<-999.99)!(X?.E1"."3.N) X
+                LAST EDITED:      JUL 22, 2003 
+                HELP-PROMPT:      Type a Dollar amount between -999.99 and 999.99, 2 Decimal Digits. 
+                DESCRIPTION:
+                                  The amount deducted from earnings that an employee has authorized for re-payment to the Veteran's Canteen Service (VCS).  
+
+
+459.01,172      TRAVEL SAVINGS AWARD   9;11 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0)!(X?.E1"."3.N) X
+                LAST EDITED:      JUL 22, 2003 
+                HELP-PROMPT:      Type a Dollar amount between 0 and 99999.99, 2 Decimal Digits.. 
+                DESCRIPTION:
+                                  The amount of the Travel Savings Award paid to an employee in the last pay period processed.  This award is granted under the Incentive Award Program.  
+
+
+459.01,173      LABOR DISTRIBUTION     LD;0 Multiple #459.1173 (Add New Entry without Asking)
+
+
+459.1173,.01      LABOR DISTRIBUTION     0;1 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUL 22, 2003 
+                  HELP-PROMPT:      Type a Number between 1 and 4, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                    The number representing the distributions 1 through 4.  
+
+                  CROSS-REFERENCE:  459.1173^B 
+                                    1)= S ^PRST(459,DA(2),"P",DA(1),"LD","B",$E(X,1,30),DA)=""
+                                    2)= K ^PRST(459,DA(2),"P",DA(1),"LD","B",$E(X,1,30),DA)
+
+
+459.1173,1        CODE                   0;2 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>4!($L(X)<4) X
+                  LAST EDITED:      JUL 21, 2003 
+                  HELP-PROMPT:      Answer must be 4 characters in length. 
+                  DESCRIPTION:
+                                     One of four possible Labor Distribution codes assigned to the employee.  
+
+
+459.1173,2        PERCENT                0;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>1)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      JUL 22, 2003 
+                  HELP-PROMPT:      Type a Number between 0 and 1, 2 Decimal Digits. 
+                  DESCRIPTION:
+                                    The percentage assigned to the Labor Distribution code.  
+
+
+459.1173,3        COST CENTER            0;4 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>4!($L(X)<4) X
+                  LAST EDITED:      JUL 30, 2003 
+                  HELP-PROMPT:      Answer must be 4 characters in length. 
+                  DESCRIPTION:
+                                    The Cost Center associated to the Labor Distribution code.  
+
+
+459.1173,4        FUND CTRL PT           0;5 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                  LAST EDITED:      JUL 21, 2003 
+                  HELP-PROMPT:      Answer must be 3 characters in length. 
+                  DESCRIPTION:
+                                    The Fund Control Point assigned to the Labor Distribution code.  
+
+
+
+
+459.01,174      HLTH CARE FLEX SPEND ACCT YTD 9;12 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>3000)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      DEC 15, 2003 
+                  HELP-PROMPT:      Type a Dollar amount between 0 and 3000, 2 Decimal Digits. 
+                  DESCRIPTION:
+                                    The accumulated total of Health Care Flexible Spending Accounts deducted from an employee this year through the last pay period processed.  
+
+
+459.01,175      HLTH CARE FLEX SPEND ACCT CPPD 9;13 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>3000)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      DEC 15, 2003 
+                  HELP-PROMPT:      Type a Dollar amount between 0 and 3000, 2 Decimal Digits. 
+                  DESCRIPTION:
+                                    The current pay period deduction from an employee's pay for the Health Care Flexible Spending Account (HCFSA).  
+
+
+459.01,176      DPNT CARE FLEX SPEND ACCT YTD 9;14 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>5000)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      DEC 15, 2003 
+                  HELP-PROMPT:      Type a Dollar amount between 0 and 5000, 2 Decimal Digits. 
+                  DESCRIPTION:
+                                    The accumulated total of Dependent Care Flexible Spending Accounts deducted from an employee this year through the last pay period processed.  
+
+
+459.01,177      DPNT CARE FLEX SPEND ACCT CPPD 9;15 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>5000)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      DEC 15, 2003 
+                  HELP-PROMPT:      Type a Dollar amount between 0 and 5000, 2 Decimal Digits. 
+                  DESCRIPTION:
+                                    The current pay period deduction from an employee's pay for the Dependent Care Flexible Spending Account (DCFSA).  
+
+
+459.01,178      TAX GARNISHMENT-3        3;11 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99)!(X?.E1"."3.N) X
+                  LAST EDITED:      JUN 23, 2004 
+                  HELP-PROMPT:      Type a Dollar amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The third amount deducted for purposes of tax garnishment.  
+
+
+459.01,179      TAX GARNISHMENT-4        3;12 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99)!(X?.E1"."3.N) X
+                  LAST EDITED:      APR 27, 2004 
+                  HELP-PROMPT:      Type a Dollar amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The fourth amount deducted for purposes of tax garnishment.  
+
+
+459.01,180      COMMERCIAL GARNISHMENT-3 3;13 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99)!(X?.E1"."3.N) X
+                  LAST EDITED:      APR 27, 2004 
+                  HELP-PROMPT:      Type a Dollar amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The third amount deducted for purposes of commercial garnishment.  
+
+
+459.01,181      COMMERCIAL GARNISHMENT-4 3;14 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-99999.99)!(X?.E1"."3.N) X
+                  LAST EDITED:      APR 27, 2004 
+                  HELP-PROMPT:      Type a Dollar amount between -99999.99 and 99999.99, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The fourth amount deducted for purposes of commercial garnishment.  
+
+
+459.01,182      FEDERAL TAX LOCK-IN INDICATOR 9;18 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                  LAST EDITED:      APR 27, 2004 
+                  HELP-PROMPT:      Answer must be 1 character in length 
+                  DESCRIPTION:
+                                    When set to Y this field will prevent the employee from making changes via EEX to their federal tax withholding amount.  (Possible Values: Y or N) 
+
+
+
+
+459,2         PAY DATE               0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 07, 1995 
+              DESCRIPTION:
+                                This is the official pay date for the pay period.  
+
+              CROSS-REFERENCE:  459^AC 
+                                1)= S ^PRST(459,"AC",$E(X,1,30),DA)=""
+                                2)= K ^PRST(459,"AC",$E(X,1,30),DA)
+
+
+
+      FILES POINTED TO                      FIELDS
+
+PAID EMPLOYEE (#450)              EMPLOYEE:NAME (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

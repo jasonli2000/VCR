@@ -1,0 +1,404 @@
+STANDARD DATA DICTIONARY #445.2 -- INVENTORY TRANSACTION FILE                                                                                                                                                                     MAY 20,2014@15:34:31  PAGE 1
+STORED IN ^PRCP(445.2,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+USED BY GENERIC INVENTORY SYSTEM.  
+  This file is used to keep a log of ANY transaction that affects the inventory level.  The file will be updated ONLY if the flag on the inventory point "KEEP DETAILED TRX.HISTORY" is set to "Y" (YES).  Records are then automatically added to the file
+during the processing of any transaction that affects the inventory level (receiving, distribution, usage, manual adjustments, etc.)  NOTE:  THIS FILE SHOULD BE PURGED FREQUENTLY!!! 
+
+
+FILE SCREEN (SCR-node) : I $D(DIS(0))!($G(PRCPPRIV))
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+
+CROSS
+REFERENCED BY: INVENTORY POINT(AD), ITEM NO.(AE), INVENTORY POINT(ANXT), INVENTORY POINT(AX1), TYPE OF TRANSACTION(AX2), INVENTORY POINT(B), TRANSACTION/P.O. NUMBER(C), TRANSACTION ID(T), VOUCHER NUMBER(V)
+
+INDEXED BY:    INVENTORY POINT & RECIPIENT (D)
+
+
+445.2,.01     INVENTORY POINT        0;1 POINTER TO GENERIC INVENTORY FILE (#445) (Required)
+
+              INPUT TRANSFORM:  K:'$G(PRCPPRIV) X
+              LAST EDITED:      MAY 03, 2000 
+              HELP-PROMPT:      The Inventory point affected by the transaction. 
+              DESCRIPTION:
+                                This is the inventory point affected by the transaction.  Each time an item has activity against it, the inventory point will be added as a new entry to this file.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  445.2^B 
+                                1)= S ^PRCP(445.2,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRCP(445.2,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  445.2^ANXT^MUMPS 
+                                1)= S:'$D(^PRCP(445.2,"ANXT",X)) ^(X)=0 S:^(X)>9999999 ^(X)=0
+                                2)= Q
+                                This cross reference is used to reset the transaction register counter for an inventory point.  
+
+
+              CROSS-REFERENCE:  445.2^AD^MUMPS 
+                                1)= I $P(^PRCP(445.2,DA,0),U,5) S Z=+$P(^(0),U,5),^PRCP(445.2,"AD",X,Z,DA)="" K Z
+                                2)= I $P(^PRCP(445.2,DA,0),U,5) S Z=+$P(^(0),U,5) K ^PRCP(445.2,"AD",X,Z,DA),Z
+                                This cross reference is used to set the "AD" cross reference for the ITEM NO. field (#4) (stored in the variable Z) to the inventory point (stored in the variable X).  
+
+
+              CROSS-REFERENCE:  445.2^AX1^MUMPS 
+                                1)= D XREFAX^PRCPUXRE(DA,X,.01,"SET")
+                                2)= D XREFAX^PRCPUXRE(DA,X,.01,"KILL")
+                                This mumps cross reference builds the node: 
+                                        ^PRCP(445.2,"AX",invpt,transdate transtype,da)="" where: 
+                                        invpt      =    internal inventory point number 
+                                                        from field .01; 
+                                        transdate  =    date of the transaction (no time) 
+                                                        from field 2.5; 
+                                        transtype  =    type of transaction (R:receipts, etc) 
+                                                        from field 3; 
+                                        da         =    internal entry number of the record.  
+                                 
+                                The call to set or kill the cross reference: 
+                                        D XREFAX^PRCPUXRE(DA,X,field,setkill) passes the following variables: 
+                                        DA         =    internal entry number of the record; 
+                                        X          =    field value to set or kill; 
+                                        field      =    field number, either .01, 2.5, or 3; 
+                                        setkill    =    pass "SET" to set xref, "KILL" to kill xref.  
+
+
+              RECORD INDEXES:   D (#48)
+
+445.2,1       TRANSACTION ID         0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      APR 17, 1992 
+              HELP-PROMPT:      A transaction is any event that affects the inventory level (receiving, distribution, etc.)  The ID uniquely identifies the transaction (ex. Distribution Order No., P.O.No.) 
+              DESCRIPTION:      This is the Transaction ID defined in two parts: A Transaction is any event that affects the inventory level (e.g., receiving, distribution, etc.).  The ID uniquely identifies the transaction (e.g., Distribution Order No., 
+                                P.O. No.).  
+
+              CROSS-REFERENCE:  445.2^T^MUMPS 
+                                1)= S ^PRCP(445.2,"T",+^PRCP(445.2,DA,0),X,DA)=""
+                                2)= K ^PRCP(445.2,"T",+^PRCP(445.2,DA,0),X,DA)
+                                This cross reference is used to sort the transaction identifier by the inventory point.  
+
+
+
+445.2,2       DATE OF TRANSACTION    0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 11, 1987 
+              HELP-PROMPT:      Date of original transaction (ex., P.O.date for receiving, date Distribution Order was entered) 
+              DESCRIPTION:
+                                This is the date of the original transaction (e.g., P.O.  date for receiving; date Distribution Order was entered).  
+
+
+445.2,2.5     DATE POSTED            0;17 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 03, 1993 
+              HELP-PROMPT:      Date this transaction affected the inventory. 
+              DESCRIPTION:
+                                This is the date the transaction affected the inventory.  
+
+
+445.2,3       TYPE OF TRANSACTION    0;4 SET (Required)
+
+                                'RC' FOR RECEIVING; 
+                                'R' FOR DISTR.(REGULAR); 
+                                'U' FOR USAGE; 
+                                'A' FOR MANUAL ADJ.; 
+                                'C' FOR DISTR.(CALL-IN); 
+                                'S' FOR SET/PACKS; 
+                                'P' FOR PHYSICAL COUNT; 
+                                'E' FOR DISTR.(EMERGENCY); 
+                                'Q' FOR QTY ON SUPPLY STATION; 
+              LAST EDITED:      APR 16, 2001 
+              HELP-PROMPT:      RC=Receive inventory, (R or C or E)=Distribute to an Inventory Point, U=Usage (ex.,patient, in-house), A=Manual adjustment, S=Sets/Packs, P=Physical Count, Q=adj to supply station qty 
+              DESCRIPTION:      This code indicates the type of transaction (i.e., RC= receiving supplies into inventory; R or C or E= Distribution to another Inventory Point; U= Usage (e.g., patient, in-house); A= Manual adjustment to inventory;
+                                S=Assemble Sets/Packs; P= Physical Count; Q= Quantity adjusted to supply station value.  
+
+              CROSS-REFERENCE:  445.2^AX2^MUMPS 
+                                1)= D XREFAX^PRCPUXRE(DA,X,3,"SET")
+                                2)= D XREFAX^PRCPUXRE(DA,X,3,"KILL")
+                                This mumps cross reference builds the node: 
+                                        ^PRCP(445.2,"AX",invpt,transdate transtype,da)="" where: 
+                                        invpt      =    internal inventory point number 
+                                                        from field .01; 
+                                        transdate  =    date of the transaction (no time) 
+                                                        from field 2.5; 
+                                        transtype  =    type of transaction (R:receipts, etc) 
+                                                        from field 3; 
+                                        da         =    internal entry number of the record.  
+                                 
+                                The call to set or kill the cross reference: 
+                                        D XREFAX^PRCPUXRE(DA,X,field,setkill) passes the following variables: 
+                                        DA         =    internal entry number of the record; 
+                                        X          =    field value to set or kill; 
+                                        field      =    field number, either .01, 2.5, or 3; 
+                                        setkill    =    pass "SET" to set xref, "KILL" to kill xref.  
+                                 
+
+
+
+445.2,4       ITEM NO.               0;5 POINTER TO ITEM MASTER FILE (#441) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^PRCP(445,+^PRCP(445.2,DA,0),1,+Y,0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 03, 1993 
+              DESCRIPTION:
+                                This is a pointer the Item Master File, #441 (Note: The item must be in the Inventory file for this Inventory Point).  
+
+              SCREEN:           S DIC("S")="I $D(^PRCP(445,+^PRCP(445.2,DA,0),1,+Y,0))"
+              EXPLANATION:      Item must be in the Inventory file for this Inventory Point.
+              CROSS-REFERENCE:  445.2^AE^MUMPS 
+                                1)= I $P(^PRCP(445.2,DA,0),U) S Z=+$P(^(0),U),^PRCP(445.2,"AD",Z,X,DA)="" K Z
+                                2)= I $P(^PRCP(445.2,DA,0),U) S Z=+$P(^(0),U) K ^PRCP(445.2,"AD",Z,X,DA),Z
+                                This cross reference sets the "AD" cross reference on the ITEM NO.? (field 4) to the inventory point (stored in the variable Z).  
+
+
+
+445.2,5       PACKAGING UNIT         0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<1) X
+              HELP-PROMPT:      Unit of Issue from this Inventory Point.  ANSWER MUST BE 1-9 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the unit of issue from this Inventory Point.  
+
+
+445.2,6       QUANTITY               0;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<-999999)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN -999999 AND 999999.  A plus indicates inventory was incremented by the quantity, a minus indicates inventory was decremented. 
+              DESCRIPTION:
+                                This is the number indicating whether the inventory was incremented by the quantity, or whether the inventory was decremented.  
+
+
+445.2,6.1     INVENTORY VALUE        0;22 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              LAST EDITED:      JUL 07, 1992 
+              HELP-PROMPT:      Type a Dollar Amount between -999999.99 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field is used to store the total dollar inventory value of the transaction.  
+
+              TECHNICAL DESCR:
+                                This field gets set in the routine PRCPUTR.  
+
+
+445.2,6.2     SELL VALUE             0;23 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              HELP-PROMPT:      Type a Dollar Amount between -999999.99 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field is used to store the total dollar sales value of the transaction.  
+
+              TECHNICAL DESCR:
+                                This field gets set in the routine PRCPUTR.  
+
+
+445.2,7       AVG.UNIT COST          0;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999.999)!(X<0)!(X?.E1"."4N.N) X
+              HELP-PROMPT:      Used to value the net affect to the Inventory of this transaction.  TYPE A NUMBER BETWEEN 0 AND 9999999.999 
+              DESCRIPTION:
+                                This is the average unit cost which is used to value the net effect to the Inventory of this transaction.  
+
+
+445.2,8       SELLING UNIT PRICE     0;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999.999)!(X<0)!(X?.E1"."4N.N) X
+              HELP-PROMPT:      Used for cost accounting=the higher of the actual cost or the average at the time the transaction occurred.  TYPE A NUMBER BETWEEN 0 AND 9999999.999 
+              DESCRIPTION:
+                                This is used for cost accounting (i.e., the higher of the actual cost or the average at the time the transaction occurred).  
+
+
+445.2,8.5     POSTED BY              0;16 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      JUN 01, 1992 
+              HELP-PROMPT:      Enter the name of the User that initiated the Posting Process for this Transaction. 
+              DESCRIPTION:
+                                This field stores the user which created the activity against this item in the inventory point.  
+
+
+445.2,9       REASON CODE            0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+              HELP-PROMPT:      (WILL LATER BE A POINTER TO A FILE USED BY THE INTERFACE TO LOG I) USED PRIMARILY TO EXPLAIN REASON FOR MANUAL ADJUSTMENTS.  ANSWER MUST BE 1-3 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field is no longer used.  
+
+
+445.2,9.5     ADDITIONAL REASON TEXT 1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              HELP-PROMPT:      Used for Manual Adjustments and Usage Function to allow operator to describe why the transaction occurred.  ANSWER MUST BE 1-80 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field is used to explain the reason for the activity against this item in the inventory point.  It allows the user to enter a reason for making adjustments to items.  
+
+
+445.2,10      ISSUABLE/NONISSUABLE   0;11 SET
+
+                                'I' FOR ISSUABLE; 
+                                'N' FOR NON-ISSUABLE; 
+              LAST EDITED:      APR 20, 1992 
+              HELP-PROMPT:      Used to denote transfers between Issuable and Non-Issuable Inventory.  (Used in manual transactions only). 
+              DESCRIPTION:
+                                This code is used to denote transfers between Issuable and Non-Issuable Inventory adjustments.  
+
+
+445.2,10.5    LOG TRANSACTION CODE   0;13 POINTER TO CALM/LOG TRANSACTIONS CODE LIST FILE (#420.4)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^PRCD(420.4,+Y,0),U,6)=""LOG""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 11, 1989 
+              DESCRIPTION:
+                                This field is no longer used.  
+
+              SCREEN:           S DIC("S")="I $P(^PRCD(420.4,+Y,0),U,6)=""LOG"""
+              EXPLANATION:      Only LOG transactions can be selected
+
+445.2,11      SOURCE CODE            0;12 POINTER TO SOURCE CODE FILE (#420.8)
+
+              HELP-PROMPT:      Used on Receiving Transactions only.  The source from which the item was procured. 
+              DESCRIPTION:
+                                This field is no longer used.  
+
+
+445.2,12      ACCOUNT CODE           0;14 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+              HELP-PROMPT:      (May be made a pointer to a file in the future) Used in LOG transactions only, the code indicates a 4-digit GL code. 
+              DESCRIPTION:
+                                This field is no longer used.  
+
+              TECHNICAL DESCR:
+                                 
+
+
+445.2,13      VOUCHER NUMBER         0;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>6!($L(X)<1) X
+              LAST EDITED:      AUG 12, 1994 
+              HELP-PROMPT:      Used for receipts from DEPOT only, this is the number that LOG used to identify a DEPOT transaction.  ANSWER MUST BE 1-6 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field stores the voucher number which appears on the voucher summary report and is used for reconciliation.  
+
+              CROSS-REFERENCE:  445.2^V 
+                                1)= S ^PRCP(445.2,"V",$E(X,1,30),DA)=""
+                                2)= K ^PRCP(445.2,"V",$E(X,1,30),DA)
+                                This cross reference is used to lookup transaction register entries by the voucher number.  
+
+
+
+445.2,14      OTHER INVENTORY POINT AFFECTED 0;18 POINTER TO GENERIC INVENTORY FILE (#445)
+
+              LAST EDITED:      JUN 22, 1987 
+              HELP-PROMPT:      For any transaction that affects two inventory points (ex.distribution), the name of the other inventory point affected should be entered here. 
+              DESCRIPTION:
+                                This is designated for the name of the other inventory point affected (i.e., in the case where there is a transaction that affects two inventory points).  
+
+
+445.2,20      ADJUSTMENT APPROVED DATE@TIME 0;20 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 17, 1992 
+              DESCRIPTION:      This field is used for adjustment transactions.  When an adjustment is made in the warehouse inventory point, this field is used to indicate the date and time the adjustment was approved by the accountable and approving
+                                officials.  
+
+
+445.2,21      ADJUSTMENT APPROVED BY 0;21 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 17, 1992 
+              DESCRIPTION:
+                                This field is used for adjustment transactions.  When an adjustment is made in the warehouse inventory point, this field is used to indicate the user who entered the adjustment as approved.  
+
+
+445.2,22      SUPPLY STATION USER    2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      APR 13, 2000 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                The name of the person who took the supplies from the automated supply station.  
+
+
+445.2,23      RECIPIENT              2;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 21, 2000 
+              HELP-PROMPT:      This field contains the information of who or what received supplies obtained from the automated supply station.  The response must be between 1 and 60 characters 
+              DESCRIPTION:
+                                This field holds the name of patient or area receiving supplies from an automated supply station.  For example, floor stock, trashed, etc.  
+
+              RECORD INDEXES:   D (#48)
+
+445.2,410     TRANSACTION/P.O. NUMBER 0;19 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>18!($L(X)<10) X
+              LAST EDITED:      JAN 15, 1992 
+              HELP-PROMPT:      Answer must be 10-18 characters in length. 
+              DESCRIPTION:      This field is used to store the transaction number from file 410.  The field is set to the transaction number when the warehouse posts an issue book to a primary.  This field is used for lookups during the 'Reprint a
+                                Picking Ticket' option.  
+
+              CROSS-REFERENCE:  445.2^C 
+                                1)= S ^PRCP(445.2,"C",$E(X,1,30),DA)=""
+                                2)= K ^PRCP(445.2,"C",$E(X,1,30),DA)
+                                This cross reference is used for lookups on the transaction number for reprinting the picking ticket.  
+
+
+
+445.2,411     ISSUE BOOK LINE NUMBER 0;24 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 14, 1994 
+              HELP-PROMPT:      Enter the Issue Book Line Number from 1 to 9999999. 
+              DESCRIPTION:
+                                This field is used to store the issue book line number.  The issue book line number is used to look up on the issue book line to determine the subacct for fms.  
+
+                                UNEDITABLE
+
+
+      FILES POINTED TO                      FIELDS
+
+CALM/LOG TRANSACTIONS CODE LIS 
+                   (#420.4)       LOG TRANSACTION CODE (#10.5)
+
+GENERIC INVENTORY (#445)          INVENTORY POINT (#.01)
+                                  OTHER INVENTORY POINT AFFECTED (#14)
+
+ITEM MASTER (#441)                ITEM NO. (#4)
+
+NEW PERSON (#200)                 POSTED BY (#8.5)
+                                  ADJUSTMENT APPROVED BY (#21)
+
+SOURCE CODE (#420.8)              SOURCE CODE (#11)
+
+
+File #445.2
+
+  Record Indexes:
+
+  D (#48)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Recipients of supplies
+      Description:  This file will list the receipients/patients to whom supplies from a supply station were obtained.  
+        Set Logic:  S ^PRCP(445.2,"D",$E(X(1),1,30),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^PRCP(445.2,"D",$E(X(1),1,30),$E(X(2),1,30),DA)
+       Whole Kill:  K ^PRCP(445.2,"D")
+             X(1):  INVENTORY POINT  (445.2,.01)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  RECIPIENT  (445.2,23)  (Subscr 2)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PRCP POSTED DIETETIC PRINT    MAY 13, 1992@16:01  USER #0                                                                                                                                                                          POSTED DIETETIC COST REPORT
+
+SORT TEMPLATE(S):
+PRCP POSTED DIETETIC SORT     JAN 17, 1995@14:45  USER #0    
+SORT BY: OTHER INVENTORY POINT AFFECTED//    (User is asked range)
+  WITHIN OTHER INVENTORY POINT AFFECTED, SORT BY: ITEM NO.://
+  ITEM MASTER FIELD: FOOD GROUP//    (User is asked range)
+    WITHIN FOOD GROUP, SORT BY: DATE OF TRANSACTION//    (User is asked range)
+
+
+FORM(S)/BLOCK(S):

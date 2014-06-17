@@ -1,0 +1,263 @@
+STANDARD DATA DICTIONARY #410.3 -- REPETITIVE ITEM LIST FILE                                                                                                                                                                      MAY 20,2014@15:33:55  PAGE 1
+STORED IN ^PRCS(410.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to build a list of repetitive (purchase request card type) items.  The Control Point Clerk can then generate requests automatically from the entries in this file.  At the time requests are generated, the items are pre-sorted by vendor
+before being entered in the Control Point Activity file as requests.  
+
+
+IDENTIFIED BY: TOTAL COST (#2), DATE/TIME CREATED (#4)
+         "Z0": W:$D(^PRCS(410.3,+Y,1,0)) ?30,"# OF ITEMS: ",$P(^(0),"^",4) W ?59,"TOTAL COST: ",$J($P(^PRCS(410.3,+Y,0),U,2),9,2)
+
+CROSS
+REFERENCED BY: NEW SSO(AC), ENTRY NUMBER(B), ENTRY NUMBER(C)
+
+410.3,.01     ENTRY NUMBER           0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>25!($L(X)<12)!'(X'?1P.E)!(X'?.ANP) X
+              LAST EDITED:      MAR 02, 1993 
+              HELP-PROMPT:      ANSWER MUST BE 12-25 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the entry number for this transaction.  It is used by the Control Point Clerk when generating requests.  
+
+              TECHNICAL DESCR:  This field consists of 6 parts, seperated by '-'.  
+                                 
+                                 PART NUMBER       NAME           DESCRIPTION 
+                                     1.       STATION NUMBER  The station number, 3 numbers only 
+                                     2.       FISCAL YEAR 
+                                     3.       QUARTER          A quarter within a FISCAL YEAR 
+                                     4.       CONTROL POINT 
+                                     5.       COST CENTER     A C. center within a CONTROL POINT 
+                                     6.       SEQUENTIAL #    A number that allows for multiple 
+                                                              repetitive item lists.  This number 
+                                                              is stored in file 410.1 under a record 
+                                                              number made up of the first 5 parts of 
+                                                              this field, separated with '-'.  
+
+              CROSS-REFERENCE:  410.3^B 
+                                1)= S ^PRCS(410.3,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRCS(410.3,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  410.3^C^MUMPS 
+                                1)= S:$P(X,"-",5)'="" ^PRCS(410.3,"C",$P(X,"-",5),DA)=""
+                                2)= K:$P(X,"-",5)'="" ^PRCS(410.3,"C",$P(X,"-",5),DA)
+                                This cross reference is set on the cost center used on the repetitive item list.  
+
+
+
+410.3,1       ITEM                   1;0 POINTER Multiple #410.31 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is the item requested in this transaction.  
+
+              IDENTIFIED BY:    
+                       "Z0":    W ?8,$P(^PRC(441,$P(^(0),"^",1),0),"^",2)
+
+410.31,.01      ITEM                   0;1 POINTER TO ITEM MASTER FILE (#441) (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $O(^PRC(441,+Y,2,0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 28, 1987 
+                HELP-PROMPT:      Select an item from the Item Master file for this repetitive request. 
+                DESCRIPTION:      This is a pointer to an item in the Item file, #441.  This file is composed of items specified by Supply Service as being purchased repetitively.  This file maintains a full description of the item, related stock
+                                  numbers, vendors, contract numbers, and a procurement history.  
+
+                SCREEN:           S DIC("S")="I $O(^PRC(441,+Y,2,0))"
+                EXPLANATION:      A vendor must exist for this item in the Item Master file.
+                CROSS-REFERENCE:  410.31^B 
+                                  1)= S ^PRCS(410.3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCS(410.3,DA(1),1,"B",$E(X,1,30),DA)
+
+
+410.31,1        QUANTITY               0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<.01)!(X?.E1"."3N.N) X
+                LAST EDITED:      APR 17, 1986 
+                HELP-PROMPT:      Enter the quantity (a number from .01 to 999,999 with up to two decimal places) of this item you wish to order. 
+                DESCRIPTION:
+                                  This is the quantity of the item, up to two decimal places, to be ordered.  
+
+
+410.31,2        VENDOR                 0;3 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  D VENDOR^PRCSRIE
+                LAST EDITED:      APR 21, 1986 
+                HELP-PROMPT:      Select the name of the vendor from whom you wish to order this item. 
+                DESCRIPTION:
+                                  This is the name of the vendor from whom this item is to be ordered.  
+
+                EXECUTABLE HELP:  S:$D(D) ZD=D S X="?",Z0=$P(^PRCS(410.3,DA(1),1,DA,0),"^",1) Q:'Z0  Q:'$D(^PRC(441,Z0,2,0))  S DIC="^PRC(441,Z0,2,",DIC(0)="QEM" D ^DIC S DIC=DIE S:$D(ZD) D=ZD K ZD
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  410.31^AC 
+                                  1)= S ^PRCS(410.3,DA(1),1,"AC",X,DA)=""
+                                  2)= K ^PRCS(410.3,DA(1),1,"AC",X,DA)
+                                  This cross reference is set on the vendor name used for the repetitive item list.  
+
+
+
+410.31,3        EST. ITEM (UNIT) COST  0;4 NUMBER (Required)
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) Q:X?1"N/C"  K:+X'=X&(X'?.N1"."2N)!(X>9999999)!(X<0) X I $D(X),X=0 S X="N/C"
+                LAST EDITED:      AUG 31, 1986 
+                HELP-PROMPT:      Enter the unit cost for this item (a dollar amount between 0 and 9999999) or N/C for no charge.  Commas are not allowed. 
+                DESCRIPTION:
+                                  This is the unit cost for this item or a N/C for no charge.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+410.31,4        VENDOR(POINTER)        0;5 POINTER TO VENDOR FILE (#440)
+
+                LAST EDITED:      APR 19, 1986 
+                DESCRIPTION:      This is a pointer to a vendor in the Vendor file, #440.  The Vendor file is composed of all the vendors with which the facility does business.  The Vendor file contains ordering and billing addresses, contract
+                                  information, FPDS information, and telephone numbers.  If the desired vendor is not in the file, Supply Service must be contacted to add it.  
+
+
+410.31,5        DELIVERY ORDER ITEM    0;6 SET
+
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                                  'O' FOR ORDERED; 
+                LAST EDITED:      JUL 31, 1996 
+                DESCRIPTION:
+                                  this field is used to indicate if the item is a contract item, which indicates that it will be placed on a delivery order.  
+
+
+410.31,6        DM DOC ID              0;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>16!($L(X)<9) X
+                LAST EDITED:      FEB 28, 2005 
+                HELP-PROMPT:      Answer must be 9-16 characters in length. 
+                DESCRIPTION:      This is DynaMed's unique number associated with each item that is sent on a request order from DynaMed. It is composed of 1 digit for Year concatenated with 3 digit Julian Date a dash, concatenated with 4 digit 
+                                  Sequential Number and a dash, concatenated up to 6 characters (ex YDDD-9999-CCCCCC).  
+                                   
+                                  This number is provided by DynaMed, a user's input is not required. DynaMed allows 16 characters maximum. 
+
+                TECHNICAL DESCR:  This number will be associated with an order request from DynaMed.  Each order request will identify a single item in Item Master File in IFCAP.  
+                                   
+                                  The DM DOC ID will also be recorded in a New Audit File (DYNAMED IFCAP INTERFACE AUDIT file #414.02 created for DynaMed Interface) and a cross reference will be established to ensure that requests bearing the same 
+                                  Document ID are only processed once by IFCAP.  
+                                   
+                                  A user is not allowed to edit this field.  
+
+                SOURCE OF DATA:   DynaMed --Information Control
+                                  UNEDITABLE
+
+410.31,7        DATE NEEDED BY         0;8 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 31, 2005 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:      This date is entered on the DynaMed system at the time the item is being requested.  This Date is received in a transaction from DynaMed, it resides first in the RIL, it is pushed to the 2237, and then to the Purchase
+                                  Order as the item is processed through IFCAP.  
+
+                TECHNICAL DESCR:
+                                  A user is not allowed to edit this field.  
+
+                SOURCE OF DATA:   DynaMed --Information Control
+                                  UNEDITABLE
+
+
+
+410.3,2       TOTAL COST             0;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:+X'=X&(X'?.N1"."2N)!(X>9999999)!(X<0) X
+              HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 9999999 
+              DESCRIPTION:
+                                This is the total cost of this item.  
+
+
+410.3,3       INVENTORY/DISTRIBUTION POINT 0;3 POINTER TO GENERIC INVENTORY FILE (#445)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""S""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 02, 1987 
+              HELP-PROMPT:      For Repetitive Item Lists generated through the General Inventory System, this will be the name of the Inventory/Distribution Point that generated the repetitive item list. 
+              DESCRIPTION:
+                                This is the inventory/distribution point for the items in the transaction.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""S"""
+              EXPLANATION:      Only Primary Inventory Points or the Warehouse can make requests to Supply Service.
+
+410.3,4       DATE/TIME CREATED      0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 28, 1987 
+              HELP-PROMPT:      Date and time that this repetitive item list was created, if built using the Automatic Generation of Suggested Supply Request option of the Generic Inventory System. 
+              DESCRIPTION:
+                                This is the date/time the transaction was created.  
+
+
+410.3,5       REQUEST BEING CREATED  0;5 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      SEP 05, 1989 
+              DESCRIPTION:
+                                Enter YES if a request is to be created.  
+
+
+410.3,6       REPETITIVE ITEM LIST TYPE 0;6 SET
+
+                                'A' FOR NARCOTIC; 
+                                'L' FOR CONTROLLED SUBSTANCE; 
+                                'D' FOR OTHER DRUGS; 
+              LAST EDITED:      MAY 24, 1992 
+              DESCRIPTION:
+                                This field specifies the type of Repetitive Item List i.e. A,L or D for drug type, or a NULL for non-drug.  
+
+
+410.3,7       NEW SSO                2;1 POINTER TO PURCHASE ORDER STATUS FILE (#442.3)
+
+              INPUT TRANSFORM:  K Z0 S Z0(65)="",DIC("S")="I $D(Z0(+$P(^(0),U,2)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 13, 1992 
+              DESCRIPTION:      This field points to the PURCHASE ORDER STATUS file.  It is used to build a cross-reference which notifies the PPM clerk that there is a new REPETITIVE ITEM LIST file entry created from a SSO transaction from Austin.  This
+                                field is set in S2^PRCOSS6.  The ENTRY ACTION of the PRCHUSER PPM menu option calls the routine PRCHOSS3.  The routine will notify the user that there are new REPETITIVE ITEM LIST entries to turn into 2237s.  
+
+              SCREEN:           K Z0 S Z0(65)="",DIC("S")="I $D(Z0(+$P(^(0),U,2)))"
+              EXPLANATION:      Notify PPM clerk about new REPETITIVE ITEM LIST from a SSO transaction to turn into a 2237.
+              CROSS-REFERENCE:  410.3^AC 
+                                1)= S ^PRCS(410.3,"AC",$E(X,1,30),DA)=""
+                                2)= K ^PRCS(410.3,"AC",$E(X,1,30),DA)
+                                This x-ref is used to notify the PPM clerk that there is a new REPETITIVE ITEM LIST file entry created from a SSO transaction from Austin.  This field is set in S2^PRCOSS6.  The ENTRY ACTION of PRCHUSER PPM menu option 
+                                calls the routine PRCOSS3. The routine will notify the user that there are new REPETITIVE ITEM LIST entries to turn into 2237s.  
+
+
+
+410.3,8       DATE/TIME IN DM        0;7 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 28, 2005 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This date and time signifies when a Requisition was generated in DynaMed. This date is passed by DynaMed and it is used to determine Fiscal Year and Quarter for the transaction in IFCAP.  
+
+              TECHNICAL DESCR:
+                                This is the date that determines Fiscal Year and Quarter for the transaction in IFCAP package.  A user is not allowed to edit this field.  
+
+              SOURCE OF DATA:   DynaMed --Information Control
+                                UNEDITABLE
+
+
+      FILES POINTED TO                      FIELDS
+
+GENERIC INVENTORY (#445)          INVENTORY/DISTRIBUTION POINT (#3)
+
+ITEM MASTER (#441)                ITEM:ITEM (#.01)
+
+PURCHASE ORDER STATUS (#442.3)    NEW SSO (#7)
+
+VENDOR (#440)                     ITEM:VENDOR(POINTER) (#4)
+
+
+
+INPUT TEMPLATE(S):
+PRCHSPD                       JUN 18, 1986        USER #0    
+PRCSRI                        AUG 13, 2001@11:01  USER #0    
+     This input template is for creating a repetitive list entry.
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

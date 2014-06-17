@@ -1,0 +1,222 @@
+STANDARD DATA DICTIONARY #350.1 -- IB ACTION TYPE FILE                                                                                                                                                                            MAY 20,2014@15:35:25  PAGE 1
+STORED IN ^IBE(350.1,  (110 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                         (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the types of actions that a service can use with IB.  Data in this file provides links from the application to IB to AR that are associated with the type rather than each entry.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: COPAY TRANSACTION TYPE field (#105) of the PRESCRIPTION File (#52) 
+               ACTION TYPE field (#.03) of the INTEGRATED BILLING ACTION File (#350) 
+               CANCELLATION ACTION TYPE field (#.06) of the IB ACTION TYPE File (#350.1) 
+               UPDATE ACTION TYPE field (#.07) of the IB ACTION TYPE File (#350.1) 
+               NEW ACTION TYPE field (#.09) of the IB ACTION TYPE File (#350.1) 
+               IB TRANSACTION TYPE field (#.03) of the IB ACTION CHARGE File (#350.2) 
+               RATE GROUP field (#.03) of the BILLABLE AMBULATORY SURGICAL CODE File (#350.4) 
+               OLD RATE GROUP field (#.03) of the UPDATE BILLABLE AMBULATORY SURGICAL CODE File (#350.41) 
+               NEW RATE GROUP field (#.04) of the UPDATE BILLABLE AMBULATORY SURGICAL CODE File (#350.41) 
+               ACTION TYPE field (#.18) of the IB COPAY TRANSACTIONS File (#354.71) 
+               IB ACTION TYPE (COPAYMENT) field (#.14) of the MCCR UTILITY File (#399.1) 
+               IB ACTION TYPE (PER DIEM) field (#.15) of the MCCR UTILITY File (#399.1) 
+               
+
+CROSS
+REFERENCED BY: SERVICE(ANEW), SEQUENCE NUMBER(ANEW1), NAME(B), SERVICE(C), ABBREVIATION(D), USER LOOKUP NAME(E)
+
+350.1,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(X?.N)!($L(X)<3)!'(X'?1P.E) X
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              DESCRIPTION:
+                                Enter the  unique name of this action type.  The name should begin with the namespace of the application that will use this action type and should describe the function being billed.  
+
+              DELETE TEST:      1,0)= I 1 W !,"Deleting entries not allowed"
+
+              CROSS-REFERENCE:  350.1^B 
+                                1)= S ^IBE(350.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(350.1,"B",$E(X,1,30),DA)
+
+
+350.1,.02     ABBREVIATION           0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>8!($L(X)<2) X
+              LAST EDITED:      AUG 30, 1991 
+              HELP-PROMPT:      Answer must be 2-8 characters in length. 
+              DESCRIPTION:
+                                Enter a short description that can be output on space limited reports.  
+
+              CROSS-REFERENCE:  350.1^D 
+                                1)= S ^IBE(350.1,"D",$E(X,1,30),DA)=""
+                                2)= K ^IBE(350.1,"D",$E(X,1,30),DA)
+
+
+350.1,.03     CHARGE CATEGORY        0;3 POINTER TO ACCOUNTS RECEIVABLE CATEGORY FILE (#430.2)
+
+              DESCRIPTION:
+                                This is the pointer to the ACCOUNT RECEIVABLE CATEGORY file.  This data will get passed to AR when an IB ACTION for this ACTION type gets passed to AR.  
+
+
+350.1,.04     SERVICE                0;4 POINTER TO SERVICE/SECTION FILE (#49)
+
+              LAST EDITED:      FEB 14, 1991 
+              DESCRIPTION:
+                                Enter the name of the Service/Section that will be using this action type.  This is required by Accounts Receivable.  
+
+              CROSS-REFERENCE:  350.1^C 
+                                1)= S ^IBE(350.1,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBE(350.1,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  350.1^ANEW^MUMPS 
+                                1)= I $P(^IBE(350.1,DA,0),U,5) S ^IBE(350.1,"ANEW",X,$P(^(0),U,5),DA)=""
+                                2)= I $P(^IBE(350.1,DA,0),U,5) K ^IBE(350.1,"ANEW",X,$P(^(0),U,5),DA)
+
+
+350.1,.05     SEQUENCE NUMBER        0;5 SET
+
+                                '1' FOR NEW; 
+                                '2' FOR CANCEL; 
+                                '3' FOR UPDATE; 
+                                '81' FOR MEDICARE DEDUCTIBLE; 
+                                '82' FOR CHAMPVA LIMIT; 
+                                '91' FOR HOSPITAL ADMISSION; 
+                                '92' FOR NHCU ADMISSION; 
+                                '93' FOR LTC ADMISSION; 
+              LAST EDITED:      MAR 05, 2002 
+              HELP-PROMPT:      Enter the appropriate entry to indicate the sequencing that this action type should be filed with AR, or the appropriate code for the non-billable action type. 
+              DESCRIPTION:      This field tells the IB filer the order in which to file entries with AR.  A new entry must be filed before it can be cancelled.  An update action type will generate two actions, a cancel of previous entry, and an updated
+                                entry containing the correct data.  The update will be filed after the cancel.  The ordering must be maintained so that the last full entry in the INTEGRATED BILLING ACTION file for a parent is the most current entry.  (an
+                                inverse date x-ref on the parent field will indicate the most recent entry to the updated parent) Additional numbering series are also available for IB ACTION TYPES which do not explicitly represent billable charges. 
+                                These series are set so that they do not conflict with the ordering required for correct processing of IB ACTION charges in AR.  
+
+              CROSS-REFERENCE:  350.1^ANEW1^MUMPS 
+                                1)= I $P(^IBE(350.1,DA,0),U,4) S ^IBE(350.1,"ANEW",$P(^(0),U,4),X,DA)=""
+                                2)= I $P(^IBE(350.1,DA,0),U,4) K ^IBE(350.1,"ANEW",$P(^(0),U,4),X,DA)
+
+
+350.1,.06     CANCELLATION ACTION TYPE 0;6 POINTER TO IB ACTION TYPE FILE (#350.1)
+
+              LAST EDITED:      FEB 13, 1991 
+              DESCRIPTION:      This is the IB ACTION TYPE entry that will be the 'CANCEL' type for this entry.  If this is a 'CANCEL' type entry, then this will be itself.  Every 'NEW' type entry should have an associated 'CANCEL' and 'UPDATE' type
+                                entry.  
+
+
+350.1,.07     UPDATE ACTION TYPE     0;7 POINTER TO IB ACTION TYPE FILE (#350.1)
+
+              LAST EDITED:      FEB 13, 1991 
+              DESCRIPTION:      This is the IB ACTION TYPE entry that will be the 'UPDATE' type for this entry.  If this entry is an UPDATE type then it will be itself.  For every 'NEW' type of entry, there should be an associated 'CANCEL' and 'UPDATE'
+                                type.  
+
+
+350.1,.08     USER LOOKUP NAME       0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>22!($L(X)<3) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 3-22 characters in length. 
+              DESCRIPTION:
+                                This is the name of the action that may be used for look-up and printing on reports.  The name will only exist for IB ACTION TYPE entries whose SEQUENCE NUMBER is "1" for NEW.  
+
+              CROSS-REFERENCE:  350.1^E 
+                                1)= S ^IBE(350.1,"E",$E(X,1,30),DA)=""
+                                2)= K ^IBE(350.1,"E",$E(X,1,30),DA)
+
+
+350.1,.09     NEW ACTION TYPE        0;9 POINTER TO IB ACTION TYPE FILE (#350.1)
+
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                This is the IB ACTION TYPE entry that is the 'NEW' type for this entry.  
+
+
+350.1,.1      PLACE ON HOLD          0;10 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:      This field is used to flag those IB Actions (as identified by the IB Action Type) which may be 'held up' in Integrated Billing until reimbursement from an Insurance company for the billing of the same event has been
+                                received.  
+                                 
+                                The field will be set to 'YES' if the Action Type is one which represents a billable action which may be billed to a patient's insurance company as well as to the patient.  
+
+
+350.1,.11     BILLING GROUP          0;11 SET
+
+                                '1' FOR INPT/NHCU FEE SERVICE; 
+                                '2' FOR INPT/NHCU COPAY; 
+                                '3' FOR INPT/NHCU PER DIEM; 
+                                '4' FOR OPT COPAY; 
+                                '5' FOR RX COPAY; 
+                                '6' FOR CHAMPVA; 
+                                '7' FOR TRICARE; 
+                                '8' FOR LTC OPT; 
+                                '9' FOR LTC INPT; 
+              LAST EDITED:      MAR 16, 2004 
+              HELP-PROMPT:      Enter Group for manual charge processing. 
+              DESCRIPTION:
+                                This field is a set of codes used to enter the group for manual charge processing.  
+
+
+350.1,10      PARENT TRACE LOGIC     10;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:      This is the executable code that will expand the field RESULTING FROM in the INTEGRATED BILLING ACTION File to return in Y(n) the zeroth node of the entry creating this entry.  If the entry is caused by a top level entry
+                                then Y(0) will equal the zeroth node of the file.  If an entry is caused by a lower level entry then in addition to Y(0), Y(1) will be the zeroth node of the next lower level, Y(2) will be the zeroth node of the third
+                                level, etc.  If a node described in the RESULTING FROM field in file 350 is not present then Y=-1^error code.  
+
+
+350.1,20      SET LOGIC              20;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:      This is the executable MUMPS code that will calculate the BRIEF DESCRIPTION stored in file 350.  This is used by the IB application interface routines.  This may execute the PARENT TRACE LOGIC to return data from the 
+                                application.  
+
+
+350.1,30      FULL PROFILE LOGIC     30;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:
+                                This is the standard MUMPS code that will calculate the full profile of an IB ACTION entry as approved by the DBA agreements between integrating applications.  
+
+
+350.1,40      ELIGIBILITY LOGIC      40;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      FEB 06, 1991 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:
+                                This field the standard mumps code to determine  eligibility to use the IB ACTION TYPE for the desired debtor.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ACCOUNTS RECEIVABLE CATEGORY 
+                   (#430.2)       CHARGE CATEGORY (#.03)
+
+IB ACTION TYPE (#350.1)           CANCELLATION ACTION TYPE (#.06)
+                                  UPDATE ACTION TYPE (#.07)
+                                  NEW ACTION TYPE (#.09)
+
+SERVICE/SECTION (#49)             SERVICE (#.04)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,1140 @@
+STANDARD DATA DICTIONARY #15 -- DUPLICATE RECORD FILE                                                                                                                                                                             MAY 20,2014@15:42:15  PAGE 1
+STORED IN ^VA(15,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                (VERSION 7.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains information about duplicate records in any file defined in the two variable pointer fields; RECORD1 and RECORD2 (.01 and .02).  The status of an entry in this file may be 'potential duplicate, unverified', 'verified, not a duplicate',
+or 'verified duplicate'.  
+ 
+The envisioned sequence of events is software would identify potential duplicates from a file and add an entry in this file containing the two potential duplicate records and set the status field to 'potential duplicate, unverified'.  A user would then
+make the determination of whether the two entries were truely duplicates and change the status field appropriately.  
+ 
+If the user changed the status to 'verified duplicate' he/she would then be asked whether to merge RECORD1 to RECORD2 or RECORD2 to RECORD1.  The records would then be merged accordingly.  
+ 
+This user interaction is controlled by the merge software and the dictionary supports a merge methodology that will notify the appropriate packages affected by the merging of the two entries and wait for their concurrence prior to actually merging the
+two entries.  If this approach is not desired the software can set the appropriate fields and immediatley do the merge.  This methodology requires the two fields defined below.  
+ 
+The MERGE STATUS field is a SET where 0=not ready, 1=ready, and 2=merged.  This field would be set to 0=not ready and a bulletin would be sent to the appropriate package users.  
+ 
+The MERGE PACKAGES field is a multiple which contains a list of packages that are affected by the merging of entries in the subject file.  The STATUS field of this multiple will be set to 0=not ready if the package has the 'from' entry and does an
+interactive merge.  It will be set to 1=ready if the package has the 'from' entry but does an automatic merge.  It will be set to 2=no from entry if the package does not have the 'from' entry, regardless of whether they do an interactive or automatic
+merge.  If the package has a merge routine in the package file the merge is automatic.  If not, the merge is interactive.  The ERROR MESSAGE field of this multiple will contain any errors encountered during the execution of that packages merge routine.  
+ 
+Once all entries in the MERGE PACKAGES multiple have a STATUS'=0 the MERGE STATUS field is set to 1=ready via a TRIGGER.  
+ 
+Once the MERGE STATUS is set to 1=ready the actual merge will occur.  When it is complete the MERGE STATUS will be set to 2=merged.  Once set to 2 most fields cannot be modified.  
+ 
+The following fields are set by TRIGGERs and are never seen by the user: DATE FOUND, DATE VERIFIED, DATE RESOLVED, WHO CREATED, WHO VERIFIED, and WHO CHANGED.  Also, the MERGE DIRECTION and MERGE STATUS fields will be deleted by a TRIGGER if the STATUS
+field is modified from 'verified duplicate' to any other status.  
+ 
+The fields LOOKUP1 and LOOKUP2 provide navigational capability from this file to either the RECORD1 or RECORD2 entries in the file specified in the variable pointer fields.  The field LOOKUP3 provides navigational capability to any file that points to
+this file and has a DINUM relationship.  
+ 
+A lookup on the "B" xref will get any file entry that is part of a duplicate record pair because the "B" xref is set by a REGULAR xref on the .01 field and by a MNEMONIC xref on the .02 field.  
+ 
+The "AFR" xref is used by the INPUT TRANSFORMS on the .01 and .02 field to prevent entering a file entry that has already been merged away.  
+ 
+All xrefs that have subscripts consisting of 'RECORD^RECORD' pairs will be 'low DFN^high DFN'.  
+ 
+The "ALK" xref is short lived and contains entries that are unresolved potential duplicates or verified duplicates that have not yet been merged.  Its form, using file 2 as an example, is ^VA(15,"ALK","DPT(",fe#1,1,fe#2,DA) or
+^VA(15,"ALK","DPT(",fe#1,2,fe#2,DA) where the 5th subscript has the following meaning: 1=potential duplicate, 2=verified duplicate.  When the 5th subscript is a 1 there will be two "ALK" entries with the two fe#s reversed.  When the 5th subscript is a 2
+there will be only 1 "ALK" entry and fe#s will be in the order 'from' 'to'.  Once merged the "ALK" xref for that entry will be killed.  
+ 
+The "AMRG" xref is also short lived and contains one "AMRG" entry for each entry in this file that has a MERGE STATUS of 0=not ready or 1=ready.  Once merged the "AMRG" xref for that entry will be killed.  The form of the "AMRG xref, using file 2 as an
+example, is ^VA(15,"AMRG","DPT(",0,DA) or ^VA(15,"AMRG","DPT(",1,DA) where the value of the 4th subscript has the following meaning; 0=not ready, 1=ready.  
+ 
+The "AVCHG" xref is set by the WHO CHANGED field which is itself only set when the STATUS field is changed from "V" to any other value.  If this xref exists action needs to be taken because other packages have been notified to merge the two entries.  
+ 
+All TRIGGERs fire forward except the TRIGGER on the STATUS field of the MERGE PACKAGES multiple which fires backward to set the MERGE STATUS field.  However, that TRIGGER has no effect on the kill side.  TRIGGER direction can be relevent when deleting
+entries using ^DIK.  
+ 
+The .01 and .02 fields are 'uneditable' so entries can only be deleted from this file using ^DIK.  
+ 
+Most TRIGGERs will not fire during a RE-INDEX of this file.  Also, many are conditional upon external SET values.  Modify this dictionary with extreme caution.  
+ 
+Several TRIGGERs have been modified using ^%GEDIT to add MUMPS code to the conditional logic to prevent firing during a RE-INDEX.  This was done only for TRIGGERs that already had human readable conditional logic.  
+ 
+***** W A R N I N G ***** When you add a file to a variable pointer field FileMan deletes the input transform so save it off before the change and restore it after the change.  
+
+
+FILE SCREEN (SCR-node) : I 1 Q:$D(APMFCTL)  Q:'$D(^VA(15,Y,9999999))  I '+^(9999999)
+              DD ACCESS: @
+              RD ACCESS: #
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: #
+IDENTIFIED BY: RECORD2 (#.02)[R], STATUS (#.03)[R]
+
+POINTED TO BY: DUPLICATE FILE ENTRY field (#.03) of the MERGE ENTRY sub-field (#15.22) of the XDR MERGE PROCESS File (#15.2) 
+               
+
+CROSS
+REFERENCED BY: STATUS(ACMORS), MERGE STATUS(ADJ), MERGE DIRECTION(AFR), MERGE STATUS(AFR), STATUS(ALK), MERGE DIRECTION(ALK2), MERGE STATUS(ALK3), MFI CONTROLLED(AMFIC), MFI PATIENT(AMFIP), MFI RESOLVED(AMFIP2), MFI RESOLVED(AMFIR), 
+               MERGE STATUS(AMRG), STATUS(ANOT), STATUS(AODUP), STATUS(APOT), STATUS(ARDUP), STATUS(ARDUP1), MERGE DIRECTION(ATO), MERGE STATUS(ATO), WHO CHANGED(AVCHG), STATUS(AVDUP), STATUS(AXDUP), STATUS(AXDUP1), RECORD1(B), RECORD2(B)
+
+15,.01        RECORD1                0;1          VARIABLE POINTER (Required)
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 2    1    P            n   PATIENT 
+                 200  2    NP           n   NEW PERSON 
+                                         
+              INPUT TRANSFORM:  I $D(^VA(15,"AFR",$P(X,";",2),+X)) S %=$O(^(+X,0)),%=+$P(^VA(15,%,0),U,$P(^VA(15,%,0),U,4)#2+1),%=$P(@(U_$P(X,";",2)_%_",0)"),U,1) K X W !?5,"Already merged to "_% Q
+              LAST EDITED:      SEP 06, 1990 
+              DESCRIPTION:
+                                This field contains one of the potential duplicate pair.  This is a variable pointer.  
+
+              TECHNICAL DESCR:
+                                One of the potential duplicate pair.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  15^B 
+                                1)= S ^VA(15,"B",$E(X,1,30),DA)=""
+                                2)= K ^VA(15,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^.06 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$D(DIU(0))=0 I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC X ^DD(15,.01,1,2,1.4)
+                                1.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,6)=DIV,DIH=15,DIG=.06 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= S X=$D(DIU(0))=0
+                                CREATE VALUE)= TODAY
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= DATE FOUND
+                                This TRIGGER sets the DATE FOUND field when an entry is added to this file.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^.09 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$D(DIU(0))=0 I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(15,.01,1,3,1.4)
+                                1.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,9)=DIV,DIH=15,DIG=.09 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= S X=$D(DIU(0))=0
+                                CREATE VALUE)= S X=DUZ
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= WHO CREATED
+                                This TRIGGER sets the WHO CREATED field when an entry is added to this file.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^9002099.3^.01 
+                                1)= Q
+                                2)= Q  X ^DD(15,.01,1,4,2.3) I X S X=DIV X ^DD(15,.01,1,4,89.2) S Y(101)=$S($D(^APMM(99.3,D0,0)):^(0),1:"") S X=$P(Y(101),U,1) S D0=I(0,0) S DIU=X K Y I DIV(0)>0 S DIK(0)=DA,DIK="^APMM(99.3,",DA=DIV(0) D ^DIK S DA=DIK(0) K
+                                 DIK
+
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$S(X["DPT("&('$D(DIU(0))):1,1:0)
+
+                                89.2)= X $P(^DD(15,99993,0),U,5,99) S Y(1)=X S I(0,0)=$S($D(D0):D0,1:"") S X=Y(1),X=X S X=X K DIC S DIC="^APMM(99.3,",DIC(0)="NMF" D ^DIC S (D,D0,DIV(0))=+Y
+
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= S X=$S(X["DPT("&('$D(DIU(0))):1,1:0)
+                                DELETE VALUE)= @
+                                DIC)= LOOKUP
+                                DIK)= DELETE
+                                FIELD)= LOOKUP3:DUPLICATE RECORD VALUE:DUPLICATES
+                                This TRIGGER fires only for file 2, and then only on the kill side.  Its purpose is to delete the corresponding entry in the DUPLICATE RECORD VALUE file, if there is one.  
+
+
+
+15,.02        RECORD2                0;2          VARIABLE POINTER (Required)
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 2    1    P            n   PATIENT 
+                 200  2    NEW PERSON   n   MESSAGE FOR NEW PERSON 
+                                         
+              INPUT TRANSFORM:  S %=$P(^VA(15,DA,0),U,1) K:X=%!($P(X,";",2)'=$P(%,";",2))!($P(^(0),U,5)=2) X X:$D(X) $P(^DD(15,.01,0),U,5,99)
+              LAST EDITED:      JUL 25, 1989 
+              DESCRIPTION:
+                                The second of the potential duplicate pair.  This is a variable pointer.  
+
+              TECHNICAL DESCR:
+                                One of the potential duplicate pair.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  15^B^MNEMONIC 
+                                1)= S:'$D(^VA(15,"B",$E(X,1,30),DA)) ^(DA)=1
+                                2)= I $D(^VA(15,"B",$E(X,1,30),DA)),^(DA) K ^(DA)
+
+
+15,.03        STATUS                 0;3 SET (Required)
+
+                                'P' FOR POTENTIAL DUPLICATE, UNVERIFIED; 
+                                'N' FOR VERIFIED, NOT A DUPLICATE; 
+                                'V' FOR VERIFIED DUPLICATE; 
+                                'X' FOR VERIFICATION IN PROCESS; 
+                                'R' FOR REQUIRES RESOLUTION; 
+              LAST EDITED:      APR 05, 1998 
+              HELP-PROMPT:      This indicates the status of the pair of entries 
+              DESCRIPTION:      This field indicates the status of this duplicate record pair.  It may be 'potential duplicate, unverified', 'verified, not a duplicate', or 'verified duplicate'.  
+                                 
+                                This field cannot be modified once MERGE STATUS is set to 2=MERGED.  
+
+              TECHNICAL DESCR:  This field indicates the status of this duplicate record pair.  It may be 'potential duplicate, unverified', 'verified, not a duplicate', or 'verified duplicate'.  
+                                 
+                                This field cannot be modified once MERGE STATUS is set to 2=MERGED.  
+
+              SCREEN:           S DIC("S")="I $P(^VA(15,DA,0),U,5)'>1"
+              EXPLANATION:      Cannot be modified once MERGE STATUS is set to 2=MERGED or 3=IN PROCESS
+              CROSS-REFERENCE:  15^APOT^MUMPS 
+                                1)= I X="P" S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) S ^VA(15,"APOT",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)=""
+                                2)= Q:X'="P"  S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) K ^VA(15,"APOT",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)
+                                The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"APOT","DPT(",fe#1^fe#2,DA)="" and the fe#s will be in the order 
+                                                                      low^high.  
+                                 
+                                This xref will be killed when the STATUS field is changed to any other value.  
+
+
+              CROSS-REFERENCE:  15^ANOT^MUMPS 
+                                1)= I X="N" S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) S ^VA(15,"ANOT",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)=""
+                                2)= Q:X'="N"  S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) K ^VA(15,"ANOT",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)
+                                This xref will exist only when the STATUS is VERIFIED, NOT A DUPLICATE.  
+                                 
+                                The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"ANOT","DPT(","fe#1^fe#2,DA)="" where the order of the fe#s will be 
+                                                                       low^high 
+                                 
+                                This xref will be killed when the STATUS field is changed to any other value.  
+
+
+              CROSS-REFERENCE:  15^AVDUP^MUMPS 
+                                1)= I X="V" S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) S ^VA(15,"AVDUP",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)=""
+                                2)= Q:X'="V"  S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) K ^VA(15,"AVDUP",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)
+                                This xref permanently exists for all entries in this file that are verified duplicates.  
+                                 
+                                The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"AVDUP","DPT(","fe#1^fe#2",DA)="" where the order of the fe#s will 
+                                                                         low^high.  
+
+
+              CROSS-REFERENCE:  15^ALK^MUMPS 
+                                1)= Q:X="N"  S %=X="V",X=$P(^VA(15,DA,0),U,1,2),^VA(15,"ALK",$P($P(X,";",2),U,1),+X,%+1,+$P(X,U,2),DA)="" S:'% ^VA(15,"ALK",$P($P(X,";",2),U,1),+$P(X,U,2),1,+X,DA)=""
+                                2)= Q:X="N"  S %=X="V",X=$P(^VA(15,DA,0),U,1,2) K ^VA(15,"ALK",$P($P(X,";",2),U,1),+X,%+1,+$P(X,U,2),DA) K:'% ^VA(15,"ALK",$P($P(X,";",2),U,1),+$P(X,U,2),1,+X,DA)
+                                This xref will exist, in one form or the other, from the time an entry is made in this file until the records are merged or verified as not a duplicate.  
+                                 
+                                The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"ALK",^DPT(",fe#1,n,fe#2,DA)="" where 'n' will be 1 for a potential duplicate and 2 for a verified duplicate.  
+                                 
+                                When 'n' is 1 there will be two "ALK" xrefs with the fe#s reversed.  When 'n' is 2 there will be only one "ALK" xref and the fe#s will be in the order RECORD1 RECORD2.  The "ALK2" xref on MERGE DIRECTION will reset this 
+                                xref to be in the order 'from' 'to'.  Once merged the "ALK" xref for this entry will be killed by the "ALK3" xref on the MERGE STATUS field..  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^.07 
+                                1)= X ^DD(15,.03,1,5,1.3) I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC X ^DD(15,.03,1,5,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(15,.03,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_Y(0)_":",2),$C(59),1)'="POTENTIAL DUPLICATE, UNVERIFIED" S:X X=$D(DIU(0))=0
+                                1.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=15,DIG=.07 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$D(DIU(0))=0 I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X="" X ^DD(15,.03,1,5,2.4)
+                                2.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=15,DIG=.07 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE CONDITION)= STATUS'="POTENTIAL DUPLICATE, UNVERIFIED"
+                                CREATE VALUE)= TODAY
+                                DELETE CONDITION)= S X=$D(DIU(0))=0
+                                DELETE VALUE)= @
+                                FIELD)= DATE VERIFIED
+                                This TRIGGER sets the DATE VERIFIED field.  It is not fired for a status of 'potential duplicate, unverified'.  If the status is changed from verified the DATE VERIFIED field is deleted and will be reset if appropriate.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^.11 
+                                1)= X ^DD(15,.03,1,6,1.3) I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,11),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(15,.03,1,6,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(15,.03,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_Y(0)_":",2),$C(59),1)'="POTENTIAL DUPLICATE, UNVERIFIED" S:X X=$D(DIU(0))=0
+                                1.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,11)=DIV,DIH=15,DIG=.11 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$D(DIU(0))=0 I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,11),X=X S DIU=X K Y S X="" X ^DD(15,.03,1,6,2.4)
+                                2.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,11)=DIV,DIH=15,DIG=.11 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE CONDITION)= STATUS'="POTENTIAL DUPLICATE, UNVERIFIED"
+                                CREATE VALUE)= S X=DUZ
+                                DELETE CONDITION)= S X=$D(DIU(0))=0
+                                DELETE VALUE)= @
+                                FIELD)= WHO VERIFIED
+                                This TRIGGER sets the WHO VERIFIED field.  It is not fired for a status of 'potential duplicate, unverified'.  If the status is changed from verified the WHO VERIFIED field is deleted and reset as appropriate.  
+                                 
+                                The conditional logic on this TRIGGER was modified, using ^%GEDIT, to prevent firing during a RE-INDEX.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^.04 
+                                1)= Q
+                                2)= X ^DD(15,.03,1,7,2.3) I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=15,DIG=.04 D ^DICR:$O(^DD(DIH,DIG,1,
+                                0))>0
+
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(15,.03,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_X_":",2),$C(59),1)="VERIFIED DUPLICATE" S:X X=$D(DIU(0))=0
+
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD STATUS="VERIFIED DUPLICATE"
+                                DELETE VALUE)= @
+                                FIELD)= MERGE DIRECTION
+                                This TRIGGER deletes the MERGE DIRECTION field when the status is being changed from 'verified duplicate' to any other value.  
+                                 
+                                The conditional logic on this TRIGGER was modified, using ^%GEDIT, to prevent firing during a RE-INDEX.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^.05 
+                                1)= X ^DD(15,.03,1,8,1.3) I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X=0 X ^DD(15,.03,1,8,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(15,.03,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_Y(0)_":",2),$C(59),1)="VERIFIED DUPLICATE" S:X X=$D(DIU(0))=0
+                                1.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,5)=DIV,DIH=15,DIG=.05 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= X ^DD(15,.03,1,8,2.3) I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X="" S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,5)=DIV,DIH=15,DIG=.05 D ^DICR:$O(^DD(DIH,DIG,1,
+                                0))>0
+
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(15,.03,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_X_":",2),$C(59),1)="VERIFIED DUPLICATE" S:X X=$D(DIU(0))=0
+
+                                CREATE CONDITION)= STATUS="VERIFIED DUPLICATE"
+                                CREATE VALUE)= S X=0
+                                DELETE CONDITION)= OLD STATUS="VERIFIED DUPLICATE"
+                                DELETE VALUE)= @
+                                FIELD)= MERGE STATUS
+                                This TRIGGER sets the MERGE STATUS field to 0=NOT READY when the status is set to 'verified duplicate'.  The MERGE STATUS field is deleted when the status is changed from 'verified duplicate' to any other value.  
+                                 
+                                The conditional logic on this TRIGGER was modified, using ^%GEDIT, to prevent firing during a RE-INDEX.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^.08 
+                                1)= X ^DD(15,.03,1,9,1.3) I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC X ^DD(15,.03,1,9,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(15,.03,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_Y(0)_":",2),$C(59),1)="VERIFIED, NOT A DUPLICATE" S:X X=$D(DIU(0))=0
+                                1.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,8)=DIV,DIH=15,DIG=.08 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$D(DIU(0))=0 I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X="" X ^DD(15,.03,1,9,2.4)
+                                2.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,8)=DIV,DIH=15,DIG=.08 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE CONDITION)= STATUS="VERIFIED, NOT A DUPLICATE"
+                                CREATE VALUE)= TODAY
+                                DELETE CONDITION)= S X=$D(DIU(0))=0
+                                DELETE VALUE)= @
+                                FIELD)= DATE RESOLVED
+                                This TRIGGER sets the DATE RESOLVED field when the status is set to 'verified, not a duplicate'.  The DATE RESOLVED field is deleted when the status is changed to any other value.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^.12 
+                                1)= Q
+                                2)= X ^DD(15,.03,1,10,2.3) I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,12),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(15,.03,1,10,2.4)
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(15,.03,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_X_":",2),$C(59),1)="VERIFIED DUPLICATE" S:X X=$D(DIU(0))=0
+                                2.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,12)=DIV,DIH=15,DIG=.12 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD STATUS="VERIFIED DUPLICATE"
+                                DELETE VALUE)= S X=DUZ
+                                FIELD)= WHO CHANGED
+                                This TRIGGER sets the WHO CHANGED field to the user number any time the status is changed from 'verified duplicate' to any other value.  
+                                 
+                                The conditional logic on this TRIGGER was modified, using ^%GEDIT, to prevent firing during a RE-INDEX.  
+
+
+              CROSS-REFERENCE:  15^AXDUP^MUMPS 
+                                1)= I X="X" S X=$P($P(^VA(15,DA,0),U),";",2) S ^VA(15,"AXDUP",X,DA)=""
+                                2)= Q:X'="X"  S X=$P($P(^VA(15,DA,0),U),";",2) K ^VA(15,"AXDUP",X,DA)
+                                3)= THIS X-REF IS USED TO IDENTIFY POTENTIAL DUPLICATES IN THE VERIFICATION PROCESS.  IT IS USED TO RAPIDLY CHECK ENTRIES FOR THE NUMBER OF DAYS SINCE THEY ENTERED THE VERIFICATION PROCESS.
+                                This X-REF (AXDUP) on field .03 is used to identify potential duplicates in the verification process.  It is used to rapidly check entries for the number of days since they entered the verification process.  
+
+
+              CROSS-REFERENCE:  15^ACMORS^MUMPS 
+                                1)= Q
+                                2)= Q
+                                3)= THIS SETS UP THE ACMORS X-REFERENCE ON CMOR SCORES FOR THE FIRST ENTRY
+
+              CROSS-REFERENCE:  15^ARDUP^MUMPS 
+                                1)= I X="R" S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) S ^VA(15,"ARDUP",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)=""
+                                2)= Q:X'="R"  S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) K ^VA(15,"ARDUP",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)
+                                 The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"ARDUP","DPT(",fe#1^fe#2,DA)="" and the fe#s will be in the order 
+                                                                       low^high.  
+                                 
+                                This xref will be killed when the STATUS field is changed to any other value.  
+
+
+              CROSS-REFERENCE:  15^AXDUP1^MUMPS 
+                                1)= I X="X" S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) S ^VA(15,"AXDUP1",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)=""
+                                2)= Q:X'="X"  S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) K ^VA(15,"AXDUP1",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)
+                                The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"AXDUP1","DPT(",fe#1^fe#2,DA)="" and the fe#s will be in the order 
+                                                                       low^high.  
+                                 
+                                This xref will be killed when the STATUS field is changed to any other value.  
+
+
+              CROSS-REFERENCE:  15^AODUP^MUMPS 
+                                1)= I X="O" S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) S ^VA(15,"AODUP",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)=""
+                                2)= Q:X'="O"  S X=$P(^VA(15,DA,0),U,1,2) S:+X>+$P(X,U,2) X=$P(X,U,2)_U_$P(X,U,1) K ^VA(15,"AODUP",$P($P(X,";",2),U,1),+X_U_+$P(X,U,2),DA)
+                                The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"AODUP","DPT(",fe#1^fe#2,DA)="" and the fe#s will be in the order 
+                                                                       low^high.  
+                                 
+                                This xref will be killed when the STATUS field is changed to any other value.  
+
+
+              CROSS-REFERENCE:  15^ARDUP1^MUMPS 
+                                1)= Q:X'="R"  S X=$P($P(^VA(15,DA,0),U),";",2) S ^VA(15,"ARDUP1",X,DA)=""
+                                2)= Q:X'="R"  S X=$P($P(^VA(15,DA,0),U),";",2) K ^VA(15,"ARDUP1",X,DA)
+                                This X-REF (RXDUP1) on field .03 is used to identify potential duplicates in the verification process.  It is used to rapidly check entries for the number of days since they entered the verification process.  
+
+
+
+15,.04        MERGE DIRECTION        0;4 SET (Required)
+
+                                '1' FOR RECORD1 to RECORD2; 
+                                '2' FOR RECORD2 to RECORD1; 
+              LAST EDITED:      JUL 09, 1990 
+              DESCRIPTION:      This field indicates in which direction the merge is to occur, RECORD1 to RECORD2 or RECORD2 to RECORD1.  This field cannot be modified once set.  
+                                 
+                                Note:  Q:X=""  on kill side of "ALK2" xref is because deleting an entry 
+                                       using ^DIK may set this field to NULL via a TRIGGER.  
+
+              TECHNICAL DESCR:  This field indicates in which direction the merge is to occur, RECORD1 to RECORD2 or RECORD2 to RECORD1.  This field cannot be modified once set.  
+                                 
+                                Note:  Q:X=""  on kill side of "ALK2" xref is because deleting an entry 
+                                       using ^DIK may set this field to NULL via a TRIGGER.  
+
+              SCREEN:           S DIC("S")="I $P(^VA(15,DA,0),U,3)=""V"""
+              EXPLANATION:      Must be verified duplicate
+              EXECUTABLE HELP:  S %=$P(^VA(15,DA,0),U,1,2) W !,?5,"RECORD1=",$P(@(U_$P($P(%,U,1),";",2)_+%_",0)"),U,1),!,?5,"RECORD2=",$P(@(U_$P($P(%,U,2),";",2)_+$P(%,U,2)_",0)"),U,1),!
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the STATUS field of the DUPLICATE RECORD File 
+
+              CROSS-REFERENCE:  15^ALK2^MUMPS 
+                                1)= S %=X,X=$P(^VA(15,DA,0),U,1,2) K ^VA(15,"ALK",$P($P(X,";",2),U,1),+$P(X,U,%#2+1),2,+$P(X,U,%),DA) S ^VA(15,"ALK",$P($P(X,";",2),U,1),+$P(X,U,%),2,+$P(X,U,%#2+1),DA)=""
+                                2)= Q:X=""  S %=X,X=$P(^VA(15,DA,0),U,1,2) K ^VA(15,"ALK",$P($P(X,";",2),U,1),+$P(X,U,%),2,+$P(X,U,%#2+1),DA)
+                                This xref kills the existing "ALK" xref for this entry and resets it to be in order 'from' 'to'.  See "ALK" xref on STATUS field for more info.  
+
+
+              CROSS-REFERENCE:  15^AFR^MUMPS 
+                                1)= S:X="V" X=$P(^VA(15,DA,0),U,1),^VA(15,"AFR",$P(X,";",2),+X,DA)=""
+                                2)= Q:X'="V"  S X=$P(^VA(15,DA,0),U,1) K ^VA(15,"AFR",$P(X,";",2),+X,DA)
+
+              CROSS-REFERENCE:  15^ATO^MUMPS 
+                                1)= S:X="V" X=$P(^VA(15,DA,0),U,2),^VA(15,"ATO",$P(X,";",2),+X,DA)=""
+                                2)= Q:X'="V"  S X=$P(^VA(15,DA,0),U,2) K ^VA(15,"ATO",$P(X,";",2),+X,DA)
+
+
+15,.05        MERGE STATUS           0;5 SET
+
+                                '0' FOR NOT READY; 
+                                '1' FOR READY; 
+                                '2' FOR MERGED; 
+                                '3' FOR IN PROGRESS; 
+              LAST EDITED:      MAY 05, 1996 
+              HELP-PROMPT:      This field indicates the status of verified duplicate entries with respect to merging. 
+              DESCRIPTION:      This field is set when a duplicate record pair is verified as a duplicate.  The actual merge will not occur until this field is set to READY (1).  The merge routine will set this field to MERGED (2).  Once set to MERGED
+                                (2) this field cannot be modified.  
+                                 
+                                Note:  Kill side of "AFR" and "ATO" xref kill all possible combinations of 
+                                       xref because deleting an entry in this file using ^DIK results in 
+                                       the .04 field being NULL when these xrefs are fired.  
+
+              TECHNICAL DESCR:  This field is set when a duplicate record pair is verified as a duplicate.  The actual merge will not occur until this field is set to READY (1).  The merge routine will set this field to MERGED (2).  Once set to MERGED
+                                (2) this field cannot be modified.  
+                                 
+                                Note:  Kill side of "AFR" and "ATO" xref kill all possible combinations of 
+                                       xref because deleting an entry in this file using ^DIK results in 
+                                       the .04 field being NULL when these xrefs are fired.  
+
+              SCREEN:           S DIC("S")="I $P(^VA(15,DA,0),U,3)=""V"",$P(^(0),U,5)'=2"
+              EXPLANATION:      Must be verified duplicate and once merged cannot be modified
+              DELETE TEST:      .05,0)= I 1
+
+              NOTES:            TRIGGERED by the STATUS field of the MERGE PACKAGES sub-field of the DUPLICATE RECORD File 
+                                TRIGGERED by the STATUS field of the DUPLICATE RECORD File 
+
+              CROSS-REFERENCE:  15^AFR^MUMPS 
+                                1)= Q:X'=2  S X=$P(^VA(15,DA,0),U,1,2),%=+$P(^(0),U,4),^VA(15,"AFR",$P($P(X,";",2),U,1),+$P(X,U,%),DA)=""
+                                2)= Q:X'=2  S X=$P(^VA(15,DA,0),U,1,2) K ^VA(15,"AFR",$P($P(X,";",2),U,1),+$P(X,U,1),DA),^VA(15,"AFR",$P($P(X,";",2),U,1),+$P(X,U,2),DA)
+                                This xref is permanent and exists for all merged entries.  It indicates which file entry was the 'from' entry.  It is used by the INPUT TRANSFORMS on the .01 and .02 fields to prevent entering a file entry that has already
+                                been merged away.  
+                                 
+                                The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"AFR","DPT(",fe#,DA)=""  where fe# is the 'from' file entry.  
+                                 
+                                Note that the kill side of this xref kills all possible combinations because deleting an entry in this file using ^DIK results in the MERGE DIRECTION field being NULL when this xref is fired.  
+
+
+              CROSS-REFERENCE:  15^ATO^MUMPS 
+                                1)= Q:X'=2  S X=$P(^VA(15,DA,0),U,1,2),%=+$P(^(0),U,4)#2+1,^VA(15,"ATO",$P($P(X,";",2),U,1),+$P(X,U,%),DA)=""
+                                2)= Q:X'=2  S X=$P(^VA(15,DA,0),U,1,2) K ^VA(15,"ATO",$P($P(X,";",2),U,1),+$P(X,U,1),DA),^VA(15,"ATO",$P($P(X,";",2),U,1),+$P(X,U,2),DA)
+                                This xref is permanent and exists for all merged entires.  It indicates which file entry was the 'to' entry.  It is currently not used by the dictionary.  
+                                 
+                                The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"ATO","DPT(",fe#,DA)="" where fe# is the 'to' file entry.  
+                                 
+                                Note that the kill side of this xref kills all possible combinations because deleting an entry in this file using ^DIK results in the MERGE DIRECTION field being NULL when this xref is fired.  
+
+
+              CROSS-REFERENCE:  15^AMRG^MUMPS 
+                                1)= Q:X=2  S %=$P($P(^VA(15,DA,0),U,1),";",2),^VA(15,"AMRG",%,X,DA)=""
+                                2)= S %=$P($P(^VA(15,DA,0),U,1),";",2) K ^VA(15,"AMRG",%,X,DA)
+                                This xref is short lived and exists only for entries that are verified duplicates that have not yet been merged.  
+                                 
+                                The form of this xref, using file 2 as an example, is: 
+                                 
+                                ^VA(15,"AMRG","DPT(",n,DA)="" where 'n' will be 0 for a MERGE STATUS of 
+                                                              NOT READY and a 1 for READY.  
+                                 
+                                Once merged the "AMRG" xref for this entry will be killed.  
+
+
+              CROSS-REFERENCE:  15^ALK3^MUMPS 
+                                1)= Q:X'=2  S X=$P(^VA(15,DA,0),U,1,2),%=$P(^(0),U,4) K ^VA(15,"ALK",$P($P(X,";",2),U,1),+$P(X,U,%),2,+$P(X,U,%#2+1),DA)
+                                2)= Q
+                                This xref kills the "ALK" xref for this entry.  See the "ALK" xref on the STATUS field for more info.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^.08 
+                                1)= X ^DD(15,.05,1,5,1.3) I X S X=DIV S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC X ^DD(15,.05,1,5,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(15,.05,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_Y(0)_":",2),$C(59),1)="MERGED" S:X X=$D(DIU(0))=0
+                                1.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,8)=DIV,DIH=15,DIG=.08 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= MERGE STATUS="MERGED"
+                                CREATE VALUE)= TODAY
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= DATE RESOLVED
+                                This TRIGGER sets the DATE RESOLVED field when the merge status is set to 'merged'.  
+                                 
+                                The conditional logic on this TRIGGER was modified, using ^%GEDIT, to prevent firing during a RE-INDEX.  
+
+
+              CROSS-REFERENCE:  15^ADJ^MUMPS 
+                                1)= Q:X'=2  S X="XDRDADJ" X ^%ZOSF("TEST") D:$T ^XDRDADJ
+                                2)= Q
+                                This xref is fired only when an entry has been merged.  The routine ^XDRDADJ then looks at the file to determine if any other file entry pairs need to be adjusted.  For example, using file 2, if patient 5 was merged to
+                                patient 10, and there was a potential duplicate entry for patient 5 and patient 15, that entry would be changed to patient 10 and patient 15.  
+                                 
+                                There are other possible situations that are far more complex than the above example.  
+
+
+
+15,.06        DATE FOUND             0;6 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 02, 1987 
+              DESCRIPTION:
+                                This field indicates the date this duplicate record pair was added to this file.  
+
+              TECHNICAL DESCR:
+                                This field indicates the date this duplicate record pair was added to this file.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the RECORD1 field of the DUPLICATE RECORD File 
+
+
+15,.07        DATE VERIFIED          0;7 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X I $D(X),$P(^VA(15,DA,0),U,3)="P" W " Not verified! " K X
+              LAST EDITED:      JUL 18, 1989 
+              DESCRIPTION:
+                                This field contains the date this duplicate record pair was verified.  The STATUS field must be set to "N" or "V" before data can be entered in this field.  
+
+              TECHNICAL DESCR:
+                                This field contains the date this duplicate record pair was verified.  The STATUS field must be set to "N" or "V" before data can be entered in this field.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the STATUS field of the DUPLICATE RECORD File 
+
+
+15,.08        DATE RESOLVED          0;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 08, 1987 
+              DESCRIPTION:
+                                This field indicates the date this duplicate record pair was resolved.  This field will be set by the dictionary when the STATUS field is set to "N" or the MERGE STATUS field is set to MERGED.  
+
+              TECHNICAL DESCR:
+                                This field indicates the date this duplicate record pair was resolved.  This field will be set by the dictionary when the STATUS field is set to "N" or the MERGE STATUS field is set to MERGED.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the STATUS field of the DUPLICATE RECORD File 
+                                TRIGGERED by the MERGE STATUS field of the DUPLICATE RECORD File 
+
+
+15,.09        WHO CREATED            0;9 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 18, 1991 
+              DESCRIPTION:
+                                This field contains the user who created this entry.  If the entry was created by software this field will be NULL.  
+
+              TECHNICAL DESCR:
+                                This field contains the user who created this entry.  If the entry was created by software this field will be NULL.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the RECORD1 field of the DUPLICATE RECORD File 
+
+
+15,.1         VERIF STARTED DATE     0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 10, 1996 
+              HELP-PROMPT:      This is the date on which the status changed from POTENTIAL DUPLICATE to VERIFICATION IN PROGRESS 
+              DESCRIPTION:
+                                This is the date on which the status changed from POTENTIAL DUPLICATE to VERIFICATION IN PROGRESS.  
+
+
+15,.11        WHO VERIFIED           0;11 POINTER TO NEW PERSON FILE (#200)
+
+              INPUT TRANSFORM:  S %=$P(^VA(15,DA,0),U,3)="P" W:% " Not verified! " K:% X
+              LAST EDITED:      JUL 18, 1989 
+              DESCRIPTION:
+                                This field indicates the user who verified this duplicate record pair.  The STATUS must be set to "N" or "V" before data can be entered in this field.  
+
+              TECHNICAL DESCR:
+                                This field indicates the user who verified this duplicate record pair.  The STATUS must be set to "N" or "V" before data can be entered in this field.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the STATUS field of the DUPLICATE RECORD File 
+
+
+15,.12        WHO CHANGED            0;12 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 18, 1991 
+              DESCRIPTION:
+                                This field is set when the STATUS field is changed from "V" to any other value.  The reason this is so important is other packages have been notified and may have already done the merge.  
+
+              TECHNICAL DESCR:
+                                This field is set when the STATUS field is changed from "V" to any other value.  The reason this is so important is other packages have been notified and may have already done the merge.  
+
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the STATUS field of the DUPLICATE RECORD File 
+
+              CROSS-REFERENCE:  15^AVCHG 
+                                1)= S ^VA(15,"AVCHG",$E(X,1,30),DA)=""
+                                2)= K ^VA(15,"AVCHG",$E(X,1,30),DA)
+                                This xref is set only when the STATUS field is changed from "V" to any other value.  This is because the WHO CHANGED is set only by a TRIGGER under the above conditon.  The reason this is critical is other packages may
+                                have been notified to do the merge.  
+                                 
+                                The form of this xref is: 
+                                 
+                                ^VA(15,"AVCHG",n,DA)="" where 'n' is the user number.  
+
+
+
+15,.13        APPROVED FOR BACK UP   0;13 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 18, 1997 
+              HELP-PROMPT:      Select YES only if the records of both the entry being merged and the entry being merged into have been fully backed up. 
+              DESCRIPTION:
+                                This field is used to document that a backup of the records has been generated.  This is required prior to merging the records.  
+
+
+15,.14        BACKUP INDICATED BY    0;14 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+              LAST EDITED:      FEB 10, 1997 
+              HELP-PROMPT:      Answer must be 3-60 characters in length. 
+              DESCRIPTION:
+                                This field is used to document the user who indicates that the backup has been generated and/or the fact that the backup was generated by the duplicate merge system.  
+
+
+15,.15        DC TOTAL POSSIBLE SCORE 0;15 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 30, 1990 
+              HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+              DESCRIPTION:
+                                 This is the maximum possible score if this entry matches exactly to its couterpart.  
+
+              TECHNICAL DESCR:
+                                This field contains the highest possible score that can be computed for this 'duplicate record' entry.  
+
+
+15,.16        DC VERIFIED DUPE THRESHOLD % 0;16 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 02, 1990 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                 This is the lowest % possible that will mark this entry as 'verified duplicate'.  
+
+              TECHNICAL DESCR:  This field contains the percent of the highest possible score that will cause this 'duplicate record' entry to become a 'verified duplicate'.  If no score, no matter how high, should cause an entry to be a 'verified 
+                                duplicate', this field should be left empty.  
+
+
+15,.17        DC POTENTIAL DUPE THRESHOLD % 0;17 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 02, 1990 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                 This is the lowest possible % of the total duplicate score that would mark this entry as 'potential duplicate/unverified'.  
+
+              TECHNICAL DESCR:
+                                This field contains the percent of the highest possible score that will cause this 'duplicate record' entry to become a 'potential duplicate/ unverified'.  
+
+
+15,.18        DC DUPE MATCH SCORE    0;18 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>500)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 30, 1990 
+              HELP-PROMPT:      Type a Number between 0 and 500, 0 Decimal Digits 
+              DESCRIPTION:
+                                 Actual duplicate score computed.  
+
+              TECHNICAL DESCR:
+                                This field contains the actual score computed when this 'duplicate record' entry was analyzed by the duplicate resolution software.  
+
+
+15,.19        DC DUPE MATCH PERCENTILE 0;19 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 02, 1990 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits 
+              DESCRIPTION:
+                                 This is the % of the total possible match score.  
+
+              TECHNICAL DESCR:
+                                This field contains the percent of the total possible score computed for this 'duplicate record' entry when it was analyzed by the duplicate resolution software.  
+
+
+15,.2         MERGE PROCESS          0;20 POINTER TO XDR MERGE PROCESS FILE (#15.2)
+
+              LAST EDITED:      DEC 01, 1995 
+              HELP-PROMPT:      This is the Merge Process which is associated with the merge of this duplicate pair 
+              DESCRIPTION:      This field indicates which entry is the XDR MERGE PROCESS file this entry is associated with.  The merge process contains information on the status of the merge of the duplicate pair(s) included within the given process 
+                                and the extent of completion.  
+
+
+15,1          REMARKS                1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      APR 06, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 1-50 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                 This field contains special comments about the duplicate record.  
+
+
+15,2          IDENTIFYING SERVICE    2;0 Multiple #15.02
+
+
+15.02,.01       IDENTIFYING SERVICE    0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      FEB 06, 1996 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                DESCRIPTION:
+                                  This field is the name of the service with respect to the patient pair being duplicates.  
+
+                CROSS-REFERENCE:  15.02^B 
+                                  1)= S ^VA(15,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VA(15,DA(1),2,"B",$E(X,1,30),DA)
+
+
+15.02,.02       SERVICE DETERMINATION  0;2 SET
+
+                                  'V' FOR VERIFIED DUPLICATE; 
+                                  'N' FOR VERIFIED, NOT A DUPLICATE; 
+                                  'U' FOR UNKNOWN; 
+                                  'D' FOR NO DATA IN FILE; 
+                LAST EDITED:      APR 26, 1996 
+                HELP-PROMPT:      This entry indicates the services indication of the status of this duplicate pair (D - NO DATA IN FILE is entered automatically if no data is available for the service to base a decision). 
+                DESCRIPTION:
+                                  This field determines if the patient pair entries are duplicates or not for each identifying service.  
+
+
+15.02,.03       WHO DETERMINED         0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      FEB 06, 1996 
+
+15.02,.04       WHEN DETERMINED        0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 06, 1996 
+
+15.02,.05       DIRECTION OF MERGE     0;5 SET
+
+                                  '1' FOR RECORD1 INTO RECORD2; 
+                                  '2' FOR RECORD2 INTO RECORD1; 
+                LAST EDITED:      FEB 13, 1996 
+                HELP-PROMPT:      Indicate the record which does not have the best data (1=RECORD1 or 2=RECORD2) which should be merged into the other record. 
+                DESCRIPTION:
+                                  This field is used for the identifying service to indicate the preference for which record should be merged into the other record.  
+
+
+
+
+15,3          OVERWRITE IN FILE      3;0 Multiple #15.03 (Add New Entry without Asking)
+
+
+15.03,.01       OVERWRITE IN FILE      0;1 NUMBER (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999999)!(X<.001)!(X?.E1"."4N.N) X
+                LAST EDITED:      APR 02, 1996 
+                HELP-PROMPT:      Enter File Number in which one or more fields are to be overwritten during the merge process by data from the merged from entry. 
+                DESCRIPTION:
+                                  This multiple field is used to indicate a file number in which one or more fields in the 'merged to' entry are to be overwritten with data from the 'merged from' entry.  
+
+                CROSS-REFERENCE:  15.03^B 
+                                  1)= S ^VA(15,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VA(15,DA(1),3,"B",$E(X,1,30),DA)
+
+
+15.03,.02       MERGE DIRECTION        0;2 SET
+
+                                  '1' FOR MERGE REC1 TO REC2; 
+                                  '2' FOR REVERSE MERGE; 
+                LAST EDITED:      APR 23, 1996 
+                HELP-PROMPT:      This entry indicates whether the merge is processed in the normal direction, or reversed 
+                DESCRIPTION:
+                                  This field is used to determine whethe the merge process is handled in the normal direction, or is reversed.  
+
+
+15.03,1         FIELD TO OVERWRITE     1;0 Multiple #15.031 (Add New Entry without Asking)
+
+
+15.031,.01        FIELD TO OVERWRITE     0;1 NUMBER (Multiply asked)
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999999999)!(X<.0000001)!(X?.E1"."8N.N) X
+                  LAST EDITED:      APR 02, 1996 
+                  HELP-PROMPT:      Enter a field number for which the data in the 'merged to' entry is to be overwritten with data from the 'merged from' entry. 
+                  DESCRIPTION:
+                                    This multiple field is used to indicate the field(s) which in the parent file that are to be overwritten with data from the 'merged from' entry.  
+
+                  CROSS-REFERENCE:  15.031^B 
+                                    1)= S ^VA(15,DA(2),3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^VA(15,DA(2),3,DA(1),1,"B",$E(X,1,30),DA)
+
+
+
+
+
+
+15,1101       MERGE PACKAGES         11;0 POINTER Multiple #15.01101
+
+              DESCRIPTION:      This multiple contains an entry for each package from the package file that is affected by the merging of entries in the file specified in this files .01 field.  The STATUS field of this multiple will be set to 0=NOT READY
+                                if the package has the 'from' entry in the subject file and does not have a merge routine specified in the package file.  The STATUS field will be set to 1=READY if the package has the 'from' entry and also has a merge
+                                routine specified in the package file.  It will be set to 2=NO FROM ENTRY if the package does not have the 'from' entry, regardless of whether the package has a merge routine or not.  
+
+              TECHNICAL DESCR:  This multiple contains an entry for each package from the package file that is affected by the merging of entries in the file specified in this files .01 field.  The STATUS field of this multiple will be set to 0=NOT READY
+                                if the package has the 'from' entry in the subject file and does not have a merge routine specified in the package file.  The STATUS field will be set to 1=READY if the package has the 'from' entry and also has a merge
+                                routine specified in the package file.  It will be set to 2=NO FROM ENTRY if the package does not have the 'from' entry, regardless of whether the package has a merge routine or not.  
+
+
+15.01101,.01    PACKAGE                0;1 POINTER TO PACKAGE FILE (#9.4)
+
+                INPUT TRANSFORM:  S DIC("S")="I $D(^DIC(9.4,Y,20,+$P(@(""^""_$P($P(^VA(15,D0,0),U),"";"",2)_""0)""),U,2)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X S:$D(X) DINUM=X
+                LAST EDITED:      SEP 06, 1990 
+                DESCRIPTION:
+                                  Package interested in pending merge.  In order to enter a package in this field the package must be affected by file being merged.  
+
+                TECHNICAL DESCR:
+                                  Package interested in pending merge.  In order to enter a package in this field the package must be affected by file being merged.  
+
+                SCREEN:           S DIC("S")="I $D(^DIC(9.4,Y,20,+$P(@""^""_$P($P(^VA(15,D0,0),U),"";"",2)_""0)""),U,2)))"
+                EXPLANATION:      Package must be affected by file being merged
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+15.01101,.02    STATUS                 0;2 SET (Required)
+
+                                  '0' FOR NOT READY; 
+                                  '1' FOR READY; 
+                                  '2' FOR NO FROM ENTRY; 
+                LAST EDITED:      JUL 25, 1989 
+                DESCRIPTION:      This field set to 0=NOT READY if package does its own interactive merge; 1=READY if package has 'from' entry and has a merge routine specified in the package file; 2=NO FROM ENTRY if the package does not have the 'from' 
+                                  entry, regardless of whether it has a merge routine or not.  
+                                   
+                                  The TRIGGER on this field must not be modified to fire on the delete side.  
+
+                TECHNICAL DESCR:  This field is set to 0=NOT READY if package does its own interactive merge; 1=READY if package has 'from' entry and has a merge routine specified in the package file; 2=NO FROM ENTRY if the package does not have the
+                                  'from' entry, regardless of whether it has a merge routine or not.  
+                                   
+                                  The TRIGGER on this field must not be modified to fire on the delete side.  
+
+                CROSS-REFERENCE:  15.01101^ANR^MUMPS 
+                                  1)= Q:X  S ^VA(15,DA(1),11,"ANR",X,DA)=""
+                                  2)= Q:X  K ^VA(15,DA(1),11,"ANR",X,DA)
+                                  This xref is set only when the status is 'not ready'.  It is used to determine when all entries in this subfile are ready, which means the primary file entries in the DUPLICATE RECORD file entry may now be merged.  
+
+
+                CROSS-REFERENCE:  ^^TRIGGER^15^.05 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^VA(15,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y X ^DD(15.01101,.02,1,2,1.1) X ^DD(15.01101,.02,1,2,1.4)
+                                  1.1)= S X=DIV X $P(^DD(15.01101,.0299,0),U,5,99) S Y(1)=X S X=Y(1)
+                                  1.4)= S DIH=$S($D(^VA(15,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,5)=DIV,DIH=15,DIG=.05 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= Q
+                                  CREATE VALUE)= READY
+                                  DELETE VALUE)= NO EFFECT
+                                  FIELD)= MERGE STATUS
+                                  This TRIGGER sets the MERGE STATUS field in this subfiles parent file.  The MERGE STATUS field is set to a value computed by the computed field READY in this subfile.  The value will compute to 0=NOT READY if there is
+                                  any entry in this subfile that is not ready.  It will compute to 1=READY only after all entries in this subfile have said they are ready.  
+                                   
+                                  This TRIGGER must not be modified to fire on the kill side.  
+
+
+
+15.01101,.0299  READY                   ;  COMPUTED
+
+                MUMPS CODE:       S X=$S($D(^VA(15,D0,11,"ANR")):0,1:1)
+                ALGORITHM:        S X=$S($D(^VA(15,D0,11,"ANR")):0,1:1)
+                LAST EDITED:      APR 05, 1990 
+                DESCRIPTION:      This field is set to 0 (not ready) if any of the entries in the MERGE PACKAGES multiple indicate via STATUS field that this duplicate record is not ready to be merged.  If all packages are ready for this record to be
+                                  merged than this field will contain 1 (ready).  
+
+                TECHNICAL DESCR:
+                                  This computed field computes a value of 0 or 1.  The value will be 0 if any entry in this subfile has a STATUS of 'not ready', otherwise, the value will be 1.  
+
+
+15.01101,.03    ERROR MESSAGE          0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                LAST EDITED:      JUL 27, 1989 
+                HELP-PROMPT:      Answer must be 3-60 characters in length. 
+                DESCRIPTION:
+                                  This field contains system error messages trapped during the execution of package merge routines.  
+
+                TECHNICAL DESCR:
+                                  This field contains system error messages trapped during the execution of package merge routines.  
+
+                                  UNEDITABLE
+
+
+
+15,1300       CHECK POINTS           CP;0 Multiple #15.013
+
+
+15.013,.01      CHECK POINTS           0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X?1A.E) X
+                LAST EDITED:      NOV 02, 1995 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                DESCRIPTION:
+                                  This sub file hold check point information about the merge.  
+
+                CROSS-REFERENCE:  15.013^B 
+                                  1)= S ^VA(15,DA(1),"CP","B",$E(X,1,30),DA)=""
+                                  2)= K ^VA(15,DA(1),"CP","B",$E(X,1,30),DA)
+
+
+15.013,1        PARAMETERS             1;E1,245 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                LAST EDITED:      NOV 02, 1995 
+                HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                DESCRIPTION:
+                                  This field is were the MERGE routines can store parameters for restart and tracking.  
+
+
+
+
+15,2101       DUPLICATE TESTS/SCORES 21;0 Multiple #15.02101 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                 This field contains the comparison tests and the scores.  
+
+              TECHNICAL DESCR:
+                                This multiple contains the individual tests, and their resulting scores, when this 'duplicate record' entry was analyzed by the duplicate resolution software.  
+
+
+15.02101,.01    DUPLICATE TEST         0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      AUG 30, 1990 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                TECHNICAL DESCR:
+                                  This field is the name of a test in the 'duplicate test' multiple of the 'duplicate resolution' file.  
+
+                CROSS-REFERENCE:  15.02101^B 
+                                  1)= S ^VA(15,DA(1),21,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VA(15,DA(1),21,"B",$E(X,1,30),DA)
+
+
+15.02101,.02    DUPLICATE SCORE        0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>500)!(X<-500)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 30, 1990 
+                HELP-PROMPT:      Type a Number between -500 and 500, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the score computed for this test at the time this 'duplicate record' entry was analyzed by the duplicate resolution software.  
+
+                TECHNICAL DESCR:
+                                  This field contains the score computed for this test at the time this 'duplicate record' entry was analyzed by the duplicate resolution software.  
+
+
+
+
+15,99991      LOOKUP1                 ;  COMPUTED
+
+              MUMPS CODE:       S X="`"_+^VA(15,D0,0)
+              ALGORITHM:        S X="`"_+^VA(15,D0,0)
+              DESCRIPTION:
+                                This field is used to navigate to the file pointed to by RECORD1.  
+
+              TECHNICAL DESCR:
+                                This field is used to navigate to the file pointed to by RECORD1.  
+
+
+15,99992      LOOKUP2                 ;  COMPUTED
+
+              MUMPS CODE:       S X="`"_+$P(^VA(15,D0,0),U,2)
+              ALGORITHM:        S X="`"_+$P(^VA(15,D0,0),U,2)
+              DESCRIPTION:
+                                This field is used to navigate to the file pointed to by RECORD2.  
+
+              TECHNICAL DESCR:
+                                This field is used to navigate to the file pointed to by RECORD2.  
+
+
+15,99993      LOOKUP3                 ;  COMPUTED
+
+              MUMPS CODE:       S X="`"_D0
+              ALGORITHM:        S X="`"_D0
+              LAST EDITED:      AUG 08, 1989 
+              DESCRIPTION:
+                                This computed field provides navigational capability to any file that points to this file and has a DINUM relationship.  
+
+              TECHNICAL DESCR:
+                                This computed field provides navigational capability to any file that points to this file and has a DINUM relationship.  
+
+
+15,999999901  MFI CONTROLLED         9999999;1 SET
+
+                                '1' FOR MERGE; 
+                                '2' FOR INSTALL; 
+              LAST EDITED:      JUL 03, 1990 
+              DESCRIPTION:
+                                 This field is for MultiFacility Integration software use only.  
+
+              TECHNICAL DESCR:  This field is set for entries entered by MFI software.  Any entry with a value in this field is under MFI control and cannot be seen by any user other than the MFI manager.  The value of this field indicates whether this
+                                entry was created by an 'install' or a 'merge' command.  
+                                 
+                                If the local site is an integration site this field may have either value.  If the local site is a facility all entries will be for 'merge' commands.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  15^AMFIC 
+                                1)= S ^VA(15,"AMFIC",$E(X,1,30),DA)=""
+                                2)= K ^VA(15,"AMFIC",$E(X,1,30),DA)
+                                This xref is set to allow the MFI duplicate resolution software direct access to MFI controlled entries.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^15^999999902 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VA(15,D0,9999999)):^(9999999),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=0 X ^DD(15,999999901,1,2,1.4)
+                                1.4)= S DIH=$S($D(^VA(15,DIV(0),9999999)):^(9999999),1:""),DIV=X S $P(^(9999999),U,2)=DIV,DIH=15,DIG=999999902 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= S X=0
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= MFI RESOLVED
+                                This trigger sets the MFI RESOLVED field to 0=UNRESOLVED when a value is entered into this field.  It has no effect on the change/delete side because this field is uneditable.  
+
+
+
+15,999999902  MFI RESOLVED           9999999;2 SET
+
+                                '0' FOR UNRESOLVED; 
+                                '1' FOR RESOLVED; 
+              LAST EDITED:      JUL 03, 1990 
+              DESCRIPTION:
+                                 This field is for MultiFacility Integration software use only.  
+
+              TECHNICAL DESCR:
+                                This field is for MFI use only and is set to 0 by a trigger when the MFI CONTROLLED field is set.  It is then set to 1 by the MFI duplicate resolution/merge software once it has completed this entry.  
+
+              NOTES:            TRIGGERED by the MFI CONTROLLED field of the DUPLICATE RECORD File 
+
+              CROSS-REFERENCE:  15^AMFIR 
+                                1)= S:'X ^VA(15,"AMFIR",$E(X,1,30),DA)=""
+                                2)= K ^VA(15,"AMFIR",$E(X,1,30),DA)
+                                This xref is set for unresolved entries only.  When the entry is changed to resolved this xref is deleted.  
+
+
+              CROSS-REFERENCE:  15^AMFIP2^MUMPS 
+                                1)= I X S %=^VA(15,DA,9999999),%=$P(%,U,3) S:% ^VA(15,"AMFIP",%,DA)=X
+                                2)= I X S %=^VA(15,DA,9999999),%=$P(%,U,3) S:% ^VA(15,"AMFIP",%,DA)=""
+                                This xref sets the value of the "AMFIP" xref to 1 once this entry is resolved.  It sets it back to "" if this field is changed from resolved.  
+
+
+
+15,999999903  MFI PATIENT            9999999;3 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      JUL 03, 1990 
+              DESCRIPTION:
+                                 This field is for MultiFacility Integration software use only.  
+
+              TECHNICAL DESCR:  This field is for MFI use only and contains the controlled patient for an 'install' command.  
+                                 
+                                So long as a patient is unresolved and under MFI control data for that patient will not be forwarded to other sites within an integration domain by the integration site.  
+
+              CROSS-REFERENCE:  15^AMFIP 
+                                1)= S ^VA(15,"AMFIP",$E(X,1,30),DA)=""
+                                2)= K ^VA(15,"AMFIP",$E(X,1,30),DA)
+                                This xref contains the controlled patient when an entry in this file is under MFI control because of an 'install' command.  
+
+
+
+15,999999904  MFI FROM SITE          9999999;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<6)!'(X?6N) X
+              LAST EDITED:      JUL 09, 1990 
+              HELP-PROMPT:      Answer must be 6 numeric characters in length. 
+              DESCRIPTION:
+                                 This field is for MultiFacility Integration software use only.  
+
+              TECHNICAL DESCR:
+                                This field is for MFI use only and contains the six digit IHS standard code for the site that originated the install or merge command that caused this duplicate recored entry to be created.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DUPLICATE RECORD (#15)            MERGE PACKAGES:STATUS (#.02)
+
+NEW PERSON (#200)                 RECORD1 (#.01)
+                                  RECORD2 (#.02)
+                                  WHO CREATED (#.09)
+                                  WHO VERIFIED (#.11)
+                                  WHO CHANGED (#.12)
+                                  IDENTIFYING SERVICE:WHO DETERMINED (#.03)
+
+PACKAGE (#9.4)                    MERGE PACKAGES:PACKAGE (#.01)
+
+PATIENT (#2)                      RECORD1 (#.01)
+                                  RECORD2 (#.02)
+                                  MFI PATIENT (#999999903)
+
+XDR MERGE PROCESS (#15.2)         MERGE PROCESS (#.2)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+XDR BRIEF LIST                MAR 12, 2002@11:37  USER #0                                                                                                                                                                                DUPLICATE RECORD LIST
+XDR MERGED LIST               JUN 19, 1991@09:24  USER #0                                                                                                                                                                                DUPLICATE RECORD LIST
+     This template prints a list of merged duplicates form the duplicate
+     record file.
+
+SORT TEMPLATE(S):
+XDR MERGED LIST               NOV 09, 1998@13:48  USER #0    
+SORT BY: @MERGE STATUS// (MERGE STATUS equals 2 (MERGED))
+  WITHIN MERGE STATUS, SORT BY: @-DC DUPE MATCH PERCENTILE// (DC DUPE MATCH PERCENTILE not null)
+    WITHIN DC DUPE MATCH PERCENTILE, SORT BY: @DATE RESOLVED// (DATE RESOLVED not null)
+     This template is used to print out a listing of all merged entries
+     from the duplicate record file.
+
+XDR NOT READY TO MERGE LIST   NOV 09, 1998@13:50  USER #0    
+SORT BY: @STATUS// (STATUS equals V (VERIFIED DUPLICATE))
+  WITHIN STATUS, SORT BY: @MERGE STATUS// (MERGE STATUS equals 0 (NOT READY))
+    WITHIN MERGE STATUS, SORT BY: @-DC DUPE MATCH PERCENTILE// (DC DUPE MATCH PERCENTILE not null)
+      WITHIN DC DUPE MATCH PERCENTILE, SORT BY: @DATE FOUND// (DATE FOUND not null)
+     This template is used to print out Verified Duplicates that have a
+     'Merge Status' of Not Ready.
+
+XDR POTENTIAL DUPLICATE LIST  DEC 03, 1997@12:02  USER #0    
+SORT BY: @STATUS="POTENTIAL DUPLICATE, UNVERIFIED";L1;L1// (STATUS=""POTENTIAL DUPLICATE, UNVERIFIED"")
+  WITHIN STATUS="POTENTIAL DUPLICATE, UNVERIFIED", SORT BY: @-DC DUPE MATCH PERCENTILE// (DC DUPE MATCH PERCENTILE not null)
+    WITHIN DC DUPE MATCH PERCENTILE, SORT BY: @DATE FOUND// (DATE FOUND not null)
+     This template is used to produce a listing of all Potential, Unverified
+     Duplicates of a given file of the Duplicate Record File.
+
+XDR READY TO MERGE LIST       NOV 09, 1998@13:51  USER #0    
+SORT BY: @STATUS// (STATUS equals V (VERIFIED DUPLICATE))
+  WITHIN STATUS, SORT BY: @MERGE STATUS// (MERGE STATUS equals 1 (READY))
+    WITHIN MERGE STATUS, SORT BY: @-DC DUPE MATCH PERCENTILE// (DC DUPE MATCH PERCENTILE not null)
+      WITHIN DC DUPE MATCH PERCENTILE, SORT BY: @DATE FOUND// (DATE FOUND not null)
+     This template is used to produce a listing of all Verified Duplicates that
+     have a merge status of Ready for a given file from the Duplicate Record
+     File.
+
+
+FORM(S)/BLOCK(S):

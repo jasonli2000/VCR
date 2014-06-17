@@ -1,0 +1,227 @@
+STANDARD DATA DICTIONARY #52.91 -- TPB ELIGIBILITY FILE                                                                                                                                                                           MAY 20,2014@15:39:21  PAGE 1
+STORED IN ^PS(52.91,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 7.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Transitional Pharmacy Benefit Project (TPB), Phase I (patch PSO*7*145) introduces a new file called TPB ELIGIBILITY file (#52.91), to store patient data for those who are enrolled in VHA's health care system and eligible for the pharmacy benefit as
+required by the Directive, Code of Federal Regulations (CFR) 38 CFR Part 17 RIN 2900-AL68, "Medication Prescribed by Non-VA Physicians".  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: INACTIVATION OF BENEFIT DATE(AD), PATIENT(B)
+
+INDEXED BY:    INSTITUTION (AC), DATE PHARMACY BENEFIT BEGAN & INACTIVATION OF BENEFIT DATE & INACTIVATION REASON CODE & DESIRED APPOINTMENT DATE & WAIT TYPE & STATION NUMBER & EXCLUSION REASON & PRIMARY CARE SCHEDULE APT DATE (AX)
+
+
+52.91,.01     PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X
+              LAST EDITED:      AUG 07, 2003 
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              DESCRIPTION:
+                                This is the patient IEN who is eligible for this new service.  
+
+              DELETE TEST:      1,0)= I 1 D EN^DDIOL("Patient entries CANNOT be deleted.")
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52.91^B 
+                                1)= S ^PS(52.91,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.91,"B",$E(X,1,30),DA)
+
+
+52.91,1       DATE PHARMACY BENEFIT BEGAN 0;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      AUG 06, 2003 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:      This is the date the entry was made into the file during extraction either from the EWL or from the Schedule Appointment set by the post-install routine. Manual entry to this file is also allowed for eligible patient, and
+                                it will be set to the current date.  
+
+              TECHNICAL DESCR:
+                                Not editable.  
+
+              RECORD INDEXES:   AX (#254)
+
+52.91,2       INACTIVATION OF BENEFIT DATE 0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X),$D(^PS(52.91,DA,0)),X<$P(^(0),U,2) D EN^DDIOL("INACTIVATION DATE CANNOT BE BEFORE DATE PHARMACY BENEFIT BEGAN","","$C(7),!?5") K X
+              LAST EDITED:      AUG 29, 2003 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:      This date can be set manually when the patient is no longer eligible for this benefit; or when the Non-VA prescriptions are either Discontinued or Expired; or set automatically due to a Date of Death entered in the Patient
+                                file (#2). 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52.91^AD^MUMPS 
+                                1)= D RXPAT^PSOTPCAN
+                                2)= Q
+                                This cross reference sets the RX Patient status in the PHARMACY PATIENT file (#55) to null if this date entered is not a future date, and the RX Patient Status is equal to "NON-VA". It sets the global: ^PS(55,DA,"PS")="".  
+
+
+              RECORD INDEXES:   AX (#254)
+
+52.91,3       INACTIVATION REASON CODE 0;4 SET
+
+                                '1' FOR SEEN BY VA PROVIDER; 
+                                '2' FOR NO/SHOW/CANCELLATION; 
+                                '3' FOR PATIENT ENDED; 
+                                '4' FOR NON-FORMULARY RX NOT ACCEPTED; 
+                                '5' FOR PATIENT EXPIRED; 
+                                '6' FOR ALL RX'S INACTIVE; 
+                                '7' FOR EXCLUSION; 
+                                '8' FOR PATIENT REFUSED APPT; 
+                                '9' FOR PATIENT UNREACHABLE; 
+                                '10' FOR PROGRAM ENDED; 
+              LAST EDITED:      NOV 16, 2005 
+              DESCRIPTION:
+                                This field contains a code representing the reason for inactivating a patient for this benefit. EXCLUSION code 7, is hidden and not user selectable. It is used by the post-install routine during initial extraction.  
+
+              SCREEN:           S DIC("S")="I Y'=7"
+              EXPLANATION:      Only these codes are allowed for manual entry.
+              RECORD INDEXES:   AX (#254)
+
+52.91,4       DESIRED APPOINTMENT DATE 0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X I $D(X),$D(^PS(52.91,DA,0)),X<$P(^(0),U,2) D EN^DDIOL("DESIRED APPOINTMENT DATE CANNOT BE BEFORE DATE PHARMACY BENEFIT BEGAN","","$C(7),!?5") K X
+              LAST EDITED:      AUG 06, 2003 
+              HELP-PROMPT:      Enter the desired date for the appointment. 
+              DESCRIPTION:
+                                Set by the EWL/Scheduling extract and is obtained from Scheduling file.  
+
+              TECHNICAL DESCR:  Set by the EWL, DESIRED DATE OF APPOINTMENT field (#22) of the SD WAIT LIST file (#409.3), piece 16 of the 0 node; or from Scheduling, the DESIRED APPOINTMENT DATE field (#27) of the APPOINTMENT subfile (#1900) of the
+                                PATIENT file (#2), piece 1 of the 1 node. If there is more than one desired appointment in Scheduling then the one that is closest to the date the extract was run is used.  
+                                 
+                                Not editable.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              RECORD INDEXES:   AX (#254)
+
+52.91,5       WAIT TYPE              0;6 SET
+
+                                'E' FOR EWL; 
+                                'M' FOR MANUAL; 
+                                'S' FOR SCHEDULED APPOINTMENT; 
+                                'X' FOR SCHEDULED APPOINTMENT & EWL; 
+              LAST EDITED:      AUG 17, 2003 
+              HELP-PROMPT:      Select one Wait List Type. 
+              DESCRIPTION:
+                                The type of wait the patient is assigned.  
+
+              TECHNICAL DESCR:
+                                "M" is set for manual entry. Not editable.  
+
+              RECORD INDEXES:   AX (#254)
+
+52.91,6       STATION NUMBER         0;7 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>7!($L(X)<3)!'(X?3N.AN) X
+              LAST EDITED:      AUG 06, 2003 
+              HELP-PROMPT:      Answer must be 3-7 characters in length 
+              DESCRIPTION:
+                                7 digit STATION NUMBER. First 3 digit station number plus any modifiers.  
+
+              TECHNICAL DESCR:
+                                An attempt to obtain the clinic from the Patient file (#2) will be performed in order to auto-populate the Station Number.  Can be entered manually. It's a required field.  
+
+              RECORD INDEXES:   AX (#254)
+
+52.91,7       INSTITUTION            0;8 POINTER TO INSTITUTION FILE (#4) (Required)
+
+              LAST EDITED:      AUG 07, 2003 
+              DESCRIPTION:
+                                Is set by the EWL/Scheduling extract and is obtained from the Institution File (#4, field .01) 
+
+              TECHNICAL DESCR:
+                                During manual entry, if this field is found null (due to timeout), then the record will be marked as inactive and the INACTIVATION REASON CODE will be set 3 (Patient Ended).  
+
+              FIELD INDEX:      AC (#253)    MUMPS    IR    ACTION
+                  Short Descr:  Sets the "AC" x-ref.
+                    Set Logic:  S ^PS(52.91,"AC",$E(X,1,30),DA)="" S:$$PATCH^XPDUTL("PSO*7.0*146") ^PS(52.91,"AX",DT,DA)="" Q
+                   Kill Logic:  K ^PS(52.91,"AC",$E(X,1,30),DA) S:$$PATCH^XPDUTL("PSO*7.0*146") ^PS(52.91,"AX",DT,DA)="" Q
+                         X(1):  INSTITUTION  (52.91,7)  (Subscr 1)  (forwards)
+
+
+52.91,8       EXCLUSION REASON       0;9 SET
+
+                                '1' FOR ACTIVE RX; 
+                                '2' FOR ACTUAL APPT. < 30 DAYS FROM DATE APPT. MADE; 
+                                '3' FOR BOTH; 
+              LAST EDITED:      AUG 17, 2003 
+              DESCRIPTION:
+                                Exclusion reason codes.  
+
+              RECORD INDEXES:   AX (#254)
+
+52.91,9       PRIMARY CARE SCHEDULE APT DATE 0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      AUG 21, 2003 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date that a primary care appointment was scheduled. This field is populated only by the post-install routine during initial extraction.  
+
+              RECORD INDEXES:   AX (#254)
+
+52.91,10      RX #                   0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      AUG 07, 2003 
+              HELP-PROMPT:      Answer must be 1-15 characters in length 
+              DESCRIPTION:
+                                Rx# if found during the extraction that made the patient flagged as excluded for this service.  
+
+
+52.91,11      DATE LETTER PRINTED    0;12 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      AUG 07, 2003 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                Date the letter was printed.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  INSTITUTION (#7)
+
+PATIENT (#2)                      PATIENT (#.01)
+
+
+File #52.91
+
+  Record Indexes:
+
+  AX (#254)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  Triggers the "AX" x-ref only during manual edit.
+        Set Logic:  S:$$PATCH^XPDUTL("PSO*7.0*146") ^PS(52.91,"AX",DT,DA)="" Q
+         Set Cond:  N I S (X,I)=0 F  S I=$O(X1(I)) Q:'I  I X1(I)'=X2(I) S X=1 Q
+       Kill Logic:  S:$$PATCH^XPDUTL("PSO*7.0*146") ^PS(52.91,"AX",DT,DA)="" Q
+        Kill Cond:  N I S (X,I)=0 F  S I=$O(X1(I)) Q:'I  I X1(I)'=X2(I) S X=1 Q
+             X(1):  DATE PHARMACY BENEFIT BEGAN  (52.91,1)  (Subscr 1)  (forwards)
+             X(2):  INACTIVATION OF BENEFIT DATE  (52.91,2)  (forwards)
+             X(3):  INACTIVATION REASON CODE  (52.91,3)  (forwards)
+             X(4):  DESIRED APPOINTMENT DATE  (52.91,4)  (forwards)
+             X(5):  WAIT TYPE  (52.91,5)  (forwards)
+             X(6):  STATION NUMBER  (52.91,6)  (forwards)
+             X(7):  EXCLUSION REASON  (52.91,8)  (forwards)
+             X(8):  PRIMARY CARE SCHEDULE APT DATE  (52.91,9)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,155 @@
+STANDARD DATA DICTIONARY #801.9 -- REMINDER RESOLUTION STATUS FILE                                                                                                                                                                MAY 20,2014@15:31:36  PAGE 1
+STORED IN ^PXRMD(801.9,  (6 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                         (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file defines the resolution statuses that may be related to a finding.  National resolution statuses are distributed in this file, but sites may create local resolution statuses.  If local resolutions are defined, they must be mapped to a national
+resolution status.  The national resolution statuses are used by the process that creates dialog sentences for finding items.  
+ 
+The distributed national resolution statuses may not be deleted. 
+ 
+Most of the findings from files can be automatically analyzed and associated with a resolution status.  For example, Education topics entered for a current visit are "DONE AT ENCOUNTER", Education topics entered for a historical visit are "DONE
+ELSEWHERE", Education topics with a Level of Understanding of Refused are "PATIENT REFUSED" resolutions. The health factor is a file of findings that we cannot categorize without the sites telling us what the related resolution status should be.  
+ 
+The statuses will be used in the future for roll-up counts to reflect how reminders were resolved (done, historical, refused, contraindicated, ordered).  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: RESOLUTION TYPE field (#13) of the REMINDER DIALOG File (#801.41) 
+               RESOLUTION STATUS field (#.01) of the RESOLUTION STATUS DEFAULTS sub-field (#801.451) of the REMINDER FINDING TYPE PARAMETER File (#801.45) 
+               SUB-STATUS field (#.01) of the SUB-STATUS sub-field (#801.9001) of the REMINDER RESOLUTION STATUS File (#801.9) 
+               RESOLUTION STATUS field (#.01) of the RESOLUTION STATUS sub-field (#801.9501) of the HEALTH FACTOR RESOLUTION File (#801.95) 
+               
+
+CROSS
+REFERENCED BY: NAME(B)
+
+INDEXED BY:    SUB-STATUS (AC), NAME (ACP)
+
+
+801.9,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      FEB 08, 2000 
+              HELP-PROMPT:      Answer must be 3-40 characters in length. 
+              DESCRIPTION:      This is a name that can be used to group reminder resolutions.  Local resolution status names need to be mapped to a national resolution status.  The Health Factor findings are the findings that may be mapped to the 
+                                resolution statuses.  
+
+              DELETE TEST:      1,0)= I $P($G(^PXRMD(801.9,DA,0)),U,6) D EN^DDIOL($C(7)_"CANNOT DELETE A NATIONAL STATUS")
+
+              CROSS-REFERENCE:  801.9^B 
+                                1)= S ^PXRMD(801.9,"B",$E(X,1,30),DA)=""
+                                2)= K ^PXRMD(801.9,"B",$E(X,1,30),DA)
+
+              FIELD INDEX:      ACP (#285)    MUMPS    IR    ACTION
+                  Short Descr:  Remove pointers to deleted local statuses from the sub-status multiple.
+                  Description:  When a local status is deleted the ACP cross reference is used to remove the local status from the sub-status multiple on the related national status. To determine the national status to which the local status belongs the
+                                AC index is used.  
+                    Set Logic:  Q
+                   Kill Logic:  D KILLAC^PXRMSEDT Q
+                         X(1):  NAME  (801.9,.01)  (Subscr 1)  (Len 30)  (forwards)
+
+
+801.9,.02     ABBREVIATED NAME       0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                This is the abbreviated name for the resolution status.  
+
+
+801.9,.03     REPORT COLUMN HEADING  0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>99!($L(X)<1) X
+              LAST EDITED:      JUN 09, 1999 
+              HELP-PROMPT:      Answer must be 1-99 characters in length. 
+              DESCRIPTION:
+                                This is the print column heading for use in reminder reports.  
+
+
+801.9,.04     INACTIVE FLAG          0;4 SET
+
+                                '1' FOR INACTIVE; 
+              LAST EDITED:      JUN 09, 1999 
+              DESCRIPTION:
+                                This flag should be set if the resolution status should no longer be used in reminder dialogs.  
+
+
+801.9,.05     CREATOR                0;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 11, 2000 
+              DESCRIPTION:
+                                Person who created the resolution status. Applies only to local statuses.  
+
+
+801.9,.06     RESTRICTED EDITING     0;6 SET
+
+                                '1' FOR RESTRICTED; 
+              LAST EDITED:      JUN 09, 1999 
+              DESCRIPTION:
+                                Nationally distributed statuses are released with this field set to restrict editing. The national statuses may not be deleted.  
+
+
+801.9,1       DESCRIPTION            1;0   WORD-PROCESSING #801.901
+
+              DESCRIPTION:
+                                This is a brief description of the resolution status.  
+
+
+801.9,10      SUB-STATUS             10;0 POINTER Multiple #801.9001
+
+              DESCRIPTION:
+                                Locally created resolution statuses must be a sub-status of a nationally released resolution status. This field contains the local statuses that belong to the national status.  
+
+              SCREEN:           S ^DIC("S")="I ^(0)'=^PXRMD(801.9,DA,0)"
+              EXPLANATION:      RESOLUTION CANNOT POINT TO ITSELF
+
+801.9001,.01    SUB-STATUS             0;1 POINTER TO REMINDER RESOLUTION STATUS FILE (#801.9) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I ($P(^(0),U,6)'=1)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      FEB 08, 2000 
+                SCREEN:           S DIC("S")="I ($P(^(0),U,6)'=1)"
+                EXPLANATION:      Substatus cannot itself be a national status.
+                CROSS-REFERENCE:  801.9001^B 
+                                  1)= S ^PXRMD(801.9,DA(1),10,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMD(801.9,DA(1),10,"B",$E(X,1,30),DA)
+
+                FIELD INDEX:      AC (#284)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#801.9)
+                    Short Descr:  Local to National Status pointers
+                    Description:  This index holds pointers from local resolution codes to national resolution codes. These pointers are created when a local code is added.  
+                      Set Logic:  S ^PXRMD(801.9,"AC",X,DA(1),DA)=""
+                     Kill Logic:  K ^PXRMD(801.9,"AC",X,DA(1),DA)
+                     Whole Kill:  K ^PXRMD(801.9,"AC")
+                           X(1):  SUB-STATUS  (801.9001,.01)  (Subscr 1)  (forwards)
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 CREATOR (#.05)
+
+REMINDER RESOLUTION STATUS 
+                   (#801.9)       SUB-STATUS:SUB-STATUS (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PXRM RESOLUTIONS (GENERAL)    MAY 05, 2000@16:56  USER #0                                                                                                                                                                      REMINDER RESOLUTION STATUS LIST
+PXRM RESOLUTIONS (LOCAL)      MAY 05, 2000@16:56  USER #0                                                                                                                                                                      REMINDER RESOLUTION STATUS LIST
+PXRM RESOLUTIONS (NATIONAL)   OCT 14, 1999@09:46  USER #0                                                                                                                                                                      REMINDER RESOLUTION STATUS LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

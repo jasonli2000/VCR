@@ -1,0 +1,1176 @@
+STANDARD DATA DICTIONARY #631 -- HBHC PATIENT FILE                                                                                                                                                                                MAY 20,2014@15:33:47  PAGE 1
+STORED IN ^HBHC(631,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is the HBHC Patient file and contains demographic, admission, discharge, and record transmission data.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: DATE (#17)[R]
+
+POINTED TO BY: HBHC EVALUATION field (#1) of the HBHC EVALUATION/ADMISSION ERROR(S) File (#634.1) 
+               HBHC DISCHARGE field (#1) of the HBHC DISCHARGE ERROR(S) File (#634.3) 
+               
+
+CROSS
+REFERENCED BY: DISCHARGE DATE(AC), DATE(AD), FORM 3 TRANSMIT STATUS(AE), FORM 5 TRANSMIT STATUS(AF), FORM 3 MAIL MESSAGE DATE(AG), FORM 5 MAIL MESSAGE DATE(AH), EVALUATION DATE(AI), MEDICAL FOSTER HOME PATIENT(AJ), MEDICAL FOSTER HOME NAME(AK), 
+               NAME(B)
+
+631,.01       NAME                   0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      APR 15, 1992 
+              HELP-PROMPT:      Answer using last name, first name, middle name format, or enter first letter of last name and last four digits of social security number  (e.g. A1234) 
+              DESCRIPTION:
+                                This field represents patient's name in Patient (2) file.  Patient must exist in DPT for HBHC selection, since LAYGO not allowed.  
+
+              CROSS-REFERENCE:  631^B 
+                                1)= S ^HBHC(631,"B",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"B",$E(X,1,30),DA)
+                                This cross-reference represents regular 'B' file index of HBHC Patient (631) file, Name (.01) field, which references Patient (2) file entries.  
+
+
+
+631,1         EVALUATION DATE        0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S (HBHCDTE,X)=Y,HBHCAD=$P(^HBHC(631,D0,0),U,18) K:X>DT!(2770101>X) X K:(HBHCAD]"")&(HBHCDTE>HBHCAD) X K HBHCAD,HBHCDTE
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Answer with date patient was evaluated for HBHC program.  Answer must be between 1/1/1977 and current date.  Evaluation date must be prior to or same as admission date. 
+              DESCRIPTION:
+                                This field represents date patient was evaluated for HBHC program.  Date range allowed is between 1/1/1977 and current date, and must be prior to or same as HBHC Admission Date.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  631^AI 
+                                1)= S ^HBHC(631,"AI",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"AI",$E(X,1,30),DA)
+                                This cross-reference represents regular 'AI' file index of HBHC Patient (631) file, Evaluation Date (1) field.  Field no longer used after installation of patch 6.  Field data retained for historical purposes only.  
+
+
+
+631,2         STATE CODE             0;3 POINTER TO HBHC VALID STATE CODE FILE (#631.8) (Required)
+
+              LAST EDITED:      JUN 22, 2009 
+              HELP-PROMPT:      Answer with 2 digit numeric state code, or state name, of state where patient resides.  Only state code(s) in HBHC VALID STATE CODE file are allowed.  Field is required for county verification. 
+              DESCRIPTION:
+                                This field represents 2 digit numeric code, in State (5) file, of location where patient resides.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^631^3 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I X'=$P(^HBHC(631,DA,0),U,3) I X S X=DIV S Y(1)=$S($D(^HBHC(631,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(631,2,1,1,1.4)
+                                1.4)= S DIH=$G(^HBHC(631,DIV(0),0)),DIV=X S $P(^(0),U,4)=DIV,DIH=631,DIG=3 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I X'=$P(^HBHC(631,DA,0),U,3) I X S X=DIV S Y(1)=$S($D(^HBHC(631,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(631,2,1,1,2.4)
+                                2.4)= S DIH=$G(^HBHC(631,DIV(0),0)),DIV=X S $P(^(0),U,4)=DIV,DIH=631,DIG=3 D ^DICR
+                                CREATE CONDITION)= I X'=$P(^HBHC(631,DA,0),U,3)
+                                CREATE VALUE)= @
+                                DELETE CONDITION)= I X'=$P(^HBHC(631,DA,0),U,3)
+                                DELETE VALUE)= @
+                                FIELD)= COUNTY CODE
+
+
+631,3         COUNTY CODE            0;4 NUMBER
+
+              INPUT TRANSFORM:  S Z0=$S($P($G(^HBHC(631,D0,0)),U,3)]"":+^HBHC(631.8,$P(^HBHC(631,D0,0),U,3),0),1:0) K:'Z0 X Q:'Z0!'$D(^DIC(5,Z0,1,0))  S DIC="^DIC(5,Z0,1,",DIC(0)="QEM" D ^DIC S X=+Y K:Y'>0 X K Z0,DIC
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($P($G(^HBHC(631,D0,0)),U,3)]"":+^HBHC(631.8,$P(^HBHC(631,D0,0),U,3),0),1:"") Q:'Z0  S Y=$P($S($D(^DIC(5,Z0,1,Y,0)):^(0),1:""),U)_"  ("_$P($S($D(^(0)):^(0),1:""),U,3)_")"
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      Answer with 3 digit numeric county code, or county name, of county where patient resides.  County codes are checked for validity of State Code entered. 
+              DESCRIPTION:
+                                This field represents 3 digit numeric code of County, in State (5) file, of location where patient resides.  County codes are checked for validity of State Code entered.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the STATE CODE field of the HBHC PATIENT File 
+
+
+631,4         ZIP CODE               0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<5)!'((X?5N)!(X?9N)) X
+              OUTPUT TRANSFORM: S Y=$E(Y,1,5)_$S($E(Y,6,9)]"":"-"_$E(Y,6,9),1:"")
+              LAST EDITED:      JUN 05, 1997 
+              HELP-PROMPT:      Answer must be 5 or 9 characters in length. 
+              DESCRIPTION:
+                                This fields represents 5 or 9 digit numeric ZIP Code of area where patient resides.  
+
+
+631,5         ELIGIBILITY @ EVALUATION 0;6 SET
+
+                                '01' FOR Service Connected 50% or More  (01); 
+                                '02' FOR Aid & Attendance or Housebound  (02); 
+                                '03' FOR Service Connected Less Than 50%  (03); 
+                                '04' FOR Non-Service Connected, Receiving VA Pension  (04); 
+                                '05' FOR Other Non-Service Connected  (05); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 2 digit numeric code representing patient's eligibility at time of evaluation. 
+              DESCRIPTION:
+                                This field represents 2 digit numeric code of patient's eligibility at time of evaluation for HBHC program.  
+
+
+631,6         BIRTH YEAR              ;  COMPUTED DATE
+
+              MUMPS CODE:       X ^DD(631,6,9.2) S X=$P(Y(631,6,101),U,3),X=$E(X,1,3)_"0000" S:'X X="" S X=X S D0=Y(631,6,80)
+                                9.2 = S Y(631,6,80)=$S($D(D0):D0,1:""),Y(631,6,1)=$S($D(^HBHC(631,D0,0)):^(0),1:""),D0=$P(Y(631,6,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(631,6,101)=$S($D(^DPT(D0,0)):^(0),1:"")
+              ALGORITHM:        YEAR(.01:DATE OF BIRTH)
+              LAST EDITED:      FEB 18, 1997 
+              HELP-PROMPT:      Answer must be 4 numeric characters in length and represents patient's birth year. 
+              DESCRIPTION:
+                                This field represents 4 digit year of patient's birthdate in Patient (2) file.  
+
+
+631,7         PERIOD OF SERVICE      0;8 POINTER TO HBHC PERIOD OF SERVICE FILE (#631.7) (Required)
+
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($D(^HBHC(631,D0,0)):$P(^(0),U,8),1:"") Q:'Z0  S Y=$P($S($D(^HBHC(631.7,Z0,0)):^(0),1:""),U,2)
+              LAST EDITED:      OCT 14, 1993 
+              HELP-PROMPT:      Answer must be 2 characters in length.  Valid entries are '00' thru '05', '07' thru '10' and 'X '.  (Note 'X' is followed by space character.)  All one digit numeric entries must have leading zero. 
+              DESCRIPTION:      This field represents 2 character code in HBHC Period of Service (631.7) file.  Valid codes are:  '00' thru '05', '07' thru '10', and 'X '.  (Note 'X' code is followed by space character.)  All 1 digit numeric codes must
+                                have leading zero.  
+
+
+631,8         SEX                     ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(631,8,9.3) S X=$P($P(Y(631,8,102),$C(59)_$P(Y(631,8,101),U,2)_":",2),$C(59),1) S D0=Y(631,8,80)
+                                9.2 = S Y(631,8,80)=$S($D(D0):D0,1:""),Y(631,8,1)=$S($D(^HBHC(631,D0,0)):^(0),1:""),D0=$P(Y(631,8,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1
+                                9.3 = X ^DD(631,8,9.2) S Y(631,8,102)=$C(59)_$S($D(^DD(2,.02,0)):$P(^(0),U,3),1:""),Y(631,8,101)=$S($D(^DPT(D0,0)):^(0),1:"")
+                                9.4 = X ^DD(631,8,9.3) S X=$P($P(Y(631,8,103),$C(59)_$P(Y(631,8,102),U,2)_":",2),$C(59),1)="M",Y(631,8,104)=X S X="Male  (1)",Y(631,8,105)=X S X=1,Y(631,8,106)=X
+              ALGORITHM:        .01:SEX
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's sex. 
+              DESCRIPTION:
+                                This field represents patient's Sex in Patient (2) file.  
+
+
+631,9         RACE                    ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(631,9,9.5) S X=$S(Y(631,9,2):Y(631,9,3),Y(631,9,4):Y(631,9,5),Y(631,9,6):Y(631,9,7),Y(631,9,8):Y(631,9,9),Y(631,9,10):Y(631,9,11),Y(631,9,12):Y(631,9,13),Y(631,9,14):X)
+                                9.2 = X $P(^DD(631,9.1,0),U,5,99) S Y(631,9,1)=X S X=Y(631,9,1)=6,Y(631,9,2)=X S X="White  (1)",Y(631,9,3)=X S X=Y(631,9,1)=4,Y(631,9,4)=X S X="Black  (2)"
+                                9.3 = X ^DD(631,9,9.2) S Y(631,9,5)=X S X=Y(631,9,1)=2,Y(631,9,6)=X S X="Hispanic  (3)",Y(631,9,7)=X S X=Y(631,9,1)=1,Y(631,9,8)=X S X="Hispanic  (3)",Y(631,9,9)=X
+                                9.4 = X ^DD(631,9,9.3) S X=Y(631,9,1)=3,Y(631,9,10)=X S X="Amer/Indian Alaskan Native  (4)",Y(631,9,11)=X S X=Y(631,9,1)=5,Y(631,9,12)=X S X="Asian/Pacific Islander  (5)"
+                                9.5 = X ^DD(631,9,9.4) S Y(631,9,13)=X S X=1,Y(631,9,14)=X S X="Not Determined  (9)"
+                                9.6 = X ^DD(631,9.1,9.3) S Y(631,9.1,101)=$S($D(^DPT(D0,0)):^(0),1:""),D0=$P(Y(631,9.1,101),U,6) S:'$D(^DIC(10,+D0,0)) D0=-1 X ^DD(631,9.1,9.2):D0>0 S X="" S D0=Y(631,9.1,80)
+                                9.7 = X ^DD(631,9.1,9.3) S Y(631,9.1,101)=$S($D(^DPT(D0,0)):^(0),1:""),D0=$P(Y(631,9.1,101),U,6) S:'$D(^DIC(10,+D0,0)) D0=-1 X ^DD(631,9.1,9.2):D0>0 S X="" S D0=Y(631,9.1,80)
+                                9.8 = X ^DD(631,9,9.2)=4,Y(631,9,1)=X S X="Black  (2)",Y(631,9,2)=X X ^DD(631,9,9.3)=3,Y(631,9,3)=X S X="American Indian/Alaskan Native  (4)",Y(631,9,4)=X X ^DD(631,9,9.4)
+                                9.9 = X ^DD(631,9,9.8) S X=X=6,Y(631,9,5)=X S X="White  (1)",Y(631,9,6)=X X ^DD(631,9,9.5)=2,Y(631,9,7)=X S X="Hispanic Origin  (3)",Y(631,9,8)=X X ^DD(631,9,9.6)
+                                10 = X ^DD(631,9,9.9) S X=X=5,Y(631,9,9)=X S X="Asian/Pacific Islander  (5)",Y(631,9,10)=X X ^DD(631,9,9.7)=1,Y(631,9,11)=X S X="Hispanic Origin  (3)"
+                                10.1 = X ^DD(631,9,10) S Y(631,9,12)=X S X=1,Y(631,9,13)=X S X="Not Determined  (9)"
+                                10.2 = X ^DD(631,9,10.1) S X=$P(Y(631,9,601),U,2),Y(631,9,602)=X S X="Hispanic (3)",Y(631,9,603)=X S X=$P(Y(631,9,601),U,1),Y(631,9,604)=X
+                                10.3 = X ^DD(631,9,10.2) S D0=$P(Y(631,9,101),U,6) S:'$D(^DIC(10,+D0,0)) D0=-1 S Y(631,9,701)=$S($D(^DIC(10,D0,0)):^(0),1:"") S X=$P(Y(631,9,701),U,2)=2
+                                10.4 = X ^DD(631,9,10.3) S Y(631,9,702)=X S X="Hispanic (3)",Y(631,9,703)=X S X=1,Y(631,9,704)=X S X="Not Determined (9)"
+              ALGORITHM:        $S(#9.1=6:"White  (1)",#9.1=4:"Black  (2)",#9.1=2:"Hispanic  (3)",#9.1=1:"Hispanic  (3)",#9.1=3:"Amer/Indian Alaskan Native  (4)",#9.1=5:"Asian/Pacific Islander  (5)",1:"Not Determined  (9)")
+              LAST EDITED:      DEC 13, 1993 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's race. 
+              DESCRIPTION:      This field is obsolete & contains historical data only  (prior to Race/Ethnicity Information multiple field mandate in Jan 2003).  Race field value set to "X" for Austin tranmission purposes after mandate.  
+                                 
+                                Historical Description:  This fields represents patient's Race in Patient (2) file. (9.1) field to convert Race field value to corresponding HBHC Race code. 
+
+              SOURCE OF DATA:   X ^DD(631,9,9.9) S X=X=5,Y(631,9,9)=X S X="Asian/Pacific Islander  (5)",Y(631,9,10)=X X ^DD(631,9,9.7)=1,Y(631,9,11)=X S X="Hispanic Origin  (3)"
+
+631,9.1       RACECOMP                ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(631,9.1,9.3) S X=$P(Y(631,9.1,201),U,2) S D0=Y(631,9.1,80)
+                                9.2 = S Y(631,9.1,80)=$S($D(D0):D0,1:""),Y(631,9.1,1)=$S($D(^HBHC(631,D0,0)):^(0),1:""),D0=$P(Y(631,9.1,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(631,9.1,180)=$S($D(D0):D0,1:"")
+                                9.3 = X ^DD(631,9.1,9.2) S Y(631,9.1,101)=$S($D(^DPT(D0,0)):^(0),1:""),D0=$P(Y(631,9.1,101),U,6) S:'$D(^DIC(10,+D0,0)) D0=-1 S Y(631,9.1,201)=$S($D(^DIC(10,D0,0)):^(0),1:"")
+              ALGORITHM:        #.01:#.06:#2
+              LAST EDITED:      DEC 13, 1993 
+              DESCRIPTION:      This field is obsolete & contains historical data only  (prior to Race/Ethnicity Information multiple field mandate in Jan 2003).  
+                                 
+                                Historical Description: This field returns the abbreviation field from the Race file (#10).  Used to obtain the field value needed for converting the Patient file (#2), Race field (#.06), Abbreviation field (#1 in DIC(10,)
+                                to the corresponding HBHC Race code field value.  
+
+
+631,10        MARITAL STATUS @ EVALUATION 0;11 SET
+
+                                '1' FOR Married  (1); 
+                                '2' FOR Widowed  (2); 
+                                '3' FOR Separated  (3); 
+                                '4' FOR Divorced  (4); 
+                                '5' FOR Never Married  (5); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's marital status at time of evaluation. 
+              DESCRIPTION:
+                                This fields represents 1 digit numeric code for patient's marital status at time of evaluation for HBHC program.  
+
+
+631,11        LIVING ARRANGEMENTS @ EVAL 0;12 SET
+
+                                '1' FOR Alone  (1); 
+                                '2' FOR With Spouse  (2); 
+                                '3' FOR With Relatives  (3); 
+                                '4' FOR With Non-Relatives  (4); 
+                                '5' FOR Group Quarters, Not Health Related  (5); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's living arrangements at time of evaluation. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's living arrangements at time of evaluation for HBHC program.  
+
+
+631,12        LAST AGENCY PROVIDING CARE 0;13 SET
+
+                                '1' FOR VA Provided Care  (1); 
+                                '2' FOR Non VA Care  (2); 
+                                '3' FOR VA Fee Basis/Contract  (3); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing last agency providing care to patient. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for last agency providing care to patient.  
+
+
+631,13        TYPE OF LAST CARE AGENCY 0;14 SET
+
+                                '1' FOR General Hospital  (1); 
+                                '2' FOR Specialty Hospital  (2); 
+                                '3' FOR Nursing Home  (3); 
+                                '4' FOR Residential Care Facility  (4); 
+                                '5' FOR Hospice  (5); 
+                                '6' FOR Community-Based Services  (6); 
+                                '7' FOR Self/Family, No Regular Source  (7); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing type of agency providing last care to patient. 
+              DESCRIPTION:
+                                This fields represents 1 digit numeric code for type of agency providing last care to patient.  
+
+
+631,14        ADMIT/REJECT ACTION    0;15 SET
+
+                                '1' FOR Admit to HBHC  (1); 
+                                '2' FOR Reject from HBHC  (2); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing whether patient was admitted to or rejected from HBHC program.  This answer determines what other data entry fields are prompted for by the package. 
+              DESCRIPTION:
+                                This fields represents 1 digit numeric code for whether patient was admitted to or rejected from HBHC program.  This field determines what other data entry fields are prompted for by the package.  
+
+
+631,15        REJECT/WITHDRAW REASON 0;16 POINTER TO HBHC REJECT/WITHDRAW REASON FILE (#631.1)
+
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($D(^HBHC(631,D0,0)):$P(^(0),U,16),1:"") Q:'Z0  S Y=$P($S($D(^HBHC(631.1,Z0,0)):^(0),1:""),U,2)
+              LAST EDITED:      MAR 17, 1994 
+              HELP-PROMPT:      Answer with 2 digit numeric code representing reason patient was rejected/withdrawn from HBHC program. 
+              DESCRIPTION:      This field represents 2 digit numeric code in HBHC Reject/Withdraw Reason (631.1) file, for reason patient was rejected/withdrawn from HBHC program.  This field is only prompted for when Admit/Reject Action field contains
+                                2 (Reject from HBHC).  
+
+
+631,16        REJECT/WITHDRAW DISPOSITION 0;17 SET
+
+                                '1' FOR Referred Back to Referral Source  (1); 
+                                '2' FOR Disposition Made by HBHC  (2); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing reject/withdraw disposition. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for reject/withdraw disposition.  This field is only prompted for when Admit/Reject Action field contains 2 (Reject from HBHC).  
+
+
+631,17        DATE                   0;18 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S (HBHCDTE,X)=Y,HBHCDS=$P(^HBHC(631,D0,0),U,40) K:X>DT!(2770101>X) X K:((HBHCDS]"")&(HBHCDTE>HBHCDS)) X K HBHCDS,HBHCDTE
+              LAST EDITED:      AUG 26, 1997 
+              HELP-PROMPT:      Date must be prior to or same as discharge date, must be between 1/1/1977 & current date, and represent date patient was considered/reviewed for HBPC program.  Field is required. 
+              DESCRIPTION:
+                                This field represents date patient was considered/reviewed for HBPC program. Date range allowed is between 1/1/1977 and current date.  Date must be prior to or same as discharge date. 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  631^AD 
+                                1)= S ^HBHC(631,"AD",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"AD",$E(X,1,30),DA)
+                                This cross-reference represents regular 'AD' file index of HBHC Patient (631) file, Date (17) field. 
+
+
+
+631,18        PRIMARY DIAGNOSIS @ ADMISSION 0;19 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($D(^HBHC(631,D0,0)):$P(^(0),U,19),1:"") Q:'Z0  S Y=$S($D(^ICD9(Z0,0)):$P(^ICD9(Z0,0),U)_"  "_$P(^ICD9(Z0,0),U,3),1:"")
+              LAST EDITED:      JUN 05, 1992 
+              HELP-PROMPT:      Answer with ICD9 diagnosis code, or diagnosis description, of patient's primary diagnosis at time of admission. 
+              DESCRIPTION:
+                                This field represents patient's primary diagnosis at time of admission, referencing ICD Diagnosis (80) file entries.  
+
+
+631,19        VISION @ ADMISSION     0;20 SET
+
+                                '1' FOR Normal or Minimal Loss  (1); 
+                                '2' FOR Moderate Loss  (2); 
+                                '3' FOR Severe Loss  (3); 
+                                '4' FOR Total Blindness  (4); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's vision at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's vision at time of admission.  
+
+
+631,20        HEARING @ ADMISSION    0;21 SET
+
+                                '1' FOR Normal or Minimal Loss  (1); 
+                                '2' FOR Moderate Loss  (2); 
+                                '3' FOR Severe Loss  (3); 
+                                '4' FOR Total Deafness  (4); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's hearing at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's hearing at time of admission.  
+
+
+631,21        EXPRESSIVE COMMUNICATION @ ADM 0;22 POINTER TO HBHC EXPRESSIVE COMMUNICATION FILE (#631.2)
+
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($D(^HBHC(631,D0,0)):$P(^(0),U,22),1:"") Q:'Z0  S Y=$P($S($D(^HBHC(631.2,Z0,0)):^(0),1:""),U)
+              LAST EDITED:      MAR 17, 1994 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's expressive communication at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's expressive communication at time of admission, referencing HBHC Expressive Communication (631.2) file entries.  
+
+
+631,22        RECEPTIVE COMMUNICATION @ ADM 0;23 POINTER TO HBHC RECEPTIVE COMMUNICATION FILE (#631.3)
+
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($D(^HBHC(631,D0,0)):$P(^(0),U,23),1:"") Q:'Z0  S Y=$P($S($D(^HBHC(631.3,Z0,0)):^(0),1:""),U)
+              LAST EDITED:      MAR 17, 1994 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's receptive communication at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's receptive communication at time of admission, referencing HBHC Receptive Communication (631.3) file entries.  
+
+
+631,23        BATHING @ ADMISSION    0;24 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing bathing of patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's bathing at time of admission.  
+
+
+631,24        DRESSING @ ADMISSION   0;25 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing dressing of patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's dressing at time of admission.  
+
+
+631,25        TOILET USAGE @ ADMISSION 0;26 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing toilet usage of patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's toilet usage at time of admission.  
+
+
+631,26        TRANSFERRING @ ADMISSION 0;27 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing transferring of patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's transferring at time of admission.  
+
+
+631,27        EATING @ ADMISSION     0;28 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing eating by patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's eating at time of admission.  
+
+
+631,28        WALKING @ ADMISSION    0;29 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing walking by patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's walking at time of admission.  
+
+
+631,29        BOWEL CONTINENCE @ ADMISSION 0;30 SET
+
+                                '1' FOR Continent or Ostomy/Catheter Self Care  (1); 
+                                '2' FOR Incontinent Occasionally  (2); 
+                                '3' FOR Incontinent or Ostomy/Catheter Not Self Care  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing bowel continence of patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's bowel continence at time of admission.  
+
+
+631,30        BLADDER CONTINENCE @ ADMISSION 0;31 SET
+
+                                '1' FOR Continent or Ostomy/Catheter Self Care  (1); 
+                                '2' FOR Incontinent Occasionally  (2); 
+                                '3' FOR Incontinent or Ostomy/Catheter Not Self Care  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing bladder continence of patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's bladder continence at time of admission.  
+
+
+631,31        MOBILITY @ ADMISSION   0;32 SET
+
+                                '1' FOR Goes Outdoors Without Help  (1); 
+                                '2' FOR Goes Outdoors With Help  (2); 
+                                '3' FOR Confined Indoors, Not Bed Disabled  (3); 
+                                '4' FOR Bed Disabled  (4); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      MAY 06, 1992 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's mobility at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's mobility at time of admission.  
+
+
+631,32        ADAPTIVE TASKS @ ADMISSION 0;33 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Requires Help  (2); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's adaptive tasks at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's adaptive tasks at time of admission.  
+
+
+631,33        BEHAVIOR PROBLEMS @ ADMISSION 0;34 SET
+
+                                '1' FOR Does Not Exhibit This Characteristic  (1); 
+                                '2' FOR Exhibits This Characteristic  (2); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing behavior problems of patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's behavior problems at time of admission.  
+
+
+631,34        DISORIENTATION @ ADMISSION 0;35 SET
+
+                                '1' FOR Does Not Exhibit This Characteristic  (1); 
+                                '2' FOR Exhibits This Characteristic  (2); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing disorientation of patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's disorientation at time of admission.  
+
+
+631,35        MOOD DISTURBANCE @ ADMISSION 0;36 SET
+
+                                '1' FOR Does Not Exhibit This Characteristic  (1); 
+                                '2' FOR Exhibits This Characteristic  (2); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing mood disturbance of patient at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's mood disturbance at time of admission.  
+
+
+631,36        CAREGIVER LIMITATIONS @ ADM 0;37 SET
+
+                                '1' FOR Minimal or None  (1); 
+                                '2' FOR Moderate  (2); 
+                                '3' FOR Moderately Severe  (3); 
+                                '4' FOR No Caregiver  (4); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's caregiver limitations at time of admission. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's caregiver limitations at time of admission.  
+
+
+631,37        PERSON COMPLETING EVL/ADM FORM 0;38 POINTER TO HBHC PROVIDER FILE (#631.4)
+
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($D(^HBHC(631,D0,0)):$P(^(0),U,38),1:"") Q:'Z0  S Z1=$P($S($D(^HBHC(631.4,Z0,0)):^(0),1:""),U,2),Z2=+(^(0)),Y=$P($S($D(^VA(200,Z1,0)):^(0),1:""),U)_"  ("_Z2_")"
+              LAST EDITED:      MAR 18, 1994 
+              HELP-PROMPT:      Answer with name of person completing evaluation/admission form.  Person must exist in HBHC Provider file. 
+              DESCRIPTION:
+                                This field represents name of person completing evaluation/admission form.  This person must exist in HBHC Provider (631.4) file, since LAYGO is not allowed.  
+
+
+631,38        DATE EVAL/ADM FORM COMPLETED 0;39 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 07, 1993 
+              HELP-PROMPT:      Answer with date evalution/admission form was completed. 
+              DESCRIPTION:
+                                This field represents date evaluation/admission form was completed.  
+
+
+631,39        DISCHARGE DATE         0;40 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S (HBHCDTE,X)=Y K:X>DT!(2770101>X) X K:HBHCDTE<$P(^HBHC(631,D0,0),U,18) X K HBHCDTE
+              LAST EDITED:      MAR 17, 1994 
+              HELP-PROMPT:      Answer with date patient was discharged from HBHC program.  Answer must be between 1/1/1977 and current date.  Discharge date must follow or be same as admission date. 
+              DESCRIPTION:
+                                This field represents date patient was discharged from HBHC program.  Date range allowed is between 1/1/1977 and current date.  Discharge date must follow or be same as admission date.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  631^AC 
+                                1)= S ^HBHC(631,"AC",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"AC",$E(X,1,30),DA)
+                                This cross-reference represents regular 'AC' file index of HBHC Patient (631) file, Discharge Date (39) field.  
+
+
+
+631,40        ELIGIBILITY @ DISCHARGE 0;41 SET
+
+                                '01' FOR Service Connected 50% or More  (01); 
+                                '02' FOR Aid & Attendance or Housebound  (02); 
+                                '03' FOR Service Connected Less Than 50%  (03); 
+                                '04' FOR Non-Service Connected, Receiving VA Pension  (04); 
+                                '05' FOR Other Non-Service Connected  (05); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 2 digit numeric code representing patient's eligibility at time of discharge. 
+              DESCRIPTION:
+                                This field represents 2 digit numeric code of patient's eligibility at time of discharge from HBHC program.  
+
+
+631,41        MARITAL STATUS @ DISCHARGE 0;42 SET
+
+                                '1' FOR Married  (1); 
+                                '2' FOR Widowed  (2); 
+                                '3' FOR Separated  (3); 
+                                '4' FOR Divorced  (4); 
+                                '5' FOR Never Married  (5); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's marital status at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's marital status at time of discharge from HBHC program.  
+
+
+631,42        LIVING ARRANGEMENTS @ D/C 0;43 SET
+
+                                '1' FOR Alone  (1); 
+                                '2' FOR With Spouse  (2); 
+                                '3' FOR With Relatives  (3); 
+                                '4' FOR With Non-Relatives  (4); 
+                                '5' FOR Group Quarters, Not Health Related  (5); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      APR 07, 1993 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's living arrangements at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's living arrangements at time of discharge from HBHC program.  
+
+
+631,43        DISCHARGE STATUS       0;44 SET
+
+                                '1' FOR Transferred to Other Provider  (1); 
+                                '2' FOR Anticipated Institutionalization  (2); 
+                                '3' FOR Family or Self Care/No Regular Source  (3); 
+                                '4' FOR Died on HBHC  (4); 
+                                '5' FOR Moved Away/Lost to Contact  (5); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing discharge status of patient.  This answer determines what other data entry fields are prompted for by the package. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's discharge status.  This field determines what other data entry fields are prompted for by the package.  
+
+
+631,44        TRANSFER DESTINATION   0;45 SET
+
+                                '1' FOR VA Provided Care  (1); 
+                                '2' FOR Non VA Care  (2); 
+                                '3' FOR VA Fee Basis/Contract  (3); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing transfer destination of patient. 
+              DESCRIPTION:      This field represents 1 digit numeric code for patient's transfer destination.  This field is only prompted for when Discharge Status field contains either 1 (Transferred to Other Provider) or 2 (Anticipated 
+                                Institutionalization).  
+
+
+631,45        TYPE OF DESTINATION AGENCY 0;46 SET
+
+                                '1' FOR General Hospital  (1); 
+                                '2' FOR Specialty Hospital  (2); 
+                                '3' FOR Nursing Home  (3); 
+                                '4' FOR Residential Care Facility/Domicillary  (4); 
+                                '5' FOR Hospice  (5); 
+                                '6' FOR Community-Based Services  (6); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing type of agency of patient's destination. 
+              DESCRIPTION:      This field represent 1 digit numeric code for patient's type of destination agency.  This field is only prompted for when Discharge Status field contains either 1 (Transferred to Other Provider) or 2 (Anticipated
+                                Institutionalization).  
+
+
+631,46        PRIMARY DIAGNOSIS @ DISCHARGE 0;47 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($D(^HBHC(631,D0,0)):$P(^(0),U,47),1:"") Q:'Z0  S Y=$S($D(^ICD9(Z0,0)):$P(^ICD9(Z0,0),U)_"  "_$P(^ICD9(Z0,0),U,3),1:"")
+              LAST EDITED:      JUN 05, 1992 
+              HELP-PROMPT:      Answer with ICD9 diagnosis code, or diagnosis description, of patient's primary diagnosis at time of discharge. 
+              DESCRIPTION:
+                                This field represents patient's primary diagnosis at time of discharge, referencing ICD Diagnosis (80) file entries.  
+
+
+631,47        VISION @ DISCHARGE     0;48 SET
+
+                                '1' FOR Normal or Minimal Loss  (1); 
+                                '2' FOR Moderate Loss  (2); 
+                                '3' FOR Severe Loss  (3); 
+                                '4' FOR Total Blindness  (4); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's vision at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's vision at time of discharge.  
+
+
+631,48        HEARING @ DISCHARGE    0;49 SET
+
+                                '1' FOR Normal or Minimal Loss  (1); 
+                                '2' FOR Moderate Loss  (2); 
+                                '3' FOR Severe Loss  (3); 
+                                '4' FOR Total Deafness  (4); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's hearing at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's hearing at time of discharge.  
+
+
+631,49        EXPRESSIVE COMMUNICATION @ D/C 0;50 POINTER TO HBHC EXPRESSIVE COMMUNICATION FILE (#631.2)
+
+              LAST EDITED:      APR 07, 1993 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's expressive communication at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's expressive communication at time of discharge, referencing HBHC Expressive Communication (631.2) file entries.  
+
+
+631,50        RECEPTIVE COMMUNICATION @ D/C 0;51 POINTER TO HBHC RECEPTIVE COMMUNICATION FILE (#631.3)
+
+              LAST EDITED:      APR 07, 1993 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's receptive communication at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's receptive communication at time of discharge, referencing HBHC Receptive Communication (631.3) file entries.  
+
+
+631,51        BATHING @ DISCHARGE    0;52 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      MAY 06, 1992 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing bathing of patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's bathing at time of discharge.  
+
+
+631,52        DRESSING @ DISCHARGE   0;53 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing dressing of patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's dressing at time of discharge.  
+
+
+631,53        TOILET USAGE @ DISCHARGE 0;54 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing toilet usage of patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's toilet usage at time of discharge.  
+
+
+631,54        TRANSFERRING @ DISCHARGE 0;55 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing transferring of patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's transferring at time of discharge.  
+
+
+631,55        EATING @ DISCHARGE     1;1 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing eating by patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's eating at time of discharge.  
+
+
+631,56        WALKING @ DISCHARGE    1;2 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Receives Help  (2); 
+                                '3' FOR Not Done or Done Without Patient Participation  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing walking by patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's walking at time of discharge.  
+
+
+631,57        BOWEL CONTINENCE @ DISCHARGE 1;3 SET
+
+                                '1' FOR Continent or Ostomy/Catheter Self Care  (1); 
+                                '2' FOR Incontinent Occasionally  (2); 
+                                '3' FOR Incontinent or Ostomy/Catheter Not Self Care  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing bowel continence of patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's bowel continence at time of discharge.  
+
+
+631,58        BLADDER CONTINENCE @ DISCHARGE 1;4 SET
+
+                                '1' FOR Continent or Ostomy/Catheter Self Care  (1); 
+                                '2' FOR Incontinent Occasionally  (2); 
+                                '3' FOR Incontinent or Ostomy/Catheter Not Self Care  (3); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing bladder continence of patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's bladder continence at time of discharge.  
+
+
+631,59        MOBILITY @ DISCHARGE   1;5 SET
+
+                                '1' FOR Goes Outdoors Without Help  (1); 
+                                '2' FOR Goes Outdoors With Help  (2); 
+                                '3' FOR Confined Indoors, Not Bed Disabled  (3); 
+                                '4' FOR Bed Disabled  (4); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's mobility at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's mobility at time of discharge.  
+
+
+631,60        ADAPTIVE TASKS @ DISCHARGE 1;6 SET
+
+                                '1' FOR No Help  (1); 
+                                '2' FOR Requires Help  (2); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's adaptive tasks at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's adaptive tasks at time of discharge.  
+
+
+631,61        BEHAVIOR PROBLEMS @ DISCHARGE 1;7 SET
+
+                                '1' FOR Does Not Exhibit This Characteristic  (1); 
+                                '2' FOR Exhibits This Characteristic  (2); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing bahavior problems of patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's behavior problems at time of discharge.  
+
+
+631,62        DISORIENTATION @ DISCHARGE 1;8 SET
+
+                                '1' FOR Does Not Exhibit This Characteristic  (1); 
+                                '2' FOR Exhibits This Characteristic  (2); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing disorientation of patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's disorientation at time of discharge.  
+
+
+631,63        MOOD DISTURBANCE @ DISCHARGE 1;9 SET
+
+                                '1' FOR Does Not Exhibit This Characteristic  (1); 
+                                '2' FOR Exhibits This Characteristic  (2); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      JUL 08, 1991 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing mood disturbance of patient at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's mood disturbance at time of discharge.  
+
+
+631,64        CAREGIVER LIMITATIONS @ D/C 1;10 SET
+
+                                '1' FOR Minimal or None  (1); 
+                                '2' FOR Moderate  (2); 
+                                '3' FOR Moderately Severe  (3); 
+                                '4' FOR No Caregiver  (4); 
+                                '9' FOR Not Determined  (9); 
+              LAST EDITED:      APR 07, 1993 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing patient's caregiver limitations at time of discharge. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for patient's caregiver limitations at time of discharge.  
+
+
+631,65        PERSON COMPLETING D/C FORM 1;11 POINTER TO HBHC PROVIDER FILE (#631.4)
+
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($D(^HBHC(631,D0,1)):$P(^(1),U,11),1:"") Q:'Z0  S Z1=$P($S($D(^HBHC(631.4,Z0,0)):^(0),1:""),U,2),Z2=+(^(0)),Y=$P($S($D(^VA(200,Z1,0)):^(0),1:""),U)_"  ("_Z2_")"
+              LAST EDITED:      MAR 17, 1994 
+              HELP-PROMPT:      Answer with name of person completing discharge form.  Person must exist in HBHC Provider file. 
+              DESCRIPTION:
+                                This field represents name of person completing discharge form.  This person must exist in HBHC Provider (631.4) file, since LAYGO is not allowed.  
+
+
+631,66        DATE DISCHARGE FORM COMPLETED 1;12 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 09, 1992 
+              HELP-PROMPT:      Answer with date discharge form was completed. 
+              DESCRIPTION:
+                                This field represents date discharge form was completed.  
+
+
+631,67        CASE MANAGER           1;13 POINTER TO HBHC PROVIDER FILE (#631.4)
+
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$P($G(^HBHC(631,D0,1)),U,13) Q:'Z0  S Z1=$P($G(^HBHC(631.4,Z0,0)),U,2),Z2=+(^(0)),Y=$P($G(^VA(200,Z1,0)),U)_"  ("_Z2_")"
+              LAST EDITED:      SEP 23, 1993 
+              HELP-PROMPT:      Answer with person responsible for this case.  Person must exist in HBHC Provider file. 
+              DESCRIPTION:
+                                This field represents name of person responsible for this case.  This person must exist in HBHC Provider (631.4) file, since LAYGO is not allowed.  
+
+
+631,68        SECONDARY DIAGNOSES @ ADM 1;14 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      JUN 11, 1991 
+              HELP-PROMPT:      Answer with diagnosis code, or diagnosis description, of patient's secondary diagnosis at time of admission.  Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field represents patient's secondary diagnosis at time of admission.  Field allows for 1-30 characters of free text.  
+
+
+631,69        CAUSE OF DEATH         1;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      JUN 11, 1991 
+              HELP-PROMPT:      Answer with patient's cause of death.  Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field represents patient's cause of death.  This field in only prompted for when Discharge Status field contains 4 (Died on HBHC).  Field allows for 1-30 characters of free text.  
+
+
+631,70        SECONDARY DIAGNOSES @ D/C 1;16 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      APR 07, 1993 
+              HELP-PROMPT:      Answer with diagnosis code, or diagnosis description, of patient's secondary diagnosis at time of discharge.  Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field represents patient's secondary diagnosis at time of discharge.  Field allows for 1-30 characters of free text.  
+
+
+631,71        FORM 3 TRANSMIT STATUS 1;17 SET
+
+                                'F' FOR Record in Transmit File; 
+                                'N' FOR Record Needs Transmitting; 
+                                'T' FOR Record Transmitted; 
+                                'O' FOR Record Omitted, Pre-dates 10/1/96 PCE Usage; 
+              LAST EDITED:      APR 17, 1997 
+              HELP-PROMPT:      Field updated only by package, no user input.  Field updated with record transmit status. 
+              DESCRIPTION:      This field represents Form 3 (Evaluation/Admission) Transmit Status. Field will contain either 'F' (Record in Transmit File), 'N' (Record Needs Transmitting), 'T' (Record Transmitted), or 'O' (Record Omitted, Pre-dates 
+                                10/1/96 PCE Usage).  Field updated by package only, no user input. 
+
+              CROSS-REFERENCE:  631^AE 
+                                1)= S ^HBHC(631,"AE",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"AE",$E(X,1,30),DA)
+                                This cross-reference represents regular 'AE' file index of HBHC Patient (631) file, Form 3 (Evaluation/Admission) Transmit Status (71) field.  Form 3 Transmit Status field updated by package only, no user input.  
+
+
+
+631,72        FORM 5 TRANSMIT STATUS 1;18 SET
+
+                                'F' FOR Record in Transmit File; 
+                                'N' FOR Record Needs Transmitting; 
+                                'T' FOR Record Transmitted; 
+                                'O' FOR Record Omitted, Pre-dates 10/1/96 PCE Usage; 
+              LAST EDITED:      APR 17, 1997 
+              HELP-PROMPT:      Field updated only by package, no user input. 
+              DESCRIPTION:      This field represents Form 5 (Discharge) Transmit Status.  Field will contain either 'F' (Record in Transmit File), 'N' (Record Needs Transmitting), 'T' (Record Transmitted), or 'O' (Record Omitted, Pre-dates 10/1/96 PCE
+                                Usage).  Field updated by package only, no user input. 
+
+              CROSS-REFERENCE:  631^AF 
+                                1)= S ^HBHC(631,"AF",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"AF",$E(X,1,30),DA)
+                                This cross-reference represents regular 'AF' file index of HBHC Patient (631) file, Form 5 (Discharge) Transmit Status (72) field.  Form 5 Transmit Status field updated by package only, no user input.  
+
+
+
+631,73        FORM 3 FILED IN HBHC(634) DATE 1;19 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 15, 2008 
+              HELP-PROMPT:      Field updated only by package, no user input.  Field represents Date/Time Form 3 filed in Transmit file. 
+              DESCRIPTION:
+                                This field represents date/time Form 3 (Evaluation/Admission) record filed in Transmit (634) file. Field transmitted to Austin for unique record identification purposes.  Field updated by package only, no user input.  
+
+
+631,74        FORM 3 BATCH INITIAL MM MSG # 1;20 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+              LAST EDITED:      JUN 26, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input.  Number represents first MM msg # in transmission batch.  Record may be transmitted in different msg, if multiple msgs transmitted. 
+              DESCRIPTION:      This field represents MailMan message number of 'First' MailMan message in Austin transmission batch.  Record 'may' be transmitted in different message, if multiple messages are transmitted in one transmission batch.  
+                                Field updated by package only, no user input.  
+
+
+631,75        FORM 3 MAIL MESSAGE DATE 1;21 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 04, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input. 
+              DESCRIPTION:
+                                This field represents date of Form 3 (Evaluation/Admission) record transmission via MailMan to Austin.  Field updated by package only, no user input.  
+
+              CROSS-REFERENCE:  631^AG 
+                                1)= S ^HBHC(631,"AG",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"AG",$E(X,1,30),DA)
+                                This cross-reference represents regular 'AG' file index of HBHC Patient (631) file, Form 3 (Evaluation/Admission) Mail Message Date (75) field.  Form 3 Mail Message Date field updated by package only, no user input.  
+
+
+
+631,76        FORM 5 FILED IN HBHC(634) DATE 1;22 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 29, 1992 
+              HELP-PROMPT:      Date Form 5 filed in Transmit file.  Field updated only by package, no user input. 
+              DESCRIPTION:
+                                This field represents date Form 5 (Discharge) record filed in Transmit (634) file.  Field updated by package only, no user input.  
+
+
+631,77        FORM 5 BATCH INITIAL MM MSG # 1;23 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+              LAST EDITED:      JUN 26, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input.  Number represents first MM msg # in transmission batch.  Record may be transmitted in different msg, if multiple msgs transmitted. 
+              DESCRIPTION:      This field represents MailMan message number of 'First' MailMan message in Austin transmission batch.  Record 'may' be transmitted in different message, if multiple messages are transmitted in one transmission batch.  
+                                Field updated by package only, no user input.  
+
+
+631,78        FORM 5 MAIL MESSAGE DATE 1;24 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 04, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input. 
+              DESCRIPTION:
+                                This field represents date of Form 5 (Discharge) record transmission via MailMan to Austin.  Field updated by package only, no user input.  
+
+              CROSS-REFERENCE:  631^AH 
+                                1)= S ^HBHC(631,"AH",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"AH",$E(X,1,30),DA)
+                                This cross-reference represents regular 'AH' file index of HBHC Patient (631) file, Form 5 (Discharge) Mail Message Date (78) field.  Form 5 Mail Message Date field updated by package only, no user input.  
+
+
+
+631,79        FORM 3 TRANSMIT FLAG EDIT DATE 1;25 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 29, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input.  Field is updated with current date when user requests Form 3 Transmit Status flag be reset (allowing editing of transmitted record). 
+              DESCRIPTION:
+                                This field represents date Form 3 (Evaluation/Admission) Transmit Status flag was requested by user to be reset (allowing editing of previously transmitted record).  Field updated by package only, no user input.  
+
+
+631,80        FORM 3 TRANSMIT FLAG EDIT DUZ 1;26 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 29, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input.  Field is updated with user's DUZ when user requests Form 3 Transmit Status flag be reset (allowing editing of transmitted record). 
+              DESCRIPTION:
+                                This field represents DUZ of user requesting Form 3 (Evaluation/ Admission) Transmit Status flag be reset (allowing editing of previously transmitted record).  Field updated by package only, no user input.  
+
+
+631,81        FORM 5 TRANSMIT FLAG EDIT DATE 1;27 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 29, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input.  Field is updated with current date when user requests Form 5 Transmit Status flag be reset (allowing editing of transmitted record). 
+              DESCRIPTION:
+                                This field represents date Form 5 (Discharge) Transmit Status flag was requested by user to be reset (allowing editing of previously transmitted record).  Field updated by package only, no user input.  
+
+
+631,82        FORM 5 TRANSMIT FLAG EDIT DUZ 1;28 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 29, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input.  Field is updated with user's DUZ when user requests Form 5 Transmit Status flag be reset (allowing editing of transmitted record). 
+              DESCRIPTION:
+                                This field represents DUZ of user requesting Form 5 (Discharge) Transmit Status flag be reset (allowing editing of previously transmitted record).  Field updated by package only, no user input.  
+
+
+631,83        FORM 3 RE-TRANS BATCH MM MSG # 2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+              LAST EDITED:      JUN 26, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input.  Number represents first MM msg # in re-transmission batch.  Record may be transmitted in different msg, if multiple msgs transmitted. 
+              DESCRIPTION:      This field represents MailMan message number of 'First' MailMan message in re-transmission batch to Austin.  Record 'may' be transmitted in different message, if multiple messages are transmitted in one re-transmission
+                                batch.  Field updated by package only, no user input.  
+
+
+631,84        FORM 3 RE-TRANSMIT DATE 2;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 04, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input. 
+              DESCRIPTION:
+                                This field represents date of Form 3 (Evaluation/Admission) record re-transmission via MailMan to Austin.  Field updated by package only, no user input.  
+
+
+631,85        FORM 5 RE-TRANS BATCH MM MSG # 2;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+              LAST EDITED:      JUN 26, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input.  Number represents first MM msg # in re-transmission batch.  Record may be transmitted in different msg, if multiple msgs transmitted. 
+              DESCRIPTION:      This field represents MailMan message number of 'First' MailMan message in re-transmission batch to Austin.  Record 'may' be transmitted in different message, if multiple messages are transmitted in one re-transmission
+                                batch.  Field updated by package only, no user input.  
+
+
+631,86        FORM 5 RE-TRANSMIT DATE 2;4 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 04, 1992 
+              HELP-PROMPT:      Field updated only by package, no user input. 
+              DESCRIPTION:
+                                This field represents date of Form 5 (Discharge) record re-transmission via MailMan to Austin.  Field updated by package only, no user input.  
+
+
+631,87        REFERRED WHILE INPATIENT 1;29 SET
+
+                                '1' FOR Yes; 
+                                '2' FOR No; 
+              LAST EDITED:      APR 04, 1997 
+              HELP-PROMPT:      Answer with 1 digit numeric code representing if patient was an inpatient at time of referral. 
+              DESCRIPTION:
+                                This field represents 1 digit numeric code for whether patient was inpatient at time of referral. 
+
+
+631,88        MEDICAL FOSTER HOME PATIENT 3;1 SET
+
+                                'Y' FOR Yes; 
+                                'N' FOR No; 
+              LAST EDITED:      SEP 26, 2008 
+              HELP-PROMPT:      Answer with 1 digit alphanumeric code representing whether Patient is Medical Foster Home (MFH) Patient. 
+              DESCRIPTION:
+                                This field represents whether Patient is Medical Foster Home (MFH) Patient.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  631^AJ 
+                                1)= S ^HBHC(631,"AJ",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"AJ",$E(X,1,30),DA)
+                                This cross-ref represents whether the Patient is Medical Foster Home (MFH) Patient.  
+
+
+
+631,89        MEDICAL FOSTER HOME NAME 3;2 POINTER TO HBHC MEDICAL FOSTER HOME FILE (#633.2)
+
+              LAST EDITED:      SEP 05, 2007 
+              HELP-PROMPT:      Answer with Name of Medical Foster Home (MFH) that already exists in Medical Foster Home file. 
+              DESCRIPTION:
+                                This field represents Name of Medical Foster Home (MFH) that already exists in HBHC Medical Foster Home file (#633.2).  
+
+              CROSS-REFERENCE:  631^AK 
+                                1)= S ^HBHC(631,"AK",$E(X,1,30),DA)=""
+                                2)= K ^HBHC(631,"AK",$E(X,1,30),DA)
+                                This cross-ref represents the Medical Foster Home (MFH) Name (pointer) in Medical Foster Home file (#633.2).  
+
+
+
+631,90        RATE PAID              4;0 DATE Multiple #631.01
+
+              DESCRIPTION:
+                                This subfile represents the Medical Foster Home (MFH) Rate Paid multiple.  
+
+
+631.01,.01      RATE PAID START DATE   0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:3991231<X!(3000101>X) X
+                LAST EDITED:      MAY 07, 2008 
+                HELP-PROMPT:      Answer with Medical Foster Home (MFH) Rate Paid Start Date between 1/1/2000 & 12/31/2099 inclusive. 
+                DESCRIPTION:
+                                  This field represents the Medical Foster Home (MFH) Rate Paid Start Date.  Date must be between 1/1/2000 & 12/31/2099 inclusive.  
+
+                CROSS-REFERENCE:  631.01^B 
+                                  1)= S ^HBHC(631,DA(1),4,"B",$E(X,1,30),DA)=""
+                                  2)= K ^HBHC(631,DA(1),4,"B",$E(X,1,30),DA)
+
+
+631.01,1        RATE PAID AMOUNT       0;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<1000) X
+                LAST EDITED:      MAY 07, 2008 
+                HELP-PROMPT:      Answer with a Dollar Amount between $1000 and $9999, 2 Decimal Digits allowed. 
+                DESCRIPTION:
+                                  This field represents the Medical Foster Home (MFH) Rate Paid Amount.  Amount must be between $1000 & $9999 inclusive.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+HBHC EXPRESSIVE COMMUNICATION 
+                   (#631.2)       EXPRESSIVE COMMUNICATION @ ADM (#21)
+                                  EXPRESSIVE COMMUNICATION @ D/C (#49)
+
+HBHC MEDICAL FOSTER HOME 
+                   (#633.2)       MEDICAL FOSTER HOME NAME (#89)
+
+HBHC PERIOD OF SERVICE (#631.7)   PERIOD OF SERVICE (#7)
+
+HBHC PROVIDER (#631.4)            PERSON COMPLETING EVL/ADM FORM (#37)
+                                  PERSON COMPLETING D/C FORM (#65)
+                                  CASE MANAGER (#67)
+
+HBHC RECEPTIVE COMMUNICATION 
+                   (#631.3)       RECEPTIVE COMMUNICATION @ ADM (#22)
+                                  RECEPTIVE COMMUNICATION @ D/C (#50)
+
+HBHC REJECT/WITHDRAW REASON 
+                   (#631.1)       REJECT/WITHDRAW REASON (#15)
+
+HBHC VALID STATE CODE (#631.8)    STATE CODE (#2)
+
+ICD DIAGNOSIS (#80)               PRIMARY DIAGNOSIS @ ADMISSION (#18)
+                                  PRIMARY DIAGNOSIS @ DISCHARGE (#46)
+
+NEW PERSON (#200)                 FORM 3 TRANSMIT FLAG EDIT DUZ (#80)
+                                  FORM 5 TRANSMIT FLAG EDIT DUZ (#82)
+
+PATIENT (#2)                      NAME (#.01)
+
+
+
+INPUT TEMPLATE(S):
+HBHC DISCHARGE                DEC 08, 1993@11:44  USER #0    
+HBHC UPDATE DISCHARGE         FEB 28, 1994@16:20  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

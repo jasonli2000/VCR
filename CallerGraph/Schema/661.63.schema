@@ -1,0 +1,157 @@
+STANDARD DATA DICTIONARY #661.63 -- PROSTHETIC TRANSACTION PATIENT ISSUE FILE                                                                                                                                                     MAY 20,2014@15:40:14  PAGE 1
+STORED IN ^RMPR(661.63,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to hold pointers to the patient 2319 file (660).  Each time a stock item is issued to a veteran the following files will be updated...  
+ 
+660    - Create record of Prosthetic Appliance/Repair (patient's 2319) 
+ 
+661.6  - Create Prosthetic Inventory Transaction record 
+ 
+661.4  - reduce stock on-hand quantity and value by issued amounts for 
+         HCPC item, vendor, location and unit of measure.  
+ 
+661.63 - record pointers to the 660 and 661.6 file records just created.  
+ 
+661.7  - reduce stock quantity and value by issued quantity and value.  
+         If the new stock quantity for the stock date and location is 
+         0 then delete the record.  
+
+
+              DD ACCESS: @
+             DEL ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: INVENTORY TRANSACTION(B)
+
+661.63,.01    INVENTORY TRANSACTION  0;1 POINTER TO PROSTHETIC INVENTORY TRANSACTION FILE (#661.6) (Required)
+
+              LAST EDITED:      NOV 22, 2000 
+              DESCRIPTION:
+                                This field points to the Prosthetic Inventory Transaction file (661.6).  
+
+              CROSS-REFERENCE:  661.63^B 
+                                1)= S ^RMPR(661.63,"B",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(661.63,"B",$E(X,1,30),DA)
+
+
+661.63,2      PATIENT TRANSACTION    0;2 POINTER TO RECORD OF PROS APPLIANCE/REPAIR FILE (#660)
+
+              LAST EDITED:      NOV 22, 2000 
+              DESCRIPTION:
+                                This field points to the patient 2319 file (660).  
+
+
+661.63,3      CONVERSION POINTER     0;3 POINTER TO PROS STOCK ITEM RECORD FILE (#661.2)
+
+              SAVED POINTER TO OLD 661.2 FILE                                                                                  
+              LAST EDITED:      JUN 11, 2001 
+              DESCRIPTION:      This field is only updated by the Old to New PIP file conversion utility (RMPRPIUG). It saves the pointer to the old 661.2 Inventory Transaction file which is held in file 660.  Should a conversion ever need to be reversed
+                                then the 660 file should be re-populated with this value (see RMPRPIXZ).  
+
+
+661.63,4      HCPCS                  0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<5) X
+              LAST EDITED:      SEP 28, 2005 
+              HELP-PROMPT:      Answer must be 5-20 characters in length. 
+              DESCRIPTION:
+                                The HCPCS that is being issued to patient.  
+
+
+661.63,5      HCPCS ITEM             0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1.N) X
+              LAST EDITED:      JAN 08, 2003 
+              HELP-PROMPT:      Type a number between 1 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is an HCPCS item issued to patient.  
+
+
+661.63,6      DATE&TIME              0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      JAN 08, 2003 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date and time the item was received in the inventory.  
+
+
+661.63,7      STATION                0;7 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      JAN 08, 2003 
+              DESCRIPTION:
+                                This is the station where the patient belongs.  
+
+
+661.63,8      LOCATION               0;8 POINTER TO PROSTHETIC STOCK LOCATION FILE (#661.5)
+
+              LAST EDITED:      JAN 08, 2003 
+              DESCRIPTION:
+                                This is where the HCPCS/ITEM was located prior to issueing to patient.  
+
+
+661.63,9      VENDOR                 0;9 POINTER TO VENDOR FILE (#440)
+
+              LAST EDITED:      JAN 08, 2003 
+              DESCRIPTION:
+                                This is a pointer to the Vendor file #440.  
+
+
+661.63,10     COST                   0;10 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999999)!(X<0)!(X?.E1"."3.N) X
+              LAST EDITED:      JAN 08, 2003 
+              HELP-PROMPT:      Type a Dollar amount between 0 and 99999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the cost of an item being issued to patient.  
+
+
+661.63,11     UNIT OF ISSUE          0;11 POINTER TO UNIT OF ISSUE FILE (#420.5)
+
+              LAST EDITED:      JAN 08, 2003 
+              DESCRIPTION:
+                                This is a pointer to Unit of Issue file #420.5.  
+
+
+661.63,12     QUANTITY               0;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1.N) X
+              LAST EDITED:      JAN 08, 2003 
+              HELP-PROMPT:      Type a number between 1 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is a quantity of item issued to patient.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  STATION (#7)
+
+PROS STOCK ITEM RECORD (#661.2)   CONVERSION POINTER (#3)
+
+PROSTHETIC INVENTORY TRANSACTI 
+                   (#661.6)       INVENTORY TRANSACTION (#.01)
+
+PROSTHETIC STOCK LOCATION 
+                   (#661.5)       LOCATION (#8)
+
+RECORD OF PROS APPLIANCE/REPAI 
+                   (#660)         PATIENT TRANSACTION (#2)
+
+UNIT OF ISSUE (#420.5)            UNIT OF ISSUE (#11)
+
+VENDOR (#440)                     VENDOR (#9)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,571 @@
+STANDARD DATA DICTIONARY #161.2 -- FEE BASIS VENDOR FILE                                                                                                                                                                          MAY 20,2014@15:33:04  PAGE 1
+STORED IN ^FBAAV(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                (VERSION 3.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Contains all Vendors established for payment of Fee Basis services.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: #
+              WR ACCESS: #
+             DEL ACCESS: #
+           LAYGO ACCESS: #
+IDENTIFIED BY: ID NUMBER (#1)[R], TYPE OF VENDOR (#6)[R], PART CODE (#7)[R], CHAIN (#8)
+      "WRITE": D ^FBVDISP
+
+POINTED TO BY: LOCATION field (#70) of the PAF File (#45.9) 
+               VENDOR field (#.04) of the AUTHORIZATION sub-field (#161.01) of the FEE BASIS PATIENT File (#161) 
+               VENDOR field (#.04) of the FEE BASIS CNH CONTRACT File (#161.21) 
+               NAME field (#.01) of the FEE BASIS VENDOR CORRECTION File (#161.25) 
+               VENDOR field (#.01) of the APPLICABLE VENDORS sub-field (#161.433) of the FEE BASIS CONTRACT File (#161.43) 
+               VENDOR field (#1) of the FEE CH REPORT OF CONTACT File (#161.5) 
+               VENDOR field (#.01) of the VENDOR sub-field (#162.01) of the FEE BASIS PAYMENT File (#162) 
+               VENDOR field (#3) of the FEE BASIS PHARMACY INVOICE File (#162.1) 
+               VENDOR field (#1) of the FEE NOTIFICATION/REQUEST File (#162.2) 
+               NURSING HOME field (#8) of the FEE CNH ACTIVITY File (#162.3) 
+               VENDOR field (#1) of the VA FORM 10-7078 File (#162.4) 
+               VENDOR field (#2) of the FEE BASIS INVOICE File (#162.5) 
+               VENDOR field (#1) of the FEE BASIS UNAUTHORIZED CLAIMS File (#162.7) 
+               CLAIM SUBMITTED BY field (#23) of the FEE BASIS UNAUTHORIZED CLAIMS File (#162.7) 
+               
+
+CROSS
+REFERENCED BY: DATE LAST CORRECTION TO AUSTIN(AC), CHAIN(AD), ID NUMBER(AD1), NAME(B), ID NUMBER(BS), ID NUMBER(C), AUSTIN NAME FIELD(D), ID NUMBER(E), NPI(NPI), NPI(NPIHISTORY)
+
+161.2,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>46!($L(X)<2)!'(X'?1P.E)!(X[", ") X I $D(X) S X=$$UP^FBAAUTL3(X) I $D(X),'$D(ZTQUEUED),'$D(^XUSEC("FBAA ESTABLISH VENDOR",DUZ)) K X W !!,*7,"You do not have the required key to add a new vendor to the Vendor file!",
+                                !
+              LAST EDITED:      JAN 11, 1995 
+              HELP-PROMPT:      ANSWER MUST BE 2-46 CHARACTERS IN LENGTH. YOU MUST BE ASSIGNED A KEY TO BE ABLE TO ADD A NEW VENDOR.  IF USING FORMAT LAST,FIRST DO NOT INCLUDE SPACES AFTER COMMA. 
+              DESCRIPTION:
+                                Name of the private vendor/provider providing fee services.  
+
+              DELETE TEST:      .01,0)= W !,*7,"You cannot delete vendors from the DHCP Vendor file!!"
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  161.2^B 
+                                1)= S ^FBAAV("B",$E(X,1,46),DA)=""
+                                2)= K ^FBAAV("B",$E(X,1,46),DA)
+
+
+161.2,.05     SPECIALTY CODE         0;8 POINTER TO FEE BASIS SPECIALTY CODE FILE (#161.6)
+
+              LAST EDITED:      MAY 01, 1986 
+              DESCRIPTION:
+                                The specialty code which describes this vendors area of expertise (ie Dermatology, Anesthesiology, Neurology). Valid codes are documented in M-1, Part I, chapter 18, Appendix A.  
+
+
+161.2,.18     NUMBER OF CNH BEDS     1;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 01, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Indicates the number of Contract Nursing Home Beds for this vendor.  
+
+
+161.2,1       ID NUMBER              0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>11!($L(X)<9)!(+X=0)!(X'?9N.2AN) X
+              OUTPUT TRANSFORM: S Y=$E(Y,1,3)_"-"_$E(Y,4,5)_"-"_$E(Y,6,99)
+              LAST EDITED:      JUN 10, 1994 
+              HELP-PROMPT:      Answer must be 9-11 characters in length.  Nine zeros is not a valid ID. 
+              DESCRIPTION:
+                                Provider's Federal ID Tax number. The first 9 characters of the ID number must be numeric. If the ID number is 11 characters long the 10th and 11th characters may be alphanumeric.  An ID number of '000000000' is not valid.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  161.2^C 
+                                1)= S ^FBAAV("C",$E(X,1,30),DA)=""
+                                2)= K ^FBAAV("C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  161.2^BS^MUMPS 
+                                1)= S ^FBAAV("BS",$E(X,6,9),DA)=""
+                                2)= K ^FBAAV("BS",$E(X,6,9),DA)
+
+              CROSS-REFERENCE:  161.2^AD1^MUMPS 
+                                1)= S:$P(^FBAAV(DA,0),U,10) ^FBAAV("AD",X_$E("0000",$L($P(^(0),U,10))+1,4)_$P(^(0),U,10),DA)=""
+                                2)= K:$P(^FBAAV(DA,0),U,10) ^FBAAV("AD",X_$E("0000",$L($P(^(0),U,10))+1,4)_$P(^(0),U,10),DA)
+                                X-Ref used to update the AD X-Ref located on the Chain Store field.  If Vendor Id is changed, the AD1 X-Ref will delete the associated AD X-Ref and add a new X-Ref (^FBAAV("AD",(VENDOR ID_CHAIN STORE),DA).  
+
+
+              CROSS-REFERENCE:  161.2^E^MUMPS 
+                                1)= S ^FBAAV("E",$E(X,1,9),DA)=""
+                                2)= K ^FBAAV("E",$E(X,1,9),DA)
+                                This cross-reference is on the base 9 of the Tax-ID number.  It will group all alpha and numeric suffixes when the base 9 is typed in for look-up.  
+
+
+
+161.2,2       STREET ADDRESS         0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              HELP-PROMPT:      ANSWER MUST BE 2-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                First line of vendor's street address.  
+
+
+161.2,2.5     STREET ADDRESS 2       0;14 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      MAR 24, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 2-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Second line of vendor's street address.  
+
+
+161.2,3       CITY                   0;4 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>33!($L(X)<1) X
+              LAST EDITED:      OCT 21, 1993 
+              HELP-PROMPT:      Answer must be 1-33 characters in length. 
+              DESCRIPTION:
+                                City in which the vendor's mailing address is located.  
+
+
+161.2,4       STATE                  0;5 POINTER TO STATE FILE (#5) (Required)
+
+              LAST EDITED:      AUG 29, 1997 
+              DESCRIPTION:
+                                State in which the vendor's mailing address is located.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^161.2^5.5 
+                                1)= Q
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^FBAAV(D0,0)):^(0),1:"") S X=$P(Y(1),U,13),X=X S DIU=X K Y S X="" S DIH=$S($D(^FBAAV(DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,13)=DIV,DIH=161.2,DIG=5.5 D ^DICR:$O(^DD(DIH,DIG,1
+                                ,0))>0
+
+                                2.4)= S DIH=$S($D(^FBAAV(DIV(0),0)):^(0),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,12,99))  S DIH=DIH_U" S %=$P(DIH,U,14,999),DIU=$P(DIH,U,13),^(0)=$P(DIH,U,1,12)_U_DIV_$S(%]"":U_%,1:""),DIH=161.2,DIG=5.5 D ^DICR:$N(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                CREATE VALUE)= NO EFFECT
+                                DELETE VALUE)= @
+                                FIELD)= #5.5
+
+
+161.2,5       ZIP CODE               0;6 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)<5!(X'?5N.E)!($L(X)>5&(X'?5N1"-"4N))!(X?5"0") X
+              LAST EDITED:      OCT 22, 1993 
+              HELP-PROMPT:      Answer must be 5-10 characters in length in 12345-1234 format. 
+              DESCRIPTION:
+                                Zip Code in which the vendor's mailing address is located.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+161.2,5.18    MAIL ROUTE CODE        0;18 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2)!'(X?2N) X
+              LAST EDITED:      MAR 01, 1993 
+              HELP-PROMPT:      Answer must be 2 numerics in length. 
+              DESCRIPTION:
+                                This field will eventually be populated with the Postal Service mail router.  
+
+              TECHNICAL DESCR:
+                                This field will hold the "plus 2" in Zip+4+2.  
+
+
+161.2,5.5     COUNTY                 0;13 NUMBER (Required)
+
+              INPUT TRANSFORM:  S Z0=$S($P(^FBAAV(D0,0),"^",5)]"":$P(^(0),"^",5),1:0) K:'Z0 X Q:'Z0!'$D(^DIC(5,Z0,1,0))  S DIC="^DIC(5,Z0,1,",DIC(0)="QEMN" D ^DIC S X=+Y K:Y'>0 X K Z0,DIC
+              OUTPUT TRANSFORM: S Y(0)=Y Q:Y']""  S Z0=$S($D(^FBAAV(D0,0)):+$P(^(0),"^",5),1:"") Q:'Z0  S Y=$P($S($D(^DIC(5,Z0,1,Y,0)):^(0),1:""),"^",1)
+              LAST EDITED:      SEP 16, 1993 
+              HELP-PROMPT:      Enter the county  or county code (whole number between 1 and 9999).  The counties are based upon the value for STATE. 
+              DESCRIPTION:
+                                The County in which the vendor is located.  
+
+              EXECUTABLE HELP:  S FBZD=D,X="?",Z0=$S($P(^FBAAV(D0,0),"^",5)]"":$P(^(0),"^",5),1:0) Q:'Z0!'$D(^DIC(5,Z0,1,0))  S DIC="^DIC(5,Z0,1,",DIC(0)="QEM" D ^DIC S DIC=DIE,D=FBZD K FBZD
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the STATE field of the FEE BASIS VENDOR File 
+
+
+161.2,6       TYPE OF VENDOR         0;7 SET (Required)
+
+                                '1' FOR PUBLIC HOSPITAL; 
+                                '2' FOR PHYSICIAN; 
+                                '3' FOR PHARMACY; 
+                                '4' FOR PROSTHETICS; 
+                                '5' FOR TRAVEL; 
+                                '6' FOR RADIOLOGY; 
+                                '7' FOR LABORATORY; 
+                                '8' FOR OTHER; 
+                                '9' FOR PRIVATE HOSPITAL; 
+                                '10' FOR FEDERAL HOSPITAL; 
+              LAST EDITED:      AUG 17, 1990 
+              DESCRIPTION:
+                                Identifies the type of services this vendor provides.  (ie HOSPITAL, PHYSICIAN, OR PHARMACY) 
+
+
+161.2,7       PART CODE              0;9 POINTER TO FEE BASIS PARTICIPATION CODE FILE (#161.81) (Required)
+
+              LAST EDITED:      MAY 01, 1986 
+              DESCRIPTION:
+                                This field is a pointer to the Participation code file which is a description of the type of vendor.  
+
+
+161.2,8       CHAIN                  0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>4!($L(X)<3)!(X'?3N.1N) X
+              LAST EDITED:      MAR 23, 1993 
+              HELP-PROMPT:      Answer must be 3-4 numerics. 
+              DESCRIPTION:
+                                This is a number that pharmacies use to identify multiple stores in the chain.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  161.2^AD^MUMPS 
+                                1)= S:$P(^FBAAV(DA,0),U,2) ^FBAAV("AD",$P(^(0),U,2)_$E("0000",$L(X)+1,4)_X,DA)=""
+                                2)= K:$P(^FBAAV(DA,0),U,2) ^FBAAV("AD",$P(^(0),U,2)_$E("0000",$L(X)+1,4)_X,DA)
+                                Sets up mumps X-Ref on the Chain Store field using vendor id_chain store combination.  Used for lookups for pharmacy vendors when receiving MRA's back from Austin.  
+
+
+
+161.2,9       AUSTIN DELETED         ADEL;1 SET
+
+                                'Y' FOR YES; 
+              LAST EDITED:      FEB 23, 1993 
+              DESCRIPTION:
+                                 This is a flag that is set by the fee software when a delete vendor master record adjustment is transmitted to Austin.  
+
+
+161.2,12      DATE LAST CORRECTION TO AUSTIN ADEL;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 09, 1993 
+              DESCRIPTION:
+                                 This field contains the date the last master record adjustment was sent to Austin for this vendor.  
+
+              TECHNICAL DESCR:
+                                 
+
+              CROSS-REFERENCE:  161.2^AC 
+                                1)= S ^FBAAV("AC",$E(X,1,30),DA)=""
+                                2)= K ^FBAAV("AC",$E(X,1,30),DA)
+                                Allows for the retrieval of when the last correction was sent to Austin via master record transaction.  
+
+
+
+161.2,12.1    DATE LAST UPDATE FROM AUSTIN ADEL;4 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 28, 1993 
+              HELP-PROMPT:      Date the last master record adjustment was received from Austin for this vendor. 
+              DESCRIPTION:      This field contains the date the last master record adjustment was received from Austin for this vendor.  
+                                  
+                                This field is updated as the record is processed by the server.  
+
+
+161.2,13      DATE OF AUSTIN DELETE  ADEL;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 23, 1993 
+              DESCRIPTION:
+                                This field contains the date that a delete master record transaction was sent to Austin, for this vendor.  
+
+
+161.2,13.1    STATION AFFECTING LAST CHANGE ADEL;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+              LAST EDITED:      NOV 30, 1994 
+              HELP-PROMPT:      Answer must be 3 numerics in length. 
+              DESCRIPTION:
+                                This field stores the station number that made the last change to the vendor.  If the station number is set to '000', that means the change was picked up off the 'VLOG' file in Austin and affected by a non-fee system.  
+
+
+161.2,14      PHONE NUMBER           1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      JUN 02, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 3-20 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field allows the user to enter the telephone number of the vendor.  
+
+
+161.2,18      INSPECTED/ACCREDITED   1;4 SET (Required)
+
+                                'I' FOR INSPECTED BY VA; 
+                                'A' FOR ACCREDITED BY JCAH; 
+                                'B' FOR BOTH INSPECTED AND ACCREDITED; 
+              LAST EDITED:      SEP 02, 1988 
+              DESCRIPTION:
+                                This field allows the user to track the status of the CNH as of the last assesment.  
+
+
+161.2,19      CERTIFIED MEDICARE/MEDICAID 1;5 SET (Required)
+
+                                '1' FOR NOT CERTIFIED FOR EITHER; 
+                                '2' FOR CERTIFIED FOR MEDICARE; 
+                                '3' FOR CERTIFIED FOR MEDICAID; 
+                                '4' FOR CERTIFIED FOR BOTH; 
+              LAST EDITED:      MAY 14, 1990 
+              DESCRIPTION:
+                                Indicates that the Nursing Home has been certified by Medicare/Medicaid.  
+
+
+161.2,20      DATE OF LAST ASSESSMENT 1;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX",%DT(0)="-"_DT D ^%DT K %DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 14, 1990 
+              DESCRIPTION:
+                                The date that the nursing home was last evaluated by either a partial or full VA team.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+161.2,22      MEDICARE ID NUMBER     0;17 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<6) X
+              LAST EDITED:      JUL 13, 1994 
+              HELP-PROMPT:      Answer must be 6 characters in length. 
+              DESCRIPTION:
+                                The Medicare Provider ID number assigned to this vendor.  
+
+
+161.2,23      FAX NUMBER             1;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      OCT 11, 1994 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                This field allows the user to enter the fax number of the vendor.  
+
+
+161.2,24      BUSINESS TYPE (FPDS)   1;10 SET
+
+                                '1' FOR SMALL BUSINESS; 
+                                '2' FOR LARGE BUSINESS; 
+                                '3' FOR OUTSIDE U.S.; 
+                                '4' FOR OTHER ENTITIES; 
+              LAST EDITED:      JUL 31, 1997 
+              HELP-PROMPT:      Enter FPDS Business Type for FPDS reports. 
+              DESCRIPTION:
+                                Business type for FPDS reporting purposes.  
+
+
+161.2,25      SOCIOECONOMIC GROUP (FPDS) 2;0 POINTER Multiple #161.225
+
+              SCREEN:           S DIC("S")="I Y>155,Y<167"
+              EXPLANATION:      Select from groups appropriate for the business type.
+
+161.225,.01     SOCIOECONOMIC GROUP (FPDS) 0;1 POINTER TO CODE INDEX FILE (#420.6) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I Y>155,Y<169,$P(^(0),U,3)=1,$P(^(0),U,6)[$G(FBBT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      OCT 24, 2001 
+                HELP-PROMPT:      Enter socioeconomic groups for FPDS reporting purposes. 
+                DESCRIPTION:
+                                  Socioeconomic group for FPDS reporting purposes.  
+
+                TECHNICAL DESCR:
+                                  Before this field is edited, variable FBBT should be set equal to the current internal value of the BUSINESS TYPE (FPDS) for the vendor so that inappropriate socio-economic groups will be screened out.  
+
+                SCREEN:           S DIC("S")="I Y>155,Y<169,$P(^(0),U,3)=1,$P(^(0),U,6)[$G(FBBT)"
+                EXPLANATION:      Only Socioeconomic Groups appropriate for the Business Type can be selected.
+                CROSS-REFERENCE:  161.225^B 
+                                  1)= S ^FBAAV(DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^FBAAV(DA(1),2,"B",$E(X,1,30),DA)
+
+
+
+
+161.2,30.01   AUSTIN NAME FIELD      AMS;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<2)!'(X'?1P.E) X
+              LAST EDITED:      MAR 09, 1993 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                This field is populated by the software.  It reflects the vendor name as it is on the centralized Austin databases.  
+
+              TECHNICAL DESCR:
+                                This field is populated by the background server.  It contains the vendor name as entered into the FMS vendor table in Austin.  Until this field is populated, no payments can be sent to Austin for processing.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  161.2^D 
+                                1)= S ^FBAAV("D",$E(X,1,30),DA)=""
+                                2)= K ^FBAAV("D",$E(X,1,30),DA)
+                                This field, populated by the data returned from Austin contains a match with central fee and FMS name fields.  It will allow the user to lookup vendors both ways.  
+
+
+
+161.2,30.02   PRICER EXEMPT          AMS;2 FREE TEXT
+
+              INPUT TRANSFORM:  I $D(X) D YN^FBAAUTL3
+              OUTPUT TRANSFORM: D OUTYN^FBAAUTL3
+              LAST EDITED:      MAR 18, 1994 
+              HELP-PROMPT:      Answer 'Yes' or '1' for YES and a 'No' or '0' for NO. 
+              DESCRIPTION:
+                                There are certain vendors that are exempt from the medicare payment methodology and are paid at a percentage of what is claimed.  
+
+              TECHNICAL DESCR:
+                                This flag will tell the software that any inpatient payments made to this vendor will not pass through the Austin Pricer system.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+161.2,30.03   1099 VENDOR            AMS;3 FREE TEXT
+
+              INPUT TRANSFORM:  I $D(X) D YN^FBAAUTL3
+              OUTPUT TRANSFORM: D OUTYN^FBAAUTL3
+              LAST EDITED:      MAR 18, 1994 
+              HELP-PROMPT:      Answer 'Yes' or '1' for YES and a 'No' or '0' for NO. 
+              DESCRIPTION:
+                                This is a flag that tells the central vendor unit is Austin whether or not a 1099 tax form should be sent to the vendor.  At this time a decision from finance is that all Fee vendors are 1099 vendors.  
+
+              TECHNICAL DESCR:
+                                This is a flag, that will always be set to yes currrently.  If finance should change their position on 1099 vendors, this flag will be used to notify Austin which vendors should receive 1099s.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+161.2,30.04   FMS VENDOR TYPE        AMS;4 SET
+
+                                'C' FOR commercial; 
+                                'I' FOR individual; 
+                                'F' FOR federal; 
+              LAST EDITED:      MAR 01, 1993 
+              DESCRIPTION:
+                                This field is sent with other vendor data to let the central vendorizing unit know the type of vendor for the FMS vendor table.  
+
+              TECHNICAL DESCR:
+                                This set of codes that will be determined by field 6 ('Type of Vendor').  It is a manditory data element with the FMS vendor table.  
+
+
+161.2,30.05   PROVIDER CODE          AMS;5 SET
+
+                                'B' FOR both; 
+                                'V' FOR vendor only; 
+                                'P' FOR provider only; 
+              LAST EDITED:      MAR 01, 1993 
+              DESCRIPTION:
+                                This flag is a mandatory field on the FMS vendor table.  Choices are V for VENDOR ONLY, P for PROVIDER ONLY or B for both.  All Fee vendors are classified as both.  
+
+              TECHNICAL DESCR:
+                                Currently always set to 'B' by the software.  
+
+
+161.2,30.06   TAX ID/SSN FLAG        AMS;6 SET (Required)
+
+              TAX ID/SSN (Enter 'T' or 'S')                                                                                    
+                                'T' FOR TAX ID NUMBER; 
+                                'S' FOR SSN NUMBER; 
+              LAST EDITED:      MAR 05, 1993 
+              DESCRIPTION:
+                                This field will be populated and sent to central vendorizing unit to notify the IRS if the 'ID NUMBER' is a Tax ID number or the vendor's SSN number.  
+
+              TECHNICAL DESCR:
+                                Flag used by the FMS vendor table to know if the ID NUMBER sent to the table is a TAX ID number or SSN number.  
+
+
+161.2,40      DATE/TIME OF LAST NPI CHANGE NPI;0 DATE Multiple #161.24 (Add New Entry without Asking)
+
+
+161.24,.01      DATE/TIME OF LAST NPI CHANGE 0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 11, 2006 
+                HELP-PROMPT:      Enter the date/time of the last change to this NPI 
+                DESCRIPTION:
+                                  This field contains the date and time of the last change to the NPI field.  
+
+                WRITE AUTHORITY:  ^
+                CROSS-REFERENCE:  161.24^B 
+                                  1)= S ^FBAAV(DA(1),"NPI","B",$E(X,1,30),DA)=""
+                                  2)= K ^FBAAV(DA(1),"NPI","B",$E(X,1,30),DA)
+
+
+161.24,.02      STATUS                 0;2 SET
+
+                                  '1' FOR ACTIVE; 
+                                  '0' FOR INACTIVE; 
+                                  '2' FOR DELETED; 
+                LAST EDITED:      SEP 12, 2006 
+                HELP-PROMPT:      Enter a 1 for 'ACTIVE' or a 0 for 'INACTIVE', or a 2 for DELETED 
+                DESCRIPTION:      The status of an NPI is either 'ACTIVE' or 'INACTIVE'.  If 'ACTIVE', then the NPI will be accessible by end-users to document a particular provider.  If 'INACTIVE', then the NPI will only be accessible by the application
+                                  to display legacy data.  
+
+
+161.24,.03      NPI                    0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<10)!('$$CHKDGT^XUSNPI(X)) X
+                LAST EDITED:      APR 12, 2006 
+                HELP-PROMPT:      Answer must be 10 characters in length.  Numerics only. 
+                DESCRIPTION:      Unique National Provider Identifier.  A unique integer assigned to providers by CMS. This field contains all of the NPIs associated with this provider.  The current NPI will be set as active in the STATUS field of this
+                                  multiple.  All others will be set as inactive.  There can only be one active NPI.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+161.24,.04      PERSON AFFECTING LAST CHANGE 0;4 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      APR 12, 2006 
+                HELP-PROMPT:      Enter the name of the person who last changed this NPI. 
+                DESCRIPTION:
+                                  This is the VistA person who last modified the NPI field 
+
+
+
+
+161.2,41.01   NPI                    3;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<10)!('$$CHKDGT^XUSNPI(X))!($$DUP^FBNPILK(X)>0) X
+              LAST EDITED:      SEP 13, 2006 
+              HELP-PROMPT:      Answer must be a unique 10 character numeric value and a valid NPI number. 
+              DESCRIPTION:
+                                Unique National Provider Identifier.  A unique integer assigned to providers by CMS. This is the current, active, NPI.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  161.2^NPI 
+                                1)= S ^FBAAV("NPI",$E(X,1,30),DA)=""
+                                2)= K ^FBAAV("NPI",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  161.2^NPIHISTORY 
+                                1)= S ^FBAAV("NPIHISTORY",$E(X,1,30),DA)=""
+                                2)= K ^FBAAV("NPIHISTORY",$E(X,1,30),DA)
+                                3)= An entry into the NPI History cross reference should not be deleted
+                                This cross reference holds the entire history of the NPIs used in the Fee Basis Vendor file 
+
+
+
+161.2,42      TAXONOMY CODE          3;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<10) X
+              LAST EDITED:      APR 22, 2011 
+              HELP-PROMPT:      Answer must be 10 characters in length. 
+              DESCRIPTION:
+                                Enter the Vendor's Taxonomy code. This value must be 10 characters.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CODE INDEX (#420.6)               SOCIOECONOMIC GROUP (FPDS):SOCIOECONOMIC GROUP (FPDS) (#.01)
+
+FEE BASIS PARTICIPATION CODE 
+                   (#161.81)      PART CODE (#7)
+
+FEE BASIS SPECIALTY CODE 
+                   (#161.6)       SPECIALTY CODE (#.05)
+
+NEW PERSON (#200)                 DATE/TIME OF LAST NPI CHANGE:PERSON AFFECTING LAST CHANGE (#.04)
+
+STATE (#5)                        STATE (#4)
+
+
+
+INPUT TEMPLATE(S):
+FB VENDOR UPDATE              AUG 01, 2006@08:12  USER #0    ^FBCTV 
+     Update Austin vendor information
+FBAA EDIT VENDOR              JUN 21, 2011@14:19  USER #0    
+FBAA NEW VENDOR               JUN 21, 2011@14:20  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

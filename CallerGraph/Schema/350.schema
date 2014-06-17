@@ -1,0 +1,575 @@
+STANDARD DATA DICTIONARY #350 -- INTEGRATED BILLING ACTION FILE                                                                                                                                                                   MAY 20,2014@15:35:24  PAGE 1
+STORED IN ^IB(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                   (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DO NOT delete entries in this file.  DO NOT edit data in this file with VA File Manager.  
+ 
+Entries in this file are created by other applications calling approved application specific routines.  This file is the link between Accounts Receivable and an application.  Integrated billing will attempt to aggregate charges where possible to reduce
+the number of account entries necessary.  Resolution of charges from Accounts Receivable would then be accomplished through Integrated Billing.  
+ 
+Entries in this file will not be deleted or edited (except for the status field, cancellation reasons filed, last updated field, and user last updating field).  Rather than deleting an entry, an entry is "reversed" by creating an additional entry with
+the IB ACTION TYPE entry that cancels the original entry.  An entry is edited by creating the cancellation entry and then adding an updated new entry.  All entries related to the original entry will be related by the PARENT LINK field.  
+ 
+There is also an IB ACTION type that is an event, which may include Hospital admissions, NHCU admissions, and outpatient visits.  All of the charges associated with an event will be related to that event by the EVENT LINK field.  
+ 
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+COMPILED CROSS-REFERENCE ROUTINE: IBXA
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: IB NUMBER field (#106) of the PRESCRIPTION File (#52) 
+               IB NUMBER field (#9) of the REFILL sub-field (#52.1) of the PRESCRIPTION File (#52) 
+               PARENT CHARGE field (#.09) of the INTEGRATED BILLING ACTION File (#350) 
+               PARENT EVENT field (#.16) of the INTEGRATED BILLING ACTION File (#350) 
+               BILLING EVENT field (#.04) of the SPECIAL INPATIENT BILLING CASES File (#351.2) 
+               COPAYMENT CHARGE field (#.08) of the TRICARE PHARMACY TRANSACTIONS File (#351.5) 
+               IB ACTION POINTER field (#.04) of the IB COPAY TRANSACTIONS File (#354.71) 
+               COPAYMENT CHARGE field (#.04) of the IB NCPDP PRESCRIPTION File (#366.15) 
+               
+
+CROSS
+REFERENCED BY: AR BILL NUMBER(ABIL), STATUS(AC), STATUS(ACT), PARENT EVENT(ACT1), PATIENT(ACVA), CHAMPVA ADM DATE(ACVA1), PARENT CHARGE(AD), ACTION TYPE(AE), PARENT EVENT(AF), PATIENT(AFDT), EVENT DATE(AFDT1), STATUS(AH), PATIENT(AH1), 
+               ON HOLD DATE(AHDT), STATUS(AHDT1), PATIENT(AHDT2), STATUS(AI), PATIENT(AI1), STATUS(AJ), PATIENT(AJ1), PARENT CHARGE(APDT), DATE ENTRY ADDED(APDT1), PATIENT(APTDT), DATE ENTRY ADDED(APTDT1), AR TRANSACTION NUMBER(AT), 
+               REFERENCE NUMBER(B), PATIENT(C), DATE ENTRY ADDED(D)
+
+350,.01       REFERENCE NUMBER       0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1000)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 11, 2002 
+              HELP-PROMPT:      Type a Number between 1000 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:      This is the station number concatenated with the internal number of this entry in this file.  The purpose of this number is to provide a unique number for each entry for each station.  Modifying this number may have
+                                serious consequences when and where centralized billing and accounting are taking place.  
+
+              DELETE TEST:      1,0)= I 1 W !,"Deleting entries not allowed"
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  350^B 
+                                1)= S ^IB("B",$E(X,1,30),DA)=""
+                                2)= K ^IB("B",$E(X,1,30),DA)
+
+
+350,.02       PATIENT                0;2 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      AUG 15, 2007 
+              DESCRIPTION:
+                                This is the patient that received services, care, or medications that caused this entry to be created.  If the debtor is the patient, this patient is the debtor.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  350^C 
+                                1)= S ^IB("C",$E(X,1,30),DA)=""
+                                2)= K ^IB("C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  350^AFDT^MUMPS 
+                                1)= I $D(^IB(DA,0)),$P(^(0),"^",17) S ^IB("AFDT",X,-$P(^(0),"^",17),DA)=""
+                                2)= I $D(^IB(DA,0)),$P(^(0),"^",17) K ^IB("AFDT",X,-$P(^(0),"^",17),DA)
+                                Cross-reference of all IB ACTION entries which represent inpatient/NHCU admissions by the patient field and the minus (negative or inverse) event date (#.17) field.  A billable event may be located for a patient using this
+                                cross-reference.  The "AFDT1" cross-reference on the event date (#.17) field is the companion to this cross-reference.  
+
+
+              CROSS-REFERENCE:  350^APTDT^MUMPS 
+                                1)= I $D(^IB(DA,1)),$P(^(1),"^",2) S ^IB("APTDT",X,$P(^(1),"^",2),DA)=""
+                                2)= I $D(^IB(DA,1)),$P(^(1),"^",2) K ^IB("APTDT",X,$P(^(1),"^",2),DA)
+                                Cross-reference of all IB ACTION entries by patient (#.02) and date entry added (#12) fields.  The "APTDT1" cross-reference on the date entry added field is the companion to this cross-reference.  
+
+
+              CROSS-REFERENCE:  350^AH1^MUMPS 
+                                1)= I $D(^IB(DA,0)),$P(^(0),U,5)=8 S ^IB("AH",X,DA)=""
+                                2)= I $D(^IB(DA,0)),$P(^(0),U,5)=8 K ^IB("AH",X,DA)
+                                All mt bills in a hold status 
+
+
+              CROSS-REFERENCE:  350^AI1^MUMPS 
+                                1)= I $D(^IB(DA,0)),$P(^(0),U,5)=99 S ^IB("AI",X,DA)=""
+                                2)= I $D(^IB(DA,0)),$P(^(0),U,5)=99 K ^IB("AI",X,DA)
+                                COMPANION TO AI X-REF ON FIELD .05 
+
+
+              CROSS-REFERENCE:  350^ACVA^MUMPS 
+                                1)= I X,$D(^IB(DA,1)),$P(^(1),"^",5) S ^IB("ACVA",X,$P(^(1),"^",5),DA)=""
+                                2)= I X,$D(^IB(DA,1)),$P(^(1),"^",5) K ^IB("ACVA",X,$P(^(1),"^",5),DA)
+                                This cross-reference is used in conjunction with the ACVA1 cross reference on the CHAMPVA ADM DATE (#15) field to cross reference all CHAMPVA inpatient subsistence charges by patient and admission date.  
+
+
+              CROSS-REFERENCE:  350^AJ1^MUMPS 
+                                1)= I $D(^IB(DA,0)),$P(^(0),U,5)=21 S ^IB("AJ",X,DA)=""
+                                2)= K ^IB("AJ",X,DA)
+                                Cross-reference of all IB ACTIONS for Means Test/Category C charges which have a STATUS (#.05) of HOLD - REVIEW.  
+                                 
+                                This cross-reference is used to generate a list of all patients, and all charges for those patients, who have had Means Test charges back-billed which need to be reviewed before being passed to the Accounts Receivable
+                                package.  The "AJ" cross-reference on the STATUS (#.05) field is the companion to this cross-reference.  
+
+
+              CROSS-REFERENCE:  350^AHDT2^MUMPS 
+                                1)= I $D(^IB(DA,1)),$P(^IB(DA,1),U,6) S ^IB("AHDT",X,+$P(^IB(DA,0),U,5),$P(^IB(DA,1),U,6),DA)=""
+                                2)= I $D(^IB(DA,1)),$P(^IB(DA,1),U,6) K ^IB("AHDT",X,+$P(^IB(DA,0),U,5),$P(^IB(DA,1),U,6),DA)
+                                Companion to 'AHDT' cross-reference on ON HOLD DATE (#16) field.  
+
+
+
+350,.03       ACTION TYPE            0;3 POINTER TO IB ACTION TYPE FILE (#350.1)
+
+              LAST EDITED:      MAR 04, 1991 
+              DESCRIPTION:      This field points to an entry in the IB ACTION TYPE file.  Entries in the IB ACTION TYPE file provide specific information about the type of entry that is being created and provides data necessary to AR and to resolve the
+                                data from the application.  
+                                 
+                                Applications passing data to IB determine the Action Type and pass this to IB.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  350^AE 
+                                1)= S ^IB("AE",$E(X,1,30),DA)=""
+                                2)= K ^IB("AE",$E(X,1,30),DA)
+
+
+350,.04       RESULTING FROM         0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      MAR 04, 1991 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:      This will be the soft-link back to the entry in any file that caused this transaction to be set.  It will be in the format of: 
+                                 
+                                    filenumber:entry;[node:sub-entry];[node:sub-entry]...  
+                                 
+                                The number of node:sub-entry pieces will depend on the level of multiples that cause the entry.  For example, a new prescription might be '52:345678'  but the first refill might be '52:345678;1,1'.  
+
+                                UNEDITABLE
+
+350,.05       STATUS                 0;5 POINTER TO IB ACTION STATUS FILE (#350.21)
+
+              LAST EDITED:      JUN 09, 2004 
+              HELP-PROMPT:        
+              DESCRIPTION:      This is the current status of this entry.  The IB routines will maintain this field.  An entry will be incomplete when it is created, complete when all data needed to pass to AR is there, and Billed after passing to AR and
+                                the bill number and/or transaction number have been added.  
+                                 
+                                If the entry represents a billable inpatient/NHCU admission (event), the status will be Incomplete while the patient is admitted, and then Complete when the patient has been discharged.  All entries created during the
+                                Means Test conversion will have the status Converted Record.  
+                                 
+                                With Integrated Billing version 2.0, this field is changed from a set of codes field to a pointer which points to the IB ACTION STATUS (#350.21) file.  This change will allow new action statuses to be added more easily,
+                                and permit various characteristics to be assigned to the statuses to facilitate system processing.  IT IS IMPERATIVE THAT THESE NEW POINTED-TO ENTRIES HAVE AN INTERNAL ENTRY NUMBER IN FILE #350.21 WHICH IS EQUAL TO THEIR
+                                PREVIOUS CODE VALUE.  PLEASE CAREFULLY READ THE IB ACTION STATUS FILE DESCRIPTION FOR MORE INFORMATION.  
+
+              CROSS-REFERENCE:  350^AC 
+                                1)= S ^IB("AC",$E(X,1,30),DA)=""
+                                2)= K ^IB("AC",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^350^13 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IB(D0,1)):^(1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=$S($D(IBDUZ):IBDUZ,$D(DUZ):DUZ,1:.5) S DIH=$G(^IB(DIV(0),1)),DIV=X S $P(^(1),U,3)=DIV,DIH=350,DIG=13 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IB(D0,1)):^(1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=$S($D(IBDUZ):IBDUZ,$D(DUZ):DUZ,1:.5) S DIH=$G(^IB(DIV(0),1)),DIV=X S $P(^(1),U,3)=DIV,DIH=350,DIG=13 D ^DICR
+                                CREATE VALUE)= S X=$S($D(IBDUZ):IBDUZ,$D(DUZ):DUZ,1:.5)
+                                DELETE VALUE)= S X=$S($D(IBDUZ):IBDUZ,$D(DUZ):DUZ,1:.5)
+                                FIELD)= #13
+
+              CROSS-REFERENCE:  ^^TRIGGER^350^14 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IB(D0,1)):^(1),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC S X=% X ^DD(350,.05,1,3,1.4)
+                                1.4)= S DIH=$G(^IB(DIV(0),1)),DIV=X S $P(^(1),U,4)=DIV,DIH=350,DIG=14 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IB(D0,1)):^(1),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC S X=% X ^DD(350,.05,1,3,2.4)
+                                2.4)= S DIH=$G(^IB(DIV(0),1)),DIV=X S $P(^(1),U,4)=DIV,DIH=350,DIG=14 D ^DICR
+                                CREATE VALUE)= NOW
+                                DELETE VALUE)= NOW
+                                FIELD)= #14
+
+              CROSS-REFERENCE:  350^ACT^MUMPS 
+                                1)= I X=1,$D(^IB(DA,0)),$P($G(^IBE(350.1,+$P(^(0),"^",3),0)),"^")'["ADMISSION",$P(^IB(DA,0),"^",16) S ^IB("ACT",$P(^(0),"^",16),DA)=""
+                                2)= I $D(^IB(DA,0)),$P(^(0),"^",16) K ^IB("ACT",$P(^(0),"^",16),DA)
+                                Cross-reference of all IB ACTIONS for Means Test/Category C charges which have a status of INCOMPLETE (cross-referenced by the parent event (#.16) field).  
+                                 
+                                This is a temporary cross-reference which is used to locate per diem and co-payment charges, for an inpatient/NHCU admission, which are established, but not yet passed to AR.  The cross-reference is set whenever the status
+                                of a billable charge is changed to 1 (INCOMPLETE), and killed whenever the parent event (#.16) field is defined.  The "ACT1" cross-reference on the parent event field is the companion to this cross-reference.  
+
+
+              CROSS-REFERENCE:  350^AH^MUMPS 
+                                1)= I X=8,$P(^IB(DA,0),U,2) S ^IB("AH",$P(^IB(DA,0),U,2),DA)=""
+                                2)= I $P(^IB(DA,0),U,2) K ^IB("AH",$P(^IB(DA,0),U,2),DA)
+                                All mt bills in a hold status.  
+
+
+              CROSS-REFERENCE:  350^AI^MUMPS 
+                                1)= I X=99,$P(^IB(DA,0),U,2) S ^IB("AI",$P(^IB(DA,0),U,2),DA)=""
+                                2)= I $P(^IB(DA,0),U,2) K ^IB("AI",$P(^IB(DA,0),U,2),DA)
+                                ALL MT BILLS IN CONVERTED STATUS 
+
+
+              CROSS-REFERENCE:  350^AJ^MUMPS 
+                                1)= I X=21,$P(^IB(DA,0),U,2) S ^IB("AJ",$P(^IB(DA,0),U,2),DA)=""
+                                2)= I $P(^IB(DA,0),U,2) K ^IB("AJ",$P(^IB(DA,0),U,2),DA)
+                                Cross-reference of all IB ACTIONS for Means Test/Category C charges which have a status of HOLD - REVIEW (cross-referenced by the PATIENT [#2] field).  
+                                 
+                                This cross-reference is used to generate a list of all patients, and all charges for those patients, who have had Means Test charges back-billed which need to be reviewed before being passed to the Accounts Receivable
+                                package.  The "AJ1" cross-reference on the PATIENT (#.02) field is the companion to this cross-reference.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^350^16 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I X=8 I X S X=DIV S Y(1)=$S($D(^IB(D0,1)):^(1),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC X ^DD(350,.05,1,8,1.4)
+                                1.4)= S DIH=$S($D(^IB(DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,6)=DIV,DIH=350,DIG=16 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= I X=8
+                                CREATE VALUE)= TODAY
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= ON HOLD DATE
+
+              CROSS-REFERENCE:  350^AHDT1^MUMPS 
+                                1)= I $D(^IB(DA,1)),$P(^IB(DA,1),U,6) S ^IB("AHDT",+$P(^IB(DA,0),U,2),X,$P(^IB(DA,1),U,6),DA)=""
+                                2)= I $D(^IB(DA,1)),$P(^IB(DA,1),U,6) K ^IB("AHDT",+$P(^IB(DA,0),U,2),X,$P(^IB(DA,1),U,6),DA)
+                                Companion to 'AHDT' cross-reference on ON HOLD DATE (#16) field.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^350^17 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$P($G(^IBE(350.21,+Y(0),0)),U)="HOLD - REVIEW" I X S X=DIV S Y(1)=$S($D(^IB(D0,1)):^(1),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC X ^DD(350,.05,1,10,
+                                1.4)
+
+                                1.4)= S DIH=$G(^IB(DIV(0),1)),DIV=X S $P(^(1),U,7)=DIV,DIH=350,DIG=17 D ^DICR
+
+                                2)= Q
+
+                                CREATE CONDITION)= STATUS="HOLD - REVIEW"
+                                CREATE VALUE)= TODAY
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= HOLD-REVIEW DATE
+
+
+350,.06       UNITS                  0;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 04, 1991 
+              HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of units that will be multiplied times a specific charge that will be calculated to create the total charge.  This is passed to IB from the application.  
+
+                                UNEDITABLE
+
+350,.07       TOTAL CHARGE           0;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      MAR 04, 1991 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:      This is the total charge for this entry, that will be passed to AR.  It is calculated and stored by IB routines.  NOTE: Several IB ACTION entries may be combined into one pass to AR so that there may not be a one to one
+                                relationship between this entry and one in AR.  
+                                 
+                                The TOTAL CHARGE for all entries will always be positive.  It is necessary to refer to the IB ACTION TYPE file to determine if this is a NEW, CANCEL or UPDATE.  Cancel action types will cause a decrease adjustment to a
+                                bill for this amount.  New and Update action types will cause an increase adjustment to a bill for this amount.  
+
+                                UNEDITABLE
+
+350,.08       BRIEF DESCRIPTION      0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      MAR 04, 1991 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:      This is a brief description of the application entry that caused this IB ACTION entry to be created.  For example, for Pharmacy co-payments it might indicate '100999-ENDURAL-2' which would indicate that this was 
+                                prescription number 100999, the drug name started with ENDURAL and 2 units (30-60 days supply) were given.  
+                                 
+                                The logic to calculate this will be supplied by the application and stored with the IB ACTION TYPE entry for this action.  
+
+                                UNEDITABLE
+
+350,.09       PARENT CHARGE          0;9 POINTER TO INTEGRATED BILLING ACTION FILE (#350)
+
+              LAST EDITED:      NOV 05, 1991 
+              DESCRIPTION:      This is a pointer to the original IB ACTION entry that this entry refers to.  For a NEW entry, it will point to itself.  For all other entries it will point to the original entry.  
+                                 
+                                An application then only needs to maintain the pointer to the original entry and can find the most recent entry for this entry as 
+                                 
+                                  S x=$O(^IB("APDT",parent,0),x=$O(^(x,0)) 
+                                 
+                                If x '= parent then this is an updated entry, the pointer to the IB ACTION TYPE file will give you the sequence number which will indicate if this is cancelled or an updated entry.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  350^AD 
+                                1)= S ^IB("AD",$E(X,1,30),DA)=""
+                                2)= K ^IB("AD",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  350^APDT^MUMPS 
+                                1)= I $D(^IB(DA,1)),$P(^(1),"^",2) S ^IB("APDT",$E(X,1,30),-$P(^(1),"^",2),DA)=""
+                                2)= I $D(^IB(DA,1)),$P(^(1),"^",2) K ^IB("APDT",$E(X,1,30),-$P(^(1),"^",2),DA)
+                                Cross-reference of all IB ACTION entries by parent link (#.09) field and the minus (negative or inverse) date entry added (#12) field.  The most current ACTION for the original entry can be found using this
+                                cross-reference.  The "APDT1" cross-reference on the DATE ENTRY ADDED (#12) field is the companion to this cross-reference.  
+
+
+
+350,.1        CANCELLATION REASON    0;10 POINTER TO IB CHARGE REMOVE REASONS FILE (#350.3)
+
+              LAST EDITED:      MAR 01, 1991 
+              DESCRIPTION:
+                                This is the reason that this charge was cancelled.  
+
+
+350,.11       AR BILL NUMBER         0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>12!($L(X)<6) X
+              LAST EDITED:      MAR 06, 1991 
+              HELP-PROMPT:      Answer must be 6-12 characters in length. 
+              DESCRIPTION:      This is the free text bill number that this entry is charged to.  It is in the format of a PAT number.  It will be calculated by accounts receivable from the AR BILL NUMBER file for the service in the IB ACTION TYPE entry
+                                associated with this entry.  
+
+              CROSS-REFERENCE:  350^ABIL 
+                                1)= S ^IB("ABIL",$E(X,1,30),DA)=""
+                                2)= K ^IB("ABIL",$E(X,1,30),DA)
+
+
+350,.12       AR TRANSACTION NUMBER  0;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 29, 1991 
+              HELP-PROMPT:      Type a Number between 1 and 999999, 0 Decimal Digits 
+              DESCRIPTION:      This is the pointer value to the AR TRANSACTION file.  An entry that causes a new bill number to be created will not have an AR TRANSACTION file entry associated with it as the charge data will be stored with the original
+                                bill.  
+
+              CROSS-REFERENCE:  350^AT 
+                                1)= S ^IB("AT",$E(X,1,30),DA)=""
+                                2)= K ^IB("AT",$E(X,1,30),DA)
+
+
+350,.13       INSTITUTION            0;13 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      MAR 04, 1991 
+              DESCRIPTION:
+                                This is the facility that caused this bill.  The station number field of the institution file will be used in determining the reference number.  Accounts Receivable will use the station number in the bill number.  
+
+                                UNEDITABLE
+
+350,.14       DATE BILLED FROM       0;14 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 02, 1992 
+              DESCRIPTION:
+                                This is the first date in the date range covered by this billing action.  
+
+
+350,.15       DATE BILLED TO         0;15 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 08, 1991 
+              DESCRIPTION:
+                                This is the last date in the date range covered by this billing action.  
+
+
+350,.16       PARENT EVENT           0;16 POINTER TO INTEGRATED BILLING ACTION FILE (#350)
+
+              LAST EDITED:      NOV 06, 1991 
+              DESCRIPTION:      This field is used only for IB ACTION entries (both events and charges) which are associated with Category C billing.  
+                                 
+                                This field is a pointer to the IB ACTION event (inpatient/NHCU admission or outpatient visit) for which the charges are being billed.  For an event entry, this field will point to itself.  For all IB ACTION charges (new,
+                                cancelled, and updated) associated with a billable event, this field will point to that event.  
+                                 
+                                Note that cancelled and updated actions will still point to the parent (new) action through the Parent Charge (.09) field, in the same manner as Pharmacy co-pay charges.  
+
+              CROSS-REFERENCE:  350^AF 
+                                1)= S ^IB("AF",$E(X,1,30),DA)=""
+                                2)= K ^IB("AF",$E(X,1,30),DA)
+                                This cross-reference will be used to link all Means Test/Category C co-payment and per diem charges to a particular billable event.  
+
+
+              CROSS-REFERENCE:  350^ACT1^MUMPS 
+                                1)= I $D(^IB(DA,0)),$P(^(0),"^",5)=1,$P($G(^IBE(350.1,+$P(^(0),"^",3),0)),"^")'["ADMISSION" S ^IB("ACT",X,DA)=""
+                                2)= K ^IB("ACT",X,DA)
+                                Cross-reference of all IB ACTIONS for Means Test/Category C charges which have a status (field #.05) of INCOMPLETE.  
+                                 
+                                This is a temporary cross-reference which is used to locate per diem and co-payment charges, for an inpatient/NHCU admission, which are established, but not yet passed to AR.  The cross-reference is set whenever the status
+                                (#.05) of a billable charge is changed to 1 (INCOMPLETE), and killed without condition.  The "ACT" cross-reference on the status field is the companion to this cross-reference.  
+
+
+
+350,.17       EVENT DATE             0;17 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 01, 1991 
+              DESCRIPTION:      This field will only be used for those IB ACTION entries which represent Hospital/NHCU admissions and outpatient visits for which Category C copayment and per diem charges will be billed to the patient.  The value of this
+                                field will be the admission or visit date.  The inverse (negative) value of this date will be cross-referenced by patient for look-up purposes.  
+
+              CROSS-REFERENCE:  350^AFDT1^MUMPS 
+                                1)= I $D(^IB(DA,0)),$P(^(0),"^",2) S ^IB("AFDT",$P(^(0),"^",2),-X,DA)=""
+                                2)= I $D(^IB(DA,0)),$P(^(0),"^",2) K ^IB("AFDT",$P(^(0),"^",2),-X,DA)
+                                Cross-reference of all IB ACTION entries which represent inpatient/NHCU admissions by the patient (#.02) field and the minus (negative or inverse) event date field.  A billable event may be located for a patient using this
+                                cross-reference.  The "AFDT" cross-reference on the patient (#.02) field is the companion to this cross-reference.  
+
+
+
+350,.18       DATE LAST BILLED       0;18 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 01, 1991 
+              DESCRIPTION:      This field will only be used for those IB ACTION entries which represent inpatient or NHCU admissions for which Category C copayment and per diem charges will be billed to the patient.  The value of this field will be the
+                                last day through which charges have been calculated for the admission.  
+
+
+350,.19       IB COPAY TRANSACTION NUMBER 0;19 POINTER TO IB COPAY TRANSACTIONS FILE (#354.71)
+
+              LAST EDITED:      JAN 19, 2001 
+              HELP-PROMPT:      Answer with a IB COPAY TRANSACTION NUMBER 
+              DESCRIPTION:
+                                This is the transaction number associated with this entry to assist in determining if a patient has reached his cap.  
+
+
+350,.2        CLINIC STOP            0;20 POINTER TO IB CLINIC STOP CODE BILLABLE TYPES FILE (#352.5)
+
+              LAST EDITED:      NOV 30, 2001 
+              HELP-PROMPT:      Enter the clinic stop for the outpatient visit. 
+              DESCRIPTION:
+                                This field is used to enter the clinic stop for outpatient co-pay charges.  
+
+
+350,.21       GMT RELATED            0;21 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 24, 2002 
+              HELP-PROMPT:      Is this charge related to the GMT Copayment Status 
+              DESCRIPTION:
+                                This is a flag indicating that this charge was decreased due to the patient's GMT Copayment status.  
+
+
+350,.22       PFSS ACCOUNT REFERENCE 0;22 POINTER TO PFSS ACCOUNT FILE (#375)
+
+              LAST EDITED:      JUL 15, 2005 
+              HELP-PROMPT:      Enter the PFSS Account Reference 
+              DESCRIPTION:
+                                This is the PFSS Account entry for the Integrated Billing Action copayment charge.  
+
+
+350,11        USER ADDING ENTRY      1;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 04, 1991 
+              DESCRIPTION:
+                                This is the person adding an entry in an application that cause the application to create an entry in this file.  
+
+                                UNEDITABLE
+
+350,12        DATE ENTRY ADDED       1;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 30, 1992 
+              DESCRIPTION:
+                                This is the date/time that an entry was added to this file.  The most recent update to an entry can be determined by finding the last entry in this field.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  350^D 
+                                1)= S ^IB("D",$E(X,1,30),DA)=""
+                                2)= K ^IB("D",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  350^APDT1^MUMPS 
+                                1)= I $P(^IB(DA,0),"^",9) S ^IB("APDT",$P(^(0),"^",9),-X,DA)=""
+                                2)= I $P(^IB(DA,0),"^",9) K ^IB("APDT",$P(^(0),"^",9),-X,DA)
+                                Cross-reference of all IB ACTION entries by parent link (#.09) field and the minus (negative or inverse) date entry added (#12) field.  The most current ACTION for the original entry can be found using this cross 
+                                reference.  The "APDT" cross-reference on the parent link (#.09) is the companion to this cross-reference.  
+
+
+              CROSS-REFERENCE:  350^APTDT1^MUMPS 
+                                1)= I $D(^IB(DA,0)),$P(^(0),"^",2) S ^IB("APTDT",$P(^(0),"^",2),X,DA)=""
+                                2)= I $D(^IB(DA,0)),$P(^(0),"^",2) K ^IB("APTDT",$P(^(0),"^",2),X,DA)
+                                Cross-reference of all IB ACTION entries by patient (#.02) and the date entry added (#12) field.  The "APTDT" cross-reference on the patient (#.02) field is the companion to this cross-reference.  
+
+
+
+350,13        USER LAST UPDATING     1;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 05, 1991 
+              DESCRIPTION:
+                                This is the person last updating an entry in an application when it caused an update to this entry in this file.  
+
+              NOTES:            TRIGGERED by the STATUS field of the INTEGRATED BILLING ACTION File 
+
+
+350,14        DATE LAST UPDATED      1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 05, 1991 
+              DESCRIPTION:
+                                This is the date/time that this entry was last updated.  
+
+              NOTES:            TRIGGERED by the STATUS field of the INTEGRATED BILLING ACTION File 
+
+
+350,15        CHAMPVA ADM DATE       1;5 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 28, 1993 
+              DESCRIPTION:
+                                This is the admission date for the episode of CHAMPVA care being billed.  
+
+              CROSS-REFERENCE:  350^ACVA1^MUMPS 
+                                1)= I X,$D(^IB(DA,0)),$P(^(0),"^",2) S ^IB("ACVA",$P(^(0),"^",2),X,DA)=""
+                                2)= I X,$D(^IB(DA,0)),$P(^(0),"^",2) K ^IB("ACVA",$P(^(0),"^",2),X,DA)
+                                This cross-reference is used in conjunction with the ACVA cross reference on the PATIENT (#.02) field to cross reference all CHAMPVA inpatient subsistence charges by patient and admission date.  
+
+
+
+350,16        ON HOLD DATE           1;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 13, 1997 
+              DESCRIPTION:      This date is used to determine when the patient charge (Status = ON HOLD) should be auto-released to Accounts Receivable as well as to generate reports.  The date is set initially when the patient charge is established and
+                                placed on hold.  The date is reset when a third party claim for the same episode of care is authorized. The new ON HOLD DATE is the authorized date of the third party claim.  
+
+              NOTES:            TRIGGERED by the STATUS field of the INTEGRATED BILLING ACTION File 
+
+              CROSS-REFERENCE:  350^AHDT^MUMPS 
+                                1)= I $D(^IB(DA,1)),$P(^IB(DA,1),U,6) S ^IB("AHDT",+$P(^IB(DA,0),U,2),+$P(^IB(DA,0),U,5),X,DA)=""
+                                2)= I $D(^IB(DA,1)),$P(^IB(DA,1),U,6) K ^IB("AHDT",+$P(^IB(DA,0),U,2),+$P(^IB(DA,0),U,5),X,DA)
+                                Cross-reference of all IB ACTIONS that have ever had the STATUS (#.05) of ON HOLD since the install of patch IB*2*70.  This cross-reference is used to automatically release charges ON HOLD for greater than 90 days. This 
+                                cross reference is also used to generate both follow-up and historic reports.  The 'AHDT1' cross-reference on the STATUS (#.05) field is the companion to this cross-reference.  
+
+
+
+350,17        HOLD-REVIEW DATE       1;7 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 29, 2003 
+              DESCRIPTION:
+                                This is the date the patient charge was put on HOLD-REVIEW status.  
+
+              NOTES:            TRIGGERED by the STATUS field of the INTEGRATED BILLING ACTION File 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+IB ACTION STATUS (#350.21)        STATUS (#.05)
+
+IB ACTION TYPE (#350.1)           ACTION TYPE (#.03)
+
+IB CHARGE REMOVE REASONS 
+                   (#350.3)       CANCELLATION REASON (#.1)
+
+IB CLINIC STOP CODE BILLABLE T 
+                   (#352.5)       CLINIC STOP (#.2)
+
+IB COPAY TRANSACTIONS (#354.71)   IB COPAY TRANSACTION NUMBER (#.19)
+
+INSTITUTION (#4)                  INSTITUTION (#.13)
+
+INTEGRATED BILLING ACTION 
+                   (#350)         PARENT CHARGE (#.09)
+                                  PARENT EVENT (#.16)
+
+NEW PERSON (#200)                 USER ADDING ENTRY (#11)
+                                  USER LAST UPDATING (#13)
+
+PATIENT (#2)                      PATIENT (#.02)
+
+PFSS ACCOUNT (#375)               PFSS ACCOUNT REFERENCE (#.22)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+IB INCOMPLETE                 MAR 18, 1991@11:07  USER #0                                                                                                                                                                       INTEGRATED BILLING ACTION LIST
+     Integrated Billing Action List of entries with Status of Incomplete.
+IB LIST                       AUG 10, 1995@13:05  USER #0                                                                                                                                                                       INTEGRATED BILLING ACTION LIST
+     Integrated Billing Action List.
+
+SORT TEMPLATE(S):
+IB INCOMPLETE                 MAR 18, 1991@10:59  USER #0    
+SORT BY: ]STATUS//     From '1'  To '2'
+  WITHIN STATUS, SORT BY: PATIENT//
+     Integrated Billing Action List of entries with a Status of Incomplete.
+
+
+FORM(S)/BLOCK(S):

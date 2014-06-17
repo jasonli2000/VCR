@@ -1,0 +1,104 @@
+STANDARD DATA DICTIONARY #446 -- DISTRIBUTION/USAGE HISTORY FILE                                                                                                                                                                  MAY 20,2014@15:34:33  PAGE 1
+STORED IN ^PRCP(446,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 5.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+USED BY GENERIC INVENTORY SYSTEM.  
+  This file is used to store data needed for cost accounting.  The data is updated automatically by the Generic Inventory system, when a distribution order (from a Primary to a Secondary) is posted, when an adjustment is made to distribution, or when
+usage within an inventory point is recorded.  The file keeps a record of total dollars distributed /used by month, and by the cost center that distributed or used the supplies.  Reports can then be generated from this file by cost center, or broken down
+further by MIS Bed Sections (defined for each inventory point).  NOTE: For usage within an inventory/point (i.e. goods were distributed to the end user at this point and not distributed to another inventory/ distribution point), the DISTRIBUTED TO and
+DISTRIBUTED FROM fields will be the same.  
+
+
+FILE SCREEN (SCR-node) : I $D(DIS(0))!($G(PRCPPRIV))
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+IDENTIFIED BY: MONTH/YEAR DISTRIBUTED (#1)[R], COST CENTER (#3)
+
+CROSS
+REFERENCED BY: MONTH/YEAR DISTRIBUTED(AC), DISTRIBUTED FROM(AD), DISTRIBUTED TO(B)
+
+446,.01       DISTRIBUTED TO         0;1 POINTER TO GENERIC INVENTORY FILE (#445) (Required)
+
+              INPUT TRANSFORM:  K:'$G(PRCPPRIV) X
+              LAST EDITED:      FEB 06, 1992 
+              HELP-PROMPT:      Enter the Inventory/Distribution point TO which supplies were distributed, or WITHIN which the supplies were used. 
+              DESCRIPTION:
+                                This is the inventory/distribution point to which the item(s) was distributed.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  446^B 
+                                1)= S ^PRCP(446,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRCP(446,"B",$E(X,1,30),DA)
+
+
+446,1         MONTH/YEAR DISTRIBUTED 0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=$E(Y,1,5) K:Y<1 X
+              OUTPUT TRANSFORM: D DD^%DT
+              HELP-PROMPT:      Enter the month and year in which the supplies were distributed/used. 
+              DESCRIPTION:
+                                This is the month and year in which the item was distributed or used.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  446^AC 
+                                1)= S ^PRCP(446,"AC",$E(X,1,30),DA)=""
+                                2)= K ^PRCP(446,"AC",$E(X,1,30),DA)
+                                This cross reference is used to sort the distribution history by the month/year an item is distributed.  The node prcp(446,"ac",MOYR,da) is set where the MOYR is the month/year distributed.  
+
+
+
+446,2         DISTRIBUTED FROM       0;3 POINTER TO GENERIC INVENTORY FILE (#445) (Required)
+
+              LAST EDITED:      JUN 05, 1987 
+              HELP-PROMPT:      Enter the Inventory Point FROM which the supplies were distributed or used. 
+              DESCRIPTION:
+                                This is the inventory/distribution point from which the item(s) was distributed.  
+
+              CROSS-REFERENCE:  446^AD 
+                                1)= S ^PRCP(446,"AD",$E(X,1,30),DA)=""
+                                2)= K ^PRCP(446,"AD",$E(X,1,30),DA)
+                                This cross reference is used to sort the distribution history by the inventory point distributing the items.  The node prcp(446,"ad",INVPT,da) is set where INVPT is the internal inventory point number from which items are
+                                distributed from.  
+
+
+
+446,3         COST CENTER            0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:'$D(^PRCD(420.1,+X,0)) X I $D(X) S X=$P(^(0),U,1)
+              HELP-PROMPT:      Enter the Cost Center FROM which the supplies were distributed/used. 
+              DESCRIPTION:
+                                This is the cost center from which the item(s) was distributed.  
+
+              EXECUTABLE HELP:  S ZD=D,X="?",DIC="^PRCD(420.1,",DIC(0)="QEM" D ^DIC S DIC=DIE,D=ZD K ZD
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+446,6         TOTAL COST             0;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999.999)!(X<-99999999.999)!(X?.E1"."4N.N) X
+              HELP-PROMPT:      Total cost (based on selling cost, the higher of the actual and the average cost).  Could be negative if only returns were processed.  TYPE A NUMBER BETWEEN -99999999.999 AND 99999999.999 
+              DESCRIPTION:
+                                This is the total cost of the item(s) used or distributed.  It is based on the selling cost.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+GENERIC INVENTORY (#445)          DISTRIBUTED TO (#.01)
+                                  DISTRIBUTED FROM (#2)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

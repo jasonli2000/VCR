@@ -1,0 +1,356 @@
+STANDARD DATA DICTIONARY #211.8 -- NURS POSITION CONTROL FILE                                                                                                                                                                     MAY 20,2014@15:38:32  PAGE 1
+STORED IN ^NURSF(211.8,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file tracks budgeted position within a service.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+IDENTIFIED BY: SERVICE CATEGORY (#.02)[R]
+
+CROSS
+REFERENCED BY: LOCATION(AA1), SERVICE CATEGORY(AA2), SERVICE POSITION(AD), EMPLOYEE(ADAE), PRIMARY ASSIGNMENT(AE), START/TRANSFER DATE(ASDT), EMPLOYEE(ASDT1), LOCATION(B), EMPLOYEE(C), PRIMARY ASSIGNMENT(D), SERVICE CATEGORY(SC)
+
+211.8,.01     LOCATION               0;1 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+              INPUT TRANSFORM:  S:$D(NURSHLIT) @NURSHLIT K DIC("S") S:$D(NURSHFLS) DIC("S")=NURSHFLS D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 03, 1990 
+              DESCRIPTION:
+                                Nursing location for this budgeted FTEE.  
+
+              SCREEN:           K DIC("S") S:$D(NURSHFLS) DIC("S")=NURSHFLS
+              EXPLANATION:      Screen for different applications to get appropriate locations.
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  211.8^B 
+                                1)= S ^NURSF(211.8,"B",$E(X,1,30),DA)=""
+                                2)= K ^NURSF(211.8,"B",$E(X,1,30),DA)
+                                This is the main index on the NURS Position Control file which lists nursing locations in the Hospital Location file.  
+
+
+              CROSS-REFERENCE:  211.8^AA1^MUMPS 
+                                1)= S NUR=$S($D(^NURSF(211.8,DA,0)):^(0),1:"") S:$P(NUR,"^",2)'="" ^NURSF(211.8,"AA",X,$P(NUR,"^",2),DA)="" K NUR
+                                2)= S NUR=$S($D(^NURSF(211.8,DA,0)):^(0),1:"") K:$P(NUR,"^",2)'="" ^NURSF(211.8,"AA",X,$P(NUR,"^",2),DA) K NUR
+                                This is a mumps index on the Position Control file which indicates the location and service category associated with the location.  
+
+
+
+211.8,.02     SERVICE CATEGORY       0;2 SET (Required)
+
+                                'R' FOR REGISTERED NURSE; 
+                                'L' FOR LICENSED PRACTICAL NURSE; 
+                                'N' FOR NURSE ASSISTANT; 
+                                'C' FOR CLERICAL; 
+                                'O' FOR OTHER; 
+                                'S' FOR SUMMER EMPLOYEE; 
+                                'A' FOR ADMIN; 
+              LAST EDITED:      NOV 25, 1991 
+              DESCRIPTION:
+                                Service category for this location (e.g., RN, LPN, NA).  
+
+              CROSS-REFERENCE:  211.8^AA2^MUMPS 
+                                1)= S NUR=$S($D(^NURSF(211.8,DA,0)):^(0),1:"") S:$P(NUR,"^")'="" ^NURSF(211.8,"AA",$P(NUR,"^"),X,DA)="" K NUR
+                                2)= S NUR=$S($D(^NURSF(211.8,DA,0)):^(0),1:"") K:$P(NUR,"^")'="" ^NURSF(211.8,"AA",$P(NUR,"^"),X,DA) K NUR
+                                This mumps index indicates the location and the nursing service category associated with the location.  
+
+
+              CROSS-REFERENCE:  211.8^SC 
+                                1)= S ^NURSF(211.8,"SC",$E(X,1,30),DA)=""
+                                2)= K ^NURSF(211.8,"SC",$E(X,1,30),DA)
+                                This is a mumps index on the 'Service Category' field which indicates the service category associated with each location.  
+
+
+
+211.8,1       BUDGETED FTEE           ;  COMPUTED
+
+              MUMPS CODE:       S X=+$$BUDCAT^NURSUT1(D0) S X=$J(X,0,3)
+              ALGORITHM:        S X=+$$BUDCAT^NURSUT1(D0)  (ALWAYS 3 DECIMAL DIGITS)
+              LAST EDITED:      JUN 09, 1997 
+              HELP-PROMPT:      Type a Number between 0 and 999.999, 3 Decimal Digits 
+              DESCRIPTION:       This field contains the computed value of the budgeted service category 
+                                 FTEE for this location based on the budgeted service position FTEE that has 
+                                 been entered for this location.  
+
+
+211.8,2       OCCUPANCY/TRANSFERRED DATE 1;0 DATE Multiple #211.82
+
+              DESCRIPTION:
+                                Date this FTEE was/or will be occupied or transferred.  
+
+              IDENTIFIED BY:    EMPLOYEE(#.02)[R], SERVICE POSITION(#.03)[R]
+
+211.82,.01      START/TRANSFER DATE    0;1 DATE (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X I $D(X) S NUR(0)=$P($G(^NURSF(211.8,DA(1),0)),"^",1,2)_"^"_X_"^"_$S($D(^NURSF(211.8,DA(1),1,DA,0)):$P(^(0),"^",2,10),1:"") D EN3^NURSUT2 K:NURSBAD X D EN4^NURSUT3
+                LAST EDITED:      NOV 09, 1991 
+                DESCRIPTION:
+                                  Indicate the start/transfer date for this position.  
+
+                LAYGO TEST:       1,0)= D:'$D(NURSNPOS) EN^DDIOL($C(7)_"ENTRIES MUST BE ADDED VIA THE STATUS AND POSITION OPTION","","!?5") I $D(NURSNPOS)
+
+                DELETE AUTHORITY: D
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  211.82^B 
+                                  1)= S ^NURSF(211.8,DA(1),1,"B",X,DA)=""
+                                  2)= K ^NURSF(211.8,DA(1),1,"B",X,DA)
+                                  This is the main index on the 'Start/Transfer Date' field of the Occupancy/Transferred Date subfile.  
+
+
+                CROSS-REFERENCE:  211.82^ASD1^MUMPS 
+                                  1)= S NUR=".01^1" D EN1^NURSUT1
+                                  2)= S NUR=".01^0" D EN1^NURSUT1
+                                  This is a mumps index that identifies entries for activation to the Nursing Acuity/Separation-Activation Run.  
+
+
+                CROSS-REFERENCE:  211.8^ASDT^MUMPS 
+                                  1)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") S:$P(NUR,"^",2) ^NURSF(211.8,"ASDT",$P(NUR,"^",2),X,DA(1),DA)="" K NUR
+                                  2)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") K:$P(NUR,"^",2) ^NURSF(211.8,"ASDT",$P(NUR,"^",2),X,DA(1),DA) K NUR
+                                  This mumps index is used to identify the starting date of all employee assignments.  
+
+
+                CROSS-REFERENCE:  211.82^AA1^MUMPS 
+                                  1)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") S:$P(NUR,"^",2)&$P(NUR,"^",3) ^NURSF(211.8,DA(1),1,"AA",$P(NUR,"^",2),X,$P(NUR,"^",3),DA)="" K NUR
+                                  2)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") K:$P(NUR,"^",2)&$P(NUR,"^",3) ^NURSF(211.8,DA(1),1,"AA",$P(NUR,"^",2),X,$P(NUR,"^",3),DA) K NUR
+                                  This mumps index identifies the employee, start/transfer date, and service position associated with each position control entry.  
+
+
+
+211.82,.02      EMPLOYEE               0;2 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      AUG 17, 1990 
+                DESCRIPTION:
+                                  The employee who is/will be assigned this FTEE.  
+
+                WRITE AUTHORITY:  ^
+                                  UNEDITABLE
+                CROSS-REFERENCE:  211.8^C^MUMPS 
+                                  1)= S ^NURSF(211.8,"C",X,DA(1),DA)="",NUR=.03 D EN1^NURSUT1
+                                  2)= K ^NURSF(211.8,"C",X,DA(1),DA)
+                                  This mumps index identifies the employee associated with each position control entry.  
+
+
+                CROSS-REFERENCE:  211.82^C 
+                                  1)= S ^NURSF(211.8,DA(1),1,"C",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(211.8,DA(1),1,"C",$E(X,1,30),DA)
+                                  This mumps index identifies the employees assigned to a location.  
+
+
+                CROSS-REFERENCE:  211.8^ADAE^MUMPS 
+                                  1)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") D EN4^NURSUT0
+                                  2)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") D EN5^NURSUT0
+                                  This mumps index identifies the primary service position and primary assigment for an employee.  
+
+
+                CROSS-REFERENCE:  211.8^ASDT1^MUMPS 
+                                  1)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") S:$P(NUR,"^") ^NURSF(211.8,"ASDT",X,$P(NUR,"^"),DA(1),DA)="" K NUR
+                                  2)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") K:$P(NUR,"^") ^NURSF(211.8,"ASDT",X,$P(NUR,"^"),DA(1),DA) K NUR
+                                  This mumps index identifies entries that are to be activated by the Nursing Acuity/Separation-Activation Run.  
+
+
+                CROSS-REFERENCE:  211.82^AA2^MUMPS 
+                                  1)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") S:$P(NUR,"^")&$P(NUR,"^",3) ^NURSF(211.8,DA(1),1,"AA",X,$P(NUR,"^"),$P(NUR,"^",3),DA)="" K NUR
+                                  2)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") K:$P(NUR,"^")&$P(NUR,"^",3) ^NURSF(211.8,DA(1),1,"AA",X,$P(NUR,"^"),$P(NUR,"^",3),DA) K NUR
+                                  This mumps index identifies position control file entries by employee, start/transfer date, and service position.  
+
+
+
+211.82,.03      SERVICE POSITION       0;3 POINTER TO NURS SERVICE POSITION FILE (#211.3) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^NURSF(211.8,DA(1),0),U,2)=""""!($P(^NURSF(211.3,+Y,0),U,5)=$P(^NURSF(211.8,DA(1),0),U,2))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      OCT 15, 1990 
+                DESCRIPTION:
+                                  Type of position this employee is filling.  
+
+                SCREEN:           S DIC("S")="I $P(^NURSF(211.8,DA(1),0),U,2)=""""!($P(^NURSF(211.3,+Y,0),U,5)=$P(^NURSF(211.8,DA(1),0),U,2))"
+                EXPLANATION:      Select service positions with the appropriate service category.
+                CROSS-REFERENCE:  211.8^AD^MUMPS 
+                                  1)= S NUR=$S($P(^NURSF(211.8,DA(1),1,DA,0),"^",2):$P(^(0),"^",2),1:"") S:+NUR ^NURSF(211.8,"AD",NUR,$E(X,1,30),DA(1),DA)="" K NUR
+                                  2)= S NUR=$S($P(^NURSF(211.8,DA(1),1,DA,0),"^",2):$P(^(0),"^",2),1:"") K:+NUR ^NURSF(211.8,"AD",NUR,$E(X,1,30),DA(1),DA) K NUR
+                                  This mumps index identifies position control entries by employee, and service position.  
+
+
+                CROSS-REFERENCE:  211.82^AA3^MUMPS 
+                                  1)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") S:$P(NUR,"^")&$P(NUR,"^",2) ^NURSF(211.8,DA(1),1,"AA",$P(NUR,"^",2),$P(NUR,"^"),X,DA)="" K NUR
+                                  2)= S NUR=$S($D(^NURSF(211.8,DA(1),1,DA,0)):^(0),1:"") K:$P(NUR,"^")&$P(NUR,"^",2) ^NURSF(211.8,DA(1),1,"AA",$P(NUR,"^",2),$P(NUR,"^"),X,DA) K NUR
+                                  This mumps index identifies position control entries by start/transfer date, employee, and service position.  
+
+
+                CROSS-REFERENCE:  211.82^APE^MUMPS 
+                                  1)= S NUR("PE")=".03^1" D EN1^NURSAPE0
+                                  2)= S NUR("PE")=".03^0" D EN1^NURSAPE0
+                                  This mumps xref is used to update the experience multiple in the staff file by the Nursing Acuity/Separation-Activation Run.  
+
+
+
+211.82,1        FTEE                   0;4 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>1)!(X<0)!(X?.E1"."4N.N) X
+                LAST EDITED:      APR 27, 1995 
+                HELP-PROMPT:      Type a Number between 0 and 1, 3 Decimal Digits 
+                DESCRIPTION:
+                                  The amount of FTEE assigned to this employee for this position.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+211.82,2        PRODUCT LINE            ;  COMPUTED
+
+                MUMPS CODE:       S DA(1)=D0,DA=D1 S X=$$GET1^DIQ(211.3,+$P($G(^NURSF(211.8,DA(1),1,DA,0)),U,3),6)
+                ALGORITHM:        S DA(1)=D0,DA=D1 S X=$$GET1^DIQ(211.3,+$P($G(^NURSF(211.8,DA(1),1,DA,0)),U,3),6)
+                LAST EDITED:      APR 16, 1996 
+                DESCRIPTION:
+                                  This field is a computed field displaying the service/program/product line associated with this position.  
+
+
+211.82,3        VACANCY DATE           0;6 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X I $D(X) D EN1^NURSUT3
+                LAST EDITED:      NOV 09, 1991 
+                DESCRIPTION:
+                                  Date this FTEE will be/is vacant.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  211.82^ASD2^MUMPS 
+                                  1)= S NUR="3^1" D EN1^NURSUT1
+                                  2)= S NUR="3^0" D EN1^NURSUT1
+                                  This mumps index is used to identify entries that are to be deactivated by the Nursing Acuity/Separation-Activation Run.  
+
+
+
+211.82,4        TRANSFER TO            0;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+                LAST EDITED:      JAN 09, 1991 
+                HELP-PROMPT:      Answer must be 2-30 characters in length. 
+                DESCRIPTION:
+                                  The name of location/service (if not nursing) where this FTEE was temporarily transferred.  
+
+
+211.82,5        VACANCY REASON         0;8 POINTER TO NURS VACANCY/TRANSFERRED REASONS FILE (#211.9)
+
+                LAST EDITED:      JUN 27, 1990 
+                DESCRIPTION:
+                                  Reason why position is vacant or why employee transferred.  
+
+                CROSS-REFERENCE:  211.82^ASD3^MUMPS 
+                                  1)= S NUR="5^1" D EN1^NURSUT1
+                                  2)= S NUR="5^0" D EN1^NURSUT1
+                                  This mumps index is used by the Nursing Acuity/Separation-Activation Run to update the experience multiple in the NURS Staff file with vacancy reason information when an assignment is deactivated.  
+
+
+
+211.82,6        PRIMARY ASSIGNMENT     0;9 SET
+
+                                  '1' FOR PRIMARY ASSIGNMENT; 
+                LAST EDITED:      SEP 24, 2009 
+                DESCRIPTION:
+                                  This flag designates this assignment as the employee's primary assignment.  
+
+                WRITE AUTHORITY:  ^
+                CROSS-REFERENCE:  211.8^AE^MUMPS 
+                                  1)= S NUR=$S($P(^NURSF(211.8,DA(1),1,DA,0),"^",2):$P(^(0),"^",2),1:"") S:+NUR ^NURSF(211.8,"AE",NUR,$E(X,1,30),DA(1),DA)="" K NUR
+                                  2)= S NUR=$S($P(^NURSF(211.8,DA(1),1,DA,0),"^",2):$P(^(0),"^",2),1:"") K:+NUR ^NURSF(211.8,"AE",NUR,$E(X,1,30),DA(1),DA) K NUR
+                                  This mumps index is used to identify an employee's primary assigment.  
+
+
+                CROSS-REFERENCE:  211.8^D^MUMPS 
+                                  1)= S NUR=$S($P(^NURSF(211.8,DA(1),1,DA,0),"^",2):$P(^(0),"^",2),1:"") S:+NUR ^NURSF(211.8,"D",+$G(^NURSF(211.8,DA(1),0)),$P(^VA(200,NUR,0),U),NUR,DA)="" K NUR
+                                  2)= S NUR=$S($P(^NURSF(211.8,DA(1),1,DA,0),"^",2):$P(^(0),"^",2),1:"") K:+NUR ^NURSF(211.8,"D",+$G(^NURSF(211.8,DA(1),0)),$P(^VA(200,NUR,0),U),NUR,DA) K NUR
+                                  This index is used by the PAID ETA Nurse Point of Care software to determine all the Nurses who have this location as their primary assignment.  
+
+
+
+211.82,7        ASSIGN TOUR OF DUTY    0;10 POINTER TO NURS TOUR OF DUTY FILE (#211.6)
+
+                LAST EDITED:      MAY 21, 1991 
+                DESCRIPTION:
+                                  This field indicates the employee's tour of duty.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+211.82,8        FACILITY                ;  COMPUTED
+
+                MUMPS CODE:       S X=$$GET1^DIQ(4,+$P($G(^SC(+$G(^NURSF(211.8,+D0,0)),0)),U,4),.01,"I")
+                ALGORITHM:        S X=$$GET1^DIQ(4,+$P($G(^SC(+$G(^NURSF(211.8,+D0,0)),0)),U,4),.01,"I")
+                LAST EDITED:      APR 16, 1996 
+                DESCRIPTION:
+                                  This field associates each position with a division of the medical center or facility.  
+
+
+
+
+211.8,3       POSITION BUDGETED      2;0 POINTER Multiple #211.83
+
+              DESCRIPTION:
+                                Indicate the service position to be budgeted within this category.  
+
+
+211.83,.01      SERVICE POSITION       0;1 POINTER TO NURS SERVICE POSITION FILE (#211.3) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^NURSF(211.8,DA(1),0),U,2)=""""!($P(^NURSF(211.3,+Y,0),U,5)=$P(^NURSF(211.8,DA(1),0),U,2))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 09, 1990 
+                DESCRIPTION:
+                                  Service position to be budgeted.  
+
+                SCREEN:           S DIC("S")="I $P(^NURSF(211.8,DA(1),0),U,2)=""""!($P(^NURSF(211.3,+Y,0),U,5)=$P(^NURSF(211.8,DA(1),0),U,2))"
+                EXPLANATION:      Select only service positions with the appropriate service category.
+                CROSS-REFERENCE:  211.83^B 
+                                  1)= S ^NURSF(211.8,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(211.8,DA(1),2,"B",$E(X,1,30),DA)
+                                  This is the main index on the 'Service Position' field of the Budgeted Position subfile.  
+
+
+
+211.83,.05      PRIORITY SEQUENCE      0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      JUL 13, 1990 
+                HELP-PROMPT:      Type a Number between 0 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  A number commonly used in print templates to display data in a specified format.  
+
+
+211.83,1        BUDGETED FTEE          0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99.999)!(X<0)!(X?.E1"."4N.N) X
+                LAST EDITED:      APR 27, 1995 
+                HELP-PROMPT:      Type a Number between 0 and 99.999, 3 Decimal Digits 
+                DESCRIPTION:
+                                  Indicate the amount of budgeted FTEE for this service position.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+HOSPITAL LOCATION (#44)           LOCATION (#.01)
+
+NEW PERSON (#200)                 OCCUPANCY/TRANSFERRED DATE:EMPLOYEE (#.02)
+
+NURS SERVICE POSITION (#211.3)    OCCUPANCY/TRANSFERRED DATE:SERVICE POSITION (#.03)
+                                  POSITION BUDGETED:SERVICE POSITION (#.01)
+
+NURS TOUR OF DUTY (#211.6)        OCCUPANCY/TRANSFERRED DATE:ASSIGN TOUR OF DUTY (#7)
+
+NURS VACANCY/TRANSFERRED REASO 
+                   (#211.9)       OCCUPANCY/TRANSFERRED DATE:VACANCY REASON (#5)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

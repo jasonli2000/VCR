@@ -1,0 +1,183 @@
+STANDARD DATA DICTIONARY #392.1 -- BENEFICIARY TRAVEL DISTANCE FILE                                                                                                                                                               MAY 20,2014@15:30:56  PAGE 1
+STORED IN ^DGBT(392.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ This file contains the mileage data between departure cities and medical center divisions.  Each departure city can have multiple divisions entered, each with it's own associated mileage, most economical cost, and remarks field.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: D
+             DEL ACCESS: D
+           LAYGO ACCESS: D
+IDENTIFIED BY: STATE (#2)[R]
+
+CROSS
+REFERENCED BY: CITY OR TOWN(AC), STATE(ACS), CITY OR TOWN(B), ZIP(C)
+
+392.1,.01     CITY OR TOWN           0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<1)!'(X'?1P.E) X I $D(X) D UP^DGBTHELP
+              LAST EDITED:      OCT 30, 2001 
+              HELP-PROMPT:      Enter the name of the city or town to be used as the point of departure, 1-30 characters in length. 
+              DESCRIPTION:      This field contains the free text departure name, 1 to 30 characters in length, of the City or Town that is used as the alternate lookup in determining the one way mileage distance that is pre-stuffed when entering the
+                                Bene Travel Claim.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  392.1^B 
+                                1)= S ^DGBT(392.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^DGBT(392.1,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  392.1^AC^MUMPS 
+                                1)= S:$P(^DGBT(392.1,DA,0),"^",2)]"" ^DGBT(392.1,"ACS",$E(X,1,30),$P(^DGBT(392.1,DA,0),"^",2),DA)="" S ^DGBT(392.1,"AC",DA)=$E(X,1,30)
+                                2)= K:$P(^DGBT(392.1,DA,0),"^",2)]"" ^DGBT(392.1,"ACS",$E(X,1,30),$P(^DGBT(392.1,DA,0),"^",2),DA) K ^DGBT(392.1,"AC",DA)
+
+
+392.1,2       STATE                  0;2 POINTER TO STATE FILE (#5) (Required)
+
+              LAST EDITED:      MAR 16, 1989 
+              HELP-PROMPT:      Enter the State name or two digit postal abbreviation 
+              DESCRIPTION:      This field points to the State File (#5) and contains the IFN for that field and is used in the Beneficiary Travel Claim Options as the primary look-up to determine the one way mileage that can be pre-stuffed in the Bene
+                                Travel Claim.  
+
+              CROSS-REFERENCE:  392.1^ACS^MUMPS 
+                                1)= S ^DGBT(392.1,"ACS",$P(^DGBT(392.1,DA,0),"^"),X,DA)=""
+                                2)= K ^DGBT(392.1,"ACS",$P(^DGBT(392.1,DA,0),"^"),X,DA)
+
+
+392.1,3       DEFAULT MILEAGE        0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 09, 1993 
+              HELP-PROMPT:      Enter the default mileage between the city/town and the primary division.  This must be a number between 0 and 10000. 
+              DESCRIPTION:      This field contains the one way mileage (in whole numbers between 0 and 10000) distance (e.g. between place of departure and place of destination).  The default mileage is between the departure city and the primary
+                                division of the instituion.  This value is not accessed directly by the user but is stuffed from the mileage/one way field in the primary division of the division mileage multiple.  It is changed whenever the one-way 
+                                mileage in the primary division is changed.  
+
+
+392.1,4       ZIP                    0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<5) X I $D(X) D ZIPIN^VAFADDR
+              OUTPUT TRANSFORM: D ZIPOUT^VAFADDR
+              LAST EDITED:      MAR 01, 1993 
+              HELP-PROMPT:      Answer must be 5 digit or 9 digit zip code.  If no zip code is entered, you will not be able to do lookups later by cross-referencing on the zip code. 
+              DESCRIPTION:      This field contains the 5-digit zip code for the Beneficiary Travel Distance File. This field is not required, but if no zip code is present, the claim enter/edit routine will not be able to make the initial look-up using
+                                the 'C' cross reference, and a correct look-up for the mileage will rely solely  on the correct spelling of the city/town.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  392.1^C 
+                                1)= S ^DGBT(392.1,"C",$E(X,1,30),DA)=""
+                                2)= K ^DGBT(392.1,"C",$E(X,1,30),DA)
+                                Zipcode cross-reference for lookup by zipcode 
+
+
+
+392.1,5       * ADDITIONAL INFORMATION 0;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 09, 1993 
+              HELP-PROMPT:      Enter 'YES' to indication that additional information should be checked (e.g. closer VA facility). 
+              DESCRIPTION:
+                                This field is a set of codes 0 for no and 1 for yes and is used to indicate that additional information should be checked or not (e.g. if there is a closer VA facility, etc.) 
+
+
+392.1,6       * MOST ECON/PUBLIC TRANS. COST 0;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>10000)!(X<0) X
+              LAST EDITED:      FEB 09, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 10000, 2 Decimal Digits.  Indicate if there is a Most Econ./Public Trans. amount that should be used for this location. 
+              DESCRIPTION:
+                                This field is a dollar amount between 0 and 10000.00 and is used to indicate if there is a most econ./public trans. amount that should be used for this location.  
+
+
+392.1,100     DIVISION MILEAGE       1;0 POINTER Multiple #392.1001 (Add New Entry without Asking)
+
+              LAST EDITED:      FEB 09, 1993 
+              DESCRIPTION:      Multiple for divisions with each division having it's own mileage value between the division and the departure city.  Edited by the user and, for the primary division, the mileage will be stuffed into the default mileage
+                                field, #3.  
+
+
+392.1001,.01    DIVISION NAME          0;1 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8) (Required)
+
+                LAST EDITED:      FEB 09, 1993 
+                HELP-PROMPT:      Enter the division name to be associated with this departure city 
+                DESCRIPTION:
+                                  Division Name points to the Medical Center Division file, #40.8 
+
+                CROSS-REFERENCE:  392.1001^B 
+                                  1)= S ^DGBT(392.1,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DGBT(392.1,DA(1),1,"B",$E(X,1,30),DA)
+
+
+392.1001,2      MILEAGE ONE WAY        0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 09, 1993 
+                HELP-PROMPT:      Enter the one-way mileage distance between the departure city and the division, 0 to 10000 miles, no decimal points 
+                DESCRIPTION:      One-way mileage value between the departure city and the division.  Value is between 0 and 10000 miles.  For the primary division only, this value is used to populate the Default Mileage field, #3 on the zero node.  This
+                                  value is stuffed into Field #3 when ever there is a difference between the Default mileage, and the primary division mileage.  
+
+
+392.1001,3      MOST ECONOMICAL COST   0;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>10000)!(X<0) X
+                LAST EDITED:      FEB 09, 1993 
+                HELP-PROMPT:      Enter the cost of the most economical method of transportation as a dollar value between $0 and $10000. 
+                DESCRIPTION:
+                                  Cost for the most economical method of transportation, public or private.  
+
+
+392.1001,4      ADDITIONAL INFORMATION 0;4 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      FEB 09, 1993 
+                HELP-PROMPT:      Enter 'Y'es if there are remarks to be entered, or a 'N'o if there are no additional mileage remarks. 
+                DESCRIPTION:
+                                  Set of codes for additional information/remarks field.  If '0', no remarks exist.  If '1', there are remarks attached.  
+
+
+392.1001,5      REMARKS                0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                LAST EDITED:      FEB 09, 1993 
+                HELP-PROMPT:      Remarks can be 1 to 50 characters in length, and are associated with this division only. 
+                DESCRIPTION:      Additional remarks associated with this division.  Remarks are free text, 1 to 50 characters in length.  These remarks will be displayed for informational purposes during Claim Enter/Edit, prior to the mileage display. 
+                                  The remark can only be changed in the Distance Enter/Edit option, it cannot be changed from the claim Enter/edit.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MEDICAL CENTER DIVISION (#40.8)   DIVISION MILEAGE:DIVISION NAME (#.01)
+
+STATE (#5)                        STATE (#2)
+
+
+
+INPUT TEMPLATE(S):
+DGBT MILES                    FEB 09, 1993@15:03  USER #0    
+DGBT REMARKS                  FEB 09, 1993@15:04  USER #0    
+DGBT ZIP                      FEB 09, 1993@15:04  USER #0    
+
+PRINT TEMPLATE(S):
+DGBT MILES                    FEB 09, 1993@14:57  USER #0                                                                                                                                                                     BENEFICIARY TRAVEL DISTANCE LIST
+DGBT REMARKS                  FEB 09, 1993@14:52  USER #0                                                                                                                                                                     BENEFICIARY TRAVEL DISTANCE LIST
+DGBT ZIP                      JUL 14, 1993@11:41  USER #0                                                                                                                                                                     BENEFICIARY TRAVEL DISTANCE LIST
+
+SORT TEMPLATE(S):
+DGBT REMARKS                  MAR 26, 1993@15:15  USER #0    
+SORT BY: @DIVISION MILEAGE;L1//
+DIVISION MILEAGE SUB-FIELD: ADDITIONAL INFORMATION="YES"// (ADDITIONAL INFORMATION=""YES"")
+  WITHIN ADDITIONAL INFORMATION="YES", SORT BY: @DIVISION MILEAGE;L1//
+  DIVISION MILEAGE SUB-FIELD: REMARKS=""// (REMARKS="""")
+
+
+FORM(S)/BLOCK(S):

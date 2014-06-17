@@ -1,0 +1,118 @@
+STANDARD DATA DICTIONARY #214.7 -- NURS REVIEW CLASSIFICATION FILE                                                                                                                                                                MAY 20,2014@15:38:37  PAGE 1
+STORED IN ^NURSA(214.7,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains an audit of classification reviews in a flat file format.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+IDENTIFIED BY: NAME (#.02)[R]
+
+CROSS
+REFERENCED BY: CLASSIFICATION REVIEWED(AA), REVIEW DATE/TIME(AZ1), NAME(AZ2), REVIEW DATE/TIME(B), NAME(C)
+
+214.7,.01     REVIEW DATE/TIME       0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:($P(Y,".")>DT)!(Y<1) X
+              LAST EDITED:      JUN 18, 1987 
+              DESCRIPTION:
+                                Date/time of the review of a classification.  
+
+              CROSS-REFERENCE:  214.7^B 
+                                1)= S ^NURSA(214.7,"B",$E(X,1,30),DA)=""
+                                2)= K ^NURSA(214.7,"B",$E(X,1,30),DA)
+                                This is the main index on the 'Review Date/Time' field of the NURS Review Classification file.  
+
+
+              CROSS-REFERENCE:  214.7^AZ1^MUMPS 
+                                1)= I $D(^NURSA(214.7,DA,0)) S:$P(^(0),U,2)'=""&($P(^(0),U,3)'="") ^NURSA(214.7,"AA",$P(^NURSA(214.7,DA,0),U,2),$P(^NURSA(214.7,DA,0),U,3),9999999-X,DA)=""
+                                2)= I $D(^NURSA(214.7,DA,0)) K:$P(^(0),U,2)'=""&($P(^(0),U,3)'="") ^NURSA(214.7,"AA",$P(^NURSA(214.7,DA,0),U,2),$P(^NURSA(214.7,DA,0),U,3),9999999-X,DA)
+                                This mumps index is an inverted time/date index which make the latest entry reviewed the first entry accessed when using this index.  
+
+
+
+214.7,.02     NAME                   0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      NOV 18, 1987 
+              DESCRIPTION:
+                                Name of patient whose classification is being reviewed.  Points to the PATIENT (#2) File.  
+
+              CROSS-REFERENCE:  214.7^C 
+                                1)= S ^NURSA(214.7,"C",$E(X,1,30),DA)=""
+                                2)= K ^NURSA(214.7,"C",$E(X,1,30),DA)
+                                This index is on the 'Name' field in the NURS Review Classification file.  
+
+
+              CROSS-REFERENCE:  214.7^AZ2^MUMPS 
+                                1)= I $D(^NURSA(214.7,DA,0)) S:$P(^(0),U,1)'=""&($P(^(0),U,3)'="") ^NURSA(214.7,"AA",X,$P(^NURSA(214.7,DA,0),U,3),9999999-$P(^NURSA(214.7,DA,0),U,1),DA)=""
+                                2)= I $D(^NURSA(214.7,DA,0)) K:$P(^(0),U,1)'=""&($P(^(0),U,3)'="") ^NURSA(214.7,"AA",X,$P(^NURSA(214.7,DA,0),U,3),9999999-$P(^NURSA(214.7,DA,0),U,1),DA)
+                                This mumps index make the latest review entry available by patient name, NURS Location, and review date/time.  
+
+
+
+214.7,.04     CLASSIFICATION REVIEWED 0;3 POINTER TO NURS CLASSIFICATION FILE (#214.6) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="D EN4^NURSCUTL" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 07, 1991 
+              DESCRIPTION:
+                                The classification being reviewed.  Points to the NURS CLASSIFICATION (#214.6) file.  
+
+              SCREEN:           S DIC("S")="D EN4^NURSCUTL"
+              EXPLANATION:      Screen to allow selection of only valid classification dates
+              CROSS-REFERENCE:  214.7^AA^MUMPS 
+                                1)= D EN3^NURSCUTL S:(NURSDFN'="")&(NURSR'="") ^NURSA(214.7,"AA",NURSDFN,X,9999999-NURSR,DA)="" K NURSDFN,NURSR
+                                2)= D EN3^NURSCUTL K:(NURSDFN'="")&(NURSR'="") ^NURSA(214.7,"AA",NURSDFN,X,9999999-NURSR,DA) K NURSDFN,NURSR
+                                This mumps index indicates the review date/time of the latest classification for this patient.  
+
+
+
+214.7,1       CLASSIFICATION CHANGED 0;4 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              DESCRIPTION:
+                                This field indicates if the classification was changed.  Answer Yes or No.  
+
+
+214.7,2       NEW CLASSIFICATION DATE/TIME 0;5 POINTER TO NURS CLASSIFICATION FILE (#214.6)
+
+              INPUT TRANSFORM:  S DIC("S")="D EN4^NURSCUTL" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 07, 1991 
+              DESCRIPTION:
+                                This field contains the new classification for the patient if it was changed.  Points to the NURS CLASSIfICATION (#214.6) file.  
+
+              SCREEN:           S DIC("S")="D EN4^NURSCUTL"
+              EXPLANATION:      Only valid classifications for this patient
+
+214.7,3       REVIEWER               0;6 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      JAN 13, 1992 
+              DESCRIPTION:
+                                Person who reviewed the classification.  Points to the NEW PERSON (#200) file.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 REVIEWER (#3)
+
+NURS CLASSIFICATION (#214.6)      CLASSIFICATION REVIEWED (#.04)
+                                  NEW CLASSIFICATION DATE/TIME (#2)
+
+PATIENT (#2)                      NAME (#.02)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,136 @@
+STANDARD DATA DICTIONARY #665.1 -- PROSTHETIC HOME/LIAISON VISITS FILE                                                                                                                                                            MAY 20,2014@15:40:19  PAGE 1
+STORED IN ^RMPR(665.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains information regarding prosthetic home/liaison visits that are to be counted on AMIS.  
+
+
+              DD ACCESS: @
+
+CROSS
+REFERENCED BY: DATE VISIT OPENED(B), DATE VISIT CLOSED(C)
+
+665.1,.01     DATE VISIT OPENED      0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 09, 1992 
+              HELP-PROMPT:      Please enter the date of the Home or Liaison visit. 
+              DESCRIPTION:
+                                Date that the Home/Liaison visit was opened.  
+
+              CROSS-REFERENCE:  665.1^B 
+                                1)= S ^RMPR(665.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(665.1,"B",$E(X,1,30),DA)
+
+
+665.1,1       PATIENT NAME/INSTITUTION 0;2        VARIABLE POINTER
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 2    1    P            n   Patient's name 
+                 4    2    I            n   Institution name 
+                 440  3    V            n   Name of the Vendor 
+                                         
+              LAST EDITED:      SEP 21, 1993 
+              HELP-PROMPT:      Enter the Patient Name or the Name of the Institution or the Name of the Vendor 
+              DESCRIPTION:
+                                Variable pointer to the Patient File, Institution File, and the Vendor File.  
+
+
+665.1,2       TYPE OF VISIT          0;3 SET (Required)
+
+                                'H' FOR HOME; 
+                                'L' FOR LIAISON; 
+              LAST EDITED:      DEC 27, 1992 
+              HELP-PROMPT:      Enter 'H' for Home visit or 'L' for Liaison visits. 
+              DESCRIPTION:
+                                Indicates if visit was a Home or Liaison Visit 
+
+
+665.1,3       VISITOR                0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      DEC 27, 1992 
+              HELP-PROMPT:      Enter the Name of the Person who attended the visit 
+              DESCRIPTION:
+                                Pointer to the New Person File.  
+
+
+665.1,4       DATE VISIT CLOSED      0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1!(X<$P(^RMPR(665.1,DA,0),U)) X
+              LAST EDITED:      JUN 02, 1993 
+              HELP-PROMPT:      Enter the Date or Date/Time that the Home/Liaison visit ended.  The Date Visit closed cannot be less that the Date Visit opened. 
+              DESCRIPTION:
+                                Contains the Date that the Home/Liaison visit was closed.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  665.1^C 
+                                1)= S ^RMPR(665.1,"C",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(665.1,"C",$E(X,1,30),DA)
+                                This x-ref will be used to calculate AMIS data by the date the visit was closed.  
+
+
+
+665.1,4.5     TOTAL HOURS            0;6 FREE TEXT
+
+              INPUT TRANSFORM:  D TRS^RMPRHL
+              LAST EDITED:      OCT 23, 1992 
+              HELP-PROMPT:      Enter Hours in the format hh.mm (e.g.) 1.05 
+              DESCRIPTION:
+                                Contains the total hours of the visit.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+665.1,5       REASON FOR VISIT       1;0   WORD-PROCESSING #665.15
+
+              DESCRIPTION:
+                                Contains information regarding the reason for the visit.  
+
+
+665.1,6       STATION                0;7 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter the Station Number or Name 
+              DESCRIPTION:
+                                Station number stored to allow splitting up for Amis calculations 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  PATIENT NAME/INSTITUTION (#1)
+                                  STATION (#6)
+
+NEW PERSON (#200)                 VISITOR (#3)
+
+PATIENT (#2)                      PATIENT NAME/INSTITUTION (#1)
+
+VENDOR (#440)                     PATIENT NAME/INSTITUTION (#1)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+RMPR CLOSED VISITS            JUN 28, 2000@12:29  USER #0                                                                                                                                                                 PROSTHETICS HOME/LIAISON CLOSED LIST
+     Prints list of closed Home/Liaison visits.
+RMPR OPEN VISITS              APR 23, 1993@08:35  USER #0                                                                                                                                                                   PROSTHETICS HOME/LIAISON OPEN LIST
+     Prints Open Home/Liaison Visits List.
+
+SORT TEMPLATE(S):
+RMPR CLOSED VISITS            APR 29, 1993@14:27  USER #0    
+SORT BY: @DATE VISIT CLOSED//    (User is asked range)
+  WITHIN DATE VISIT CLOSED, SORT BY: @PATIENT NAME/INSTITUTION// (PATIENT NAME/INSTITUTION not null)
+     Sorts file 665.1 by date visit closed and patient name/institution.
+
+RMPR OPEN VISITS              SEP 14, 1993@15:28  USER #0    
+SORT BY: @DATE VISIT CLOSED="";L1// (DATE VISIT CLOSED="""")
+  WITHIN DATE VISIT CLOSED="", SORT BY: @DATE VISIT OPENED//    (User is asked range)
+    WITHIN DATE VISIT OPENED, SORT BY: @PATIENT NAME/INSTITUTION// (PATIENT NAME/INSTITUTION not null)
+     Sorts file 665.1 by date visit closed and date visit opened.
+
+
+FORM(S)/BLOCK(S):

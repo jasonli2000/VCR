@@ -1,0 +1,143 @@
+STANDARD DATA DICTIONARY #3.05 -- FAILED ACCESS ATTEMPTS LOG FILE                                                                                                                                                                 MAY 20,2014@15:36:24  PAGE 1
+STORED IN ^%ZUA(3.05,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 8.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Once the maximum sign-on attempts limit has been exceeded, an entry will be made in this file to record all available information about the failed sign-on attempt.  Information includes the date/time, CPU, UCI, device, and, if known, user.  The text
+entered for each attempt is recorded when it does not match existing codes such that security is not violated.  This file is not cross-referenced.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+
+
+3.05,.001     DATE/TIME OF ATTEMPT       DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                Entries in this file are uniquely identified by the precise time of the failed access attempt.  
+
+
+3.05,.01      DEVICE                 0;1 POINTER TO DEVICE FILE (#3.5) (Required)
+
+              LAST EDITED:      APR 06, 1988 
+              DESCRIPTION:
+                                This field holds a pointer to the Device File to identify the device in use at the time of the failed access attempt.  
+
+
+3.05,1        CPU                    0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              HELP-PROMPT:      ANSWER MUST BE 1-10 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field identifies the CPU/Volume Set where the failed access attempt occurred.  
+
+
+3.05,2        TYPE OF FAILED ATTEMPT 0;3 SET
+
+                                'D' FOR DEVICE; 
+                                'V' FOR VERIFY; 
+                                'A' FOR ACCESS; 
+              DESCRIPTION:
+                                This field identifies the type of access failure.  For example, if the access code passes the type of access is VERIFY and only the text entered in guessing the verify code is stored.  
+
+
+3.05,3        NUMBER OF ATTEMPTS     0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<1)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 100 
+              DESCRIPTION:      This field records the number of unsuccessful attempts that were made before the device locked.  The ^DISV global maintains a count of the current unsuccessful attempts.  A lock results when the number of default attempts
+                                (set in the Kernel Site Parameters File) is reached.  If the default is reached an entry is made in this file.  
+
+
+3.05,4        UCI                    0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              HELP-PROMPT:      ANSWER MUST BE 1-10 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field identifies the UCI account location of the failed access attempt.  
+
+
+3.05,5        USER                   0;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      SEP 08, 1989 
+              DESCRIPTION:
+                                This field is used when an access code is entered which matches one on file.  The associated user's name may then be recorded.  
+
+
+3.05,5.5      USER NUMBER             ;  COMPUTED
+
+              MUMPS CODE:       S Y(3.05,5.5,1)=$S($D(^%ZUA(3.05,D0,0)):^(0),1:"") S X=$P(Y(3.05,5.5,1),U,6),X=X
+              ALGORITHM:        INTERNAL(USER)
+              DESCRIPTION:
+                                This field retrieves the user number from the User File to facilitate report display.  
+
+
+3.05,6        ZIO (optional)         0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<2) X
+              LAST EDITED:      MAR 29, 1989 
+              HELP-PROMPT:      The DECserver port info at sign-on. 
+              DESCRIPTION:
+                                This field (if filled in) is the $ZIO value from VAX-DSM to show the DECserver port that was trying to sign-on.  On MSM systems with LAT servers it will have the $ZDEV value.  
+
+
+3.05,7        TEXT ENTERED           1;0 Multiple #3.051 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This subfile holds the text of the unsuccessful attempts.  
+
+
+3.051,.01       TEXT ENTERED           0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>250!($L(X)<1) X
+                HELP-PROMPT:      ANSWER MUST BE 1-250 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  This field holds the text that was entered during an unsuccessful log-on attempt.  Text that matches existing codes is not recorded to prevent discovery of valid codes.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DEVICE (#3.5)                     DEVICE (#.01)
+
+NEW PERSON (#200)                 USER (#5)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+XUDFDISPH                     JUL 01, 1987        USER #0                                                                                                                                                                                                    @
+XUDFDISPLAY                   DEC 22, 1988        USER #0                                                                                                                                                                                          [XUDFDISPH]
+XUFDISPLAY                    MAY 19, 1988        USER #0                                                                                                                                                                               FAILED ACCESS ATTEMPTS
+XUUFAA                        APR 04, 1989@09:33  USER #0                                                                                                                                                                                            [XUUFAAH]
+XUUFAAH                       JUN 19, 1987        USER #0                                                                                                                                                                                                    @
+
+SORT TEMPLATE(S):
+XU-FAILED LOGONS: CPU,UCI,DATEDEC 17, 1986        USER #0    
+SORT BY: #CPU//    (User is asked range)
+  WITHIN CPU, SORT BY: UCI;S1//    (User is asked range)
+    WITHIN UCI, SORT BY: DATE/TIME OF ATTEMPT//    (User is asked range)
+
+XUDFDISPS                     DEC 22, 1988        USER #0    
+SORT BY: +@DEVICE;S1//
+  WITHIN DEVICE, SORT BY: @DATE/TIME OF ATTEMPT//
+
+XUFDISPS                      DEC 13, 1996@15:57  USER #0    
+SORT BY: +@USER;S1// (USER not null)
+  WITHIN USER, SORT BY: @DATE/TIME OF ATTEMPT// (DATE/TIME OF ATTEMPT not null)
+
+XUUFAA                        DEC 13, 1996@15:60  USER #0    
+SORT BY: DATE/TIME OF ATTEMPT// (DATE/TIME OF ATTEMPT not null)
+  WITHIN DATE/TIME OF ATTEMPT, SORT BY: USER// (USER not null)
+    WITHIN USER, SORT BY: TYPE OF FAILED ATTEMPT// (TYPE OF FAILED ATTEMPT not null)
+
+
+FORM(S)/BLOCK(S):

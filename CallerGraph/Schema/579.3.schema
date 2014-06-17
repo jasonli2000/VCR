@@ -1,0 +1,375 @@
+STANDARD DATA DICTIONARY #579.3 -- VDEF REQUEST QUEUE FILE                                                                                                                                                                        MAY 20,2014@15:42:36  PAGE 1
+STORED IN ^VDEFHL7(579.3,  (1 ENTRY)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                         (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file stores all information specific to each individual Request Queue. It defines how the entries in each queue will be processed, how often the processed entries in the queue will be purged, etc.  
+ 
+This file also stores all Requests and Request-specific data for this queue, i.e. the parameters passed in by the calling program as well as the information generated while the VDEF Request Processor program is handling this request.  
+
+
+
+POINTED TO BY: REQUEST QUEUE field (#.04) of the VDEF REQUESTOR File (#579.1) 
+               
+
+CROSS
+REFERENCED BY: REQUEST QUEUE NAME(B), REQUEST ENTRY STATUS(C)
+
+579.3,.01     REQUEST QUEUE NAME     0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      SEP 26, 2003 
+              HELP-PROMPT:      Answer must be 1-20 characters in length 
+              DESCRIPTION:
+                                Name of this Request Queue that uniquely identifies it.  
+
+              TECHNICAL DESCR:
+                                The name of a Request Processor task in TaskMan. It will process all requests in the Request Queue that it is responsible for.  
+
+              CROSS-REFERENCE:  579.3^B 
+                                1)= S ^VDEFHL7(579.3,"B",$E(X,1,30),DA)=""
+                                2)= K ^VDEFHL7(579.3,"B",$E(X,1,30),DA)
+
+
+579.3,.02     REQUEST QUEUE WAKEUP PERIOD 0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  S X=$$TIMEI^VDEFUTIL(X) I 'X K X
+              OUTPUT TRANSFORM: S Y(0)=Y S Y=$$TIMEE^VDEFUTIL(Y)
+              LAST EDITED:      SEP 26, 2003 
+              HELP-PROMPT:      Type a number between 1 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Number of seconds in which this queue's Request Processor will resubmit itself for execution.  
+
+
+579.3,.03     LAST ENTRY CHECKED OUT 0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1.N) X
+              LAST EDITED:      OCT 24, 2003 
+              HELP-PROMPT:      Type a number between 1 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                IEN of the last Checked Out entry in sub-file 579.31.  
+
+
+579.3,.04     ARCHIVAL PARAMETER     0;4 NUMBER (Required)
+
+              INPUT TRANSFORM:  S X=$$TIMEI^VDEFUTIL(X) I 'X K X
+              OUTPUT TRANSFORM: S Y=$$TIMEE^VDEFUTIL(Y)
+              LAST EDITED:      FEB 24, 2012 
+              HELP-PROMPT:      Enter time in xxD yyH zzM wwS format. The minimum allowable time is 30D. 
+              DESCRIPTION:
+                                The minimum number of seconds an already processed entry in a Request Queue will be kept in the Queue for archival purposes before it is purged by the VDEF Monitor process.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+579.3,.05     CHECK-OUT TIME LIMIT   0;5 NUMBER (Required)
+
+              INPUT TRANSFORM:  S X=$$TIMEI^VDEFUTIL(X) I 'X K X
+              OUTPUT TRANSFORM: S Y=$$TIMEE^VDEFUTIL(Y)
+              LAST EDITED:      AUG 29, 2003 
+              HELP-PROMPT:      Enter time in xxD yyH zzM wwS format 
+              DESCRIPTION:
+                                The maximum number of seconds that the oldest Checked Out entry in this queue can be Checked Out for before a MailMan message is sent to the VISTA HL7 IRM account or group.  
+
+              TECHNICAL DESCR:
+                                The background process monitoring all Request Queues is a Scheduled Option in TaskMan and runs every 10 minutes.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+579.3,.06     REQUEST QUEUE ENTRIES  1;0 Multiple #579.31
+
+
+579.31,.01      REQUEST ENTRY NUMBER   0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1.N) X S:$D(X) DINUM=X
+                LAST EDITED:      JAN 07, 2003 
+                HELP-PROMPT:      Type a number between 1 and 9999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  IEN of this entry in the queue.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  579.31^B 
+                                  1)= S ^VDEFHL7(579.3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VDEFHL7(579.3,DA(1),1,"B",$E(X,1,30),DA)
+
+
+579.31,.02      REQUEST ENTRY STATUS   0;2 SET
+
+                                  'C' FOR CHECKED OUT; 
+                                  'P' FOR PROCESSED; 
+                                  'Q' FOR QUEUED; 
+                                  'E' FOR ERRORED OUT; 
+                LAST EDITED:      FEB 02, 2012 
+                HELP-PROMPT:      Enter "C"hecked Out or "P"rocessed or "Q"ueued. 
+                DESCRIPTION:      Status of this entry in the queue: "Q" for Queued Up, "C" for Checked Out, "P" for Processed. Created by the VDEF API when the entry is Queued Up, updated by the Request Processor when the entry is Checked Out and when
+                                  it is Processed. This sub-file will be cross-referenced by this field. The cross-reference will be used by the VDEF Monitor to find the oldest entry checked out and then purge all entries in this Request Queue that are
+                                  older than specified by the Archival Parameter.  
+
+                CROSS-REFERENCE:  579.3^C 
+                                  1)= S ^VDEFHL7(579.3,"C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^VDEFHL7(579.3,"C",$E(X,1,30),DA(1),DA),^VDEFHL7(579.3,"C","Q",DA(1),DA),^VDEFHL7(579.3,"C","P",DA(1),DA),^VDEFHL7(579.3,"C","C",DA(1),DA),^VDEFHL7(579.3,"C","E",DA(1),DA)
+                                  This cross-reference has the format: 
+                                   
+                                  ^VDEFHL7(579.3,"C",<status code>,<IEN>,<sub-ien of entry in the multiple>)="" 
+                                   
+                                   
+                                  The KILL logic kills the cross-reference for each code in the set of codes, to insure that the entry is removed from the cross-reference even if the cross-reference contains a value that is discrepant from the actual
+                                  value of the field. 
+                                   
+
+
+
+579.31,.03      MESSAGE TYPE           0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      SEP 26, 2003 
+                HELP-PROMPT:      Answer must be 1-40 characters in length 
+                DESCRIPTION:
+                                  Message Type for this Request Entry. Created by the VDEF API based on the value passed to it by the calling program.  
+
+
+579.31,.04      EVENT TYPE             0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      SEP 26, 2003 
+                HELP-PROMPT:      Answer must be 1-40 characters in length 
+                DESCRIPTION:
+                                  Event Type for this Request Entry. Created by the VDEF API based on the value passed to it by the calling program.  
+
+
+579.31,.05      NAME VALUE PAIRS MULTIPLE .05;0 Multiple #579.311
+
+                LAST EDITED:      DEC 13, 2002 
+
+579.311,.01       NAME VALUE PAIR NUMBER 0;1 NUMBER (Required)
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1.N) X S:$D(X) DINUM=X
+                  LAST EDITED:      DEC 18, 2002 
+                  HELP-PROMPT:      Type a number between 1 and 999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    IEN of this Name Value pair within the request.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  579.311^B 
+                                    1)= S ^VDEFHL7(579.3,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^VDEFHL7(579.3,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)
+
+
+579.311,.02       NAME VALUE PAIR DATA   0;2 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                  LAST EDITED:      SEP 26, 2003 
+                  HELP-PROMPT:      Answer must be 1-200 characters in length 
+                  DESCRIPTION:      A single Name-Value pair for a Request Entry. Created by the VDEF Queue API based on the values passed to it by the calling program.  The VDEF API performs no validation of the Name Value pair format or validity except 
+                                    for stripping the "^"s when populating this field. Validation will be performed by the VDEF Request Processor.  
+
+
+
+
+579.31,.06      REQUESTOR                0;6 POINTER TO VDEF REQUESTOR FILE (#579.1)
+
+                  LAST EDITED:      SEP 26, 2003 
+                  HELP-PROMPT:      Answer must be 1-40 characters in length 
+                  DESCRIPTION:
+                                    Requestor IEN for this Request Entry. Created by the VDEF API based on the value passed to it by the calling program. The data in this field is a pointer to a Requestor record in file 579.1.  
+
+
+579.31,.07      DESTINATION POINTER      0;7 POINTER TO VDEF DESTINATION FILE (#579.2)
+
+                  LAST EDITED:      SEP 26, 2003 
+                  HELP-PROMPT:      Answer must be 1-40 characters in length 
+                  DESCRIPTION:
+                                    Destination for this Request Entry. Created by the VDEF API based on the value passed to it by the calling program. The data stored in this field is a pointer to a Destination record in file 579.2.  
+
+
+579.31,.08      DTS ADDED                0;8 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+                  LAST EDITED:      NOV 10, 2003 
+                  HELP-PROMPT:      (No range limit on date) 
+                  DESCRIPTION:
+                                    Date/time stamp when this entry was added to the Request Queue. Created by the VDEF API when it creates an entry for this request.  
+
+
+579.31,.09      DTS CHECKED OUT          0;9 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                  LAST EDITED:      NOV 10, 2003 
+                  HELP-PROMPT:      (No range limit on date) 
+                  DESCRIPTION:
+                                    Date/time stamp when this entry was checked out for processing.  Created by the VDEF Request Processor when it starts processing this request.  
+
+
+579.31,.1       DTS LAST HL7 MESSAGE GENERATED 0;10 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                  LAST EDITED:      NOV 10, 2003 
+                  HELP-PROMPT:      (No range limit on date) 
+                  DESCRIPTION:
+                                    Date/time stamp when the last (most recent) HL7 message for this request was generated. Created or updated by the Request Processor every time it finishes processing an HL7 message for this Request Entry.  
+
+
+579.31,.13      DTS PROCESSED            0;13 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                  LAST EDITED:      NOV 10, 2003 
+                  HELP-PROMPT:      (No range limit on date) 
+                  DESCRIPTION:
+                                    Date/time stamp when the processing for this entry was completed.  Created by the Request Processor once it has finished processing this Request Entry.  
+
+
+579.31,.15      DTS VISTA HL7 MANAGER NOTIFIED 0;15 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                  LAST EDITED:      NOV 10, 2003 
+                  HELP-PROMPT:      (No range limit on date) 
+                  DESCRIPTION:
+                                    Date/time stamp when the IRM was notified that this Request is potentialy stuck since it has been in Checked Out state too long.  
+
+
+579.31,.17      ERROR TEXT               ERRMSG;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+                  LAST EDITED:      SEP 20, 2004 
+                  HELP-PROMPT:      Answer must be 1-80 characters in length. 
+                  DESCRIPTION:
+                                    VDEF processing error message text 
+
+
+579.31,.18      VDEF EVENT               0;18 POINTER TO VDEF EVENT SUBTYPES FILE (#577.4)
+
+                  LAST EDITED:      SEP 01, 2004 
+                  HELP-PROMPT:      Pointer to VDEF Event Subtype file 577.4 
+                  DESCRIPTION:
+                                    Pointer to File 577.4, VDEF Event Subtype file.  
+
+
+579.31,.19      DYNAMIC ADDRESSING       .19;0 Multiple #579.313 (Add New Entry without Asking)
+
+
+579.313,.01       DYNAMIC ADDRESSING COUNT 0;1 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1.N) X
+                    LAST EDITED:      OCT 15, 2003 
+                    HELP-PROMPT:      Type a number between 1 and 999999, 0 Decimal Digits 
+                    DESCRIPTION:
+                                      List of VistA HL7 Protocols passed to VDEF for this request. Will be passed on to the VistA HL7 package when calling GENERATE^HLMA.  
+
+
+579.313,.02       DESTINATION DATA         1;E1,200 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                    LAST EDITED:      OCT 14, 2003 
+                    HELP-PROMPT:      Answer must be 1-200 characters in length 
+
+
+
+
+
+579.3,.08     FUTURE TASKMAN TASK NUMBER 0;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 11, 2003 
+              HELP-PROMPT:      Type a Number between 1 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Number of the TaskMan task that was last queued up to handle this Request Queue.  
+
+
+579.3,.09     SUSPENDED FLAG         0;9 SET (Required)
+
+                                'S' FOR SUSPENDED; 
+                                'R' FOR RUNNING; 
+              LAST EDITED:      SEP 26, 2003 
+              HELP-PROMPT:      Enter "S" for Suspended or "R" for Running 
+              DESCRIPTION:      Current status of this VDEF REquest Processor Queue. Turning the Queue off will result in VDEF HL7 message generation for the Queue being suspended until such time when the Queue is turned back on. NOTE: Turning off a
+                                Request Queue will not prevent VDEF from adding requests to it. Turning a VDEF Request Queue off for a prolonged period of time may result in a significant number of VDEF Requests accumulating in that Queue and causing
+                                disk space problems. If VDEF messaging is to be completely turned off for a Request Queue, the associated VDEF Requestor should be turned off via menu option VDEF (De)Activate Requestor.  
+
+
+579.3,.1      REQUEST PROCESS SCHEDULE 2;0 Multiple #579.32
+
+              LAST EDITED:      SEP 01, 2004 
+              DESCRIPTION:
+                                Define time periods when the Request Processor should not run 
+
+
+579.32,.01      RULE                   0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      SEP 01, 2004 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  The name of the rule.  
+
+                CROSS-REFERENCE:  579.32^B 
+                                  1)= S ^VDEFHL7(579.3,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VDEFHL7(579.3,DA(1),2,"B",$E(X,1,30),DA)
+
+
+579.32,.02      DAY OF THE WEEK        0;2 SET
+
+                                  '1' FOR Sunday; 
+                                  '2' FOR Monday; 
+                                  '3' FOR Tuesday; 
+                                  '4' FOR Wednesday; 
+                                  '5' FOR Thursday; 
+                                  '6' FOR Friday; 
+                                  '7' FOR Saturday; 
+                LAST EDITED:      OCT 09, 2003 
+                HELP-PROMPT:      Enter a number for the day of the week (1=Sunday, 2=Monday) 
+                DESCRIPTION:
+                                  Number corresponding to the day of the week 
+
+
+579.32,.03      FORCED STATUS          0;3 SET
+
+                                  'R' FOR RUNNING; 
+                                  'S' FOR STOPPED; 
+                LAST EDITED:      SEP 01, 2004 
+                HELP-PROMPT:      Enter the status that should be forced during this period 
+
+579.32,.04      FROM TIME              0;4 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:'$$TIMECK^VDEFQM(X) X
+                LAST EDITED:      SEP 18, 2003 
+                HELP-PROMPT:      Enter time in HH:MM format (military format, not AM or PM) 
+
+579.32,.05      TO TIME                0;5 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:'$$TIMECK^VDEFQM(X) X
+                LAST EDITED:      SEP 18, 2003 
+                HELP-PROMPT:      Enter time in HH:MM format (military format, not AM or PM) 
+
+
+
+579.3,.11     CURRENT TASKMAN TASK NUMBER 0;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1.N) X
+              LAST EDITED:      SEP 26, 2003 
+              HELP-PROMPT:      Type a number between 1 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Taskman number of the currently running Request Processor task.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+VDEF DESTINATION (#579.2)         REQUEST QUEUE ENTRIES:DESTINATION POINTER (#.07)
+
+VDEF EVENT SUBTYPES (#577.4)      REQUEST QUEUE ENTRIES:VDEF EVENT (#.18)
+
+VDEF REQUESTOR (#579.1)           REQUEST QUEUE ENTRIES:REQUESTOR (#.06)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

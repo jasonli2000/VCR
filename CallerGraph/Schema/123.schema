@@ -1,0 +1,883 @@
+STANDARD DATA DICTIONARY #123 -- REQUEST/CONSULTATION FILE                                                                                                                                                                        MAY 20,2014@15:31:42  PAGE 1
+STORED IN ^GMR(123,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains consult and request orders originating primarily via the OE/RR ordering process.  Once the order exists in this file, receiving service users perform update tracking activities.  An audit trail of the update tracking activities is
+maintained in this file.  
+  
+The only associating of results to a consult or request, for this version, is based on Medicine Package procedure results.  
+
+
+IDENTIFIED BY: PATIENT NAME (#.02)[R]
+
+POINTED TO BY: CONSULT LINK field (#688) of the PATIENT sub-field (#44.003) of the APPOINTMENT sub-field (#44.001) of the HOSPITAL LOCATION File (#44) 
+               CONSULT NUMBER field (#3) of the HOME TELEHEALTH PATIENT File (#391.31) 
+               CONSULT field (#.01) of the CONSULTS sub-field (#396.914) of the FORM 28-8861 File (#396.9) 
+               CONSULT field (#8.9) of the RECORD OF PROS APPLIANCE/REPAIR File (#660) 
+               CONSULT field (#20) of the PROSTHETIC SUSPENSE File (#668) 
+               GMRCO field (#1001) of the ECHO File (#691) 
+               GMRCO field (#1001) of the CARDIAC CATHETERIZATION File (#691.1) 
+               GMRCO field (#1001) of the ELECTROCARDIOGRAM (EKG) File (#691.5) 
+               GMRCO field (#1001) of the HOLTER File (#691.6) 
+               GMRCO field (#1001) of the EXERCISE TOLERANCE TEST File (#691.7) 
+               GMRCO field (#1001) of the ELECTROPHYSIOLOGY (EP) File (#691.8) 
+               GMRCO field (#1001) of the HEMATOLOGY File (#694) 
+               GMRCO field (#1001) of the GENERATOR IMPLANT File (#698) 
+               GMRCO field (#1001) of the V LEAD IMPLANT File (#698.1) 
+               GMRCO field (#1001) of the A LEAD IMPLANT File (#698.2) 
+               GMRCO field (#1001) of the PACEMAKER SURVEILLANCE File (#698.3) 
+               GMRCO field (#1001) of the ENDOSCOPY/CONSULT File (#699) 
+               GMRCO field (#1001) of the GENERALIZED PROCEDURE/CONSULT File (#699.5) 
+               GMRCO field (#1001) of the PULMONARY FUNCTION TESTS File (#700) 
+               GMRCO field (#1001) of the RHEUMATOLOGY File (#701) 
+               CONSULT REQUEST field (#.01) of the TELEREADER READ/UNREAD LIST File (#2006.5849) 
+               REQUESTING PACKAGE REFERENCE field (#1405) of the TIU DOCUMENT File (#8925) 
+               
+
+CROSS
+REFERENCED BY: OE/RR FILE NUMBER(AC), PATIENT NAME(AD), FORWARDED FROM(AD), DATE OF REQUEST(AD1), CPRS STATUS(AF), REMOTE ORDERING PROVIDER(AIP), PATIENT LOCATION(AL), PROCEDURE/REQUEST TYPE(AP), FILE ENTRY DATE(B), TO SERVICE(C), CPRS STATUS(D), 
+               DATE OF REQUEST(E), PATIENT NAME(F), SENDING PROVIDER(G), FROM(H), ASSOCIATED RESULTS(R)
+
+INDEXED BY:    CLINICAL PROCEDURE & PATIENT NAME (ACP), TO SERVICE & CPRS STATUS & DATE OF REQUEST (AE), ROUTING FACILITY & REMOTE CONSULT FILE ENTRY (AIFC)
+
+
+123,.001      NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 04, 1991 
+              HELP-PROMPT:      Type a Number between 0 and 99999999, 0 Decimal Digits 
+
+123,.01       FILE ENTRY DATE        0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=$P($H,",",2),Y=Y_"."_$E(0,1,2-$L(X\3600))_(X\3600)_$E(0,1,2-$L(X#3600\60))_(X#3600\60)_$E(0,1,2-$L(X#60))_(X#60),Y=+Y,X=Y K:Y<1 X
+              HELP-PROMPT:      This is the date/time of the entry of the consultation/request. 
+              DESCRIPTION:
+                                Date of actual entry of consultation request into the file.  Transparent to user.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  123^B 
+                                1)= S ^GMR(123,"B",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"B",$E(X,1,30),DA)
+
+
+123,.02       PATIENT NAME           0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      OCT 08, 2001 
+              HELP-PROMPT:      Enter the name of a patient or the last 4 digits of the SSN. 
+              DESCRIPTION:
+                                This is the Patient who the consult or request was ordered for.  Enter the patient's name, or the last four digits of the SSN.  
+
+              CROSS-REFERENCE:  123^AD^MUMPS 
+                                1)= I $P(^GMR(123,DA,0),"^",7) S GMRCD=9999999-$P(^GMR(123,DA,0),"^",7),^GMR(123,"AD",X,GMRCD,DA)="" K GMRCD
+                                2)= I $P(^GMR(123,DA,0),"^",7) S GMRCD=9999999-$P(^GMR(123,DA,0),"^",7) K ^GMR(123,"AD",X,GMRCD,DA),GMRCD
+                                The "AD" cross-reference allows look up of patient consults in reverse chronological "DATE OF REQUEST" order.  
+
+
+              CROSS-REFERENCE:  123^F 
+                                1)= S ^GMR(123,"F",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"F",$E(X,1,30),DA)
+
+              RECORD INDEXES:   ACP (#102)
+
+123,.03       OE/RR FILE NUMBER      0;3 POINTER TO ORDER FILE (#100)
+
+              LAST EDITED:      NOV 03, 1998 
+              HELP-PROMPT:      Enter the File 100 internal entry number of this record. 
+              DESCRIPTION:
+                                This is the internal entry number of the order in the Orders File (100).  The consult sends CPRS information about the consult which is stored in File 100. This is the IEN of the consult in that file.  
+
+              CROSS-REFERENCE:  123^AC 
+                                1)= S ^GMR(123,"AC",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"AC",$E(X,1,30),DA)
+                                This cross-reference allows determining the request entry in 123 based on the ORIFN from OE/RR.  
+
+
+
+123,.04       PATIENT LOCATION       0;4 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      OCT 15, 2001 
+              HELP-PROMPT:      Enter the Hospital Location of this patient. 
+              DESCRIPTION:
+                                This is the location of the patient when the consult/request order was placed.  
+
+              CROSS-REFERENCE:  123^AL 
+                                1)= S ^GMR(123,"AL",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"AL",$E(X,1,30),DA)
+
+
+123,.05       ORDERING FACILITY      0;21 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      MAY 02, 1996 
+              HELP-PROMPT:      If this is a consult/request sent to another Institution, then this is the SENDING hospital/institution. 
+              DESCRIPTION:      This field contains the number, from file 4, of the institution/hospital that is requesting the consult.  This field is mandatory if the consult/ request is being sent to another hospital/institution, so that routing 
+                                information can be obtained in order to return the results to the sending hospital/institution.  
+
+
+123,.06       REMOTE CONSULT FILE ENTRY 0;22 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1.N) X
+              LAST EDITED:      DEC 03, 2001 
+              HELP-PROMPT:      Type a number between 1 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:      This is the ^GMR(123, file number of the consult from a foreign database.  It is stored here so that when the consult is returned in an HL7 message, it can be located at the sending facility.  Also, if the sending facility
+                                needs to send updated consult information to the receiving facility, this number will reference the consult number there so that the data can be added/ammended and tracking information can be updated.  
+
+              RECORD INDEXES:   AIFC (#111)
+
+123,.07       ROUTING FACILITY       0;23 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      DEC 03, 2001 
+              HELP-PROMPT:      Enter the institution for routing updates 
+              DESCRIPTION:
+                                This field will contain the INSTITUTION to which communications and updates regarding this request will be routed.  If the request is being requested and performed locally, this field will be blank. 
+
+              RECORD INDEXES:   AIFC (#111)
+
+123,.1        DISPLAY TEXT OF ITEM ORDERED 1.11;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      JUL 12, 1998 
+              HELP-PROMPT:      Enter the display text the user selected to place the order. 
+              DESCRIPTION:      This is the display text of the item ordered.  If the order was placed using a quick order, then the Display text is the text from the Order Dialog File.  If the order was placed by selecting an Orderable Item, then the
+                                text is the Print Name from the Orderable Item file.  
+
+
+123,.125      IFC ROLE               12;5 SET
+
+                                'P' FOR PLACER; 
+                                'F' FOR FILLER; 
+              LAST EDITED:      JUL 13, 2001 
+              DESCRIPTION:      This field will define the role of the particular VistA system in the fullfillment of the inter-facility consult. This facilitates proper HL7 message formats.  
+                                 
+                                PLACER indicates that this VistA system originated and ordered this request. 
+                                 
+                                FILLER indicates that this request was generated at the institution in the ORDERING FACILITY field.  
+
+
+123,.126      REMOTE ORDERING PROVIDER 12;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<2) X
+              LAST EDITED:      FEB 04, 2002 
+              HELP-PROMPT:      Answer must be 2-40 characters in length 
+              DESCRIPTION:
+                                This field contains the name of the requesting provider of an inter-facility consult. This field is only defined on an inter-facility consult on file at a consulting site. 
+
+              CROSS-REFERENCE:  123^AIP^MUMPS 
+                                1)= S ^GMR(123,"AIP",$E(X,1,40),DA)=""
+                                2)= K ^GMR(123,"AIP",$E(X,1,40),DA)
+
+
+123,.131      IFC REMOTE SERVICE NAME 13;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>63!($L(X)<3) X
+              LAST EDITED:      NOV 07, 2001 
+              HELP-PROMPT:      Answer must be 3-63 characters in length. 
+              DESCRIPTION:
+                                This field holds the name of the service that will perform the Inter- facility Consult at the remote facility. 
+
+
+123,.132      REMOTE REQUESTOR PHONE 13;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      DEC 20, 2001 
+              HELP-PROMPT:      Answer must be 1-20 characters in length 
+              DESCRIPTION:      This field will contain the telephone number of the remote requestor of an inter-facility consult. This will be displayed with the consult and can expedite communication between requesting provider and consultant.  
+                                 
+                                This field is derived from the OFFICE PHONE field of the NEW PERSON file. 
+
+
+123,.133      REMOTE REQUESTOR DIG PAGER 13;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      DEC 20, 2001 
+              HELP-PROMPT:      Answer must be 1-20 characters in length 
+              DESCRIPTION:      This field contains the digital pager number of a remote requesting provider if this is an inter-facility consult.  This may expedite communication between the requesting provider and the consultant. 
+                                 
+                                This data in this field is derived from the DIGITAL PAGER field of the NEW PERSON file. 
+
+
+123,1         TO SERVICE             0;5 POINTER TO REQUEST SERVICES FILE (#123.5) (Required)
+
+              LAST EDITED:      FEB 06, 2008 
+              HELP-PROMPT:      Enter the name of the service that will complete the consult. 
+              DESCRIPTION:
+                                This is the "TO" service/specialty.  This service is responsible for completion of the consult/request.  
+
+              CROSS-REFERENCE:  123^C 
+                                1)= S ^GMR(123,"C",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"C",$E(X,1,30),DA)
+                                This cross reference allows searching for all consults/requests by specific service/specialty.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^123^70 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^GMR(123,D0,70)):^(70),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y X ^DD(123,1,1,2,1.1) S DIH=$G(^GMR(123,DIV(0),70)),DIV=X S $P(^(70),U,1)=DIV,DIH=123,DIG=70 D ^DICR
+                                1.1)= S X=DIV X ^DD(123,1,1,2,49.2) S X=$P($P(Y(102),$C(59)_$P(Y(101),U,1)_":",2),$C(59)) S D0=I(0,0)
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^GMR(123,D0,70)):^(70),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y X ^DD(123,1,1,2,2.1) S DIH=$G(^GMR(123,DIV(0),70)),DIV=X S $P(^(70),U,1)=DIV,DIH=123,DIG=70 D ^DICR
+                                2.1)= S X=DIV X ^DD(123,1,1,2,59.2) S Y(101)=$S($D(^GMR(123.5,D0,30)):^(30),1:"") S X=$P($P(Y(102),$C(59)_$P(Y(101),U,1)_":",2),$C(59)) S D0=I(0,0)
+                                49.2)= S I(0,0)=$G(D0),D0=DIV S:'D0!'$D(^GMR(123.5,+D0,0)) D0=-1 S Y(102)=$C(59)_$P($G(^DD(123.5,150,0)),U,3),Y(101)=$S($D(^GMR(123.5,D0,30)):^(30),1:"")
+                                59.2)= S I(0,0)=$G(D0),Y(1)=$S($D(^GMR(123,D0,0)):^(0),1:""),D0=$P(Y(1),U,5) S:'D0!'$D(^GMR(123.5,+D0,0)) D0=-1 S Y(102)=$C(59)_$P($G(^DD(123.5,150,0)),U,3)
+                                CREATE VALUE)= TO SERVICE:ADMIN
+                                DELETE VALUE)= TO SERVICE:ADMIN
+                                FIELD)= ADMIN
+                                Whenever the TO SERVICE field is updated, this trigger will set the ADMINISTRATIVE field of the REQUEST/CONSULTATION file (#123) to the value of the ADMINISTRATIVE field in the REQUEST SERVICES file (#123.5).  Requests
+                                marked as administrative shall be excluded from the Consults Performance Monitor report [GMRC RPT PERF MONITOR] 
+
+
+              RECORD INDEXES:   AE (#81)
+
+123,1.01      CLINICAL PROCEDURE     1;1 POINTER TO CP DEFINITION FILE (#702.01)
+
+              LAST EDITED:      OCT 08, 2001 
+              HELP-PROMPT:      Enter a CP DEFINITION 
+              DESCRIPTION:
+                                This field contains the CP DEFINITION that is associated with this request.  
+
+              RECORD INDEXES:   ACP (#102)
+
+123,2         FROM                   0;6 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      JUL 12, 1998 
+              HELP-PROMPT:      Enter the hospital location that is sending the order. 
+              DESCRIPTION:
+                                This field represents the location that sent the order to the receiving location.  
+
+              CROSS-REFERENCE:  123^H 
+                                1)= S ^GMR(123,"H",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"H",$E(X,1,30),DA)
+                                This cross-reference allows the location that sent the consult to track what happened to their consults.  
+
+
+
+123,3         DATE OF REQUEST        0;7 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 18, 1992 
+              HELP-PROMPT:      Enter the date/time this order was released from CPRS. 
+              DESCRIPTION:
+                                This is the date and time the order was released from OE/RR.  If the TO service entered the order stub through the Add Order (AD) action, this is the service-specified request date.  
+
+              CROSS-REFERENCE:  123^AD1^MUMPS 
+                                1)= I $P(^GMR(123,DA,0),"^",2) S ^GMR(123,"AD",$P(^GMR(123,DA,0),"^",2),9999999-X,DA)=""
+                                2)= I $P(^GMR(123,DA,0),"^",2) K ^GMR(123,"AD",$P(^GMR(123,DA,0),"^",2),9999999-X,DA)
+                                This cross-reference provides consults by patient by inverted order date.  
+
+
+              CROSS-REFERENCE:  123^E 
+                                1)= S ^GMR(123,"E",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"E",$E(X,1,30),DA)
+                                This cross reference allows searching for consults based on Date of Request.  
+
+
+              RECORD INDEXES:   AE (#81)
+
+123,4         PROCEDURE/REQUEST TYPE 0;8          VARIABLE POINTER
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 101  1    O            n   Enter Order Item 
+             123.3    2    PROC         n   Consult Procedure 
+                                         
+              LAST EDITED:      OCT 15, 2001 
+              HELP-PROMPT:      Enter the type of procedure being requested (e.g., EKG, UGI, etc.). 
+              DESCRIPTION:
+                                This is the procedure that was requested via CPRS while ordering.  
+
+              CROSS-REFERENCE:  123^AP 
+                                1)= S ^GMR(123,"AP",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"AP",$E(X,1,30),DA)
+
+
+123,5         URGENCY                0;9 POINTER TO PROTOCOL FILE (#101)
+
+              LAST EDITED:      JUL 09, 1997 
+              HELP-PROMPT:      Enter the urgency for this order (STAT, ROUTINE, NEXT AVAILABLE, EMERGENCY, TODAY, WITHIN 24 HOURS, WITHIN 48 HOURS, WITHIN 72 HOURS, etc.) 
+              DESCRIPTION:      This field describes the urgency of the consult. Urgencies are sent in the PROTOCOL File (#101) as: STAT, EMERGENCY, INPATIENT, NEXT AVAILABLE, NOW, ROUTINE, TODAY, WITHIN 24 HOURS, WITHIN 48 HOURS, WITHIN 72 HOURS, WITHIN
+                                1 WEEK, WITHIN 1 MONTH. 
+
+
+123,6         PLACE OF CONSULTATION  0;10 POINTER TO PROTOCOL FILE (#101)
+
+              LAST EDITED:      JUN 11, 1997 
+              HELP-PROMPT:      Type The Place Of Consultation: Bedside, Consultant's Choice, On Call, Emergency Room, EKG Lab. 
+              DESCRIPTION:      This is the place where the consultation will take place.  Choose from: 
+                                 
+                                    B - Bedside 
+                                    C - Consultant's Choice 
+                                    E - Emergency Room 
+                                    O - On Call 
+                                    EKG - EKG Lab 
+
+
+123,7         ATTENTION              0;11 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 05, 1991 
+              HELP-PROMPT:      Enter the name of the Consult Service provider to be alerted about the consult. 
+              DESCRIPTION:      Enter the name of a person you would like to alert about the consult.  This person will be sent a notification that a new consult exists.  In order for the person to see this type of notification, the person must be set up
+                                to receive "New service consult" notifications.  
+
+
+123,8         CPRS STATUS            0;12 POINTER TO ORDER STATUS FILE (#100.01)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$$SCREEN^XTID(100.01,,Y_"","")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 03, 2006 
+              HELP-PROMPT:      Enter the CPRS STATUS of this consult (e.g., pending, active, complete, etc.). 
+              DESCRIPTION:
+                                This is the current CPRS status of the consult or request order.  The Action Types which may be taken from the "Select Action: " prompt update the status in this file as well as in the Orders File (100).  
+
+              SCREEN:           S DIC("S")="I '$$SCREEN^XTID(100.01,,Y_"","")"
+              EXPLANATION:      Data Standardization of Order Status (#100.01) file.
+              CROSS-REFERENCE:  123^D 
+                                1)= S ^GMR(123,"D",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"D",$E(X,1,30),DA)
+                                This cross-reference allows searching based on the OE/RR status.  
+
+
+              CROSS-REFERENCE:  123^AF^MUMPS 
+                                1)= I "^5^6^"[(U_X_U) N B,C,D I $D(^SC("AWAS1",DA)) S B=$O(^SC("AWAS1",DA,0)),C=$O(^SC("AWAS1",DA,B,0)),D=$O(^SC("AWAS1",DA,B,C,0)) S $P(^SC(B,"S",C,1,D,"CONS"),U)="" K ^SC("AWAS1",DA)
+                                2)= Q
+                                This x-ref removes the consult link to an appointment, if one exists, when this field has a status change to Pending (5) or Active (6).  
+
+
+              RECORD INDEXES:   AE (#81)
+
+123,9         LAST ACTION TAKEN      0;13 POINTER TO REQUEST ACTION TYPES FILE (#123.1)
+
+              LAST EDITED:      DEC 06, 1991 
+              HELP-PROMPT:      Enter the last action taken on the consult (From file 123.1). 
+              DESCRIPTION:
+                                This is the last Action Type taken that updated the activity tracking audit trail.  
+
+
+123,10        SENDING PROVIDER       0;14 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 12, 2001 
+              HELP-PROMPT:      Enter the name of the Ordering Provider. 
+              DESCRIPTION:
+                                This is the provider who originated the order.  
+
+              CROSS-REFERENCE:  123^G 
+                                1)= S ^GMR(123,"G",$E(X,1,30),DA)=""
+                                2)= K ^GMR(123,"G",$E(X,1,30),DA)
+                                This index allows look-up of consults by sending provider. 
+
+
+
+123,11        RESULT                 0;15         VARIABLE POINTER
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 691  2    ECHO             Select ECHO report 
+             691.1    3    CATH             Select CATH report 
+             691.5    4    ECG          n   Select ECG report 
+             691.6    5    HOLTER       n   Select HOLTER result 
+             691.7    6    ETT          n   Select ETT report 
+             691.8    7    EP           n   Select EP report 
+                 694  8    HEM          n   Select HEM report 
+                 698  9    G            n   Select GEN IMP report 
+             698.1    10   V            n   Select V LEAD IMPLANT 
+             698.2    11   A            n   Select A LEAD IMPLANT 
+             698.3    12   PS           n   Select SURVEILLANCE report 
+                 699  13   ENDO         n   Select ENDOSCOPY report 
+                 700  14   PFT          n   Select PFT report 
+                 701  15   RHEUM        n   Select RHEUMATOLOGY report 
+                                         
+              LAST EDITED:      DEC 06, 1991 
+              HELP-PROMPT:      Enter the record number for the result in the MEDICINE PACKAGE that contains the results for this consult. 
+              DESCRIPTION:
+                                This is a variable pointer used by the GMRC MEDICINE PKG INTERFACE option to associate results in the Medicine Procedure Files with a consult/request order.  
+
+
+123,12        MODE OF ENTRY          0;16 SET
+
+                                '1' FOR SERVICE FORCED ENTRY; 
+              LAST EDITED:      APR 25, 1998 
+              HELP-PROMPT:      Enter '1' if this is a service-entered consult. 
+              DESCRIPTION:      When a consult or request is entered by the service, rather than through CPRS order processing, this field will be set to "1" to indicate the Service forced the entry.  This forcing means there is no electronic signature
+                                related to the order.  
+
+
+123,13        REQUEST TYPE           0;17 SET (Required)
+
+                                'C' FOR Consult; 
+                                'P' FOR Procedure; 
+              LAST EDITED:      DEC 14, 1999 
+              DESCRIPTION:
+                                This field will indicate whether the order is a consult or procedure request order.  Based on this fields value, the Consultation Body Header alters to indicate "Consult Type: " or "Procedure Request: ".  
+
+
+123,14        SERVICE RENDERED AS IN OR OUT 0;18 SET
+
+                                'I' FOR inpatient; 
+                                'O' FOR outpatient; 
+              LAST EDITED:      SEP 25, 1991 
+              HELP-PROMPT:      Type I if the service is on an inpatient basis, O if outpatient. 
+              DESCRIPTION:      This field allows the ordering person to indicate if the service is to be rendered on an outpatient or inpatient basis.  This is to alleviate the confusion if patient is currently an inpatient/outpatient but is just about
+                                to be discharged/admitted and become a outpatient/inpatient.  
+
+
+123,15        SIGNIFICANT FINDINGS   0;19 SET
+
+                                'Y' FOR yes; 
+                                'N' FOR no; 
+                                'U' FOR unknown; 
+              LAST EDITED:      APR 23, 1998 
+              HELP-PROMPT:      Enter a value to indicate if significant findings are in the results. 
+              DESCRIPTION:      If significant findings are noted in the consult results, then this field may be marked "Yes", and appropriate comments may be entered in the "Comment" field. "Unknown" is the default. "No" may also be specified to 
+                                indicate the results do not include significant findings.  
+
+
+123,16        TIU RESULT NARRATIVE   0;20 POINTER TO TIU DOCUMENT FILE (#8925)
+
+              LAST EDITED:      MAY 14, 1996 
+              HELP-PROMPT:      Enter the File 8925 internal entry number where the TIU narrative for this consult is stored. 
+              DESCRIPTION:
+                                Pointer to the Text Integration Utilities file (#8925) where consult/request results narrative is stored.  
+
+
+123,17        EARLIEST DATE          0;24 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      JAN 14, 2009 
+              HELP-PROMPT:      Enter earliest date desired for consultation 
+
+123,20        REASON FOR REQUEST     20;0   WORD-PROCESSING #123.01
+
+              DESCRIPTION:
+                                This is the reason for requesting the Consult or Procedure Request.  
+
+
+123,30        PROVISIONAL DIAGNOSIS  30;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>180!($L(X)<2) X
+              LAST EDITED:      MAY 22, 1997 
+              HELP-PROMPT:      Enter a Provisional Diagnosis, 2 to 180 characters in length. 
+              DESCRIPTION:
+                                This is the Provisional Diagnosis the ordering clinician would specify on the Consult Form 513.  
+
+
+123,30.1      PROVISIONAL DIAGNOSIS CODE 30.1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<2) X
+              LAST EDITED:      SEP 24, 1999 
+              HELP-PROMPT:      Answer must be 2-20 characters in length 
+              DESCRIPTION:
+                                This field is used to store the coded portion of the Provisional Diagnosis if an ICD-9 coded diagnosis is sent via CPRS. 
+
+
+123,40        REQUEST PROCESSING ACTIVITY 40;0 DATE Multiple #123.02
+
+              LAST EDITED:      JUN 19, 2002 
+              DESCRIPTION:
+                                Maintains history of processing actions.  
+
+
+              INDEXED BY:       ACTIVITY & REMOTE DATE/TIME OF FILING & DATE/TIME OF ACTUAL ACTIVITY (AC)
+
+123.02,.01      DATE/TIME OF ACTION ENTRY 0;1 DATE (Required)
+
+                ACTIVITY ENTRY DATE                                                                                            
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 19, 2002 
+                HELP-PROMPT:      Enter the Date/Time you are entering this activity. 
+                DESCRIPTION:
+                                  This is the actual date and time the activity tracking update was added to the REQUEST PROCESSING ACTIVITY multiple.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  123.02^B 
+                                  1)= S ^GMR(123,DA(1),40,"B",$E(X,1,30),DA)=""
+                                  2)= K ^GMR(123,DA(1),40,"B",$E(X,1,30),DA)
+
+
+123.02,.21      REMOTE ENTERING PERSON 2;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>64!($L(X)<2) X
+                LAST EDITED:      DEC 07, 2001 
+                HELP-PROMPT:      Answer must be 2-64 characters in length 
+                DESCRIPTION:      This is the free text name of the individual that entered this activity at the facility referenced in the ROUTING FACILITY field. 
+                                   
+                                  This field will only be popluated for activities entered on a remote VistA system for an inter-facility consult. 
+
+
+123.02,.22      REMOTE RESPONSIBLE PERSON 2;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>64!($L(X)<2) X
+                LAST EDITED:      DEC 07, 2001 
+                HELP-PROMPT:      Answer must be 2-64 characters in length 
+                DESCRIPTION:      This is the free text name of the individual that is responsible for this activity at the facility referenced in the ROUTING FACILITY field.  
+                                   
+                                  This field will only be popluated for activities entered on a remote VistA system for an inter-facility consult.         
+
+
+123.02,.23      REMOTE ACTIVITY TIME ZONE 2;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                LAST EDITED:      DEC 07, 2001 
+                HELP-PROMPT:      Answer must be 3 characters in length 
+                DESCRIPTION:      This is the short representation of the time zone in which this activity took place.  When an inter-facility consult update message is generated at a remote facility, the current MAILMAN TIME ZONE at that facility is
+                                  sent with the message and stored in this field.  
+
+
+123.02,.24      REMOTE RESULT          2;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<2) X
+                LAST EDITED:      DEC 07, 2001 
+                HELP-PROMPT:      Answer must be 2-60 characters in length. 
+                DESCRIPTION:      This field will contain a reference to a  result stored on a remote VistA system. 
+                                   
+                                  Result will be in form: 
+                                    ien;source file of result;institution ien where result resides 
+
+
+123.02,.25      REMOTE DATE/TIME OF FILING 2;5 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAR 23, 2002 
+                HELP-PROMPT:      Enter the date/time the activity was actually filed at the remote site 
+                DESCRIPTION:      This field will hold the date/time this particular activity was filed at the remote facility.  This field will be used in conjunction with the DATE/TIME OF ACTUAL ACTIVITY field to detect and reject the filing of 
+                                  duplicate activities.  
+
+                RECORD INDEXES:   AC (#112)
+
+123.02,.31      PREVIOUS REMOTE SERVICE NAME 3;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>63!($L(X)<3) X
+                LAST EDITED:      DEC 07, 2001 
+                HELP-PROMPT:      Answer must be 3-63 characters in length. 
+                DESCRIPTION:
+                                  This field holds the name of the service that the inter-facility consult was was directed to at the remote site prior to being forwarded.  
+
+
+123.02,1        ACTIVITY               0;2 POINTER TO REQUEST ACTION TYPES FILE (#123.1)
+
+                LAST EDITED:      MAR 07, 2002 
+                HELP-PROMPT:      Enter the activity being updated (From file 123.1) 
+                DESCRIPTION:
+                                  This is the activity that is being updated.  
+
+                RECORD INDEXES:   AC (#112)
+
+123.02,2        DATE/TIME OF ACTUAL ACTIVITY 0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ETXS",%DT(0)="-NOW" D ^%DT K %DT(0) S X=Y K:Y<1 X
+                LAST EDITED:      JUN 19, 2002 
+                HELP-PROMPT:      ENTER BOTH DATE AND TIME.  FUTURE DATE/TIME NOT PERMITTED. 
+                DESCRIPTION:
+                                  The Date and time the actual activity was done.  This may be different than the DATE/TIME OF ACTION ENTRY for certain actions.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                RECORD INDEXES:   AC (#112)
+
+123.02,3        WHO'S RESPONSIBLE FOR ACTIVITY 0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      FEB 27, 1992 
+                HELP-PROMPT:      Enter the name of the provider responsible for the activity. 
+                DESCRIPTION:
+                                  The clinician or service person responsible for the activity.  
+
+
+123.02,4        WHO ENTERED ACTIVITY   0;5 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      MAY 07, 1991 
+
+123.02,5        COMMENT                1;0   WORD-PROCESSING #123.25   (NOWRAP)
+
+                LAST EDITED:      MAY 07, 1991 
+                DESCRIPTION:
+                                  A comment may be added here which would be associated with the Action Type selected at the "Select Action: " prompt.  
+
+
+123.02,6        FORWARDED FROM         0;6 POINTER TO REQUEST SERVICES FILE (#123.5)
+
+                LAST EDITED:      APR 10, 2006 
+                HELP-PROMPT:      Enter the name of the Hospital Service which is forwarding the consult. 
+                DESCRIPTION:
+                                  This is the Service which forwarded the Consult to the new TO SERVICE.  It is maintained for an audit trail.  
+
+                CROSS-REFERENCE:  123^AD^MUMPS 
+                                  1)= N B S B=DA(1) N A,C,D,E S A="AWAS1" I $D(^SC(A,B)) S C=$O(^SC(A,B,0)),D=$O(^SC(A,B,C,0)),E=$O(^SC(A,B,C,D,0)) S $P(^SC(C,"S",D,1,E,"CONS"),U)="" K ^SC("AWAS1",B)
+                                  2)= Q
+                                  This x-ref removes the appointment link to the consult when this field is filled in.  
+
+
+
+123.02,7        PREVIOUSLY ASSIGNED TO 0;7 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAY 19, 2010 
+                HELP-PROMPT:      Enter the name of the provider who was the previous attention value assigned on this consult. 
+                DESCRIPTION:
+                                  This is the provider who was previously identified in the ATTENTION (#7) field of the REQUEST/CONSULTATION (#123) file.  
+
+
+123.02,8        PRINTED TO             0;8 POINTER TO DEVICE FILE (#3.5)
+
+                LAST EDITED:      MAY 10, 1992 
+                HELP-PROMPT:      Enter the name of the Printer Device which printed the consult. 
+                DESCRIPTION:
+                                  This is the printer that the CONSULT FORM 513 was printed to upon the orders release from OE/RR or when the Consult/Request order is forwarded from one service to another.  
+
+
+123.02,9        RESULT                 0;9        VARIABLE POINTER
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   8925 1    TIU          n   Note 
+                                         
+                LAST EDITED:      APR 14, 1998 
+                HELP-PROMPT:      Enter the associated result. 
+                DESCRIPTION:
+                                  This is the result that was updated when this activity occurred.  
+
+
+123.02,10       ACTION METHOD          0;10 SET
+
+                                  '1' FOR Consult Actions; 
+                                  '2' FOR Order Actions; 
+                                  '3' FOR GUI Actions; 
+                                  '4' FOR TIU Interface; 
+                LAST EDITED:      APR 25, 1998 
+                HELP-PROMPT:      Enter the number that indicates how the action originated. 
+                DESCRIPTION:
+                                  The action method will identify how the user performed the action, from a consults menu, Order entry menu, a GUI menu, or a TIU interface.  
+
+
+
+
+123,50        ASSOCIATED RESULTS     50;0         VARIABLE POINTER  Multiple #123.03
+
+123.03,.01      ASSOCIATED RESULTS     0;1        VARIABLE POINTER (Multiply asked)
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   8925 1    TIU          n   Note 
+                   691  2    ECHO         n   Select ECHO report 
+               691.1    3    CATH         n   Select CATH report 
+               691.5    4    EKG          n   Select EKG report 
+               691.6    5    HOLTER       n   Select HOLTER report 
+               691.7    6    ETT          n   Select ETT report 
+               691.8    7    EP           n   Select EP report 
+                   694  8    HEM          n   Select HEM report 
+                   698  9    GEN IMP      n   Select GEN IMP report 
+               698.1    10   V LEAD       n   Select V LEAD IMPLANT report 
+               698.2    11   A LEAD       n   Select A LEAD IMPLANT report 
+               698.3    12   PACE         n   Select PACEMAKER report 
+                   699  13   ENDO         n   Select ENDO report 
+               699.5    14   GEN PROC     n   Select GEN PROCEDURE report 
+                   700  15   PFT          n   Select PFT report 
+                   701  16   RHEUM        n   Select RHEUMATOLOGY report 
+                                         
+                LAST EDITED:      JUN 22, 1998 
+                HELP-PROMPT:      Enter the associated result. 
+                DESCRIPTION:      This multiple allows one or more results to be associated with a consult.  
+                                   
+                                  This field invokes IA #147 
+
+                CROSS-REFERENCE:  123.03^B 
+                                  1)= S ^GMR(123,DA(1),50,"B",$E(X,1,30),DA)=""
+                                  2)= K ^GMR(123,DA(1),50,"B",$E(X,1,30),DA)
+                                  3)= Required Index for Variable Pointer
+
+                CROSS-REFERENCE:  123^R 
+                                  1)= S ^GMR(123,"R",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^GMR(123,"R",$E(X,1,30),DA(1),DA)
+
+
+
+
+123,51        REMOTE RESULTS         51;0 DATE Multiple #123.051
+
+              LAST EDITED:      JUL 30, 2001 
+
+              INDEXED BY:       REMOTE ASSOCIATED RESULT & RESULTING SITE (AR)
+
+123.051,.01     REMOTE RESULT DATE     0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      DEC 07, 2001 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  This is the date/time that a remote result was added to the record.  
+
+                CROSS-REFERENCE:  123.051^B 
+                                  1)= S ^GMR(123,DA(1),51,"B",$E(X,1,30),DA)=""
+                                  2)= K ^GMR(123,DA(1),51,"B",$E(X,1,30),DA)
+
+
+123.051,.02     REMOTE ASSOCIATED RESULT 0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+                LAST EDITED:      DEC 07, 2001 
+                HELP-PROMPT:      Answer must be 2-30 characters in length 
+                DESCRIPTION:
+                                  This is the free text representation of a variable pointer from a remote facility. The facility is referenced in the RESULTING SITE field. 
+
+                RECORD INDEXES:   AR (#113)
+
+123.051,.03     RESULTING SITE         0;3 POINTER TO INSTITUTION FILE (#4)
+
+                LAST EDITED:      DEC 07, 2001 
+                DESCRIPTION:
+                                  This field is a pointer to the INSTITUION file and contains the institution that stores the result referenced in the REMOTE ASSOCIATED RESULT FIELD.  
+
+                RECORD INDEXES:   AR (#113)
+
+
+
+123,70        ADMINISTRATIVE         70;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 08, 2008 
+              HELP-PROMPT:      Field is set via a Trigger on TO SERVICE 
+              DESCRIPTION:      This field is set via a trigger on TO SERVICE which will set this field to the value found in the ADMINISTRATIVE field of the REQUEST SERVICES file (#123.5).  Requests marked as administrative shall be excluded from the
+                                Consults Performance Monitor report [GMRC RPT PERF MONITOR] 
+
+              WRITE AUTHORITY:  ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the TO SERVICE field of the REQUEST/CONSULTATION File 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+A LEAD IMPLANT (#698.2)           RESULT (#11)
+
+CARDIAC CATHETERIZATION (#691.1)  RESULT (#11)
+
+CP DEFINITION (#702.01)           CLINICAL PROCEDURE (#1.01)
+
+DEVICE (#3.5)                     REQUEST PROCESSING ACTIVITY:PRINTED TO (#8)
+
+ECHO (#691)                       RESULT (#11)
+
+ELECTROCARDIOGRAM (EKG) (#691.5)  RESULT (#11)
+
+ELECTROPHYSIOLOGY (EP) (#691.8)   RESULT (#11)
+
+ENDOSCOPY/CONSULT (#699)          RESULT (#11)
+
+EXERCISE TOLERANCE TEST (#691.7)  RESULT (#11)
+
+GENERATOR IMPLANT (#698)          RESULT (#11)
+
+GMRC PROCEDURE (#123.3)           PROCEDURE/REQUEST TYPE (#4)
+
+HEMATOLOGY (#694)                 RESULT (#11)
+
+HOLTER (#691.6)                   RESULT (#11)
+
+HOSPITAL LOCATION (#44)           PATIENT LOCATION (#.04)
+                                  FROM (#2)
+
+INSTITUTION (#4)                  ORDERING FACILITY (#.05)
+                                  ROUTING FACILITY (#.07)
+                                  REMOTE RESULTS:RESULTING SITE (#.03)
+
+NEW PERSON (#200)                 ATTENTION (#7)
+                                  SENDING PROVIDER (#10)
+                                  REQUEST PROCESSING ACTIVITY:WHO'S RESPONSIBLE FOR ACTIVITY (#3)
+                                  WHO ENTERED ACTIVITY (#4)
+                                  PREVIOUSLY ASSIGNED TO (#7)
+
+ORDER (#100)                      OE/RR FILE NUMBER (#.03)
+
+ORDER STATUS (#100.01)            CPRS STATUS (#8)
+
+PACEMAKER SURVEILLANCE (#698.3)   RESULT (#11)
+
+PATIENT (#2)                      PATIENT NAME (#.02)
+
+PROTOCOL (#101)                   PROCEDURE/REQUEST TYPE (#4)
+                                  URGENCY (#5)
+                                  PLACE OF CONSULTATION (#6)
+
+PULMONARY FUNCTION TESTS 
+                   (#700)         RESULT (#11)
+
+REQUEST ACTION TYPES (#123.1)     LAST ACTION TAKEN (#9)
+                                  REQUEST PROCESSING ACTIVITY:ACTIVITY (#1)
+
+REQUEST SERVICES (#123.5)         TO SERVICE (#1)
+                                  REQUEST PROCESSING ACTIVITY:FORWARDED FROM (#6)
+
+RHEUMATOLOGY (#701)               RESULT (#11)
+
+TIU DOCUMENT (#8925)              TIU RESULT NARRATIVE (#16)
+
+V LEAD IMPLANT (#698.1)           RESULT (#11)
+
+
+File #123
+
+  Record Indexes:
+
+  ACP (#102)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Index on the PATIENT NAME and CLINICAL PROCEDURE fields
+      Description:  This INDEX is used to list all Clinical Procedure requests for a patient.  
+        Set Logic:  S ^GMR(123,"ACP",X(1),X(2),DA)=""
+       Kill Logic:  K ^GMR(123,"ACP",X(1),X(2),DA)
+       Whole Kill:  K ^GMR(123,"ACP")
+             X(1):  CLINICAL PROCEDURE  (123,1.01)  (Subscr 1)  (forwards)
+             X(2):  PATIENT NAME  (123,.02)  (Subscr 2)  (forwards)
+
+  AE (#81)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Index by SERVICE, STATUS, DATE OF REQUEST
+      Description:  This cross reference is used for services to see all consults by service, OE/RR status and Date of Request.  
+        Set Logic:  S ^GMR(123,"AE",$E(X(1),1,5),$E(X(2),1,5),$E(X(3),1,20),DA)=""
+       Kill Logic:  K ^GMR(123,"AE",$E(X(1),1,5),$E(X(2),1,5),$E(X(3),1,20),DA)
+       Whole Kill:  K ^GMR(123,"AE")
+             X(1):  TO SERVICE  (123,1)  (Subscr 1)  (Len 5)  (forwards)
+             X(2):  CPRS STATUS  (123,8)  (Subscr 2)  (Len 5)  (forwards)
+             X(3):  DATE OF REQUEST  (123,3)  (Subscr 3)  (Len 20)  (forwards)
+                      Transform (Storage):  S X=9999999-X
+
+  AIFC (#111)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Index on ROUTING FACILITY & REMOTE CONSULT #
+        Set Logic:  S ^GMR(123,"AIFC",$E(X(1),1,5),$E(X(2),1,9),DA)=""
+       Kill Logic:  K ^GMR(123,"AIFC",$E(X(1),1,5),$E(X(2),1,9),DA)
+       Whole Kill:  K ^GMR(123,"AIFC")
+             X(1):  ROUTING FACILITY  (123,.07)  (Subscr 1)  (Len 5)  (forwards)
+             X(2):  REMOTE CONSULT FILE ENTRY  (123,.06)  (Subscr 2)  (Len 9)  (forwards)
+
+Subfile #123.02
+
+  Record Indexes:
+
+  AC (#112)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Index on activity, actual date of activity and remote date of activity
+      Description:  This index will be built using the ACTIVITY (field #1), ACTUAL DATE/TIME OF ACTIVITY (field #2) and the REMOTE DATE/TIME OF FILING (field #.25).  This index will be used to prevent an activity from being filed more than once, in case
+                    of re-transmission of the activity from the remote site.  
+        Set Logic:  S ^GMR(123,DA(1),40,"AC",$E(X(1),1,3),$E(X(2),1,17),$E(X(3),1,17),DA)=""
+       Kill Logic:  K ^GMR(123,DA(1),40,"AC",$E(X(1),1,3),$E(X(2),1,17),$E(X(3),1,17),DA)
+       Whole Kill:  K ^GMR(123,DA(1),40,"AC")
+             X(1):  ACTIVITY  (123.02,1)  (Subscr 1)  (Len 3)  (forwards)
+             X(2):  REMOTE DATE/TIME OF FILING  (123.02,.25)  (Subscr 2)  (Len 17)  (forwards)
+             X(3):  DATE/TIME OF ACTUAL ACTIVITY  (123.02,2)  (Subscr 3)  (Len 17)  (forwards)
+
+Subfile #123.051
+
+  Record Indexes:
+
+  AR (#113)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Index on REMOTE ASSOCIATED RESULT and RESULTING SITE
+      Description:  This index is used to keep track of the remote results associated with a particular IFC. 
+        Set Logic:  S ^GMR(123,DA(1),51,"AR",$E(X(1),1,30),$E(X(2),1,10),DA)=""
+       Kill Logic:  K ^GMR(123,DA(1),51,"AR",$E(X(1),1,30),$E(X(2),1,10),DA)
+       Whole Kill:  K ^GMR(123,DA(1),51,"AR")
+             X(1):  REMOTE ASSOCIATED RESULT  (123.051,.02)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  RESULTING SITE  (123.051,.03)  (Subscr 2)  (Len 10)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+CAPTIONED                                         USER #0    
+GMRC CONSULTS LIST            MAY 12, 1992@22:33  USER #0                                                                                                                                                                          [GMRC CONSULTS LIST HEADER]
+GMRC CONSULTS LIST HEADER     JUL 07, 1995@11:36  USER #0                                                                                                                                                                                                    @
+
+SORT TEMPLATE(S):
+GMRC CONSULTS LIST            MAY 14, 1992@15:37  USER #0    
+SORT BY: ]#TO//    (User is asked range)
+  WITHIN TO, SORT BY: -+@DATE OF REQUEST// (DATE OF REQUEST not null)
+
+
+FORM(S)/BLOCK(S):

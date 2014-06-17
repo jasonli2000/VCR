@@ -1,0 +1,181 @@
+STANDARD DATA DICTIONARY #697.5 -- MEDICAL DIAGNOSIS/ICD CODES FILE                                                                                                                                                               MAY 20,2014@15:37:38  PAGE 1
+STORED IN ^MCAR(697.5,  (907 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                        (VERSION 2.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+THIS FILE CONTAINS VARIOUS MEDICAL DIAGNOSES WITH A SCREEN TO DIFFERENTIATE THE AREA OF MEDICINE ASSOCIATED WITH IT.  IT ALSO STORES THE VARIOUS ICD CODES ASSOCIATED WITH EACH DIAGNOSIS 
+
+
+              DD ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: DIAGNOSIS field (#.01) of the DIAGNOSIS sub-field (#691.15) of the ECHO File (#691) 
+               INDICATION field (#.01) of the INDICATION sub-field (#691.18) of the CARDIAC CATHETERIZATION File (#691.1) 
+               CARDIAC DX field (#6) of the ELECTROPHYSIOLOGY (EP) File (#691.8) 
+               ARRHYTHMIA DX field (#.01) of the ARRHYTHMIA DX sub-field (#691.805) of the ELECTROPHYSIOLOGY (EP) File (#691.8) 
+               FINAL DIAGNOSIS field (#.01) of the FINAL DIAGNOSIS sub-field (#694.035) of the HEMATOLOGY File (#694) 
+               PROVISIONAL DX field (#.01) of the PROVISIONAL DX sub-field (#694.038) of the HEMATOLOGY File (#694) 
+               PRIMARY DIAGNOSIS field (#204) of the ENDOSCOPY/CONSULT File (#699) 
+               IMPRESSION field (#6) of the LOCATION EVALUATED sub-field (#699.01) of the ENDOSCOPY/CONSULT File (#699) 
+               SECONDARY DIAGNOSIS field (#.01) of the SECONDARY DIAGNOSIS sub-field (#699.75) of the ENDOSCOPY/CONSULT File (#699) 
+               CONSULT DX field (#.01) of the CONSULT DX sub-field (#700.01) of the PULMONARY FUNCTION TESTS File (#700) 
+               DIAGNOSIS field (#.01) of the DIAGNOSIS sub-field (#701.0615) of the RHEUMATOLOGY File (#701) 
+               
+
+CROSS
+REFERENCED BY: DIAGNOSIS(B), DIAGNOSIS(C), PROCEDURE(D), DIAGNOSIS(E), PROCEDURE(F), DIAGNOSIS(G), SPECIAL DIAGNOSIS TYPE(H), PROCEDURE NAME(I)
+
+697.5,.01     DIAGNOSIS              0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>50!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      MAY 10, 1996 
+              HELP-PROMPT:      Answer must be 3-50 characters in length. 
+              DESCRIPTION:
+                                This field identifies a list of diagnoses for the various medical tests.  
+
+              CROSS-REFERENCE:  697.5^B 
+                                1)= S ^MCAR(697.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^MCAR(697.5,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  697.5^C^KWIC 
+                                1)= S %1=1 F %=1:1:$L(X)+1 S I=$E(X,%) I "(,.?! '-/&:;)"[I S I=$E($E(X,%1,%-1),1,30),%1=%+1 I $L(I)>2,^DD("KWIC")'[I S ^MCAR(697.5,"C",I,DA)=""
+                                2)= S %1=1 F %=1:1:$L(X)+1 S I=$E(X,%) I "(,.?! '-/&:;)"[I S I=$E($E(X,%1,%-1),1,30),%1=%+1 I $L(I)>2 K ^MCAR(697.5,"C",I,DA)
+                                This cross-reference indexes the file by each key word in the DIAGNOSIS field (#1).  
+
+
+              CROSS-REFERENCE:  697.5^E^MUMPS 
+                                1)= F %=0:0 S %=$O(^MCAR(697.5,DA,4,%)) Q:%'>0  I $D(^(%,0)) S %1=$P(^(0),U,1) I $L(%1) S ^MCAR(697.5,"A."_%1,X,DA)=""
+                                2)= F %=0:0 S %=$O(^MCAR(697.5,DA,4,%)) Q:%'>0  I $D(^(%,0)) S %1=$P(^(0),U,1) I $L(%1) K ^MCAR(697.5,"A."_%1,X,DA)
+                                Sorts Diagnosis by Procedure Types 
+
+
+              CROSS-REFERENCE:  697.5^G^MUMPS 
+                                1)= I $D(^MCAR(697.5,DA,3)) S %=$P(^(3),U),^MCAR(697.5,"A."_%,X,DA)=""
+                                2)= I $D(^MCAR(697.5,DA,3)) S %=$P(^(3),U) K ^MCAR(697.5,"A."_%,X,DA)
+                                This stores the list of special diagnosis types 
+
+
+
+697.5,1       ICD CODE               2;0 POINTER Multiple #697.51 (Add New Entry without Asking)
+
+              DESCRIPTION:      This field is a multiple field which stores ICD codes for the various Diagnoses. It is not being used at the present time and is expected to be converted to a singular field, so as to facilitate looking up diagnoses by ICD
+                                code, in the future.  
+
+
+697.51,.01      ICD CODE               0;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Multiply asked)
+
+                LAST EDITED:      MAR 02, 1989 
+                HELP-PROMPT:      Enter the ICD code with which this diagnosis is associated. 
+                DESCRIPTION:
+                                  This field identifies the specific ICD code for this diagnosis 
+
+                CROSS-REFERENCE:  697.51^B 
+                                  1)= S ^MCAR(697.5,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^MCAR(697.5,DA(1),2,"B",$E(X,1,30),DA)
+
+
+
+
+697.5,2       SPECIAL DIAGNOSIS TYPE 3;1 SET
+
+                                'H' FOR HEMATOLOGY-PROVISIONAL DIAGNOSIS; 
+                                'HF' FOR HEMATOLOGY-FINAL DIAGNOSIS; 
+                                'PC' FOR PFT CONSULT DIAGNOSIS; 
+                                'C' FOR CARDIOLOGY DIAGNOSIS; 
+                                'G' FOR GI DIAGNOSIS; 
+                                'P' FOR PULMONARY DIAGNOSIS; 
+              LAST EDITED:      MAY 10, 1996 
+              HELP-PROMPT:      Enter the procedure/subspecialty code to which this diagnosis applies. 
+              DESCRIPTION:
+                                This field is used as a screen to allow separation of diagnoses within a specified procedure.  
+
+              SCREEN:           S DIC("S")="I ""^C^G^P^""'[(U_Y_U)"
+              EXPLANATION:      Codes C, G, and P are no longer used.
+              CROSS-REFERENCE:  697.5^H^MUMPS 
+                                1)= S ^MCAR(697.5,"A."_X,$P(^MCAR(697.5,DA,0),U),DA)=""
+                                2)= K ^MCAR(697.5,"A."_X,$P(^MCAR(697.5,DA,0),U),DA)
+                                Sets Special Diagnosis Type List 
+
+
+
+697.5,3       *PROCEDURE             1;0 POINTER Multiple #697.53
+
+              LAST EDITED:      AUG 05, 1992 
+              DESCRIPTION:
+                                This field stores the various procedures with which the diagnosis is applicable.  
+
+
+697.53,.01      PROCEDURE              0;1 POINTER TO PROCEDURE/SUBSPECIALTY FILE (#697.2) (Multiply asked)
+
+                LAST EDITED:      OCT 21, 1991 
+                HELP-PROMPT:      Enter a procedure to which this diagnosis applies. 
+                DESCRIPTION:
+                                  This field identifies the specific procedure that the diagnosis is applicable to. 
+
+                CROSS-REFERENCE:  697.53^B 
+                                  1)= S ^MCAR(697.5,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^MCAR(697.5,DA(1),1,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  697.5^D^MUMPS 
+                                  1)= S ^MCAR(697.5,"D",$E(X,1,30),DA(1))=""
+                                  2)= K ^MCAR(697.5,"D",$E(X,1,30),DA(1))
+                                  This cross-reference indexes the entire file in alphabetical order by procedure.  
+
+
+                CROSS-REFERENCE:  697.5^F^MUMPS 
+                                  1)= S %=$P(^MCAR(697.2,X,0),U,1) I $L(%) S ^MCAR(697.5,"A."_%,$P(^MCAR(697.5,DA(1),0),U),DA(1))=""
+                                  2)= S %=$P(^MCAR(697.2,X,0),U,1) I $L(%) K ^MCAR(697.5,"A."_%,$P(^MCAR(697.5,DA(1),0),U),DA(1))
+                                  Sorts Diagnoses by procedure.  
+
+
+
+
+
+697.5,3.1     PROCEDURE NAME         4;0 Multiple #697.55
+
+              DESCRIPTION:
+                                This field stores the various procedures with which the diagnosis is applicable.  
+
+
+697.55,.01      PROCEDURE NAME         0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  I $D(X) N DO,DIC,Y S DIC="^MCAR(697.2,",DIC(0)="QEZ" D ^DIC S:+Y'=-1 X=$P(Y,U,2) K:+Y<0 X
+                LAST EDITED:      JUL 26, 1994 
+                HELP-PROMPT:      This field stores the various procedures with which the diagnosis is applicable. 
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  697.55^B 
+                                  1)= S ^MCAR(697.5,DA(1),4,"B",$E(X,1,30),DA)=""
+                                  2)= K ^MCAR(697.5,DA(1),4,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  697.5^I^MUMPS 
+                                  1)= S ^MCAR(697.5,"A."_X,$P(^MCAR(697.5,DA(1),0),U),DA(1))=""
+                                  2)= K ^MCAR(697.5,"A."_X,$P(^MCAR(697.5,DA(1),0),U),DA(1))
+                                  Sorts Diagnoses by procedure.  
+
+
+
+
+
+697.5,4       INTEGRATOR ICD CODE    0;2 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      OCT 28, 1991 
+
+
+      FILES POINTED TO                      FIELDS
+
+ICD DIAGNOSIS (#80)               INTEGRATOR ICD CODE (#4)
+                                  ICD CODE:ICD CODE (#.01)
+
+PROCEDURE/SUBSPECIALTY (#697.2)   *PROCEDURE:PROCEDURE (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

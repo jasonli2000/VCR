@@ -1,0 +1,146 @@
+STANDARD DATA DICTIONARY #45.85 -- CENSUS WORKFILE FILE                                                                                                                                                                           MAY 20,2014@15:41:14  PAGE 1
+STORED IN ^DG(45.85,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is a work file of patients who were inpatients as of 11:59pm on acensus date.  File entries are created by the Regenerate Census Workfile option of the Census module.  
+ 
+The file is used to produce the Census Status Report.  Without this workfile, it would be necessary to search all admissions in order to compile this report.  This file eliminates that processing.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: D
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+IDENTIFIED BY: CENSUS DATE (#.04)
+
+CROSS
+REFERENCED BY: CENSUS DATE(ACENSUS), NAME(B), PTF NUMBER(PTF)
+
+45.85,.01     NAME                   0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              DESCRIPTION:
+                                This field contains the name of the inpatient.  
+
+              CROSS-REFERENCE:  45.85^B 
+                                1)= S ^DG(45.85,"B",$E(X,1,30),DA)=""
+                                2)= K ^DG(45.85,"B",$E(X,1,30),DA)
+
+
+45.85,.02     ADMISSION DATE         0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                This field contains the admission date and time associated with this workfile entry.  
+
+
+45.85,.03     ADMISSION ENTRY        0;3 POINTER TO PATIENT MOVEMENT FILE (#405)
+
+              LAST EDITED:      OCT 19, 1990 
+              DESCRIPTION:
+                                This field contains the internal entry number to the patient's admission multiple.  This number represent the admission entry that caused this workfile entry to be created.  
+
+
+45.85,.04     CENSUS DATE            0;4 POINTER TO PTF CENSUS DATE FILE (#45.86)
+
+              LAST EDITED:      APR 12, 1990 
+              DESCRIPTION:      This field contains the CENSUS DATE that the workfile entry is associated.  
+                                 
+                                Note that an admission can be associated with more than one census record but each workfile entry is associated with only one census record.  
+                                 
+                                As an example, a patient who was a continuous inpatient from 8/1/91 to 11/1/92 would have census records for the 9/30/91 and 9/30/92 censuses. This admission would have two workfile entries.  
+
+              CROSS-REFERENCE:  45.85^ACENSUS 
+                                1)= S ^DG(45.85,"ACENSUS",$E(X,1,30),DA)=""
+                                2)= K ^DG(45.85,"ACENSUS",$E(X,1,30),DA)
+
+
+45.85,.05     DISCHARGE DATE         0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                This field contains the discharge date and time associated with this workfile entry.  
+
+
+45.85,.06     WARD ON CENSUS DATE    0;6 POINTER TO WARD LOCATION FILE (#42)
+
+              DESCRIPTION:
+                                This field contains the ward that the patient was on as of 11:59 of the CENSUS DATE.  
+
+
+45.85,.12     PTF NUMBER             0;12 POINTER TO PTF FILE (#45)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,11)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 18, 1990 
+              DESCRIPTION:
+                                This field contains the PTF record that is assoicated with this workfile entry.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,11)=1"
+              EXPLANATION:      Only PTF records allowed.
+              CROSS-REFERENCE:  45.85^PTF 
+                                1)= S ^DG(45.85,"PTF",$E(X,1,30),DA)=""
+                                2)= K ^DG(45.85,"PTF",$E(X,1,30),DA)
+
+
+45.85,101     CENSUS STATUS           ;  COMPUTED
+
+              MUMPS CODE:       D STATUS^DGPTCO1
+              ALGORITHM:        D STATUS^DGPTCO1
+              DESCRIPTION:      This computed field will display/print the census status associated with the admission and CENSUS DATE for this workfile entry.  
+                                 
+                                Possible statuses are:   Open 
+                                                         Closed 
+                                                         Released 
+                                                         Transmitted 
+
+
+45.85,103     CENSUS RECORD NUMBER    ;  COMPUTED
+
+              MUMPS CODE:       D CREC^DGPTCO1
+              ALGORITHM:        D CREC^DGPTCO1
+              LAST EDITED:      MAY 15, 1990 
+              DESCRIPTION:
+                                This computed field displays/prints the census record number associated with the admission and CENSUS DATE for this workfile entry.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+PATIENT (#2)                      NAME (#.01)
+
+PATIENT MOVEMENT (#405)           ADMISSION ENTRY (#.03)
+
+PTF (#45)                         PTF NUMBER (#.12)
+
+PTF CENSUS DATE (#45.86)          CENSUS DATE (#.04)
+
+WARD LOCATION (#42)               WARD ON CENSUS DATE (#.06)
+
+
+
+INPUT TEMPLATE(S):
+DGPT STUFF ENTRY              SEP 26, 1990@11:23  USER #0    
+
+PRINT TEMPLATE(S):
+DGPT FEE BASIS                MAR 23, 2005@15:14  USER #0                                                                                                                                                                       FEE BASIS CENSUS WORKFILE LIST
+DGPT WORKFILE                 MAY 18, 1990@10:43  USER #0                                                                                                                                                                                 CENSUS WORKFILE LIST
+
+SORT TEMPLATE(S):
+DGPT FEE BASIS                MAR 24, 2005@16:55  USER #0    
+SORT BY: @CENSUS DATE:NUMBER//    (User is asked range)
+  WITHIN CENSUS DATE:NUMBER, SORT BY: PTF NUMBER://
+  PTF FIELD: FEE BASIS// (FEE BASIS equals 1 (FEE BASIS))
+    WITHIN FEE BASIS, SORT BY: @CENSUS STATUS//    (User is asked range)
+      WITHIN CENSUS STATUS, SORT BY: NAME// (NAME not null)
+
+DGPT WORKFILE                 JUN 27, 1990@15:04  USER #0    
+SORT BY: @INTERNAL(CENSUS DATE)//    (User is asked range)
+  WITHIN INTERNAL(CENSUS DATE), SORT BY: #WARD:DIVISION;"DIVISION: "//
+    WITHIN WARD:DIVISION, SORT BY: CENSUS STATUS;S2//    (User is asked range)
+      WITHIN CENSUS STATUS, SORT BY: #WARD ON CENSUS DATE//
+        WITHIN WARD ON CENSUS DATE, SORT BY: NAME//
+
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,742 @@
+STANDARD DATA DICTIONARY #126 -- GMRY PATIENT I/O FILE FILE                                                                                                                                                                       MAY 20,2014@15:33:21  PAGE 1
+STORED IN ^GMR(126,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains a patient's intake and output measurements.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+
+CROSS
+REFERENCED BY: PATIENT(B), D/T TITER ADJUSTED(C)
+
+126,.01       PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X
+              LAST EDITED:      JUN 15, 1992 
+              DESCRIPTION:
+                                This field identifies the patient for whom these intake/output measurements pertain.  Pointer to the Patient file (#2).  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  126^B 
+                                1)= S ^GMR(126,"B",$E(X,1,30),DA)=""
+                                2)= K ^GMR(126,"B",$E(X,1,30),DA)
+                                This regular cross-reference is automatically created on .01 field of the file.  
+
+
+
+126,1         INTAKE                 IN;0 DATE Multiple #126.01 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This field contains the patient's cumulative intake within an interval of time.  
+
+              IDENTIFIED BY:    
+                   "WRITE1":    N MSG S MSG=$P($G(^GMRD(126.56,+$P(^(0),U,2),0)),U) D EN^DDIOL(MSG_$E(@(DIC_"Y,0)"),0),"","?$X+3")
+
+126.01,.01      INTAKE DATE/TIME       0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ETXRS",%DT(0)="-NOW" D ^%DT S X=Y K:Y<1 X K %DT(0)
+                LAST EDITED:      DEC 13, 1995 
+                DESCRIPTION:
+                                  This field stores the end date/time point for this intake measurement.  NO FUTURE DATE/TIME ALLOWED !!! 
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  126.01^B 
+                                  1)= S ^GMR(126,DA(1),"IN","B",$E(X,1,30),DA)=""
+                                  2)= K ^GMR(126,DA(1),"IN","B",$E(X,1,30),DA)
+                                  This regular cross-reference is automatically created on the .01 field of the file.  This index sorts the intake measurements by date/time for a patient.  
+
+
+                CROSS-REFERENCE:  126.01^TYP01^MUMPS 
+                                  1)= I $D(^GMR(126,DA(1),"IN",DA,0)),$P(^(0),"^",2)'="" S GMRTYP=$P(^(0),"^",2) S ^GMR(126,DA(1),"IN","TYP",9999999-X,GMRTYP,DA)="" K GMRTYP
+                                  2)= I $D(^GMR(126,DA(1),"IN",DA,0)),$P(^(0),"^",2)'="" S GMRTYP=$P(^(0),"^",2) K ^GMR(126,DA(1),"IN","TYP",9999999-X,GMRTYP,DA),GMRTYP
+                                  TYP01 MUMPS cross-reference is created to delete an old intake measurement index ^GMR(126,DA(1),"IN","TYP",9999999-INTAKE DATE/TIME,INTAKE TYPE,DA) 
+                                  ="".
+
+
+
+126.01,1        INTAKE TYPE            0;2 POINTER TO GMRY INPUT TYPE FILE (#126.56) (Required)
+
+                TYPE OF INTAKE                                                                                                 
+                LAST EDITED:      SEP 29, 1993 
+                DESCRIPTION:
+                                  This field identifies the major intake categories such as PO, TUBE FEEDING etc.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  126.01^TYP1^MUMPS 
+                                  1)= S GMRVDT="" S:$D(^GMR(126,DA(1),"IN",DA,0)) GMRVDT=$P(^(0),U) S:GMRVDT'=""&(X>0) ^GMR(126,DA(1),"IN","TYP",9999999-GMRVDT,X,DA)="" K GMRVDT
+                                  2)= S GMRVDT="" S:$D(^GMR(126,DA(1),"IN",DA,0)) GMRVDT=$P(^(0),U) K:GMRVDT'=""&(X>0) ^GMR(126,DA(1),"IN","TYP",9999999-GMRVDT,X,DA) K GMRVDT
+                                  TYP1 MUMPS cross-reference is created to sort intake measurements by inverted INTAKE DATE/TIME and INTAKE TYPE.  
+
+
+
+126.01,3        INTAKE ITEM            1;0 POINTER Multiple #126.13 (Add New Entry without Asking)
+
+                LAST EDITED:      FEB 20, 1991 
+                DESCRIPTION:
+                                  This multiple identifies the fluid intake absorbed by the patient.  
+
+
+126.13,.01        INTAKE ITEM            0;1 POINTER TO GMRY INTAKE ITEMS FILE (#126.8) (Multiply asked)
+
+                  INPUT TRANSFORM:  D EN6^GMRYUT2 D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X K:'$D(GEDIT) GMRYTYP
+                  LAST EDITED:      JUN 25, 1996 
+                  DESCRIPTION:
+                                    This field stores the name of the fluid(s) taken by the patient.  
+
+                  SCREEN:           D EN6^GMRYUT2
+                  EXPLANATION:      Select only the item applicable to this type of input.
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  126.13^B 
+                                    1)= S ^GMR(126,DA(2),"IN",DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^GMR(126,DA(2),"IN",DA(1),1,"B",$E(X,1,30),DA)
+                                    This regular cross-reference is automatically created on the .01 field of the file.  
+
+
+                  CROSS-REFERENCE:  126.13^VOL^MUMPS 
+                                    1)= I $D(GMROUT) S $P(^GMR(126,DA(2),"IN",DA(1),1,DA,0),"^",2)=+$P(^GMRD(126.8,+X,0),"^",2) D EN3^GMRYUT2
+                                    2)= I $D(GMROUT) S $P(^GMR(126,DA(2),"IN",DA(1),1,DA,0),"^",2)="" D EN3^GMRYUT2
+                                    VOL MUMPS cross-reference is created to sum up the values of VOLUME field of the INTAKE ITEM multiple and insert the total in the TOTAL AMOUNT field of the INTAKE record.  
+
+
+
+126.13,1          VOLUME                 0;2 NUMBER (Required)
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."2N.N) X
+                  LAST EDITED:      JAN 22, 1996 
+                  HELP-PROMPT:      Type a Number between 0 and 9999, 1 Decimal Digit 
+                  DESCRIPTION:
+                                    This field contains the measurement in milliliters (ml) for the fluid intake item.  
+
+
+126.13,2          SPECIFY                0;3 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                  LAST EDITED:      JUL 10, 1993 
+                  HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                  DESCRIPTION:
+                                    The user can specify the intake item if the OTHER item is selected.  
+
+
+
+
+126.01,4        TOTAL AMOUNT             0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JAN 22, 1996 
+                  HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field stores the cumulative intake measurement in milliliters (ml) for this period.  Numeric example: 240.  
+
+
+126.01,5        COMMENT                  0;6 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                  LAST EDITED:      SEP 01, 1995 
+                  HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                  DESCRIPTION:
+                                    This field permits the caregiver to describe additional observations.  This field will be used in the next version.  
+
+
+126.01,6        ENTERED BY               0;7 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                  LAST EDITED:      FEB 25, 1991 
+                  DESCRIPTION:
+                                    This field contains the name of the user who enters this record.  Pointer to the New Person file ^VA(200).  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+126.01,7        HOSPITAL LOCATION        0;4 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Z""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JUN 17, 1992 
+                  DESCRIPTION:
+                                    This field identifies the patient's hospital location.  Pointer to the Hospital Location file (#44).  
+
+                  SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Z"""
+                  EXPLANATION:      The hospital location where the patient is located. Pointer to Hospital Location file (#44).
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+126,2         OUTPUT                 OUT;0 DATE Multiple #126.02 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This field contains the patient's cumulative output for an interval of time.  
+
+              IDENTIFIED BY:    
+                   "WRITE1":    N MSG S MSG=$P($G(^GMRD(126.58,+$P(^(0),U,2),0)),U) D EN^DDIOL(MSG_$E(@(DIC_"Y,0)"),0),"","?$X+3")
+
+126.02,.01      OUTPUT DATE/TIME       0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ETXRS",%DT(0)="-NOW" D ^%DT S X=Y K:Y<1 X K %DT(0)
+                LAST EDITED:      DEC 13, 1995 
+                DESCRIPTION:
+                                  This field stores the end date/time point for this cumulative measurement.  NO FUTURE DATE/TIME ALLOWED !!! 
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  126.02^B 
+                                  1)= S ^GMR(126,DA(1),"OUT","B",$E(X,1,30),DA)=""
+                                  2)= K ^GMR(126,DA(1),"OUT","B",$E(X,1,30),DA)
+                                  This regular cross-reference is automatically created on the .01 field of the file.  This index sorts the output measurements by date/time for a patient.  
+
+
+                CROSS-REFERENCE:  126.02^TYP01^MUMPS 
+                                  1)= I $D(^GMR(126,DA(1),"OUT",DA,0)),$P(^(0),"^",2)'="" S GMRTYP=$P(^(0),"^",2) S ^GMR(126,DA(1),"OUT","TYP",9999999-X,GMRTYP,DA)="" K GMRTYP
+                                  2)= I $D(^GMR(126,DA(1),"OUT",DA,0)),$P(^(0),"^",2)'="" S GMRTYP=$P(^(0),"^",2) K ^GMR(126,DA(1),"OUT","TYP",9999999-X,GMRTYP,DA),GMRTYP
+                                  TYP01 MUMPS cross-reference is created to delete an old output record index ^GMR(126,DA(1) ,"OUT","TYP",9999999-OUTPUT DATE/TIME,OUTPUT TYPE,DA) 
+                                  ="".
+
+
+
+126.02,1        OUTPUT TYPE            0;2 POINTER TO GMRY OUTPUT TYPE FILE (#126.58) (Required)
+
+                LAST EDITED:      SEP 29, 1993 
+                DESCRIPTION:
+                                  This field identifies the major output categories such as URINE, EMESIS, etc.  
+
+                CROSS-REFERENCE:  126.02^TYP1^MUMPS 
+                                  1)= S GMRVDT="" S:$D(^GMR(126,DA(1),"OUT",DA,0)) GMRVDT=$P(^(0),U) S:GMRVDT'=""&(X>0) ^GMR(126,DA(1),"OUT","TYP",9999999-GMRVDT,X,DA)="" K GMRVDT
+                                  2)= S GMRVDT="" S:$D(^GMR(126,DA(1),"OUT",DA,0)) GMRVDT=$P(^(0),U) K:GMRVDT'=""&(X>0) ^GMR(126,DA(1),"OUT","TYP",9999999-GMRVDT,X,DA) K GMRVDT
+                                  TYP1 MUMPS cross-reference is created to sort output measurements by inverted OUTPUT DATE/TIME and OUTPUT TYPE.  
+
+
+
+126.02,2        OUTPUT SUBTYPE         0;3 POINTER TO GMRY OUTPUT SUBTYPE FILE (#126.6)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)=$P($G(^GMR(126,DA(1),""OUT"",DA,0)),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUN 03, 1992 
+                DESCRIPTION:
+                                  This field contains subtitle names associated with each major output category, i.e., FOLEY CATHETER and VOIDED for URINE.  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,2)=$P($G(^GMR(126,DA(1),""OUT"",DA,0)),U,2)"
+                EXPLANATION:      Select only the OUTPUT SUBTYPE applicable to this OUTPUT TYPE.
+
+126.02,3        OUTPUT AMOUNT          0;4 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:'(($L(X)=1&("SML"[$$UP^XLFSTR(X)!($E(X)="*")))!(X?1.4N1"*")!(X?1.4N)) X I $D(X),+X>9999 K X
+                LAST EDITED:      NOV 06, 1996 
+                HELP-PROMPT:      Answer must be a number between 0 and 9999 or * if output amount is unknown. 
+                DESCRIPTION:
+                                  The field stores the cumulative amount of this output period in milliliters (ml).  Enter "*" if output amount is unknown.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+126.02,4        COMMENT                0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      SEP 01, 1995 
+                HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                DESCRIPTION:
+                                  This field permits the caregiver to describe additional observations for this output, i.e., color, odor, consistency for drainage.  This field will be used in the next version.  
+
+
+126.02,5        ENTERED BY             0;6 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      FEB 25, 1991 
+                DESCRIPTION:
+                                  This field contains the name of the user who enters this record.  Pointer to the New Person file ^VA(200).  
+
+
+126.02,6        HOSPITAL LOCATION      0;7 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Z""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUN 17, 1992 
+                DESCRIPTION:
+                                  This field contains the hospital location of the patient.  Pointer to the Hospital Location file (#44).  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Z"""
+                EXPLANATION:      The hospital location where the patient is located.  Pointer to the Hospital Location file (#44).
+
+
+
+126,3         IV                     IV;0 DATE Multiple #126.03 (Add New Entry without Asking)
+
+              LAST EDITED:      FEB 06, 1991 
+              DESCRIPTION:
+                                This multiple documents all information specific to the starting and discontinuation of an intravenous(IV) fluid on a patient.  
+
+              IDENTIFIED BY:    INFUSION SITE(#1)[R], TYPE OF IV(#3)[R]
+                   "WRITE2":    D EN^DDIOL($P(^(0),U,3)_$E(@(DIC_"Y,0)"),0),"","?$X+3")
+
+126.03,.01      IV START DATE/TIME     0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ETXRS",%DT(0)="-NOW" D ^%DT S X=Y K:Y<1 X K %DT(0)
+                LAST EDITED:      DEC 13, 1995 
+                DESCRIPTION:
+                                  This field contains the DATE and TIME this IV solution was added or hung.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  126.03^B 
+                                  1)= S ^GMR(126,DA(1),"IV","B",$E(X,1,30),DA)=""
+                                  2)= K ^GMR(126,DA(1),"IV","B",$E(X,1,30),DA)
+                                  This regular cross-reference is automatically created on the .01 field of the file.  This index sorts the intravenous fluids on a patient by starting date/time.  
+
+
+                CROSS-REFERENCE:  126.03^TYP01^MUMPS 
+                                  1)= S:$D(^GMR(126,DA(1),"IV",DA,0)) GMRVTYP=$P(^(0),U,4) S:GMRVTYP'="" ^GMR(126,DA(1),"IV","TYP",9999999-X,GMRVTYP,DA)="" K GMRVTYP
+                                  2)= S:$D(^GMR(126,DA(1),"IV",DA,0)) GMRVTYP=$P(^(0),U,4) K:GMRVTYP'="" ^GMR(126,DA(1),"IV","TYP",9999999-X,GMRVTYP,DA) K GMRVTYP
+                                  TYP01 MUMPS cross-reference is created to sort the intravenous fluids on a patient by the inverted IV START DATE/TIME and TYPE OF IV.  
+
+
+                CROSS-REFERENCE:  126.03^C^MUMPS 
+                                  1)= S ^GMR(126,DA(1),"IV","C",9999999-X,DA)="" S:$P($G(^GMR(126,DA(1),"IV",DA,0)),"^",7)="" $P(^GMR(126,DA(1),"IV",DA,0),"^",7)=DUZ
+                                  2)= K ^GMR(126,DA(1),"IV","C",9999999-X,DA)
+                                  C MUMPS cross-reference indexes the intravenous solutions on a patient by the inverted IV START DATE/TIME.  The SET statement inserts the DUZ in the IV STARTED BY field (6).  
+
+
+
+126.03,1        INFUSION SITE          0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) D EN2^GMRYUT5 K:$L(X)>50!($L(X)<3) X
+                LAST EDITED:      SEP 29, 1993 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:      This field contains the IV's location such as LEFT HAND, RIGHT HAND and LEFT ARM, etc.  The user is allowed to select from the IV SITE file (#126.7) by entering a number or a combination of numbers.  The software then
+                                  transforms the number(s) into text.  
+
+                EXECUTABLE HELP:  D EN1^GMRYUT5
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  126.03^SITE^MUMPS 
+                                  1)= S:$D(^GMR(126,DA(1),"IV",DA,0)) GMRVDT=$P(^(0),U) S:$D(GMRVDT) ^GMR(126,DA(1),"IV","SITE",X,9999999-GMRVDT,DA)="" K GMRVDT
+                                  2)= S:$D(^GMR(126,DA(1),"IV",DA,0)) GMRVDT=$P(^(0),U) K:$D(GMRVDT) ^GMR(126,DA(1),"IV","SITE",X,9999999-GMRVDT,DA) K GMRVDT
+                                  SITE MUMPS cross-reference sorts the intravenous fluids on a patient by INFUSION SITE and inverted IV START DATE/TIME.  
+
+
+
+126.03,2        SOLUTION               0;3 FREE TEXT (Required)
+
+                SOLUTION                                                                                                       
+                INPUT TRANSFORM:  K:$L(X)>75!($L(X)<1) X
+                LAST EDITED:      MAY 23, 1996 
+                HELP-PROMPT:      Answer must be 1-75 characters in length. 
+                DESCRIPTION:      This field contains the name of the IV solution or heparin/saline lock.  The user can select the active IV orders for this patient from the PHARMACY PATIENT file (#55) or from the NUR IV SOLUTION file (#126.9).  If the
+                                  user selects a heparin/saline lock, the software inserts the data into the IV record.  
+
+
+126.03,3        TYPE OF IV             0;4 SET (Required)
+
+                                  'A' FOR ADMIXTURE; 
+                                  'P' FOR PIGGYBACK; 
+                                  'H' FOR HYPERAL; 
+                                  'B' FOR BLOOD/BLOOD PRODUCTS; 
+                                  'I' FOR INTRALIPIDS; 
+                                  'L' FOR HEPARIN/SALINE LOCK; 
+                LAST EDITED:      SEP 29, 1993 
+                DESCRIPTION:
+                                  This field describes the type of IV: 'H' for hyperal, 'P' for piggyback, 'A' for admixture, 'B' for blood/blood product, 'I' for intralipid, and 'L' for heparin/saline lock.  
+
+                CROSS-REFERENCE:  126.03^TYP3^MUMPS 
+                                  1)= S:$D(^GMR(126,DA(1),"IV",DA,0)) GMRVDT=$P(^(0),U) S:GMRVDT'="" ^GMR(126,DA(1),"IV","TYP",9999999-GMRVDT,X,DA)="" K GMRVDT
+                                  2)= S:$D(^GMR(126,DA(1),"IV",DA,0)) GMRVDT=$P(^(0),U) K:GMRVDT'="" ^GMR(126,DA(1),"IV","TYP",9999999-GMRVDT,X,DA) K GMRVDT
+                                  TYP3 MUMPS cross-reference sorts the intravenous fluids on a patient by the inverted IV START DATE/TIME and TYPE OF IV.  
+
+
+
+126.03,4        VOLUME                 0;5 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+                LAST EDITED:      OCT 07, 1996 
+                HELP-PROMPT:      Answer must be 1-4 characters in length. 
+                DESCRIPTION:
+                                  This field identifies the total amount of solution in milliliters (ml) in the IV container.  
+
+
+126.03,5        IV CATHETER TYPE/SIZE  0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JAN 13, 1993 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This field stores the name and size of the IV catheter(s).  
+
+
+126.03,6        IV STARTED BY          0;7 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      SEP 09, 1992 
+                DESCRIPTION:
+                                  This field holds the name of the user who entered the data.  Pointer to the NEW PERSON file (#200).  
+
+
+126.03,7        HOSPITAL LOCATION      0;8 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Z""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 09, 1992 
+                DESCRIPTION:
+                                  This field identifies the hospital location of the patient.  Pointer to the Hospital Location file (#44).  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Z"""
+                EXPLANATION:      The hospital location where the patient is located.  Pointer to the Hospital Location file (#44).
+
+126.03,8        DATE/TIME DC'ED        0;9 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR",%DT(0)="-NOW" D ^%DT S X=Y K:Y<1!(+$P(^GMR(126,DA(1),"IV",DA,0),U)>Y) X S:Y>0 $P(^GMR(126,DA(1),"IV",DA,0),U,10)=DUZ K %DT(0)
+                LAST EDITED:      SEP 06, 1993 
+                HELP-PROMPT:      The IV discontinued time must be later than the IV start time. 
+                DESCRIPTION:
+                                  This field holds the DATE/TIME when the IV was discontinued.  
+
+                TECHNICAL DESCR:
+                                  The IV discontinued time must be later than the IV start time.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+126.03,9        DC'ED BY               0;10 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      DEC 31, 1992 
+                DESCRIPTION:
+                                  This field stores the name of the person who removes the IV from the patient.  Pointer to NEW PERSON file (#200).  
+
+
+126.03,10       REASON FOR DC          0;11 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JAN 13, 1993 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This field identifies the reason for discontinuing the IV infusion.  Text from IV DC'ED REASON file (#126.76).  
+
+
+126.03,11       INFUSION RATE          0;12 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 22, 1996 
+                HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the rate at which the infusion is to take place.  Example: 125 = 125 ml/hr.  
+
+
+126.03,12       RESTART DATE/TIME      1;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 08, 1993 
+                DESCRIPTION:
+                                  This field stores the date/time when a discontinued IV is restarted.  
+
+
+126.03,13       IV INTAKE              IN;0 DATE Multiple #126.313 (Add New Entry without Asking)
+
+                LAST EDITED:      FEB 21, 1991 
+                DESCRIPTION:
+                                  This multiple contains the parenteral IV fluid intake records for this patient.  NO FUTURE DATE/TIME ALLOWED !!! 
+
+
+126.313,.01       IV INTAKE DATE/TIME    0;1 DATE (Required)
+
+                  INPUT TRANSFORM:  S %DT="ETXRS",%DT(0)="-NOW" D ^%DT S X=Y K:Y<1!(Y<$P(^GMR(126,DA(2),"IV",DA(1),0),"^"))!($P(^(0),"^",2)>0&($P(^(0),"^",2)<X)) X K %DT(0)
+                  LAST EDITED:      DEC 13, 1995 
+                  DESCRIPTION:
+                                    This field documents the end date/time point for this IV fluid intake period.  NO FUTURE DATE/TIME OR DATE/TIME BEFORE THE IV STARTED ALLOWED !!! 
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  126.313^B 
+                                    1)= S ^GMR(126,DA(2),"IV",DA(1),"IN","B",$E(X,1,30),DA)=""
+                                    2)= K ^GMR(126,DA(2),"IV",DA(1),"IN","B",$E(X,1,30),DA)
+                                    This regular cross-reference is automatically created on the .01 field.  
+
+
+                  CROSS-REFERENCE:  126.313^C^MUMPS 
+                                    1)= S ^GMR(126,DA(2),"IV",DA(1),"IN","C",9999999-X,DA)="" S:$P($G(^GMR(126,DA(2),"IV",DA(1),"IN",DA,0)),"^",4)="" $P(^GMR(126,DA(2),"IV",DA(1),"IN",DA,0),U,4)=DUZ
+                                    2)= K ^GMR(126,DA(2),"IV",DA(1),"IN","C",9999999-X,DA)
+                                    This MUMPS index is created to sort the intake records for an IV solution by inverted IV INTAKE DATE/TIME.  The SET statement inserts DUZ in the ENTERED BY field (3).  
+
+
+
+126.313,1         AMOUNT LEFT            0;2 FREE TEXT (Required)
+
+                  INPUT TRANSFORM:  K:'(($L(X)=1&(X="*"))!(X?1.4N)!(X?1.4N1"."1N)!(X?1"."1N)) X I $D(X),+X>9999 K X
+                  LAST EDITED:      JAN 22, 1996 
+                  HELP-PROMPT:      Answer must be a number between 0 and 9999 with one decimal point (decimal point is optional) or * if solution absorbed is unknown. 
+                  DESCRIPTION:
+                                    This field contains the amount of solution left in the IV container. Enter "*" if amount of solution absorbed is unknown.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+126.313,2         IV INTAKE AMOUNT        ;  COMPUTED
+
+                  MUMPS CODE:       D EN3^GMRYUT5 S X=$J(X,0,0)
+                  ALGORITHM:        D EN3^GMRYUT5  (ALWAYS 0 DECIMAL DIGITS)
+                  DESCRIPTION:
+                                    This field contains the amount of IV fluid absorbed.  The amount is computed from the total volume of the IV solution field value and the records of AMOUNT LEFT.  
+
+
+126.313,3         ENTERED BY             0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                  LAST EDITED:      AUG 31, 1992 
+                  DESCRIPTION:
+                                    This field holds the name of the person who entered the data.  Pointer to NEW PERSON file (#200).  
+
+
+126.313,4         HOSPITAL LOCATION      0;5 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Z""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      AUG 31, 1992 
+                  DESCRIPTION:
+                                    This field identifies the hospital location of the patient.  Pointer to HOSPITAL LOCATION file (#44).  
+
+                  SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Z"""
+                  EXPLANATION:      The hospital location where the patient is located.  Pointer to the Hospital Location file (#44).
+
+
+
+126.03,14       RESTARTED IV             1;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      OCT 08, 1993 
+                  HELP-PROMPT:      Type a Number between 1 and 999999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field stores the new IEN for this IV fluid if it is discontinued before infused.  
+
+
+126.03,15       IV LINE #                 ;  COMPUTED
+
+                  MUMPS CODE:       S X=D1
+                  ALGORITHM:        S X=D1
+                  DESCRIPTION:
+                                    This computed field sets the IV LINE # to the D1 value.  
+
+
+126.03,16       D/T TITER ADJUSTED       TITR;0 DATE Multiple #126.316 (Add New Entry without Asking)
+
+                  DESCRIPTION:
+                                    This field documents the date/time when the rate of intravenous infusion is adjusted.  
+
+
+126.316,.01       D/T TITER ADJUSTED       0;1 DATE (Required)
+
+                    INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      MAY 30, 1996 
+                    DESCRIPTION:
+                                      This field documents the date/time when the rate of intravenous infusion is adjusted.  
+
+                    CROSS-REFERENCE:  126.316^B 
+                                      1)= S ^GMR(126,DA(2),"IV",DA(1),"TITR","B",$E(X,1,30),DA)=""
+                                      2)= K ^GMR(126,DA(2),"IV",DA(1),"TITR","B",$E(X,1,30),DA)
+                                      This regular cross-reference is automatically created on the .01 field.  
+
+
+                    CROSS-REFERENCE:  126^C^MUMPS 
+                                      1)= S ^GMR(126,DA(2),"IV",DA(1),"TITR","C",9999999-X,DA)="" S $P(^GMR(126,DA(2),"IV",DA(1),"TITR",DA,0),U,3)=DUZ
+                                      2)= K ^GMR(126,DA(2),"IV",DA(1),"TITR","C",9999999-X,DA)
+                                      This MUMPS index is created to sort the infusion rate adjustment record by inverted the date/time stored in the D/T TITER ADJUSTED field.  
+
+
+
+126.316,1         RATE                     0;2 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      MAY 30, 1996 
+                    HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+                    DESCRIPTION:
+                                      This field contains the rate at which the infusion is to take place.  Example:  125 = 125 ml/hr.  
+
+
+126.316,2         ADJUSTED BY              0;3 POINTER TO NEW PERSON FILE (#200)
+
+                    LAST EDITED:      JUN 07, 1996 
+                    DESCRIPTION:
+                                      This field contains the name of the user who enters this record.  Pointer to the New Person file ^VA(200).  
+
+
+126.316,3         HOSPITAL LOCATION        0;4 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+                    INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Z""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                    LAST EDITED:      JUN 07, 1996 
+                    SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Z"""
+                    EXPLANATION:      The hospital location where the patient is located. Pointer to Hospital Location file.
+
+126.316,4         COMMENT                  0;5 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                    LAST EDITED:      JUL 03, 1996 
+                    HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                    DESCRIPTION:
+                                      This field contains any additional comments associated with this infusion rate adjustment.  
+
+
+
+
+126.03,17       PORT                       3;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                    LAST EDITED:      MAY 14, 1996 
+                    HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                    DESCRIPTION:
+                                      This field contains the name of the lumen associated with the IV catheter for this IV line.  
+
+
+
+
+126,4         IV MAINTENANCE         IVM;0 Multiple #126.04
+
+              LAST EDITED:      AUG 27, 1992 
+              DESCRIPTION:
+                                This multiple records the patient's IV maintenance or care including the IV infusion site care, IV tube change(s) and dressing change(s).  
+
+
+126.04,.01      IV SITE                0;1 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  D EN2^GMRYUT5 K:$L(X)>50!($L(X)<3) X
+                LAST EDITED:      AUG 28, 1992 
+                HELP-PROMPT:      Answer must be 3-50 characters in length. 
+                DESCRIPTION:      This field contains the IV's location such as LEFT HAND, RIGHT HAND and LEFT ARM, etc.  The user is allowed to select from the IV SITE file (#126.7) by entering a number or a combination of numbers.  The software then
+                                  transforms the number(s) into text.  
+
+                EXECUTABLE HELP:  D EN1^GMRYUT5
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  126.04^B 
+                                  1)= S ^GMR(126,DA(1),"IVM","B",$E(X,1,30),DA)=""
+                                  2)= K ^GMR(126,DA(1),"IVM","B",$E(X,1,30),DA)
+                                  This regular cross-reference is automatically created on the IV SITE field of the IV MAINTENANCE.  The records are sorted by the IV's location such as LEFT HAND, RIGHT HAND and LEFT ARM, etc.  
+
+
+
+126.04,1        MAINTENANCE DATE/TIME  1;0 DATE Multiple #126.41 (Add New Entry without Asking)
+
+                LAST EDITED:      JAN 07, 1993 
+                DESCRIPTION:
+                                  This multiple stores the DATE/TIME the IV infusion was performed along with the specific tasks associated with the maintenance.  
+
+
+126.41,.01        MAINTENANCE DATE/TIME  0;1 DATE (Required)
+
+                  INPUT TRANSFORM:  S %DT="ESTXR",%DT(0)="-NOW" D ^%DT S X=Y K:Y<1 X K %DT(0)
+                  LAST EDITED:      DEC 13, 1995 
+                  DESCRIPTION:
+                                    This field indicates the DATE/TIME the IV care was performed.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  126.41^B 
+                                    1)= S ^GMR(126,DA(2),"IVM",DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^GMR(126,DA(2),"IVM",DA(1),1,"B",$E(X,1,30),DA)
+                                    This cross-reference is created automatically on the .01 field of the MAINTENANCE DATE/TIME multiple for each IV SITE.  
+
+
+                  CROSS-REFERENCE:  126.41^AC^MUMPS 
+                                    1)= S:$P($G(^GMR(126,DA(2),"IVM",DA(1),1,DA,0)),"^",5)="" $P(^GMR(126,DA(2),"IVM",DA(1),1,DA,0),"^",5)=DUZ
+                                    2)= Q
+                                    AC MUMPS cross-reference is created to insert the DUZ of the person who gives the nursing care in the ENTERED BY field (4) of the maintenance record.  
+
+
+                  CROSS-REFERENCE:  126.41^C^MUMPS 
+                                    1)= S ^GMR(126,DA(2),"IVM",DA(1),1,"C",9999999-X,DA)=""
+                                    2)= K ^GMR(126,DA(2),"IVM",DA(1),1,"C",9999999-X,DA)
+                                    C cross-reference is created to sort the nursing care records for a specific IV's location by the inverted date/time the care given.  
+
+
+
+126.41,1          SITE DESCRIPTION       0;2 FREE TEXT
+
+                  INPUT TRANSFORM:  D SITEDES1^GMRYUT5 K:$L(X)>50!($L(X)<3) X
+                  LAST EDITED:      SEP 28, 1992 
+                  HELP-PROMPT:      Answer must be 3-50 characters in length. 
+                  DESCRIPTION:      This field stores the care-giver's observation of the IV infusion site.  The user is allowed to select a number or a combination of numbers from the IV SITE DESCRIPTION file (#126.72).  The software then transforms the
+                                    number(s) into text.  
+
+                  EXECUTABLE HELP:  D SITEDES^GMRYUT5
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+126.41,2          TUBING CHANGED         0;3 SET
+
+                                    'Y' FOR yes; 
+                                    'N' FOR no; 
+                  LAST EDITED:      JAN 11, 1993 
+                  DESCRIPTION:
+                                    This field indicates if the IV tubing was changed.  Enter "Y" if IV tube has been changed.  
+
+
+126.41,3          DRESSING CHANGED       0;4 SET
+
+                                    'Y' FOR yes; 
+                                    'N' FOR no; 
+                  LAST EDITED:      JAN 11, 1993 
+                  DESCRIPTION:
+                                    This field indicates if the dressing was changed.  Enter "Y" if dressing has been changed.  
+
+
+126.41,4          ENTERED BY             0;5 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      SEP 15, 1992 
+                  DESCRIPTION:
+                                    This field documents the name of the person who gives the nursing care.  Pointer to the NEW PERSON file (#200).  
+
+
+126.41,5          SITE DC'ED             0;6 SET
+
+                                    'Y' FOR yes; 
+                                    'N' FOR no; 
+                  LAST EDITED:      JAN 13, 1993 
+                  DESCRIPTION:
+                                    This field indicates if the IV was discontinued at its insertion point.  Enter Y(es) if the IV site was discontinued.  
+
+
+126.41,6          LINE OF TUBE           0;7 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>1000)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JAN 26, 1993 
+                  HELP-PROMPT:      Type a Number between 1 and 1000, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field indicates the IEN of the IV.  
+
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+GMRY INPUT TYPE (#126.56)         INTAKE:INTAKE TYPE (#1)
+
+GMRY INTAKE ITEMS (#126.8)        INTAKE ITEM:INTAKE ITEM (#.01)
+
+GMRY OUTPUT SUBTYPE (#126.6)      OUTPUT:OUTPUT SUBTYPE (#2)
+
+GMRY OUTPUT TYPE (#126.58)        OUTPUT:OUTPUT TYPE (#1)
+
+HOSPITAL LOCATION (#44)           INTAKE:HOSPITAL LOCATION (#7)
+                                  OUTPUT:HOSPITAL LOCATION (#6)
+                                  IV:HOSPITAL LOCATION (#7)
+                                  IV INTAKE:HOSPITAL LOCATION (#4)
+                                  D/T TITER ADJUSTED:HOSPITAL LOCATION (#3)
+
+NEW PERSON (#200)                 INTAKE:ENTERED BY (#6)
+                                  OUTPUT:ENTERED BY (#5)
+                                  IV:IV STARTED BY (#6)
+                                  DC'ED BY (#9)
+                                  IV INTAKE:ENTERED BY (#3)
+                                  D/T TITER ADJUSTED:ADJUSTED BY (#2)
+                                  MAINTENANCE DATE/TIME:ENTERED BY (#4)
+
+PATIENT (#2)                      PATIENT (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

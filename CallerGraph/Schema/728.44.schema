@@ -1,0 +1,203 @@
+STANDARD DATA DICTIONARY #728.44 -- CLINICS AND STOP CODES FILE                                                                                                                                                                      MAY 20,2014@15:32  PAGE 1
+STORED IN ^ECX(728.44,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds the DSS translation tables for entries in the HOSPITAL LOCATION file (#44).  For each clinic, this file holds its name, stop code, credit stop code, and DSS alternatives for both stop code and credit stop code.  Also included is a field
+indicating which code should be sent to the DSS commercial software, that is, stop code, credit stop code, or both.  If there is no data in this file for a given clinic, the stop code in the HOSPITAL LOCATION file (#44) will be used.  If DSS alternate
+stop codes are entered, they will be used in place of those entered in the HOSPITAL LOCATION file (#44).  This file should be reviewed by the DSS manager on a regular basis and corrected as needed.  Since several fields in this file are linked to fields
+in the HOSPITAL LOCATION file (#44), data in this file should be entered and edited only by using the DSS software and not by direct access via VA FileMan.  
+
+
+
+CROSS
+REFERENCED BY: DATE LAST REVIEWED(AC), CLINIC NAME(B)
+
+728.44,.01    CLINIC NAME            0;1 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+              INPUT TRANSFORM:  K X W !,"Entries into this file may be made only by using the DSS software",!!
+              LAST EDITED:      DEC 12, 1996 
+              HELP-PROMPT:      Enter the clinic name. 
+              DESCRIPTION:
+                                The name of the clinic.  
+
+              TECHNICAL DESCR:
+                                Pointer to the HOSPITAL LOCATION file (#44).  
+
+              DELETE TEST:      .01,0)= I 1 W !,"Entries must not be deleted from this file!,",!!
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  728.44^B 
+                                1)= S ^ECX(728.44,"B",$E(X,1,30),DA)=""
+                                2)= K ^ECX(728.44,"B",$E(X,1,30),DA)
+
+
+728.44,1      STOP CODE              0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      NOV 06, 1997 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                The stop code for this clinic as determined by Medical Administration Service (MAS).  
+
+              TECHNICAL DESCR:
+                                Stop code from the HOSPITAL LOCATION file (#44) for this clinic.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+
+728.44,2      CREDIT STOP CODE       0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAR 12, 1991 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:      The credit stop code, if none exists, for this clinic as determined by Medical Administration Service (MAS).  
+                                 
+
+              TECHNICAL DESCR:
+                                The credit stop code for this clinic in the HOSPITAL LOCATION file (#44).  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+
+728.44,3      DSS STOP CODE          0;4 NUMBER
+
+              INPUT TRANSFORM:  N DIC D INPUTT^ECXUTL6 Q:'$D(X)  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X Q:'$D(X)  N ECXSC S ECXSC=$O(^DIC(40.7,"C",X,"")) I ECXSC'="" K:("PE"'[$P(^DIC(40.7,ECXSC,0),U,6))!($P(^(0),U,7)>DT) X
+              LAST EDITED:      SEP 29, 2008 
+              HELP-PROMPT:      Enter an active 3 digit Stop Code with restriction type of "Primary" or "Either". 
+              DESCRIPTION:
+                                Three digit Stop Code number assigned to specific location. Each Stop Code number represents a type of care or Service/treating specialty (clinics only). Stop code must have a restriction type of Primary or Either.  
+
+              TECHNICAL DESCR:
+                                Stop code is verified by existence in File# 40.7 Node ^DIC(40.7,"C",stop code,pointer) must exist.  
+
+              EXECUTABLE HELP:  N X S ZD=D,X="?",DIC="^DIC(40.7,",DIC(0)="EQ",DIC("S")="I '$P(^(0),U,3) I $L($P(^(0),U,2))=3" D ^DIC S D=ZD K DIC,ZD
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+728.44,4      DSS CREDIT STOP CODE   0;5 NUMBER
+
+              INPUT TRANSFORM:  N DIC D INPUTT^ECXUTL6 Q:'$D(X)  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X Q:'$D(X)  N ECXSC S ECXSC=$O(^DIC(40.7,"C",X,"")) I ECXSC'="" K:("SE"'[$P(^DIC(40.7,ECXSC,0),U,6))!($P(^(0),U,7)>DT) X
+              LAST EDITED:      SEP 29, 2008 
+              HELP-PROMPT:      Enter an active Stop Code with restriction type of "Secondary" or "Either". 
+              DESCRIPTION:      Appointments to this clinic will receive this Stop Code credit in addition to the 'normal' Stop Code credit if a Stop Code different from the 'normal' Stop Code for this clinic is entered here.  Credit Stop Code must have
+                                a restriction type of Secondary or Either.  
+
+              TECHNICAL DESCR:
+                                Credit Stop code is verified by existence in File# 40.7 Node ^DIC(40.7,"C",stop code,pointer) must exists.  
+
+              EXECUTABLE HELP:  N X S ZD=D,X="?",DIC="^DIC(40.7,",DIC(0)="EQ",DIC("S")="I '$P(^(0),U,3) I $L($P(^(0),U,2))=3 Q" D ^DIC S D=ZD K DIC,ZD
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+728.44,5      ACTION TO SEND         0;6 SET (Required)
+
+                                '1' FOR SEND STOP CODE; 
+                                '4' FOR SEND BOTH AS ONE RECORD WITH NATIONAL CODE; 
+                                '5' FOR SEND BOTH AS ONE RECORD WITHOUT NATIONAL CODE; 
+                                '6' FOR DO NOT SEND; 
+              LAST EDITED:      AUG 01, 2012 
+              HELP-PROMPT:      Select the appropriate stop code action. 
+              DESCRIPTION:
+                                This determines how alternate stop code and alternate credit stop codes are combined to form a feeder key for this clinic.  
+
+              TECHNICAL DESCR:
+                                This field is used in routine ECXSCX to create the feeder key for this clinic.  
+
+
+728.44,6      DATE LAST REVIEWED     0;7 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 24, 1992 
+              HELP-PROMPT:      Enter the date this data was reviewed. 
+              DESCRIPTION:
+                                The date this data in this file was last reviewed.  
+
+              TECHNICAL DESCR:
+                                This field is used to prompt users that the data in this file might need to be reviewed.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  728.44^AC^MUMPS 
+                                1)= S ^ECX(728.44,"A1",-X,DA)=""
+                                2)= K ^ECX(728.44,"A1",-X,DA)
+                                3)= DO NOT DELETE.
+                                An inverse date cross reference to tell the user when data in this file was last reviewed.  
+
+
+
+728.44,7      NATIONAL CODE          0;8 POINTER TO NATIONAL CLINIC FILE (#728.441) (Required)
+
+              LAST EDITED:      APR 14, 1995 
+              HELP-PROMPT:      Enter the appropriate national code. 
+              DESCRIPTION:
+                                A pointer to the NATIONAL CLINIC file (#728.441) to provide a way to send a national identifier to the commercial software when using action code 4.  
+
+              TECHNICAL DESCR:
+                                Pointer to the NATIONAL CLINIC file (#728.441).  Used to provide a way to send a national identifier to the commercial software when data from the ACTION TO SEND field (#5) is code 4.  
+
+
+728.44,8      DSS UNIT IDENTIFIER    0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUN 21, 1994 
+              HELP-PROMPT:      The identifier if this clinic is used for non-OR surgical procedures. 
+              DESCRIPTION:
+                                This field will identify clinics which are used for non-OR procedures in the Surgery package.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+728.44,9      INACTIVE DATE          0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 17, 1996 
+              HELP-PROMPT:      Enter the date this clinic became inactive. 
+              DESCRIPTION:
+                                This is the date that MAS inactivated this clinic.  
+
+              TECHNICAL DESCR:
+                                From the INACTIVE DATE field (2505) in the HOSPITAL LOCATION file (#44).  
+
+
+728.44,10     DSS PRODUCT DEPARTMENT 0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      FEB 23, 2004 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                The nationally defined DSS Intermediate Department Number designated to the patient care product being provided.  
+
+
+728.44,11     NON-COUNT CLINIC (Y/N) 0;12 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      MAY 25, 2009 
+              HELP-PROMPT:      The value of this field should match field #2502 in the HOSPITAL LOCATION file (#44) for the same clinic. 
+              DESCRIPTION:
+                                Is this clinic to be a non-count clinic for workload purposes? OR Are visits to this clinic to be included in workload statistics? 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+HOSPITAL LOCATION (#44)           CLINIC NAME (#.01)
+
+NATIONAL CLINIC (#728.441)        NATIONAL CODE (#7)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+ECX CLINIC REVIEW EXPORT      MAY 16, 2012@10:09  USER #0                                                                                                                                                                                                   @@
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

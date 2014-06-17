@@ -1,0 +1,651 @@
+STANDARD DATA DICTIONARY #221 -- DENTAL TREATMENT (AMIS) FILE                                                                                                                                                                     MAY 20,2014@15:32:05  PAGE 1
+STORED IN ^DENT(221,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The Treatment file contains all dental treatments for each patient entered by the date of treatment and the provider ID #.  This is the core of the dental package where all dental activities are recorded.  Entries are usually  recorded in this file on a
+daily basis.  
+
+
+IDENTIFIED BY: 
+         "Z0": I $D(^(0)),$P(^(0),U,1) S Z=Y,Y=$P(^(0),U,1) X ^DD("DD") W ?25,Y S Y=Z K Z
+         "Z1": W:$D(^DENT(221,+Y,0)) ?45,$P(^(0),U,10)
+         "Z2": W:$D(^(0)) ?52,$P(^(0),U,2)
+
+CROSS
+REFERENCED BY: RELEASED BY(A), STATION.DIVISION(A1), PROVIDER NUMBER(AC1), DATE(AD), DENTAL PATIENT(AE), DATE RELEASED(AG), DATE(B), PROVIDER NUMBER(C), SSN(D), PATIENT (POINTER)(E)
+
+221,.01       DATE                   0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT(0)="-NOW",%DT="ESTX" D ^%DT K %DT(0) S X=Y K:Y<1 X I $D(X) D IEN1^DENTE1
+              LAST EDITED:      DEC 09, 1994 
+              HELP-PROMPT:      Enter the date and time for this treatment sitting 
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  221^B^MUMPS 
+                                1)= S ^DENT(221,"B",X,DA)=""
+                                2)= K ^DENT(221,"B",X,DA)
+
+              CROSS-REFERENCE:  221^AD^MUMPS 
+                                1)= Q
+                                2)= I $P(^DENT(221,DA,0),"^",40)'="" K ^DENT(221,"A",$P(^DENT(221,DA,0),"^",40),$P(X,".",1),DA) S Z=$P(^DENT(221,DA,0),"^",3) I Z S Z=$S($D(^DENT(220.5,Z,0)):$P(^(0),"^",2),1:"") K:Z'="" ^DENT(221,"AC",$P(^DENT(221,DA,0),"
+                                ^",40),$P(X,".",1),Z,DA)
+                                2.  If station.division isn't null, then kill the A cross reference which is composed of (221,"A",station,date,record#).  
+                                 
+                                If there is data in dental provider field, and the number is a dental provider with INACTIVE status (file 220.5) then kill the "AC" cross reference composed of (221,"AC",station,date,status,recn) 
+
+
+
+221,.3        STATION.DIVISION       0;40 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) S DIC="^DENT(225,",DIC(0)="QEMZ" D ^DIC S:Y>0 X=$P(Y(0),U,1) K:Y'>0 X K DIC
+              LAST EDITED:      JAN 13, 1995 
+              HELP-PROMPT:      Select the appropriate station (division) number for this Dental treatment entry 
+              DESCRIPTION:
+                                This is the three digit station number.  
+
+              EXECUTABLE HELP:  S:$D(D) ZD=D S X="?",DIC="^DENT(225,",DIC(0)="QEM" D ^DIC D:$D(DENTFUL) N^DENTDNJ2 S DIC=DIE S:$D(ZD) D=ZD K ZD
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  221^A1^MUMPS 
+                                1)= D STASETT^DENTXREF(X)
+                                2)= D STAKILT^DENTXREF(X)
+                                **update all xrefs that use Station as part of their key (fields .3,.4,60,61) ** 
+                                 
+                                1.  Set the "A1" xref composed of (221,"A1",Station,Date,Record#).  If data is not released set the A xref composed of (221,"A",Station,Date,Record #).  
+                                 
+                                2.  Kill "A1" xref composed of (221,"A1",Station,Date,Record#).  If data is released kill the A xref composed of (221,"A",Station,Date,Record #).  
+
+
+              CROSS-REFERENCE:  221^A1^MUMPS 
+                                1)= S ^DENT(221,"A1",X,$P($P(^DENT(221,DA,0),U,1),".",1),DA)=""
+                                2)= K ^DENT(221,"A1",X,$P($P(^DENT(221,DA,0),U,1),".",1),DA)
+
+
+221,.4        PROVIDER NUMBER        0;10 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>4!($L(X)<4)!'(X?4N) X
+              LAST EDITED:      JAN 11, 1995 
+              HELP-PROMPT:      ANSWER MUST BE 4 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                ENTER IN THIS FIELD THE PROVIDER CODE NUMBER 
+
+              NOTES:            TRIGGERED by the DENTAL PROVIDER field of the DENTAL TREATMENT (AMIS) File 
+
+              CROSS-REFERENCE:  221^C 
+                                1)= S ^DENT(221,"C",$E(X,1,30),DA)=""
+                                2)= K ^DENT(221,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  221^AC1^MUMPS 
+                                1)= I $P(^DENT(221,DA,0),"^",40)'="" D AC1SET^DENTXREF
+                                2)= I $P(^DENT(221,DA,0),"^",40)'="" D AC1KILL^DENTXREF
+                                If there is data in station.division field then kill or set the "AC1" x-ref which is composed of (221,"AC1",Station,Date,Provider#,Record#) 
+                                 
+                                If the data has not been released (released by field) set or kill the "AC" cross reference composed of (221,"AC",Station,Date,Provider#,Record#).  
+
+
+
+221,.5        DENTAL PROVIDER        0;3 POINTER TO DENTAL PROVIDER FILE (#220.5) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),""^"",2)'="""",'$P(^(0),""^"",3)" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      FEB 05, 2004 
+              HELP-PROMPT:      Select the appropriate dental provider by name or provider number. 
+              DESCRIPTION:
+                                This is the dental provider.  Names are entered lastname,first name.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),""^"",2)'="""",'$P(^(0),""^"",3)"
+              EXPLANATION:      The dental provider must have a dental provider number and must be an active provider.
+              CROSS-REFERENCE:  ^^TRIGGER^221^.4 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DENT(221,D0,0)):^(0),1:"") S X=$P(Y(1),U,10),X=X S DIU=X K Y S X=DIV S X=$P($G(^DENT(220.5,X,0)),"^",2) S DIH=$G(^DENT(221,DIV(0),0)),DIV=X S $P(^(0),U,10)=DIV,DIH=221,DIG=.4
+                                 D ^DICR
+
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DENT(221,D0,0)):^(0),1:"") S X=$P(Y(1),U,10),X=X S DIU=X K Y S X="" S DIH=$G(^DENT(221,DIV(0),0)),DIV=X S $P(^(0),U,10)=DIV,DIH=221,DIG=.4 D ^DICR
+
+                                CREATE VALUE)= S X=$P($G(^DENT(220.5,X,0)),"^",2)
+                                DELETE VALUE)= @
+                                FIELD)= PROVIDER NUMBER
+
+
+221,1         SSN                    0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)<9!($L(X)>10)!(X'?9N."P") X
+              LAST EDITED:      JUL 31, 1986 
+              HELP-PROMPT:      Enter this patient's social security number.  Answer must be 9 digits or 9 digits followed by one "P". 
+              WRITE AUTHORITY:  ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  221^D 
+                                1)= S ^DENT(221,"D",$E(X,1,30),DA)=""
+                                2)= K ^DENT(221,"D",$E(X,1,30),DA)
+
+
+221,2         DENTAL PATIENT         0;39 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  I $D(X),X'="GROUP" S DIC="^DENT(220,",DIC(0)="ELMQ",DLAYGO=220 D ^DIC K DLAYGO K:+Y'>0 X I $D(X) S (DFN,DENTDFN)=+Y D DEM^VADPT S X=VADM(1),DENTSSN=$P(VADM(2),"^")
+              LAST EDITED:      FEB 25, 1988 
+              HELP-PROMPT:      Select the patient being treated or enter the word "GROUP" for a group patient education treatment sitting. 
+              EXECUTABLE HELP:  S:$D(D) ZD=D S X="?",DIC="^DENT(220,",DIC(0)="EM" D ^DIC S DIC=DIE S:$D(ZD) D=ZD K ZD D:$D(DENTFUL) N^DENTDNJ2
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  221^AE^MUMPS 
+                                1)=  D DPSET^DENTE3
+                                2)= D DPKILL^DENTE3
+
+
+221,3         PATIENT (POINTER)      0;4 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      JUL 06, 1986 
+              HELP-PROMPT:      Select the appropriate patient for this sitting. 
+              CROSS-REFERENCE:  221^E 
+                                1)= S ^DENT(221,"E",$E(X,1,30),DA)=""
+                                2)= K ^DENT(221,"E",$E(X,1,30),DA)
+
+
+221,4.5       PATIENT CATEGORY       0;19 POINTER TO DENTAL CLASSIFICATION FILE (#220.2) (Required)
+
+              LAST EDITED:      JUL 06, 1986 
+              HELP-PROMPT:      Select the appropriate patient category for this sitting. 
+              DESCRIPTION:      Category 19 includes only priority 1, continued after priority 1 inpatient care.  Category 21 includes only priority 2, continued after priority 2 inpatient care.  Category 22 includes only priority 3, continued after
+                                priority 3 inpatient care and active duty military personnel, military retirees, and CHAMPVA.  
+
+
+221,5         BED SECTION            0;6 POINTER TO DENTAL BED SECTION FILE (#220.4)
+
+              LAST EDITED:      JUL 25, 1985 
+              HELP-PROMPT:      Select the appropriate bed section code (1-15) for this Patient Category.       A bed section can only be entered for inpatients (Patient Categories 1 thru  3 and 6 thru 8. 
+
+221,6         SCREENING/COMPLETE EXAM 0;7 SET
+
+                                'S' FOR SCREENING; 
+                                'C' FOR COMPLETE; 
+              LAST EDITED:      JUL 23, 1985 
+              HELP-PROMPT:      Select 'S' for screening or 'C' for complete exam 
+              DESCRIPTION:       SCREENING EXAMINATION The screening examination includes an evaluation of the oral and perioral soft tissues and a visual estimate of dental status without a tooth by tooth charting.  Radiographs usually will not be
+                                taken, but may be if PROFESSIONALLY DETERMINED to be necessary as for an emergency.  A chart review (patient not present at time of review) is also classed as a screening exam.  When a chart review is entered the provider
+                                must also mark ADMIN PROCEDURE on the screen to avoid a "patient visit" count.  Note:  Providers must be aware of significant medical problems; therefore, a medical and dental history and/or medical record review must be
+                                included.  Recall examinations (may be less than six months) would be included in this area.  The screening examination is an essential part of the admission physical examination.  All INPATIENT screening examinations will
+                                be placed in a Priority 1 Category.  If the inpatient does not fall into Emergency, Extended Care, NHCU, Dom, or Special Provisions, s/he would be placed in the Compelling Medical Need Category.  All OUTPATIENT screening 
+                                examinations will be placed in Priority 1.  
+                                 
+                                COMPLETE EXAMINATION A complete examination includes dental charting on a tooth by tooth basis as well as the comprehensive evaluation of the oral and perioral soft tissues. A head and neck exam is included as an essential
+                                portion of the complete examination.  A thorough review of the medical chart and medical history with the pertinent medical findings noted on the dental record are included in the complete examination.  A complete
+                                examination will be accomplished for a patient who is to receive treatment other than emergency care. Complete examinations will be recorded in the appropriate inpatient or outpatient category/priority.  
+
+
+221,6.2       INTERDISCIPLINARY CONSULT 0;42 SET
+
+                                '1' FOR INTERDISC. CONSULT; 
+              LAST EDITED:      MAY 03, 1985 
+              HELP-PROMPT:      Enter a '1' or 'I' for an interdisciplinary consultation. 
+              DESCRIPTION:      Count those that were instituted via Form 513 (Consultation Request), a telephone request with following Form 513 and Form 10-10 or 10-10m with progress notes attached.  All INPATIENT interdisciplinary consultations will
+                                be placed in a Priority 1 category.  If the inpatient does not fall into Emergency, Extended Care, NHCU, Dom, or Special Provisions, s/he would be placed in the Compelling Medical Need Category.  All OUTPATIENT 
+                                interdisciplinary consultations will be placed in a Priority 1 Category.  
+
+
+221,6.4       EVALUATION             0;43 SET
+
+                                '1' FOR EVALUATION; 
+              LAST EDITED:      MAY 03, 1985 
+              HELP-PROMPT:      Enter a '1' or an 'E' for an evaluation 
+              DESCRIPTION:      No more than one evaluation per provider can be counted on the same visit.  Evaluations are identified as medical/dental workups, (e.g., periodontal, surgical, endodontic, etc.) on those patients for whom a complete
+                                screening examination has already been performed. Evaluations may be in conjunction with review of a medical record, the initiation of an interdisciplinary consultion or with a medical or dental emergency workup on a
+                                patient for whom no definitive treatment is delivered. An evaluation made by the staff mentor for trainees at a scheduled treatment visit prior to carrying out a specific treatment procedure is counted as education time.  
+                                All other INPATIENT evaluations will be placed in a Priority 1 Category.  If the inpatient does not fall into Emergency, Extended Care, NHCU, Dom, or Special Provisions, s/he would be placed in the Compelling Medical Need 
+                                Category.  All OUTPATIENT evaluations will be placed in a Priority 1 Category.  
+
+
+221,6.6       PRE AUTH/2ND OPINION EXAM 0;44 SET
+
+                                '2' FOR PRE-AUTH/2ND OPINION; 
+              LAST EDITED:      NOV 15, 1985 
+              HELP-PROMPT:      Enter a '2' or 'P' for a  pre-authorization/second opinion exam. 
+              DESCRIPTION:      A pre-authorization exam is performed on a fee basis patient in order to determine treatment needs prior to authorization of the patient to a fee- for-service provider.  A second opinion exam is performed when the original 
+                                estimate on a fee basis dental case exceeds $500.00.  
+
+
+221,6.7       SPOT CHECK EXAM        0;27 SET
+
+                                '1' FOR STAFF; 
+                                '3' FOR FEE; 
+              LAST EDITED:      NOV 18, 1985 
+              HELP-PROMPT:      If a spot check examination was performed on this patient, enter a '1' or 'S' if it was for a patient treated by staff and a '3' or 'F' if treated by a fee dentist. 
+
+221,6.8       SPOT CHECK DISCREPANCY # 0;45 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>3)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 23, 1985 
+              HELP-PROMPT:      Enter a number from 0 to 3 to indicate the category of discrepancy. 
+              DESCRIPTION:      The DISCREPANCY categories are defined as follows: 
+                                        
+                                          1 = MINOR discrepancy only 
+                                          2 = MAJOR discrepancy-- QUALITY  ONLY 
+                                          3 = MAJOR discrepancy- MISREPRESENTATION ONLY 
+
+
+221,7         ADMIN PROCEDURE        0;8 SET
+
+                                '1' FOR ADMIN PROCEDURE; 
+              LAST EDITED:      SEP 05, 1985 
+              HELP-PROMPT:      Enter a '1' or 'A' for an administrative procedure. 
+              DESCRIPTION:
+                                An entry should be made in this field when a case, a service or a procedure has been administratively completed or terminated without an actual patient visit (i.e., chart review, telephone call, death, etc.).  
+
+
+221,7.1       COMPLETIONS/TERMINATIONS 0;41 SET
+
+                                '2' FOR COMPLETION; 
+                                '3' FOR TERMINATION; 
+              LAST EDITED:      NOV 18, 1985 
+              HELP-PROMPT:      Enter a '2' or 'C' for a completion or a '3' or 'T' for a termination. 
+              DESCRIPTION:      COMPLETIONS 
+                                 
+                                A case is completed when all treatment authorized has been accomplished.  Only one count should be taken for a patient during any single period of hospitalization unless the patient is under long term care.  In the case of
+                                long term care patients, including NHC and Dom patients, a count for a completed case may be taken once in each six months if re-examination indicated need for another episode of care.  For outpatients, only one complete
+                                case count may be taken per episode of care for which a treatment plan was established, even if there were intervening terminations.  If, after an outpatient case has been completed and s/he is eligible for recall, another
+                                episode of care may begin with the recall examination if treatment is indicated.  Treatment plans will not be segmented for the purpose of multiple completions during an episode of care.  For cases administratively
+                                completed, also make an entry in the ADMIN PROCEDURE field.  
+                                 
+                                TERMINATIONS 
+                                 
+                                A case is terminated when an episode of care is interrupted or stopped short of completion of the authorized treatment plan.  Examples of this would be the death of a patient, discharge to OPT status, closure of the case
+                                due to failed appointments, health reasons, or at the patient's request. For cases administratively terminated, also make an entry in the ADMIN  PROCEDURE field.  
+
+
+221,8         X-RAYS EXTRAORAL #     0;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 26, 1985 
+              HELP-PROMPT:      Enter a whole number from 0 to 4. 
+              DESCRIPTION:
+                                Enter the number of EXTRAORAL radiographs taken on this patient for panoramic, cephalometric or other extraoral procedures.  
+
+
+221,10        X-RAYS INTRAORAL #     0;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>24)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 27, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 24. 
+              DESCRIPTION:
+                                Enter the number of INTRAORAL radiographs taken for this patient for PA, bitewing, occlusal and other intraoral procedures.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,11        PROPHY NATURAL DENTITION 0;12 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 03, 1985 
+              HELP-PROMPT:      Enter a '1' or 'Y' for yes for an oral prophylaxis on natural dentition. 
+              DESCRIPTION:      In special circumstances, when a patient is of such a difficult nature that two or more appointments are needed to complete the prophylaxis,credit for each treatment episode may be recorded. If a patient is on a formal
+                                recall status, such as head and neck cancer patients who are being followed after radiation treatment,credit may be taken at each prophylaxis appointment.  A prophylaxis will include a complete review of preventive oral
+                                disease instructions.  
+
+
+221,12        PROPHY DENTURE         0;13 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 03, 1985 
+              HELP-PROMPT:      Enter a '1' or 'Y' for yes if the patient had one or more complete and/or partial removable prostheses cleaned and polished by any provider. 
+              DESCRIPTION:
+                                If a patient had a prophylaxis of natural dentition and a removeable prothesis cleaned on the same visit, an entry can be made for both procedures.  
+
+
+221,14        NEOPLASM CONFIRMED MALIGNANT # 0;15 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>2)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 23, 1985 
+              HELP-PROMPT:      Enter a number from 0 to 2 indicating the number of confirmed malignant neoplasms initially recognized by a member of the Dental Service. 
+              DESCRIPTION:      Activities surrounding the confirmation should include patient/family counseling and discussion with other hospital services (laboratory, surgery, etc.) for diagnostic interpretation and treatment planning.  All confirmed
+                                malignant neoplasms on INPATIENTS will be placed in a Priority 1 Category. If the inpatient does not fall into Extended Care, NHCU, Dom, or Special Provisions, s/he would be placed in the Compelling Medical Need Category.
+                                All confirmed malignant neoplasms on OUTPATIENTS will be placed in the appropriate Priority 1 Category.  
+
+
+221,15        NEOPLASM REMOVED #     0;16 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 30, 1985 
+              HELP-PROMPT:      Enter a whole number from 0 to 4 indicating the number of neoplasms removed (including excisional biopsies). 
+              DESCRIPTION:      All neoplasms removed for INPATIENTS will be placed in a Priority 1 Category.  If the inpatient does not fall into Extended Care, NHCU, Dom, or Special Provisions, s/he would be placed in the Compelling Medical Need 
+                                Category.  All neoplasms removed for OUTPATIENTS will be placed in the appropriate Priority 1 Category.  
+
+
+221,16        BIOPSY/SMEAR #         0;17 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 05, 1985 
+              HELP-PROMPT:      Enter a whole number from 0 to 4 indicating the number of biopsies/smears. 
+              DESCRIPTION:      Enter the number of incisional biopsies (separate lesions) plus the number of cytological smears (one smear per patient) taken.  All biopsies and cytological smears performed on INPATIENTS will be placed in a Priority 1 
+                                Category.  If the inpatient does not fall into Extended Care, NHCU, Dom, or Special Provisions, s/he would be placed in the Compelling Medical Need Category.  All biopsies and cytological smears performed on OUTPATIENTS 
+                                will be placed in the appropriate Priority 1 Category.  
+
+
+221,17        FRACTURE #             0;18 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 30, 1985 
+              HELP-PROMPT:      Enter a whole number from 0 to 4 indicating the number of maxillofacial fractures (surgical sites or procedures) reduced. 
+              DESCRIPTION:      For multiple fractures in the same bone (e.g., bilateral condylar or a bilateral combination of body and condyle) count only as one fracture reduction if only one surgical site/procedure was used.  The computer generated
+                                weighted value includes all post-operative visits.  All maxillofacial fractures reduced for INPATIENTS will be placed in a Priority 1 Category.  If the inpatient does not fall into Emergency, Extended Care, NHCU, Dom, or
+                                Special Provisions, s/he would be placed in the Compelling Medical Need Category.  All Maxillofacial fractures reduced for OUTPATIENTS will be placed in the appropriate Priority 1 Category.  
+
+
+221,19        OTHER SIGNIF. SURG. (CTV)  0;20 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>50 W !,"WARNING!! Normal range for Other Significant Surgery is 1 to 50",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 99 indicating the weighted value (CTV's) for the surgical procedure performed. 
+              DESCRIPTION:               OTHER SIGNIFICANT SURGERY CTV'S 
+                                  1. Salivary Gland Surgery            16.0 
+                                  2. Dislocation                        3.0 
+                                  3. Laceration/suturing                6.0 
+                                  4. Incision and Drainage              4.0 
+                                  5. Orthognathic Surgery              65.0 
+                                  6. Frenectomy*                        6.0 
+                                  7. Alveoplasty* (per quadrant)        4.0 
+                                  8. Exostoses removal*                 4.0 
+                                  9. Apicoectomy                       10.0 
+                                 10. Tooth hemisection, 
+                                     Root amputation*                  10.0 
+                                 11. Vestibuloplasty* 
+                                     Sulcus revision, 
+                                     Ridge extension (W/O skin graft)  12.0 
+                                     Graft procedure                   16.0 
+                                 12. Endosteal Implants**               9.0 
+                                 13. All other surgeries                6.0 
+                                  
+                                 *  These procedures will be reported at one-half of the listed units 
+                                     when done in conjunction with a quadrant of periodontal surgery.  
+                                 ** Requires VAMC Research and Development Committee approval.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,21        SURFACES RESTORED #    0;22 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>24)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>11 W !,"WARNING!! Normal range for Surfaces Restored is 1 to 11",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 24 indicating the number of surfaces restored with permanent restorative material. 
+              DESCRIPTION:
+                                DO NOT record the number of teeth restored or the number of restorations or temporary restorations in this field. They must be recorded under Other Significant Treatment.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,22        ROOT CANAL THERAPY #   0;23 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>8)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>5 W !,"WARNING!! Normal range for Root Canal Therapy is 1 to 5",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 8 indicating the number of root canals permanently filled.  DO NOT enter the number of teeth treated. 
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,23        PERIODONTAL QUADS (SURGICAL) # 0;24 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 02, 1988 
+              HELP-PROMPT:      Enter a whole number from 0 to 4 indicating the number of quadrant equivalents of periodontal surgery. 
+              DESCRIPTION:      A quadrant may have fewer than eight (8) teeth present or treated, that is, a full quadrant of teeth is not required.  If two to eight teeth are present in the same arch and any number cross the midline, count as only ONE
+                                quadrant.  DO NOT INCLUDE SCALING AND CURETTAGE IN THIS AREA EVEN IF LOCAL ANESTHESIA IS USED.  If scaling and curettage are done as part of the surgical procedure, do not take additional credit by entering both the 
+                                periodontal surgery and the scaling.  Included in the periodontal surgery is the chart review, local anesthesia, post-operative instructions, treating of complications, suture removal and pack changes.  
+                                 
+                                NOTE: ADDITIONAL SURGICAL PROCEDURES, FRENECTOMY, ALVEOPLASTY, EXOSTOSES REMOVAL, TOOTH HEMISECTION, ROOT AMPUTATION, AND/OR VESTIBULOPLASTY, WHICH ARE PERFORMED AT THE TIME OF PERIODONTAL SURGERY ARE ENTERED AS A SEPARATE 
+                                PROCEDURE UNDER OTHER SIGNIFICANT SURGERY AND ARE WEIGHTED AT ONE-HALF THE LISTED VALUE IF PERFORMED IN THE SAME SURGICAL SITE.  
+
+
+221,24        PERIO QUADS (ROOT PLANE) # 0;25 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 30, 1985 
+              HELP-PROMPT:      Enter a whole number from 0 to 4 indicating the number of quadrant equivalents of subgingival curettage and/or root planing. 
+              DESCRIPTION:      This must not be part of a periodontal surgery procedure performed in the same quadrant on the same visit.  A quadrant may have fewer than eight (8) teeth present or treated, that is, a full quadrant of teeth is not 
+                                required. If two to eight teeth are present in the same arch and any number cross the midline, count as only ONE quadrant.  If nine or more teeth are present in the same arch, count as two quadrants.  DO NOT COUNT AS
+                                QUADRANTS OF ROOT PLANING AND CURETTAGE A PROPHYLAXIS PERFORMED BY A DENTIST, EFDA, OR HYGIENIST.  That is, do not count a supragingival scaling (such as using a cavitron alone) and polishing as a curettage.  
+
+
+221,25        PATIENT ED. (CTV)      0;26 SET
+
+                                '0' FOR NONE; 
+                                '3' FOR INDIVIDUAL; 
+                                '4' FOR GROUP; 
+              LAST EDITED:      JUN 03, 1985 
+              HELP-PROMPT:      Enter a '0' or 'N' for none, a '3' or 'I' for individual , or a '4' or 'G' for group patient instruction. 
+              DESCRIPTION:      Enter the weighted value of preventive dentistry instructions.  DO NOT LIST THE NUMBER OF MINUTES.  These instructions may be given by any provider.  However, NO CREDIT IS RECORDED AT THE SAME APPOINTMENT when a
+                                prophylaxis or another treatment procedure is being accomplished by the same provider (an increase in CTV credits recognizes time spent for patient instruction during other scheduled treatment procedures).  The main pupose
+                                of this field is to record a specific appointment scheduled for a single patient or for a group training session to provide oral hygiene instructions, diet counseling, plaque scoring, etc.  For an individual patient, enter 
+                                the service code, a weighted value of three (3), and the patient's name for each instructional session.  For a group session, enter the service code, a weighted value of four (4), and the word "GROUP" in place of a 
+                                patient's name for all  instructional sessions.  All group instructions will be entered under the appropriate patient category for the majority of the group in attendance. The patient category determination for individual
+                                instructional sessions will be reported the same as for other services provided for that individual. Preventive Dentistry instructions presented for employees are recorded as education/training time.  
+
+
+221,27        INDIVIDUAL CROWNS #    0;28 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>28)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>10 W !,"WARNING!! Normal range for Individual Crowns is 1 to 10",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 28 indicating the number of permanent crowns cemented. 
+              DESCRIPTION:      The crowns cemented are not part of a fixed prosthesis. Included in this field are all types of permanent crowns such as, 3/4, porcelain fused to metal, porcelain jacket, full gold, etc. Temporary crowns are NOT to be
+                                counted in this field.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,28        POST & CORES #         0;29 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>28)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>8 W !,"WARNING!! Normal range for Post and Cores is 1 to 8",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 28 indicating the number of teeth on which a post/core or overdenture coping was cemented. 
+              DESCRIPTION:      Enter a post/core or overdenture coping regardless of whether that tooth will have a crown  as part of a fixed prosthesis or have an individual crown placed on it.  This field includes all types of posts/cores (i.e., cast,
+                                pre-prepared types, and/or threaded systems).  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,29        FIXED PARTIALS (ABUT) # 0;30 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>24)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>10 W !,"WARNING!! Normal range for Fixed Partials (Abutments) is 1 to 10",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 24 indicating the number of abutment units contained in the fixed prosthesis inserted. 
+              DESCRIPTION:      Temporary bridges for this treatment episode are NOT counted in this field.  This category includes all types of fixed prostheses with the exception of Acid Etched, Resin Bonded Retainers. These types of prostheses are
+                                recorded under Splints and Special Procedures.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,30        FIXED PARTIALS (PONT ONLY) #  0;31 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>28)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 03, 1985 
+              HELP-PROMPT:      Enter a whole number from 0 to 28 indicating the number of PONTIC UNITS contained in the fixed prosthesis inserted. 
+              DESCRIPTION:      PONTIC UNITS of temporary bridges for this treatment episode are NOT counted in this field. This field includes all types of fixed prostheses except Acid Etched, Resin  Bonded Retainers. These are reported under SPLINTS
+                                AND SPECIAL PROCEDURES.  
+
+
+221,31        REMOVABLE PARTIALS #   0;32 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>2)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 30, 1985 
+              HELP-PROMPT:      Enter a whole number from 0 to 2 indicating the number of R.P.D.'s that were delivered to the patient. 
+              DESCRIPTION:      Acrylic R.P.D.'s may be counted here ONLY if the clasp assembly contains definitive occlusal rests. Transitional (temporary) tissue supported partials are counted in the SPLINTS AND SPECIAL PROCEDURES field.  R.P.D.
+                                relines or rebases are counted under OTHER SIGNIFICANT TREATMENT.  
+
+
+221,32        COMPLETE DENTURES #    0;33 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>2)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 30, 1985 
+              HELP-PROMPT:      Enter a whole number from 0 to 2 indicating the number of COMPLETE DENTURE units (each separate prosthesis is one unit) delivered to the patient. 
+              DESCRIPTION:
+                                All COMPLETE DENTURES are counted at the time of insertion or disposition of the dentures.  Complete Denture relines or rebases are to be credited under the field OTHER SIGNIFICANT TREATMENT.  
+
+
+221,33        PROSTHETIC REPAIR #    0;34 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>2 W !,"WARNING!! Normal range for Prosthetic Repairs is 1 to 2",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 2 indicating the number of removable dentures and special appliances that were repaired for this patient. 
+              DESCRIPTION:      Each repair is counted at the time of delivery to the patient or other disposition.  Fixed prostheses with broken facings which have been repaired are reported in the Other Significant Treatment section.  If the patient
+                                does not come to the clinic for the prosthetic repair, an entry must be made in the Admin Procedure field.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,34        SPLINTS & SPEC. PROCS. (CTV)  0;35 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>50 W !,"WARNING!! Normal range for Splints and Special Procedures is 1 to 50",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 99 indicating the weighted value (CTV's) assigned to the special appliance delivered to the patient or disposed of for the patient. 
+              DESCRIPTION:                                WEIGHTED VALUES (CTV'S) 
+                                 
+                                  1. Periodontal or trauma splinting, 
+                                     orthodontic bands and/or brackets                     1.0/tooth 
+                                  2. Flouride carriers (custom)                            3.0/patient 
+                                  3. Facial moulage                                        9.0 
+                                  4. Tissue borne partial prosth.                         12.0 
+                                  5. Oral hygiene aids for handicapped pts.                9.0 
+                                  6. Acrylic cranial plate                                18.0 
+                                  7. Mandibular guidance appliance                        36.0 
+                                  8. Radiation stent                                      12.0 
+                                  9. Surgical stent or night guard                         9.0 
+                                 10. Dynamic bite opening device                          36.0 
+                                 11. Intraoral obturator (includes basic prosthesis)      50.0 
+                                 12. Speech aid prosthesis (includes basic prosthesis)    50.0 
+                                 13. Palatal lift prosthesis (includes basic prosthesis)  50.0 
+                                 14. Stock occular prosthesis                             50.0 
+                                 15. Ear prosthesis                                       50.0 
+                                 16. Custom occular prosthesis                            75.0 
+                                 17. Facial prosthesis                                    75.0 
+                                 18. Resin bonded retainers                                3.0/unit 
+                                 19. Orthodontic appliance adjustment                      2.0/visit 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,35        EXTRACTIONS #          0;36 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>32)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>10 W !,"WARNING!! Normal range for Extractions is 1 to 10",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 32 indicating the number of non-impacted (erupted) teeth extracted. 
+              DESCRIPTION:      These extractions are considered as simple extractions since no flap was necessary for surgical exposure to extract the tooth or root. Flaps in conjuction with an alveoplasty do not indicate a surgical extraction.  This
+                                entry includes all post-operative care and instructions.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,36        SURGICAL EXTRACTIONS # 0;37 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>32)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>3 W !,"WARNING!! Normal range for Impactions is 1 to 3",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 32 indicating the number of teeth surgically extracted. 
+              DESCRIPTION:
+                                This includes any type of impaction or an erupted tooth for which an intentional flap is required.  This entry includes all post-operative care and instructions.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,37        OTHER SIGNIFICANT TREAT (CTV) 0;38 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>39)!(X<0)!(X?.E1"."1N.N) X I $D(X),X>16 W !,"WARNING!! Normal range for Other Significant Treatments is 1 to 16",*7 D YN^DENTCRD1
+              LAST EDITED:      MAY 23, 1986 
+              HELP-PROMPT:      Enter a whole number from 0 to 39 indicating the weighted values (CTV's) of the procedure performed. 
+              DESCRIPTION:                        WEIGHTED VALUES (CTV's) 
+                                   
+                                  1. Blood pressure recording                                1.0/patient.  
+                                  2. Topical flouride treatment                              2.0/patient.  
+                                  3. Drug injection (not local anesthetic)                   1.0/patient.  
+                                  4. Prescription writing (Pharmacy)                         1.0/patient.  
+                                  5. Temporary restoration                                   2.0/patient.  
+                                  6. Nitrous oxide sedation                                  2.0/patient.  
+                                  7. Complete or partial denture adj. (not constructed 
+                                     by treating clinic during this episode of care.)        2.0/patient.  
+                                  8. Occulusal equilibration (not isolated adjustments)      2.0/quadrant.  
+                                  9. Recementation of crown                                  2.0 
+                                 10. Recementation of fixed bridge                           3.0 
+                                 11. Crown or bridge facing repair or recementation          3.0 
+                                 12. Tissue conditioning or chairside reline                 3.0/visit 
+                                 13. Temporary crown (not constructed by treating clinic 
+                                     during this episode of care.)                           3.0 
+                                 14. Temporary bridge (not constructed by treating clinic 
+                                     during this episode of care.)                           6.0 
+                                 15. Bleaching of teeth                                      4.0/visit 
+                                 16. Attachments (intra or extra coronal, 
+                                     semi-precision or precision)                            5.0/attach.  
+                                 17. Full mouth periodontal charting                         6.0/patient.  
+                                 18. I.V. sedation/medication                                6.0/patient.  
+                                 19. Dental admissions (no O.R.)                             9.0/patient.  
+                                 20. Reline or rebase of a complete or partial denture      12.0/unit 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+221,38        OPERATING ROOM         0;14 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 30, 1985 
+              HELP-PROMPT:      Enter a '1' or 'Y' for yes if this patient was treated in the operating room. 
+              DESCRIPTION:
+                                These cases will not be credited to a resident provider.  They must be credited to a dental staff provider or a dental consultant or attending.  
+
+
+221,39        FACTOR (NOT USED)      0;21 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 08, 1985 
+              HELP-PROMPT:      NO ENTRY IS PERMITTED IN THIS FIELD AT THIS TIME. 
+
+221,40        CHANGE/DELETE          0;5 SET
+
+                                'C' FOR CHANGE; 
+                                'D' FOR DELETE; 
+              LAST EDITED:      OCT 07, 1987 
+
+221,60        RELEASED BY            .1;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 19, 1995 
+              CROSS-REFERENCE:  221^A^MUMPS 
+                                1)= I $P(^DENT(221,DA,0),"^",40)'="" D ASET^DENTXREF
+                                2)= I $P(^DENT(221,DA,0),"^",40)'="" D AKILL^DENTXREF
+                                1. Set Logic:  KILL "A" xref composed of (221,"A",Station,Date,Record#).  If provider # has data KILL the "AC" xref composed of (221,"AC",Station,Date,Provider#,Record#).  
+                                 
+                                2. Kill Logic:  SET "A" xref composed of (221,"A",Station,Date,Record#).  If provider # has data SET the "AC" xref composed of (221,"AC",Station,Date,Provider#,Record#).  
+
+
+
+221,61        DATE RELEASED          .1;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 09, 1994 
+              CROSS-REFERENCE:  221^AG^MUMPS 
+                                1)= I $P(^DENT(221,DA,0),"^",40)'="" S ^DENT(221,"AG",$P(^DENT(221,DA,0),"^",40),X,DA)=""
+                                2)= I $P(^DENT(221,DA,0),"^",40)'="" K ^DENT(221,"AG",$P(^DENT(221,DA,0),"^",40),X,DA)
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DENTAL BED SECTION (#220.4)       BED SECTION (#5)
+
+DENTAL CLASSIFICATION (#220.2)    PATIENT CATEGORY (#4.5)
+
+DENTAL PROVIDER (#220.5)          DENTAL PROVIDER (#.5)
+
+NEW PERSON (#200)                 RELEASED BY (#60)
+
+PATIENT (#2)                      PATIENT (POINTER) (#3)
+
+
+
+INPUT TEMPLATE(S):
+DENTENDM                      AUG 24, 1988        USER #0    
+DENTENDU                      AUG 24, 1988        USER #0    
+DENTGENM                      AUG 24, 1988        USER #0    
+DENTGENU                      AUG 24, 1988        USER #0    
+DENTORAM                      APR 21, 1989        USER #0    
+DENTORAU                      APR 21, 1989        USER #0    
+DENTPERIM                     AUG 24, 1988        USER #0    
+DENTPERIU                     AUG 24, 1988        USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

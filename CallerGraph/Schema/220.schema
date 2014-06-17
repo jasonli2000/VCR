@@ -1,0 +1,493 @@
+STANDARD DATA DICTIONARY #220 -- DENTAL PATIENT FILE                                                                                                                                                                              MAY 20,2014@15:32:03  PAGE 1
+STORED IN ^DENT(220,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 1.2)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains patient information pertinent to the Dental Service.  It points to the Patient file (2).  
+
+
+
+CROSS
+REFERENCED BY: MEDICAL REVIEW DATE(AC), NAME(B)
+
+INDEXED BY:    NAME & FLUORIDE MONITOR RUN DATE (AM)
+
+
+220,.01       NAME                   0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X
+              LAST EDITED:      FEB 12, 2009 
+              HELP-PROMPT:      PLEASE SELECT NAME OF DENTAL PATIENT 
+              DESCRIPTION:
+                                ENTER PATIENT'S NAME IN THIS ORDER: LAST, FIRST 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  220^B 
+                                1)= S ^DENT(220,"B",$E(X,1,30),DA)=""
+                                2)= K ^DENT(220,"B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AM (#826)
+
+220,.09       PRIMARY PROVIDER       0;9 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      MAR 17, 2005 
+              DESCRIPTION:
+                                This field contains the Primary provider for this dental patient. 
+
+              SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+              EXPLANATION:      Only active dental providers
+
+220,.1        SECONDARY PROVIDER     0;10 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      MAR 17, 2005 
+              DESCRIPTION:
+                                This field contains the Secondary provider for this dental patient.  
+
+              SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+              EXPLANATION:      Only active dental providers
+
+220,.11       PRIMARY FEE PROVIDER   0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAR 14, 2008 
+              HELP-PROMPT:      Answer must be 3-30 characters in length 
+              DESCRIPTION:
+                                If the Primary Provider for the Patient is a Fee Basis provider, then this field will be set to the name of the Fee provider.  
+
+
+220,.12       SECONDARY FEE PROVIDER 0;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAR 14, 2008 
+              HELP-PROMPT:      Answer must be 3-30 characters in length 
+              DESCRIPTION:
+                                If the Secondary Provider for the Patient is a Fee Basis provider, then this field will be set to the name of the Fee provider.  
+
+
+220,1         APPLICATION FOR CARE STATUS 0;2 SET
+
+                                'N' FOR NEW PATIENT; 
+                                'R' FOR READMISSION/REAPPLICATION; 
+
+220,2         PATIENT CATEGORY       0;3 SET
+
+                                '1' FOR EMERGENCY; 
+                                '2' FOR COMPELLING MEDICAL NEED; 
+                                '3' FOR EXTENDED CARE; 
+                                '4' FOR NURSING HOME CARE; 
+                                '5' FOR DOMICILIARY; 
+                                '6' FOR SPECIAL PROVISION; 
+                                '7' FOR PRIORITY 2; 
+                                '8' FOR PRIORITY 3; 
+              LAST EDITED:      AUG 07, 1985 
+              DESCRIPTION:
+                                ENTER CODE CHOOSE FROM: 01 = EMERGENCY 02 = COMPELLING MEDICAL NEED 03 = EXTENDED CARE 04 = NURSING HOME CARE 05 = DOMICILIARY 06 = SPECIAL PROVISION 07 = PRIORITY 2 08 = PRIORITY 3 
+
+              SOURCE OF DATA:   Central Office instruction manual (test) on use of Optical Scan
+
+220,3         FLUORIDE CODE 1        0;4 POINTER ** TO AN UNDEFINED FILE ** 
+
+              LAST EDITED:      APR 21, 2009 
+              HELP-PROMPT:      Select a Transaction that flagged the Fluoride Monitor 
+              DESCRIPTION:
+                                This field contains the first of two restoration codes that flagged the fluoride monitor.  
+
+
+220,4         FLUORIDE CODE 2        0;5 POINTER ** TO AN UNDEFINED FILE ** 
+
+              LAST EDITED:      APR 21, 2009 
+              HELP-PROMPT:      Select a Transaction that flagged the Fluoride Monitor 
+              DESCRIPTION:
+                                This field contains the second of two restoration codes that flagged the fluoride monitor.  
+
+
+220,5         FLUORIDE MONITOR RUN DATE 0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      APR 20, 2009 
+              HELP-PROMPT:      Enter the date the fluoride monitor was last run 
+              DESCRIPTION:      This field contains the date (only) that the Fluoride Monitor was run for this patient.  Because the monitor runs in the background when a user brings up a patient and may potentially process many transactions, it will
+                                only run once per day for a patient and then store the results so that the next user will not have to wait.  
+
+              NOTES:            TRIGGERED by the FLUORIDE MONITOR FLAG field of the DENTAL PATIENT File 
+                                TRIGGERED by the FLUORIDE RX DATE field of the DENTAL PATIENT File 
+
+              RECORD INDEXES:   AM (#826)
+
+220,6         FLUORIDE RX DATE       0;7 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      APR 20, 2009 
+              HELP-PROMPT:      Enter the date a fluoride prescription was given 
+              DESCRIPTION:
+                                This is the date that a Fluoride prescription was given (written, or prescribed) to the patient that meets the Fluoride Monitor criteria.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^220^5 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DENT(220,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X="" S DIH=$G(^DENT(220,DIV(0),0)),DIV=X S $P(^(0),U,6)=DIV,DIH=220,DIG=5 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DENT(220,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X="" S DIH=$G(^DENT(220,DIV(0),0)),DIV=X S $P(^(0),U,6)=DIV,DIH=220,DIG=5 D ^DICR
+                                CREATE VALUE)= @
+                                DELETE VALUE)= @
+                                FIELD)= FLUORIDE MONITOR RUN
+                                Delete the Fluoride Monitor Run Date when a Fluoride Rx Date is changed so that the monitor is re-run for the patient/date.  
+
+
+
+220,7         FLUORIDE MONITOR FLAG  0;8 SET
+
+                                '0' FOR MONITOR IS PROCESSING; 
+                                '1' FOR MONITOR IS MET (NO FLAG); 
+                                '2' FOR ALERT PROVIDER (FLAG); 
+              LAST EDITED:      APR 21, 2009 
+              HELP-PROMPT:      Select the monitor flag, 1=No flag 2=Flag 
+              DESCRIPTION:      This field contains the flag for the Fluoride Monitor.  A value of 0 (zero) means the monitor is currently running in the background for the patient and the system/application should continue to poll for results.  A value
+                                of 1 means that there is no flag (either no restorative codes, or fluoride was prescribed or treatment was given).  A value of 2 means the provider should be flagged that restorative intervention is needed for this
+                                patient.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^220^5 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DENT(220,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X=DIV S X=DT S DIH=$G(^DENT(220,DIV(0),0)),DIV=X S $P(^(0),U,6)=DIV,DIH=220,DIG=5 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=DT
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= FLUORIDE MONITOR RUN DATE
+                                Set the Fluoride Monitor Date to the current date when the Fluoride Monitor Flag is set to denote the monitor has been run.  
+
+
+
+220,8         ORAL MALIGNANCY DATE   1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+
+220,9         PERIAPICAL RADIOGRAPH DATE 1;2 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+
+220,10        BITE WING RADIOGRAPH DATE 1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+
+220,11        PANOGRAPHIC RADIOGRAPH DATE 1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+
+220,12        OTHER RADIOGRAPH DATE  1;5 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+
+220,13        EDENTULOUS NO DENTURES 2;1 SET
+
+                                'U' FOR UPPER; 
+                                'L' FOR LOWER; 
+                                'B' FOR BOTH; 
+              LAST EDITED:      OCT 27, 1985 
+
+220,14        EDENTULOUS WITH DENTURES 2;2 SET
+
+                                'U' FOR UPPER; 
+                                'L' FOR LOWER; 
+                                'B' FOR BOTH; 
+              LAST EDITED:      JUL 18, 1985 
+
+220,47        OTHER FINDINGS/REMARKS 5;0   WORD-PROCESSING #220.01
+
+
+220,48        TREATMENT PLAN PREPARED DATE 6;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+
+220,49        TREATMENT PLAN         7;0 POINTER Multiple #220.02
+
+
+220.02,.01      TREATMENT PLAN         0;1 POINTER TO DENTAL TYPE OF SERVICE FILE (#220.3) (Multiply asked)
+
+                LAST EDITED:      JUN 24, 1985 
+
+220.02,1        PLANNED DATE           0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 28, 1985 
+
+220.02,2        COMPLETED DATE         0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 28, 1985 
+
+
+
+220,50        MEDICAL REVIEW DATE    8;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 23, 2007 
+              CROSS-REFERENCE:  220^AC 
+                                1)= S ^DENT(220,"AC",$E(X,1,30),DA)=""
+                                2)= K ^DENT(220,"AC",$E(X,1,30),DA)
+                                This cross references by the Medical Review date (Recare Date).  
+
+
+
+220,51        TREATMENT PLAN #       9;0 Multiple #220.03
+
+              IDENTIFIED BY:    DATE GENERATED(#.1)[R], PROPH PROVIDER(#3)
+
+220.03,.01      TREATMENT PLAN #       0;1 NUMBER (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 16, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                CROSS-REFERENCE:  220.03^B 
+                                  1)= S ^DENT(220,DA(1),9,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DENT(220,DA(1),9,"B",$E(X,1,30),DA)
+
+
+220.03,.1       DATE GENERATED         0;17 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 16, 1986 
+
+220.03,1        RX NEEDED              0;2 SET
+
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      JUN 06, 1986 
+
+220.03,2        PROPHYLAXIS APPT'S NEEDED 0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>2)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 30, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 2 
+                DESCRIPTION:
+                                  Enter "??" for further information concerning this field, or <RETURN> to continue.  
+
+                EXECUTABLE HELP:  I X="??" D HLP4^DENTCPM1
+
+220.03,3        PROPH PROVIDER         0;4 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+                INPUT TRANSFORM:  S DIC("S")="I '$P(^DENT(220.5,+Y,0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 22, 1987 
+                HELP-PROMPT:      Enter the Name of the PROPHYLAXIS provider. 
+                SCREEN:           S DIC("S")="I '$P(^DENT(220.5,+Y,0),U,3)"
+                EXPLANATION:      Screen out inactive PROPHYLAXIS provider
+
+220.03,4        PERIODONTAL APPT'S NEEDED 0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>8)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 30, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 8 
+                DESCRIPTION:
+                                  Enter "??" for further information concerning this field, or <RETURN> to continue 
+
+                EXECUTABLE HELP:  I X="??" D HLP6^DENTCPM1
+
+220.03,5        PERIO PROVIDER         0;6 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+                INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 23, 1987 
+                HELP-PROMPT:      Enter the name of the PERIODONTAL provider 
+                SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+                EXPLANATION:      Screen out inactive PERIODONTAL provider
+
+220.03,6        ENDODONTIC APPT'S NEEDED 0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>8)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 30, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 8 
+                DESCRIPTION:
+                                  Enter "??" for further information concerning this field, or <RETURN> to continue.  
+
+                EXECUTABLE HELP:  I X="??" D HLP8^DENTCPM1
+
+220.03,7        ENDO PROVIDER          0;8 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+                INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 23, 1987 
+                HELP-PROMPT:      Enter the name of the ENDODONTIC provider 
+                SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+                EXPLANATION:      Screen out inactive ENDODONTIC provider
+
+220.03,8        RESTORATIVE APPT'S NEEDED 0;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>7)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 30, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 7 
+                DESCRIPTION:
+                                  Enter "??" for further information concerning this field, or <RETURN> to continue.  
+
+                EXECUTABLE HELP:  I X="??" D HLP10^DENTCPM1
+
+220.03,9        REST PROVIDER          0;10 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+                INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 23, 1987 
+                HELP-PROMPT:      Enter the name of the RESTORATIVE provider 
+                SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+                EXPLANATION:      Screen out inactive RESTORATIVE provider
+
+220.03,10       SURGICAL APPT'S NEEDED 0;11 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 30, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 4 
+                DESCRIPTION:
+                                  Enter "??" for further information concerning this field, or <RETURN> to continue.  
+
+                EXECUTABLE HELP:  I X="??" D HLP12^DENTCPM1
+
+220.03,11       SURG PROVIDER          0;12 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+                INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 23, 1987 
+                HELP-PROMPT:      Enter the name of SURGICAL provider 
+                SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+                EXPLANATION:      Screen out inactive SURGICAL provider
+
+220.03,12       CROWN/BRIDGE APPT'S NEEDED 0;13 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>18)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 30, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 18 
+                DESCRIPTION:
+                                  Enter "??" for further information concerning this field, or <RETURN> to continue.  
+
+                EXECUTABLE HELP:  I X="??" D HLP14^DENTCPM1
+
+220.03,13       C/B PROVIDER           0;14 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+                INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 23, 1987 
+                HELP-PROMPT:      Enter the name of the CROWN/BRIDGE provider 
+                SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+                EXPLANATION:      Screen out inactive CROWN/BRIDGE provider
+
+220.03,14       REM PROS APPT'S NEEDED 0;15 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>5)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 30, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 5 
+                DESCRIPTION:
+                                  Enter "??" for further information concerning this field, or <RETURN> to continue.  
+
+                EXECUTABLE HELP:  I X="??" D HLP16^DENTCPM1
+
+220.03,15       PROS PROVIDER          0;16 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+                INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 23, 1987 
+                HELP-PROMPT:      Enter the name of PROS. provider 
+                SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+                EXPLANATION:      Screen out inactive  PROS. provider
+
+
+
+220,60        DENTAL ALERTS          12;0   WORD-PROCESSING #220.04   (NOWRAP)
+
+              DESCRIPTION:
+                                Contains the dental alerts for the patient - e.g. Antibiotic Premed, Sedation Premed, etc.  
+
+
+220,70.01     LAST CLASSIFICATION    10;1 POINTER TO DENTAL CLASSIFICATION FILE (#220.2)
+
+              LAST EDITED:      JUL 17, 2003 
+              DESCRIPTION:      This is computer generated.  It is the last classification for this patient based upon data filed in file 228.1 for which a transaction was marked as completed or terminated.  
+                                 
+                                This valued is stuffed from a cross reference on the dental transaction file, 228.2.  
+
+
+220,70.02     LAST CLASSIFICATION DATE 10;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      JUL 17, 2003 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is computed generated from data entered into file 228.2.  This is date of the last classification.  
+
+
+220,71        TP CHART NUM           11;0 Multiple #220.071
+
+              DESCRIPTION:      This multiple contains data used by the Discus Treatment Planning software.  That software sequences transactions by patient per day.  
+                                 
+                                Completed transactions have a chart number of 60 or greater.  Chart numbers 0-59 indicate treatment plans.  The Discus software allows only one completed chart number per day per patient.  
+                                 
+                                To sequence the data within a chart number, the Discus software uses the TIME COUNTER field.  For each transaction TIME COUNTER must be unique per patient per day.  
+                                 
+                                The data in this multiple is computer generated from cross references on file 228.2.  
+
+
+220.071,.001    DATE                     DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      JUL 18, 2003 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  This is computer generated from data filed in file 228.2.  This is the date of the transaction.  
+
+
+220.071,.01     CHART NUMBER           0;1 NUMBER (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<60)!(X?.E1"."1.N) X
+                LAST EDITED:      JUL 18, 2003 
+                HELP-PROMPT:      Type a number between 60 and 9999999, 0 Decimal Digits 
+                DESCRIPTION:      This multiple tracks the Discus Treatment Planning software chart numbers and time counters.  In this software, there is only one chart number per patient per day.  
+                                   
+                                  In the Discus software, planning transactions are 0-59.  Completed transactions are 60 or greater.  
+
+                CROSS-REFERENCE:  220.071^B 
+                                  1)= S ^DENT(220,DA(1),11,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DENT(220,DA(1),11,"B",$E(X,1,30),DA)
+
+
+220.071,.02     TIME COUNTER LAST      0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1000)!(X?.E1"."1.N) X
+                LAST EDITED:      JUL 18, 2003 
+                HELP-PROMPT:      Type a number between 1000 and 999999999, 0 Decimal Digits 
+                DESCRIPTION:      This is computer generated from filing transactions in file 228.2.  The Discus treatment planning software uses a field called TIME COUNTER to sequence the transactions for a patient per day.   Discus starts the counter
+                                  with a value of 1000 and increments it by 10 for each transaction.  This field records the last TIME COUNTER filed in file 228.2 
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DENTAL CLASSIFICATION (#220.2)    LAST CLASSIFICATION (#70.01)
+
+DENTAL PROVIDER (#220.5)          PRIMARY PROVIDER (#.09)
+                                  SECONDARY PROVIDER (#.1)
+                                  TREATMENT PLAN #:PROPH PROVIDER (#3)
+                                  PERIO PROVIDER (#5)
+                                  ENDO PROVIDER (#7)
+                                  REST PROVIDER (#9)
+                                  SURG PROVIDER (#11)
+                                  C/B PROVIDER (#13)
+                                  PROS PROVIDER (#15)
+
+DENTAL TYPE OF SERVICE (#220.3)   TREATMENT PLAN:TREATMENT PLAN (#.01)
+
+PATIENT (#2)                      NAME (#.01)
+
+
+File #220
+
+  Record Indexes:
+
+  AM (#826)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  Sort by Patient and Monitor Run Date
+      Description:  Only keeps one index per day per patient.  We don't need to know every day that the monitor was run, just if it was run for the current date. Xref contains the monitor flag, field #8.  
+        Set Logic:  S ^DENT(220,"AM",X(1),X(2))=+$P($G(^DENT(220,DA,0)),U,8)
+       Kill Logic:  K ^DENT(220,"AM",X(1))
+       Whole Kill:  K ^DENT(220,"AM")
+             X(1):  NAME  (220,.01)  (Subscr 1)  (Len 15)  (forwards)
+             X(2):  FLUORIDE MONITOR RUN DATE  (220,5)  (Subscr 2)  (Len 7)  (forwards)
+
+
+INPUT TEMPLATE(S):
+DENTCPMEDT                    JUL 30, 1986        USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

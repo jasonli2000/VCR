@@ -1,0 +1,162 @@
+STANDARD DATA DICTIONARY #458.6 -- OVERTIME WARNINGS FILE                                                                                                                                                                         MAY 20,2014@15:39:36  PAGE 1
+STORED IN ^PRST(458.6,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains entries that are generated during a supervisors certification.  When an employee's 8B string contains more overtime than approved overtime in the requests file, a warning message is displayed to the supervisor before certifying the
+timecard.  If the supervisor certifies the timecard without resolving the warning then the warning is filed in this file.  The entries are for either week 1 or week 2 of a pay period.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: STATUS(AC), NUMBER(B), PAY PERIOD(C), PAY PERIOD(D), STATUS(E)
+
+458.6,.01     NUMBER                 0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 01, 1998 
+              HELP-PROMPT:      Type a Number between 1 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                a sequential number to uniquely identify each warning.  
+
+              DELETE TEST:      1,0)= I 1 D EN^DDIOL(" OT WARNING CAN'T BE DELETED!! ","","?0")
+
+              CROSS-REFERENCE:  458.6^B 
+                                1)= S ^PRST(458.6,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRST(458.6,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^458.6^4 
+                                1)= X ^DD(458.6,.01,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^PRST(458.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X="A" X ^DD(458.6,.01,1,2,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(2)=$C(59)_$S($D(^DD(458.6,4,0)):$P(^(0),U,3),1:""),Y(1)=$S($D(^PRST(458.6,D0,0)):^(0),1:"") S X=$P($P(Y(2),$C(59)_$P(Y(1),U,5)_":",2),$C(59),1)=""
+                                1.4)= S DIH=$S($D(^PRST(458.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,5)=DIV,DIH=458.6,DIG=4 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= STATUS=""
+                                CREATE VALUE)= S X="A"
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= STATUS
+                                Trigger ensures that whenever an overtime warning is filed that it's status is set to active. The conditional expression ensures that the status is not triggered unless it is a new overtime warning entry and won't reset
+                                status if the trigger is reindexed. 
+
+
+
+458.6,1       EMPLOYEE               0;2 POINTER TO PAID EMPLOYEE FILE (#450) (Required)
+
+              LAST EDITED:      AUG 06, 1998 
+              DESCRIPTION:
+                                The employee who has more calculated overtime in their 8B string than approved overtime in the OT/CT requests file.  
+
+
+458.6,2       PAY PERIOD             0;3 POINTER TO TIME & ATTENDANCE RECORDS FILE (#458) (Required)
+
+              LAST EDITED:      AUG 13, 1998 
+              DESCRIPTION:
+                                The pay period in which the overtime warning occurs.  
+
+              CROSS-REFERENCE:  458.6^C 
+                                1)= S ^PRST(458.6,"C",$E(X,1,30),DA)=""
+                                2)= K ^PRST(458.6,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  458.6^D^MUMPS 
+                                1)= S PRSZ=$P($G(^PRST(458,X,0)),"^"),^PRST(458.6,"D",$$IC^PRSAPPU($P(PRSZ,"-"),4,10,)_"-"_$P(PRSZ,"-",2),DA)="" K PRSZ
+                                2)= S PRSZ=$P($G(^PRST(458,X,0)),"^") K ^PRST(458.6,"D",$$IC^PRSAPPU($P(PRSZ,"-"),4,10,)_"-"_$P(PRSZ,"-",2),DA),PRSZ
+                                4 digit year cross ref on pay period in order to be year 2000 compliant.  
+
+
+
+458.6,3       WEEK                   0;4 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>2)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 06, 1998 
+              HELP-PROMPT:      Type a Number between 1 and 2, 0 Decimal Digits 
+              DESCRIPTION:
+                                Either the first (1) or second (2) week of the pay period in which the overtime warning occurs.  
+
+
+458.6,4       STATUS                 0;5 SET (Required)
+
+                                'A' FOR ACTIVE; 
+                                'C' FOR CLEARED; 
+              LAST EDITED:      SEP 24, 1998 
+              DESCRIPTION:
+                                When a supervisor approves a timecard with an overtime warning an entry is added to this file and it is assumed active.  Payroll may decide to clear the warning thereby changing the status to cleared.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the NUMBER field of the OVERTIME WARNINGS File 
+
+              CROSS-REFERENCE:  458.6^AC^MUMPS 
+                                1)= I $$STATCHNG^PRSAOTTF(DA,X) D CLRXREF^PRSAOTTF(DA)
+                                2)= Q
+                                This cross reference looks at the existing value of the "E" x-ref on this field (STATUS) to determine if the value of this field is being changed.  If the STATUS is being changed then the LAST UPDATED BY field is set to
+                                the current user via their DUZ.  
+
+
+              CROSS-REFERENCE:  458.6^E 
+                                1)= S ^PRST(458.6,"E",$E(X,1,30),DA)=""
+                                2)= K ^PRST(458.6,"E",$E(X,1,30),DA)
+                                This x-ref maintains an index of Active and Cleared Overtime Warnings. 
+
+
+
+458.6,5       LAST UPDATED BY        0;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      SEP 21, 1998 
+              DESCRIPTION:
+                                User in file 200 who changes the STATUS of the warning to CLEARED (C).  
+
+              TECHNICAL DESCR:
+                                triggered by status field being set to Cleared.  
+
+              WRITE AUTHORITY:  ^
+
+458.6,6       DATE/TIME CLEARED      0;7 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 06, 1998 
+              DESCRIPTION:
+                                Date and time that the overtime warning is cleared.  
+
+
+458.6,7       8B STRING OVERTIME     0;8 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>98)!(X<0)!(X?.E1"."3N.N) X
+              LAST EDITED:      AUG 06, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 98, 2 Decimal Digits 
+              DESCRIPTION:
+                                The total of all types of overtime in the employees 8B string for either week 1 or 2.  
+
+
+458.6,8       APPROVED OVERTIME      0;9 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>98)!(X<0)!(X?.E1"."3N.N) X
+              LAST EDITED:      AUG 06, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 98, 2 Decimal Digits 
+              DESCRIPTION:
+                                The total amount of approved overtime at the time this warning is filed.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 LAST UPDATED BY (#5)
+
+PAID EMPLOYEE (#450)              EMPLOYEE (#1)
+
+TIME & ATTENDANCE RECORDS 
+                   (#458)         PAY PERIOD (#2)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

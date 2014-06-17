@@ -1,0 +1,161 @@
+STANDARD DATA DICTIONARY #163.5 -- FPPS QUEUED INVOICES FILE                                                                                                                                                                      MAY 20,2014@15:33:17  PAGE 1
+STORED IN ^FBHL(163.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 3.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the list of VistA Fee Basis invoices that are pending transmission or have already been transmitted to the Fee Payment Processing System (FPPS) hosted at the Health Administration Center (HAC).  
+ 
+VistA invoice data must be transmitted to FPPS for invoices that are associated with an electronically submitted health care claim.  FPPS can then generate the electronic remittance advice to the vendor as required by HIPAA.  
+ 
+Invoices are automatically added to this file when various trigger events occur such as receipt of a payment confirmation message.  The interface software uses this file to identify invoices that should be transmitted to FPPS and to maintain a record of
+transmissions and acknowledgements.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: INVOICE FILE NUMBER (#1)[R], STATUS (#2)[R]
+
+CROSS
+REFERENCED BY: STATUS(AC), MESSAGE DATE/TIME(AMD), MESSAGE ID(AMI), REJECT STATUS(ARS), INVOICE NUMBER(B)
+
+163.5,.01     INVOICE NUMBER         0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1)!'(X'?1P.E) X
+              LAST EDITED:      JUN 19, 2003 
+              HELP-PROMPT:      Answer must be 1-30 characters in length 
+              DESCRIPTION:
+                                The invoice number as represented throughout the system.  
+
+              CROSS-REFERENCE:  163.5^B 
+                                1)= S ^FBHL(163.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^FBHL(163.5,"B",$E(X,1,30),DA)
+
+
+163.5,1       INVOICE FILE NUMBER    0;2 SET (Required)
+
+                                '3' FOR 162 (OUTP); 
+                                '5' FOR 162.1 (PHARM); 
+                                '9' FOR 162.5 (INP); 
+              LAST EDITED:      AUG 21, 2003 
+              HELP-PROMPT:      Enter the code associated with the appropriate invoice File. 
+              DESCRIPTION:
+                                This field represents the invoice file associated with this invoice (i.e. FEE BASIS INVOICE, FEE BASIS PHARMACY INVOICE, etc.) 
+
+
+163.5,2       STATUS                 0;3 SET (Required)
+
+                                '0' FOR PENDING; 
+                                '1' FOR TRANSMITTED; 
+                                '2' FOR ACKNOWLEDGED; 
+              LAST EDITED:      AUG 21, 2003 
+              DESCRIPTION:
+                                This field represents the status of this entry.  
+
+              CROSS-REFERENCE:  163.5^AC 
+                                1)= S ^FBHL(163.5,"AC",$E(X,1,30),DA)=""
+                                2)= K ^FBHL(163.5,"AC",$E(X,1,30),DA)
+                                This cross reference represents the breakout between those invoices that are pending to be transmitted vs. those that have already been transmitted.  
+
+
+
+163.5,3       MESSAGE ID             0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      AUG 26, 2003 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                Message ID as assigned by the HL7 package.  
+
+              CROSS-REFERENCE:  163.5^AMI 
+                                1)= S ^FBHL(163.5,"AMI",$E(X,1,30),DA)=""
+                                2)= K ^FBHL(163.5,"AMI",$E(X,1,30),DA)
+                                Regular cross-reference of assigned HL7 message ID.  
+
+
+
+163.5,4       MESSAGE DATE/TIME      0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 21, 2003 
+              HELP-PROMPT:      Enter time that message was sent to HL7 package. 
+              DESCRIPTION:
+                                This field contains the date/time that Fee Basis submitted the message to the HL7 package.  
+
+              CROSS-REFERENCE:  163.5^AMD 
+                                1)= S ^FBHL(163.5,"AMD",$E(X,1,30),DA)=""
+                                2)= K ^FBHL(163.5,"AMD",$E(X,1,30),DA)
+                                Regular cross-reference of date/time that the message was accepted by the HL7 package.  
+
+
+
+163.5,5       TRANSACTION TYPE       0;6 SET
+
+                                'C' FOR CLAIM LEVEL; 
+                                'L' FOR LINE LEVEL; 
+                                'X' FOR CANCELLATION; 
+              LAST EDITED:      AUG 21, 2003 
+              HELP-PROMPT:      Enter Transaction Code that was included in the HL message. 
+              DESCRIPTION:
+                                This field contains the transaction code that was included in the HL message.  
+
+
+163.5,6       STATION NUMBER         0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>7!($L(X)<3) X
+              LAST EDITED:      AUG 21, 2003 
+              HELP-PROMPT:      Answer must be 3-7 characters in length. 
+              DESCRIPTION:
+                                This field contains the station number that was included in the HL message.  
+
+
+163.5,7       MESSAGE TEXT           1;0   WORD-PROCESSING #163.57   (NOWRAP)
+
+
+163.5,8       ACK FLAG               0;8 SET
+
+                                'A' FOR ACCEPTED; 
+                                'R' FOR REJECTED; 
+              LAST EDITED:      AUG 24, 2003 
+              DESCRIPTION:
+                                This field contains the result of the commit acknowledgement from the VistA Interface Engine.  
+
+
+163.5,9       ACK DATE/TIME          0;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 24, 2003 
+              DESCRIPTION:
+                                This field contains the date/time that the HL message status was updated.  
+
+
+163.5,10      REJECT STATUS          0;10 SET
+
+                                'N' FOR NOT REPORTED; 
+                                'R' FOR REPORTED; 
+              LAST EDITED:      AUG 24, 2003 
+              DESCRIPTION:
+                                This field will only be populated when the HL message is rejected.  It indicates if the rejection has been reported to users yet.  
+
+              CROSS-REFERENCE:  163.5^ARS 
+                                1)= S ^FBHL(163.5,"ARS",$E(X,1,30),DA)=""
+                                2)= K ^FBHL(163.5,"ARS",$E(X,1,30),DA)
+                                This regular cross-reference is used to find reject messages that have not been reported to users yet.  
+
+
+
+163.5,11      REJECT TEXT            2;0   WORD-PROCESSING #163.511   (NOWRAP)
+
+              LAST EDITED:      AUG 26, 2003 
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

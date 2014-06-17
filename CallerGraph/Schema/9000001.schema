@@ -1,0 +1,160 @@
+STANDARD DATA DICTIONARY #9000001 -- PATIENT/IHS FILE                                                                                                                                                                             MAY 20,2014@15:39:40  PAGE 1
+STORED IN ^AUPNPAT(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                              
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is IHS's primary patient data file.  The NAME (.01) field of this file is a pointer to the VA's patient file (#2).  Fields in common between the two dictionaries actually exist only in the VA patient file and are referenced by the IHS patient
+file as computed fields.  All other files containing patient data have backward pointers linking them to this file.  The linkage is by patient name and the internal FileMan gener- ated number of the ancillary file is the same number used in this file.  
+   
+All applications developed for the RPMS which require patient data will point to this file.  
+
+
+FILE SCREEN (SCR-node) : X "I '$P(^DPT(Y,0),U,19)" W $E(^AUPNPAT(Y,0),0)
+SPECIAL LOOKUP ROUTINE : DPTLK
+POST-SELECTION ACTION  : D ^AUPNPAT
+              DD ACCESS: @
+             DEL ACCESS: @
+
+POINTED TO BY: PATIENT NAME field (#.02) of the PCE DEVICE INTERFACE MODULE ERRORS File (#839.01) 
+               PATIENT field (#.02) of the TIU DOCUMENT File (#8925) 
+               PATIENT NAME field (#.05) of the VISIT File (#9000010) 
+               PATIENT NAME field (#.02) of the V PROVIDER File (#9000010.06) 
+               PATIENT NAME field (#.02) of the V POV File (#9000010.07) 
+               PATIENT NAME field (#.02) of the V IMMUNIZATION File (#9000010.11) 
+               PATIENT NAME field (#.02) of the V SKIN TEST File (#9000010.12) 
+               PATIENT NAME field (#.02) of the V EXAM File (#9000010.13) 
+               PATIENT NAME field (#.02) of the V TREATMENT File (#9000010.15) 
+               PATIENT NAME field (#.02) of the V PATIENT ED File (#9000010.16) 
+               PATIENT NAME field (#.02) of the V CPT File (#9000010.18) 
+               PATIENT NAME field (#.02) of the V HEALTH FACTORS File (#9000010.23) 
+               PATIENT NAME field (#.02) of the PROBLEM File (#9000011) 
+               
+
+CROSS
+REFERENCED BY: NAME(B), HEALTH RECORD NO.(D)
+
+9000001,.01   NAME                   0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  S:$D(X) DINUM=X
+              LAST EDITED:      SEP 29, 1990 
+              DESCRIPTION:
+                                This field points to the Patient file (#2) and has the same internal number as that file.  Thus, the patient's name is the Patient file (#2) name.  
+
+              TECHNICAL DESCR:  This field is populated in the VA when a new patient is added to the ^DPT file by the PX09 cross-reference on the Social Security Number (.09) field of ^DPT.  
+                                  
+                                Any merging of patients in ^DPT by a VAMC should include this PATIENT/IHS  file in its merging process.  
+
+              DELETE TEST:      .01,0)= I 1
+
+              SOURCE OF DATA:   011/PINAME
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  9000001^B 
+                                1)= S ^AUPNPAT("B",$E(X,1,30),DA)=""
+                                2)= K ^AUPNPAT("B",$E(X,1,30),DA)
+
+
+9000001,1201  LOCATION OF HOME       12;0   WORD-PROCESSING #9000001.12
+
+              DESCRIPTION:
+                                This is the directions to get to the patients home.  
+
+
+9000001,4101  HEALTH RECORD NO.      41;0 POINTER Multiple #9000001.41 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple contains the different health record identifiers by facility.  IHS uses a 6 character identifier.  The VA uses the social security number which may be up to 10 characters.  
+
+              TECHNICAL DESCR:
+                                This multiple is used for Multi-Facility Integration (MFI) processing at IHS facilities.  
+
+              IDENTIFIED BY:    HEALTH RECORD NO.(#.02)[R]
+
+9000001.41,.01  HEALTH RECORD FAC      0;1 POINTER TO LOCATION FILE (#9999999.06)
+
+                INPUT TRANSFORM:  S DINUM=X
+                LAST EDITED:      MAR 07, 1991 
+                HELP-PROMPT:      ENTER NAME OF FACILITY ASSOCIATED WITH THE HEALTH RECORD NUMBER YOU WISH TO ENTER. 
+                DESCRIPTION:      This field is a pointer to the LOCATION file.  The internal pointer is forced into the third subscript for the 9000001.41 subfile.  This allows easy lookup by health record number for the logged on location (facility).  
+                                   
+                                  The complete subscript for 9000001.41 will be (DFN,41,facility pointer,0).  
+
+                TECHNICAL DESCR:
+                                  In the VA, the Kernel Site Parameters DEFAULT INSTITUTION field is used to populate this field.  This was used instead of the users institution because of regional users ability to add patients to the VA.  
+
+                SOURCE OF DATA:   015/HRSUBR
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000001.41,.02  HEALTH RECORD NO.      0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  I $G(DUZ("AG"))="I" K:(X'?1.6N&(X'?1"T"5N))!(X?1.6N&(X'=+X)) X
+                LAST EDITED:      MAY 24, 1988 
+                HELP-PROMPT:      ENTER TEXT FROM 1 TO 10 CHARACTERS. 
+                DESCRIPTION:      This field is used to represent the health record number related to a facility.  
+                                   
+                                  IHS uses a 6 character whole number.  
+                                   
+                                  VA uses the patient SSN from the Patient File (2).  
+
+                TECHNICAL DESCR:
+                                  In the VA, this field is populated by the PX09 cross-reference on the SSN (.09) field of the Patient File (2).  
+
+                SOURCE OF DATA:   015/HRNUMB
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  9000001^D 
+                                  1)= S ^AUPNPAT("D",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^AUPNPAT("D",$E(X,1,30),DA(1),DA)
+
+
+9000001.41,.03  DATE INACTIVATED/DELETED 0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                DESCRIPTION:
+                                  This is date that the patients entry was inactivated.  
+
+                TECHNICAL DESCR:
+                                  This is primarily used by IHS facilities for tracking patients.  The VA currently is not maintaining this field.  
+
+
+9000001.41,.05  RECORD STATUS          0;5 SET
+
+                                  'D' FOR DELETED; 
+                                  'I' FOR INACTIVATED; 
+                                  'M' FOR MERGED; 
+                LAST EDITED:      APR 19, 1990 
+                HELP-PROMPT:      Enter "D" if the record has been deleted. 
+                DESCRIPTION:
+                                  This field is used by the IHS Multi-Facility Integration (MFI) package to determine whether to stop integrating data at a facility for a particular patient and location facility.  
+
+
+9000001.41,.06  STOP INTEGRATION       0;6 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      AUG 17, 1988 
+                DESCRIPTION:
+                                  This field is used by the Mult-Facility Integration (MFI) package, created by IHS, to indicate this patients data should no longer be integrated by MFI.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+LOCATION (#9999999.06)            HEALTH RECORD NO.:HEALTH RECORD FAC (#.01)
+
+PATIENT (#2)                      NAME (#.01)
+
+
+
+INPUT TEMPLATE(S):
+PX LOCATION OF HOME           APR 12, 1996@11:42  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,268 @@
+STANDARD DATA DICTIONARY #810.9 -- REMINDER LOCATION LIST FILE                                                                                                                                                                    MAY 20,2014@15:31:39  PAGE 1
+STORED IN ^PXRMD(810.9,  (10 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                        (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to group a list of locations and give the group a name. The locations can be Hospital Locations and/or Clinic Stops (which resolve to a list of Hospital Locations).  
+ 
+A Location List finding in Clinical Reminders is based on an entry from this file. A Location List finding will be true when a patient has an entry in the Visit file for at least one of the locations in the Location List.  
+
+
+              DD ACCESS: @
+              RD ACCESS:  
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: CLASS (#100)[R]
+
+PRIMARY KEY:        A (#43)
+  Uniqueness Index: B (#751)
+       File, Field: 1) NAME (810.9,.01)
+
+POINTED TO BY: CREDIT STOPS TO EXCLUDE (LIST) field (#2) of the CLINIC STOP LIST sub-field (#810.9001) of the REMINDER LOCATION LIST File (#810.9) 
+               FINDING ITEM field (#.01) of the FINDINGS sub-field (#811.52) of the REMINDER TERM File (#811.5) 
+               FINDING ITEM field (#.01) of the FINDINGS sub-field (#811.902) of the REMINDER DEFINITION File (#811.9) 
+               
+
+
+INDEXED BY:    NAME (B)
+
+
+810.9,.01     NAME                   0;1 FREE TEXT (Required) (Key field)
+
+              INPUT TRANSFORM:  K:$L(X)>64!($L(X)<3)!'(X'?1P.E)!('$$VNAME^PXRMINTR(.X)) X
+              LAST EDITED:      MAY 29, 2009 
+              HELP-PROMPT:      Enter the name of the location list, 3-64 characters. 
+              DESCRIPTION:
+                                This is the NAME of the Location List; it must be unique.  
+
+              TECHNICAL DESCR:
+                                NAME is a key for this file.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              FIELD INDEX:      B (#751)    REGULAR    IR    LOOKUP & SORTING
+                   Unique for:  Key A (#43), File #810.9
+                  Short Descr:  This is a new-style B cross-reference
+                    Set Logic:  S ^PXRMD(810.9,"B",$E(X,1,64),DA)=""
+                   Kill Logic:  K ^PXRMD(810.9,"B",$E(X,1,64),DA)
+                   Whole Kill:  K ^PXRMD(810.9,"B")
+                         X(1):  NAME  (810.9,.01)  (Subscr 1)  (Len 64)  (forwards)
+
+
+810.9,1       DESCRIPTION            1;0   WORD-PROCESSING #810.91
+
+              DESCRIPTION:
+                                This word processing field is used for describing the LOCATION LIST.  Information such as the purpose of the LOCATION LIST can be recorded here. The DESCRIPTION will be displayed when a LOCATION LIST inquiry is done.  
+
+
+810.9,40.7    CLINIC STOP LIST       40.7;0 POINTER Multiple #810.9001
+
+              LAST EDITED:      NOV 05, 2002 
+              DESCRIPTION:
+                                This is the list of clinic stop codes that are included in the Location List.  
+
+              IDENTIFIED BY:    AMIS REPORTING STOP CODE(#.02)
+
+              INDEXED BY:       CLINIC STOP (AC)
+
+810.9001,.01    CLINIC STOP            0;1 POINTER TO CLINIC STOP FILE (#40.7) (Multiply asked)
+
+                LAST EDITED:      AUG 03, 2009 
+                HELP-PROMPT:      Enter a CLINIC STOP CODE 
+                CROSS-REFERENCE:  810.9001^B 
+                                  1)= S ^PXRMD(810.9,DA(1),40.7,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMD(810.9,DA(1),40.7,"B",$E(X,1,30),DA)
+
+                FIELD INDEX:      AC (#752)    MUMPS    IR    ACTION
+                    Short Descr:  Set the AMIS Reporting Stop Code
+                      Set Logic:  D SAMIS^PXRMLLED(X,.DA,"CLINIC STOP")
+                     Kill Logic:  D KAMIS^PXRMLLED(X,.DA,"CLINIC STOP")
+                           X(1):  CLINIC STOP  (810.9001,.01)  (Subscr 1)  (forwards)
+
+
+810.9001,.02    AMIS REPORTING STOP CODE 0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 03, 2009 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the AMIS REPORTING STOP CODE; it is set automatically when the location is selected.  
+
+                                  UNEDITABLE
+
+810.9001,1      CREDIT STOPS TO EXCLUDE 1;0 POINTER Multiple #810.90011
+
+                DESCRIPTION:      A Clinic Stop resolves to a list of Hospital Locations. Associated with each Hospital Location entry in file #44 is a Credit Stop (the 18th piece of the 0 node). There may be certain Credit Stops that you want to exclude
+                                  from the list of locations in the Clinic Stop. This multiple contains a list of any Credit Stops that should be excluded.  
+
+                IDENTIFIED BY:    AMIS REPORTING STOP CODE(#.02)
+
+                INDEXED BY:       CREDIT STOP TO EXCLUDE (ACEX)
+
+810.90011,.01     CREDIT STOP TO EXCLUDE 0;1 POINTER TO CLINIC STOP FILE (#40.7) (Multiply asked)
+
+                  LAST EDITED:      NOV 21, 2008 
+                  HELP-PROMPT:      Enter a credit stop to exclude. 
+                  DESCRIPTION:      Clinic Stops are a way to group a list of Hospital Locations.  Associated with each Hospital Location is a Credit Stop Code. If there are Hospital Locations with certain Credit Stops that you want excluded from the
+                                    list of Hospital Locations associated with this Clinic Stop entry, they are entered in this list.  
+
+                  CROSS-REFERENCE:  810.90011^B 
+                                    1)= S ^PXRMD(810.9,DA(2),40.7,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^PXRMD(810.9,DA(2),40.7,DA(1),1,"B",$E(X,1,30),DA)
+
+                  FIELD INDEX:      ACEX (#753)    MUMPS    IR    ACTION
+                      Short Descr:  Set the AMIS Reporting Stop Code
+                        Set Logic:  D SAMIS^PXRMLLED(X,.DA,"CREDIT STOP TO EXCLUDE")
+                       Kill Logic:  D KAMIS^PXRMLLED(X,.DA,"CREDIT STOP TO EXCLUDE")
+                             X(1):  CREDIT STOP TO EXCLUDE  (810.90011,.01)  (Subscr 1)  (forwards)
+
+
+810.90011,.02     AMIS REPORTING STOP CODE 0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      AUG 03, 2009 
+                  HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                  DESCRIPTION:      This is the AMIS REPORTING STOP CODE; it is set automatically when the location is selected.  
+                                     
+
+                                    UNEDITABLE
+
+
+
+810.9001,2      CREDIT STOPS TO EXCLUDE (LIST) 2;1 POINTER TO REMINDER LOCATION LIST FILE (#810.9)
+
+                  LAST EDITED:      APR 04, 2008 
+                  HELP-PROMPT:      Select the Location List that contains the credit stops to exclude. 
+                  DESCRIPTION:      Clinic Stops have lists of Hospital Locations associated with them.  Each Hospital Location entry in file #44 has an associated Credit Stop (the 18th piece of the 0 node). There may be certain Credit Stops that you
+                                    want to exclude from the list of locations in the Clinic Stop. You can define a Location List that contains the list of Credit Stops to exclude and this field points to the exclusion list.  
+                                     
+                                     
+                                     
+                                     
+
+
+810.9001,3      EXCL LOCS WITH NO CREDIT STOP 3;1 SET
+
+                                    '0' FOR NO; 
+                                    '1' FOR YES; 
+                  LAST EDITED:      AUG 27, 2008 
+                  HELP-PROMPT:      Enter YES to exclude locations with no credit stop. 
+                  DESCRIPTION:      If this field has a value of "YES" then locations that do not have a credit stop will be excluded from the list. The default value is "NO".  
+                                     
+                                     
+
+
+
+
+810.9,44      HOSPITAL LOCATION LIST 44;0 POINTER Multiple #810.944
+
+              LAST EDITED:      NOV 05, 2002 
+              DESCRIPTION:
+                                This is the list of hospital locations that are included in the Location List.  
+
+
+810.944,.01     HOSPITAL LOCATION      0;1 POINTER TO HOSPITAL LOCATION FILE (#44) (Multiply asked)
+
+                LAST EDITED:      NOV 05, 2002 
+                HELP-PROMPT:      Enter a hospital location 
+                CROSS-REFERENCE:  810.944^B 
+                                  1)= S ^PXRMD(810.9,DA(1),44,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMD(810.9,DA(1),44,"B",$E(X,1,30),DA)
+
+
+
+
+810.9,100     CLASS                  100;1 SET (Required)
+
+                                'L' FOR LOCAL; 
+                                'N' FOR NATIONAL; 
+                                'V' FOR VISN; 
+              INPUT TRANSFORM:  K:'$$VCLASS^PXRMINTR(X) X
+              LAST EDITED:      JUN 16, 2005 
+              HELP-PROMPT:      Enter the CLASS. 
+              DESCRIPTION:      This is the CLASS of the location list. Possible classes are "N" for national, "V" for VISN, and "L" for local. National location lists cannot be edited by sites.  
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+810.9,101     SPONSOR                100;2 POINTER TO REMINDER SPONSOR FILE (#811.6)
+
+              LAST EDITED:      JUN 16, 2005 
+              HELP-PROMPT:      Enter the SPONSOR. 
+              DESCRIPTION:
+                                This is the organization or group that sponsors this location list.  
+
+
+810.9,102     REVIEW DATE            100;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 17, 2005 
+              HELP-PROMPT:      Enter the REVIEW DATE. 
+              DESCRIPTION:      REVIEW DATE is used to determine when the location list should be reviewed to verify that it is current with the latest standards and guidelines.  You can find all location lists whose review date has passed using the 
+                                Clinical Reminders Review Date Report.  
+
+
+810.9,110     EDIT HISTORY           110;0 DATE Multiple #810.9002
+
+              DESCRIPTION:
+                                This multiple is used to record a history of changes made to the location list.  
+
+
+810.9002,.01    EDIT DATE              0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 16, 2005 
+                HELP-PROMPT:      Do not edit this field. 
+                DESCRIPTION:      This is the date and time when the editing was done. This field is set automatically and should not be changed by the user.  
+                                   
+
+                CROSS-REFERENCE:  810.9002^B 
+                                  1)= S ^PXRMD(810.9,DA(1),110,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMD(810.9,DA(1),110,"B",$E(X,1,30),DA)
+
+
+810.9002,1      EDIT BY                0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUN 16, 2005 
+                HELP-PROMPT:      Do not edit this field. 
+                DESCRIPTION:      This is the person who did the editing. This field is set automatically and should not be changed by the user.  
+                                   
+
+
+810.9002,2      EDIT COMMENTS          1;0   WORD-PROCESSING #810.90022
+
+                DESCRIPTION:      This word-processing field can be used to record the changes made during the editing session.  
+                                   
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CLINIC STOP (#40.7)               CLINIC STOP LIST:CLINIC STOP (#.01)
+                                  CREDIT STOPS TO EXCLUDE:CREDIT STOP TO EXCLUDE (#.01)
+
+HOSPITAL LOCATION (#44)           HOSPITAL LOCATION LIST:HOSPITAL LOCATION (#.01)
+
+NEW PERSON (#200)                 EDIT HISTORY:EDIT BY (#1)
+
+REMINDER LOCATION LIST (#810.9)   CLINIC STOP LIST:CREDIT STOPS TO EXCLUDE (LIST) (#2)
+
+REMINDER SPONSOR (#811.6)         SPONSOR (#101)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PXRM LOCATION LIST INQUIRY    NOV 28, 2008@15:01  USER #0                                                                                                                                                                          REMINDER LOCATION LIST LIST
+PXRM LOCATION LIST LIST       JUL 12, 2006@12:26  USER #0                                                                                                                                                                                                    @
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,285 @@
+STANDARD DATA DICTIONARY #50.3 -- PRIMARY DRUG FILE                                                                                                                                                                               MAY 20,2014@15:35:17  PAGE 1
+STORED IN ^PS(50.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                              
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  This file contains drug names used to order medications for patients. These names are used mainly for selection and printing for non-pharmacy personnel, as the names HAVE NO DOSAGE ASSOCIATED WITH THEM.  
+
+
+              DD ACCESS: @
+              WR ACCESS: ^
+             DEL ACCESS: ^
+           LAYGO ACCESS: ^
+IDENTIFIED BY: MESSAGE (#.03)
+
+POINTED TO BY: *PRIMARY DRUG field (#64) of the DRUG File (#50) 
+               FORMULARY ALTERNATIVE field (#.01) of the FORMULARY ALTERNATIVE sub-field (#50.311) of the APPLICATION sub-field (#50.31) of the PRIMARY DRUG File (#50.3) 
+               *PRIMARY DRUG field (#16) of the IV ADDITIVES File (#52.6) 
+               *PRIMARY DRUG field (#16) of the IV SOLUTIONS File (#52.7) 
+               *PRIMARY DRUG field (#101) of the NON-VERIFIED ORDERS File (#53.1) 
+               *DRUG field (#.01) of the *DRUG sub-field (#53.21) of the UNIT DOSE ORDER SET File (#53.2) 
+               *PRIMARY DRUG field (#.03) of the ORDER sub-field (#53.52) of the PATIENT sub-field (#53.51) of the PICK LIST File (#53.5) 
+               *PRIMARY DRUG field (#117) of the IV sub-field (#55.01) of the PHARMACY PATIENT File (#55) 
+               *PRIMARY DRUG field (#101) of the UNIT DOSE sub-field (#55.06) of the PHARMACY PATIENT File (#55) 
+               PRIMARY DRUG field (#3) of the PHARMACY QUICK ORDER File (#57.1) 
+               
+
+CROSS
+REFERENCED BY: APPLICATION(AIU), NAME(B), SYNONYM(C)
+
+50.3,.01      NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$S($L(X)>40:1,$L(X)<3:1,X?1P.E:1,X?2"z".E:1,1:$D(^PS(50.3,"B",X))) X
+              LAST EDITED:      AUG 26, 1992 
+              HELP-PROMPT:      Answer must be 3-40 characters in length. 
+              DESCRIPTION:
+                                  This is the name of a drug used by this site.  Primary drug is used to allow order entry to be easier for non-pharmacy personnel and for display.  THIS NAME MUST BE NAME ONLY, WITH NO DOSAGE.  
+
+              TECHNICAL DESCR:
+                                  This is used in order entry by non-pharmacy personnel, for display purposes, and by other packages, when it is inappropriate for the dosage of the order to be part of the drug name.  
+
+              DELETE TEST:      1,0)= I 1 W !!,"Primary Drug entries cannot be deleted."
+
+              GROUP:            PS
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  50.3^B 
+                                1)= S ^PS(50.3,"B",X,DA)=""
+                                2)= K ^PS(50.3,"B",X,DA)
+
+
+50.3,.02      DEA, SPECIAL HANDLING  0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<1)!(X'?.N.U) X D:$D(X) EDIT^PSJDEA
+              LAST EDITED:      OCT 01, 1991 
+              HELP-PROMPT:      Answer must be 1-6 characters in length. 
+              DESCRIPTION:
+                                  This is used to designate any special handling that may apply to this primary drug.  
+
+              TECHNICAL DESCR:
+                                  This is checked by various functions of the Pharmacy/Medications packages.  
+
+              EXECUTABLE HELP:  D ^PSJDEA
+              GROUP:            PS
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.3,.03      MESSAGE                0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>68!($L(X)<1) X
+              LAST EDITED:      MAR 19, 1992 
+              HELP-PROMPT:      Answer must be 1-68 characters in length. 
+              DESCRIPTION:
+                                  This is any information that the pharmacy wants to convey to users who select this drug.  Common messages include restrictions that may have been placed on the drug.  
+
+              TECHNICAL DESCR:
+                                  This allows the pharmacy to convey any information about the drug to users who select the drug.  This is an identifier.  
+
+              GROUP:            PS
+
+50.3,1        APPLICATION            1;0 Multiple #50.31
+
+              OUTPUT TRANSFORM: S Y=$O(^PS(50.35,"C",Y,0)) S:Y Y=$P($G(^PS(50.35,Y,0)),"^") S:Y="" Y=Y(0)
+              LAST EDITED:      AUG 18, 1991 
+              DESCRIPTION:        This is the [DHCP] applications that may make use of this primary drug.  This can be used by the applications as a screen, and allows the applications to edit information about the drug that is specific to the 
+                                application.  
+
+              GROUP:            PS
+
+50.31,.01       APPLICATION            0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  D ENALU^PSJUTL
+                OUTPUT TRANSFORM: S Y=$O(^PS(50.35,"C",Y,0)) S:Y Y=$P($G(^PS(50.35,Y,0)),"^") S:Y="" Y=Y(0)
+                LAST EDITED:      AUG 23, 1991 
+                HELP-PROMPT:      Select an application for which this drug will be dispensed. 
+                DESCRIPTION:
+                                    This is an application (computer package) that would be using entries in this file.  
+
+                EXECUTABLE HELP:  D ENAQ^PSJUTL
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  50.31^B 
+                                  1)= S ^PS(50.3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(50.3,DA(1),1,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  50.31^AFI^MUMPS 
+                                  1)= S X(1)=$G(^PS(50.3,DA(1),1,DA,0)),^PS(50.3,DA(1),1,"AFI",X)='$P(X(1),"^",2)_$S($P(X(1),"^",3):"^"_$P(X(1),"^",3),1:"")
+                                  2)= K ^PS(50.3,DA(1),1,"AFI",X)
+                                  3)= Needed to know if non-formulary or inactive.
+                                    Provides a quicker check for non-formulary and/or inactive.  
+
+
+                CROSS-REFERENCE:  50.3^AIU^MUMPS 
+                                  1)= S X(1)=$P($G(^PS(50.3,DA(1),0)),"^") I X(1)]"" S ^PS(50.3,"AIU"_X,X(1),DA(1))=""
+                                  2)= S X(1)=$P($G(^PS(50.3,DA(1),0)),"^") I X(1)]"" K ^PS(50.3,"AIU"_X,X(1),DA(1))
+                                  3)= Needed to select drugs by application.
+                                    Used to allow the application to easily select only those drugs marked for the application.  
+
+
+
+50.31,.02       NON-FORMULARY          0;2 SET
+
+                                  '1' FOR N/F; 
+                LAST EDITED:      OCT 30, 1991 
+                HELP-PROMPT:      Enter a '1' if this is not to appear on the formulary list. 
+                DESCRIPTION:
+                                    This is used to designate the drug as non-formulary.  
+
+                GROUP:            PS
+                CROSS-REFERENCE:  50.31^AFIF^MUMPS 
+                                  1)= S X(1)=$G(^PS(50.3,DA(1),1,DA,0)) I $P(X(1),"^")]"" S $P(^PS(50.3,DA(1),1,"AFI",$P(X(1),"^")),"^")=""
+                                  2)= S X(1)=$G(^PS(50.3,DA(1),1,DA,0)) I $P(X(1),"^")]"" S $P(^PS(50.3,DA(1),1,"AFI",$P(X(1),"^")),"^")=1
+                                  3)= Needed to know if non-formulary.
+                                    Used to quickly know if non-formulary.  
+
+
+
+50.31,.03       INACTIVE DATE          0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 19, 1991 
+                HELP-PROMPT:      Enter a date this drug is to be inactive. 
+                DESCRIPTION:
+                                    This is the date this drug is inactive.  
+
+                GROUP:            PS
+                CROSS-REFERENCE:  50.31^AFII^MUMPS 
+                                  1)= S X(1)=$G(^PS(50.3,DA(1),1,DA,0)) I $P(X(1),"^")]"" S $P(^PS(50.3,DA(1),1,"AFI",$P(X(1),"^")),"^",2)=X
+                                  2)= S X(1)=$G(^PS(50.3,DA(1),1,DA,0)) I $P(X(1),"^")]"" S $P(^PS(50.3,DA(1),1,"AFI",$P(X(1),"^")),"^",2)=""
+                                  3)= Needed to know if inactive.
+                                    Used to quickly know if inactive.  
+
+
+
+50.31,.05       DAY (nD) or DOSE (nL) LIMIT 0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$S('X:1,X?1.2N1"D":0,1:X'?1.2N1"L") X
+                LAST EDITED:      AUG 15, 1991 
+                HELP-PROMPT:      Type a whole Number between 0 and 99, 0 Decimal Digits, followed by either a 'D' (for NUMBER OF DAYS) or an 'L' (for DOSE LIMIT). 
+                DESCRIPTION:        If found when this drug is ordered, this is used to calculate a DEFAULT value for the STOP DATE prompt of the order.  If the number entered here is followed by a "D", that NUMBER OF DAYS will be added to the START DATE
+                                  to calculate the STOP DATE.  If the number entered is followed by an "L", the number is used as the NUMBER OF DOSES to calculate the stop date.  
+                                    This is best used for NARCOTICS and ANTIBIOTICS.  
+
+                GROUP:            PS
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.31,.06       MED ROUTE              0;6 POINTER TO MEDICATION ROUTES FILE (#51.2)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),""^"")'=""ORAL"",$P(^(0),""^"",4)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      AUG 18, 1991 
+                HELP-PROMPT:      Enter the most common MED ROUTE associated with this medication. 
+                DESCRIPTION:
+                                    If a MED ROUTE is entered here, that med route is used as a DEFAULT value during order entry when this drug is selected.  
+
+                SCREEN:           S DIC("S")="I $P(^(0),""^"")'=""ORAL"",$P(^(0),""^"",4)"
+                EXPLANATION:      ONLY MED ROUTES MARKED FOR USE BY ALL PACKAGES ARE SELECTABLE.
+                GROUP:            PS
+
+50.31,.07       SCHEDULE TYPE          0;7 SET
+
+                                  'OC' FOR ON CALL; 
+                                  'O' FOR ONE TIME; 
+                                  'P' FOR PRN; 
+                                  'R' FOR FILL on REQUEST; 
+                LAST EDITED:      AUG 18, 1991 
+                HELP-PROMPT:      Enter the most common SCHEDULE TYPE associated with this medication. 
+                DESCRIPTION:
+                                    If a SCHEDULE TYPE is entered here, it is used as a DEFAULT value in order entry when this drug is selected.  
+
+                GROUP:            PS
+
+50.31,.08       SCHEDULE               0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45)!($L(X," ")>2)!($L(X)>70)!($L(X)<1) X D:$D(X)#2 EN^PSGS0 I $D(X)#2,'PSGS0Y,PSGS0XT W "  Every ",PSGS0XT," minutes"
+                LAST EDITED:      AUG 18, 1991 
+                HELP-PROMPT:      Enter the most common SCHEDULE associated with this medication. 
+                DESCRIPTION:
+                                    If a SCHEDULE is entered here, it will be used as a DEFAULT value during order entry when this drug is selected.  
+
+                GROUP:            PS
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.31,1         FORMULARY ALTERNATIVE  1;0 POINTER Multiple #50.311
+
+                DESCRIPTION:
+                                    These are formulary alternatives to this non-formulary primary drug.  
+
+                GROUP:            PS
+
+50.311,.01        FORMULARY ALTERNATIVE  0;1 POINTER TO PRIMARY DRUG FILE (#50.3) (Multiply asked)
+
+                  INPUT TRANSFORM:  S DIC("S")=$P($G(^PS(50.3,D0,1,D1,0)),"^"),DIC("S")=$S(DIC("S")]"":"I +Y'="_D0_",$G(^PS(50.3,+Y,1,""AFI"","""_DIC("S")_"""))",1:"I 0") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      APR 27, 1993 
+                  HELP-PROMPT:      Enter a formulary drug that may be used as an alternative to this non-formulary drug. 
+                  DESCRIPTION:
+                                      This is a formulary alternative to this non-formulary drug.  Any formulary alternatives entered here are shown to non-pharmacists whenever they attempt to order this non-formulary drug.  
+
+                  SCREEN:           S DIC("S")=$P($G(^PS(50.3,D0,1,D1,0)),"^"),DIC("S")=$S(DIC("S")]"":"I +Y'="_D0_",$G(^PS(50.3,+Y,1,""AFI"","""_DIC("S")_"""))",1:"I 0")
+                  EXPLANATION:      Alternative must be a formulary item and be marked for this application.
+                  GROUP:            PS
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  50.311^B 
+                                    1)= S ^PS(50.3,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^PS(50.3,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)
+
+
+
+
+
+
+50.3,2        SYNONYM                2;0 Multiple #50.32
+
+              DESCRIPTION:
+                                  This allows alternate names, such as trade names, to be entered for primary drugs, allowing primary drugs to be selected by the alternate names.  
+
+              TECHNICAL DESCR:
+                                  This allows users to provide alternate names for the entries in this file.  Users can then select entries from this file by these alternate names through a regular 'C' cross-reference.  
+
+              GROUP:            PS
+
+50.32,.01       SYNONYM                0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      MAR 15, 1992 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                    This allows alternate names, such as trade names, to be entered for primary drugs, allowing primary drugs to be selected by the alternate names.  
+
+                TECHNICAL DESCR:
+                                    This allows users to provide alternate names for the entries in this file.  Users can then select entries from this file by these alternate names through a regular 'C' cross-reference.  
+
+                CROSS-REFERENCE:  50.32^B 
+                                  1)= S ^PS(50.3,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(50.3,DA(1),2,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  50.3^C 
+                                  1)= S ^PS(50.3,"C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PS(50.3,"C",$E(X,1,30),DA(1),DA)
+                                  3)= Used for look-up.
+                                    This allows users to select file entries by their synonym(s).  
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MEDICATION ROUTES (#51.2)         APPLICATION:MED ROUTE (#.06)
+
+PRIMARY DRUG (#50.3)              FORMULARY ALTERNATIVE:FORMULARY ALTERNATIVE (#.01)
+
+
+
+INPUT TEMPLATE(S):
+PSS PD EDIT                   AUG 30, 1996@10:44  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

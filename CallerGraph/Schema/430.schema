@@ -1,0 +1,2390 @@
+STANDARD DATA DICTIONARY #430 -- ACCOUNTS RECEIVABLE FILE                                                                                                                                                                         MAY 20,2014@15:30:11  PAGE 1
+STORED IN ^PRCA(430,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 4.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This is the main file of the Accounts Receivable system.  It holds a permanent record, by bill number, of the receivable.  DO NOT USE FILEMAN TO EDIT THIS FILE DIRECTLY! Using FileMan will compromise system integrity. Use the AR menu options.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+IDENTIFIED BY: 
+        "WR1": S %I=Y,Y=$S('$D(^(0)):"",$D(^PRCA(430.2,+$P(^(0),U,2),0))#2:$P(^(0),U,1),1:""),C=$P(^DD(430.2,.01,0),U,2) D Y^DIQ:Y]"" W "   ",Y,@("$E("_DIC_"%I,0),0)") S Y=%I K %I
+        "WR2": W "   ",$E($P(^(0),U,10),4,5)_"-"_$E($P(^(0),U,10),6,7)_"-"_$E($P(^(0),U,10),2,3)
+        "WR3": S %=$P(^(0),U,9) W:%="" "NO DEBTOR NAME !  " I %]"",$D(^RCD(340,%,0)) S %=U_$P($P(^RCD(340,%,0),"^"),";",2)_+^(0)_",0)",%=$S($D(@%):$P(@%,U,1),1:"") W "  ",% K %
+        "WR4": S %I=Y,Y=$S('$D(^(0)):"",$D(^PRCA(430.3,+$P(^(0),U,8),0))#2:$P(^(0),U,1),1:""),C=$P(^DD(430.3,.01,0),U,2) D Y^DIQ:Y]"" W "   ",Y,@("$E("_DIC_"%I,0),0)") S Y=%I K %I
+        "WR5": Q:'$D(^(7))  S %=$P(^(7),U,1)+$P(^(7),U,2)+$P(^(7),U,3)+$P(^(7),U,4)+$P(^(7),U,5) W "$",$J(%,0,2) K %
+
+POINTED TO BY: BILL NUMBER field (#5.01) of the AR EVENT File (#341) 
+               ACCOUNT field (#.03) of the TRANSACTION sub-field (#344.01) of the AR BATCH PAYMENT File (#344) 
+               AR BILL # field (#.07) of the SEQUENCE # sub-field (#344.491) of the EDI LOCKBOX EOB WORKLIST File (#344.49) 
+               AR BILL NUMBER field (#.07) of the AR FMS DOCUMENT File (#347) 
+               BILL NUMBER field (#.01) of the BILL NUMBER sub-field (#348.41) of the AR DATA QUEUE File (#348.4) 
+               BILL NUMBER field (#.03) of the AR TRANSACTION File (#433) 
+               BILL NO. field (#1.01) of the AR MEDICARE DEDUCTIBLE ALERTS PART A File (#436.1) 
+               
+
+CROSS
+REFERENCED BY: CURRENT STATUS(AC), DATE ACCOUNT ACTIVATED(ACTDT), REFERRAL DATE(AD), DATE BILL PREPARED(AE), DATE STATUS UPDATED(AF), DATE ACCOUNT ACTIVATED(AG), REFERRAL DATE(AH), RE-REFERRAL DATE(AI), APPROPRIATION SYMBOL(AJ), 
+               DATE BILL PREPARED(AJK1A), DATE ACCOUNT ACTIVATED(AK), RETURNED DATE BY RC/DOJ(AL), REFERRAL DATE TO COWC(AM), DEBTOR(AS1), CURRENT STATUS(AS2), CURRENT STATUS(ASDT1), DATE STATUS UPDATED(ASDT2), DEBTOR(ATD), BILL NO.(B), DEBTOR(C), 
+               BILL NO.(D), PATIENT(E), FMS TRANSMISSION DATE(FMS), TOP REFUND STATUS(TREF)
+
+430,.01       BILL NO.               0;1 FREE TEXT
+
+              ACCOUNTS RECEIVABLE BILL NUMBER                                                                                  
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$P(X,"-",1)'?3N!'($P(X,"-",2)?7UN) X I $D(X) K:$L(X)>14!($L(X)<11) X
+              LAST EDITED:      JUL 20, 2010 
+              HELP-PROMPT:      Enter the 7-10-digit Bill Number, preceded by station number if multi-divisional (EX: 662-4K00001). 
+              DESCRIPTION:      This is the unique bill number assigned to this billing episode.  New bill numbers consist of 7 characters, preceded by station number if multi-divisional (Example: 662-K000001).  Bill numbers for bills that have been
+                                cancelled in Integrated Billing (IB) during the process of correcting errors in the original bill add an additional 3 characters, a hyphen and 
+                                 an incremental number (Example: 662-K000001-01).  
+
+              PRE-LOOKUP:       D LOOKUP^RCBEUBI1
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  430^B 
+                                1)= S ^PRCA(430,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(430,"B",$E(X,1,30),DA)
+                                3)= Needed for look-up of Site-Bill Number
+                                This cross-reference is used for file look-up and sorting by Accounts Receivable Bill No.  
+
+
+              CROSS-REFERENCE:  430^D^MUMPS 
+                                1)= S ^PRCA(430,"D",$P(X,"-",2,3),DA)=""
+                                2)= K ^PRCA(430,"D",$P(X,"-",2,3),DA)
+                                3)= Needed for look-up by bill number
+                                Needed for look-up  by bill number.  This cross reference is used for 
+                                 look-up and sorts on the Account Receivable 8 digit bill number. (without 
+                                 the station number, but with the -iteration# if applicable). 
+
+
+
+430,.11       LAST INTEREST CHARGE DATE .1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 19, 2000 
+              HELP-PROMPT:      This field is internally populated by AR.  This field contains the date the bill was last charged interest. 
+              DESCRIPTION:
+                                This field stores the last date interest was charged to this bill.  
+
+
+430,.12       LAST ADMIN CHARGE DATE .1;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 19, 2000 
+              HELP-PROMPT:      This field is internally populated by AR.  This field contains the date the bill was last charged an administrative fee. 
+              DESCRIPTION:
+                                This field stores the last date an administrative charge was applied to this bill.  
+
+
+430,.13       LAST PENALTY CHARGE DATE .1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 19, 2000 
+              HELP-PROMPT:      This field is internally populated by AR.  This field contains the date the bill was last charged a penalty fee. 
+              DESCRIPTION:
+                                This field stores the last date penalty charges were added to this bill.  
+
+
+430,1         FISCAL YEAR            2;0 Multiple #430.01 (Add New Entry without Asking)
+
+              LAST EDITED:      SEP 09, 1993 
+              DESCRIPTION:
+                                A single bill can have activity that spreads over more than one fiscal year.  This multiple field holds a record of each year's appropriation symbol, PAT reference number, original amount, etc.  
+
+              IDENTIFIED BY:    
+                       "Z1":    W "   " W:$P(^(0),U,2)]"" "$",$P(^(0),U,2)
+                       "Z2":    S %I=Y,Y=$S('$D(^(0)):"",$D(^PRC(442,+$P(^(0),U,3),0))#2:$P(^(0),U,1),1:""),C=$P(^DD(442,.01,0),U,2) D Y^DIQ:Y]"" W "   ",Y,@("$E("_DIC_"%I,0),0)") S Y=%I K %I
+                       "Z3":    W "   ",$P(^(0),U,4)
+
+430.01,.01      FISCAL YEAR            0;1 FREE TEXT (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  K:X'?2N X I $D(X) S DINUM=$S(+X<70:"3"_X,1:"2"_X)
+                LAST EDITED:      AUG 15, 1988 
+                HELP-PROMPT:      Enter the two digit code for the Fiscal Year. For bills with more than one FY, complete the first entry, then enter the second at the next 'FISCAL YEAR //' prompt. 
+                DESCRIPTION:
+                                  This is the 2-digit code representing the Fiscal Year, for instance, 89 stands for Fiscal Year 1989.  Bills may have data for more than one Fiscal year.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  430.01^B 
+                                  1)= S ^PRCA(430,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCA(430,DA(1),2,"B",$E(X,1,30),DA)
+                                  This cross-reference is used for look-up and sorts of the Fiscal Years for the bill.  
+
+
+
+430.01,1        CURR.PRIN.BAL.         0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-9999.99) X
+                LAST EDITED:      NOV 05, 1987 
+                HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the current principal balance for the Fiscal Year.  
+
+                NOTES:            TRIGGERED by the FY ORIGINAL AMOUNT field of the FISCAL YEAR sub-field of the ACCOUNTS RECEIVABLE File 
+
+
+430.01,2        PAT REF NO.            0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      AUG 15, 1997 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                DESCRIPTION:
+                                  ***This field is obsolete with version 4.5 and will be deleted with an upcoming cleanup patch.  
+
+
+430.01,3        APPROPRIATION SYMBOL   0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) D EN1^PRCHPAT
+                LAST EDITED:      MAR 31, 1988 
+                HELP-PROMPT:      Enter the Appropriation with a space instead of the Fiscal Year (ie. 36 2431) 
+                DESCRIPTION:
+                                  This is the accounting symbol that represents the annual appropriation for this bill.  
+
+                EXECUTABLE HELP:  S PRCALD("APPR")="",DIC="^PRCD(420.3,",DIC(0)="QE",D="C",Z0=$P(^PRCA(430,DA(1),2,DA,0),U,1),DIC("S")="I $P(^(0),U,5)]""""" D DQ^DICQ K PRCALD("APPR"),DIC,Z0
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  430^AJ^MUMPS 
+                                  1)= S Z0=$P(^PRCA(430,DA(1),2,DA,0),U,4) S:$E(Z0,3)?1N Z0=$E(Z0,1,2)_" "_$E(Z0,4,7) S $P(^PRCA(430,DA(1),0),U,18)=Z0 K Z0
+                                  2)= Q
+                                  This cross reference sets the Appropriation Symbol field 18 to the non year appropriation symbol entered for this Fiscal Year.  
+
+
+
+430.01,4        ALD CODE               0;5 POINTER TO PRCD FUND/APPROPRIATION CODE FILE (#420.3)
+
+                LAST EDITED:      OCT 02, 1987 
+                HELP-PROMPT:      Enter the first few characters of an ALD Code, then choose appropriate code from listing. 
+                DESCRIPTION:
+                                  This is a pointer to the ALD Code File (Appropriation/Limitation/Department).  New entries are not allowed.  
+
+
+430.01,5        CALM CODE DONE         0;6 SET
+
+                                  '1' FOR NOT DONE; 
+                                  '2' FOR DONE; 
+                LAST EDITED:      SEP 01, 1988 
+                HELP-PROMPT:      Enter 2 for 'DONE' or 1 for 'NOT DONE' 
+                DESCRIPTION:
+                                  This is a set of codes, indicating whether or not a CALM code sheet has been completed.  
+
+
+430.01,7        FY ORIGINAL AMOUNT     0;8 NUMBER (Required)
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999.99)!(X<0) X
+                LAST EDITED:      APR 25, 2008 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the original amount of the charges for this Fiscal Year.  
+
+                CROSS-REFERENCE:  ^^TRIGGER^430.01^1 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^PRCA(430,D0,2,D1,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=DIU+DIV X ^DD(430.01,7,1,1,1.4)
+                                  1.3)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(0)=X S Y(1)=$S($D(^PRCA(430,D0,2,D1,0)):^(0),1:"") S X=$P(Y(1),U,2)=""
+                                  1.4)= S DIH=$S($D(^PRCA(430,DIV(0),2,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=430.01,DIG=1 D ^DICR:$O(^DD(DIH,DIG,1,0))
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^PRCA(430,D0,2,D1,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y X ^DD(430.01,7,1,1,2.1) X ^DD(430.01,7,1,1,2.4)
+                                  2.1)= S X=DIV S Y(1)=$S($D(^PRCA(430,D0,2,D1,0)):^(0),1:"") S X=$P(Y(1),U,2)-X
+                                  2.4)= S DIH=$S($D(^PRCA(430,DIV(0),2,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=430.01,DIG=1 D ^DICR:$O(^DD(DIH,DIG,1,0))
+                                  CREATE CONDITION)= CURR.PRIN.BAL.=""
+                                  CREATE VALUE)= CURR.PRIN.BAL.+FY ORIGINAL AMOUNT
+                                  DELETE VALUE)= CURR.PRIN.BAL-OLD FY ORIGINAL AMOUNT
+                                  FIELD)= CURR.PRIN.BAL.
+                                  This cross reference triggers the Curr.Prin.Bal field #1.  
+
+
+
+
+
+430,2         CATEGORY               0;2 POINTER TO ACCOUNTS RECEIVABLE CATEGORY FILE (#430.2) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,7)'=33,$P(^(0),U,7)"_$S($D(PRCABT):$P(">14&($P(^(0),U,7)<17):=17:>4&($P(^(0),U,7)<15)",":",PRCABT),1:">4") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 08, 2004 
+              HELP-PROMPT:      Enter the category for this bill. 
+              DESCRIPTION:
+                                This is the bill's Category - a pointer to the Category File (Means Test, Vendor, Employee, Tort, etc.).  
+
+              TECHNICAL DESCR:
+                                 
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,7)'=33,$P(^(0),U,7)"_$S($D(PRCABT):$P(">14&($P(^(0),U,7)<17):=17:>4&($P(^(0),U,7)<15)",":",PRCABT),1:">4")
+              EXPLANATION:      TYPE OF BILL
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+430,3         ORIGINAL AMOUNT        0;3 NUMBER (Required)
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+              LAST EDITED:      OCT 07, 1991 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999.99, 2 Decimal Digits, Total original amount for this bill. 
+              DESCRIPTION:
+                                This is the original dollar amount of the bill.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^430^71 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCA(430,D0,7)):^(7),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X=DIV S X=DIU+DIV X ^DD(430,3,1,1,1.4)
+                                1.4)= S DIH=$S($D(^PRCA(430,DIV(0),7)):^(7),1:""),DIV=X S $P(^(7),U,1)=DIV,DIH=430,DIG=71 D ^DICR:$O(^DD(DIH,DIG,1,0))
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCA(430,D0,7)):^(7),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X=DIV S X=DIU-X X ^DD(430,3,1,1,2.4)
+                                2.1)= S X=DIV S Y(1)=$S($D(^PRCA(430,D0,0)):^(0),1:"") S X=$P(Y(1),U,3)
+                                2.4)= S DIH=$S($D(^PRCA(430,DIV(0),7)):^(7),1:""),DIV=X S $P(^(7),U,1)=DIV,DIH=430,DIG=71 D ^DICR:$O(^DD(DIH,DIG,1,0))
+                                3)= Needed to set the Principal Balance of Bill
+                                CREATE VALUE)= PRINCIPAL BALANCE+ORIGINAL AMOUNT
+                                DELETE VALUE)= PRINCIPAL BALANCE-OLD ORIGINAL AMOUNT
+                                FIELD)= PRINCIPAL BALANCE
+                                This cross reference triggers the Principal Balance field #71.  
+
+
+
+430,4         GL NO.                 0;4 FREE TEXT (Required)
+
+              GENERAL LEDGER NO.                                                                                               
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<4) X
+              LAST EDITED:      JUN 03, 1987 
+              HELP-PROMPT:      Enter the General Ledger No. Must be 4 characters. 
+              DESCRIPTION:
+                                This is the General Ledger Number for the ALD CODE assigned to this bill.  
+
+
+430,4.5       BILL RESULTING FROM    0;5 POINTER TO AR DEBT LIST FILE (#430.6) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="S Z0=$P(^PRCA(430,DA,0),U,2) Q:+Z0'>0  S Z0=$P(^PRCA(430.2,Z0,0),U,6) I ($P(^PRCA(430.6,Y,0),U,4)[Z0)!($P(^(0),U,4)[""X"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I $D(^PRCA(430.6,+Y,0)) S Y=$P(^PRCA(430.6,+Y,0),U,2)
+              LAST EDITED:      JAN 13, 1994 
+              HELP-PROMPT:      We'll put this data on the follow-up letters. Enter the reason for the bill. Notify Supervisor if correct choice is not available. 
+              DESCRIPTION:      The cause of the debt.  This field points to the AR Debt List File which contains brief statements describing the source of the bills that are used on the debt collection letters.  
+                                  
+                                The type of entry selected must be compatible with the bill's category type.  
+
+              SCREEN:           S DIC("S")="S Z0=$P(^PRCA(430,DA,0),U,2) Q:+Z0'>0  S Z0=$P(^PRCA(430.2,Z0,0),U,6) I ($P(^PRCA(430.6,Y,0),U,4)[Z0)!($P(^(0),U,4)[""X"")"
+              EXPLANATION:      CLASSIFY WITH TYPE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+430,7         PATIENT                0;7 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      JUN 02, 1993 
+              HELP-PROMPT:      Enter a Patient from the Patient File. Adding new patients is not allowed. 
+              DESCRIPTION:
+                                This is a pointer to the Patient File. Adding new patients is NOT ALLOWED through this option.  
+
+              CROSS-REFERENCE:  430^E 
+                                1)= I $P(^PRCA(430,DA,0),"^",2),$P(^PRCA(430.2,+$P(^(0),"^",2),0),"^",6)["T" S ^PRCA(430,"E",X,DA)=""
+                                2)= K ^PRCA(430,"E",X,DA)
+                                3)= Needed to look up third party bills by patient
+                                This cross reference is set for the Third Party type category of bills.  
+
+
+
+430,8         CURRENT STATUS         0;8 POINTER TO ACCOUNTS RECEIVABLE TRANS.TYPE FILE (#430.3) (Required)
+
+              INPUT TRANSFORM:  D CKSTAT^PRCAUT3
+              LAST EDITED:      NOV 12, 1996 
+              HELP-PROMPT:      Enter the current status of this bill. 
+              SCREEN:           S Z1=100,Z2=199 S:$D(PRCASV("STATUS")) Z1=199,Z2=300 S DIC("S")="I ($P(^PRCA(430.3,Y,0),U,3)>Z1)&($P(^(0),U,3)<Z2)" S:$D(PRCAOLD) DIC("S")="I $P(^(0),U,5)=1"
+              EXPLANATION:      CURRENT BILL STATUS
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  430^AC 
+                                1)= S ^PRCA(430,"AC",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(430,"AC",$E(X,1,30),DA)
+                                3)= Needed to look-up bills by status
+                                This cross-reference is needed to find bills by status.  This cross-reference is used extensively by reports and options.  
+
+
+              CROSS-REFERENCE:  430^AS2^MUMPS 
+                                1)= I $P(^PRCA(430,DA,0),"^",9) S ^PRCA(430,"AS",$P(^PRCA(430,DA,0),"^",9),X,DA)=""
+                                2)= I $P(^PRCA(430,DA,0),"^",9) K ^PRCA(430,"AS",$P(^PRCA(430,DA,0),"^",9),X,DA)
+                                3)= Needed to look-up bills by status for a specific debtor
+                                This cross-reference allows rapid look-up of bills by status for a specific debtor.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^430^60 
+                                1)= X ^DD(430,8,1,3,1.3) I X S X=DIV S Y(1)=$S($D(^PRCA(430,D0,6)):^(6),1:"") S X=$P(Y(1),U,21),X=X S DIU=X K Y S X=DIV D NOW^%DTC S X=% X ^DD(430,8,1,3,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=0 I ",112,102,"[(","_$P($G(^PRCA(430.3,+$P(^PRCA(430,D0,0),"^",8),0)),"^",3)_","),$P($G(^PRCA(430,D0,6)),"^",21)="" S X=1
+                                1.4)= S DIH=$S($D(^PRCA(430,DIV(0),6)):^(6),1:""),DIV=X S $P(^(6),U,21)=DIV,DIH=430,DIG=60 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                3)= Needed to create a new 'activity' for a debtor
+                                69.2)= S Y(3)=$S($D(^PRCA(430,D0,6)):^(6),1:"") S X=$S('$D(^PRCA(430.3,+Y(0),0)):"",1:$P(^(0),U,1))="OPEN",Y(1)=X S X=$S('$D(^PRCA(430.3,+Y(0),0)):"",1:$P(^(0),U,1))
+                                CREATE CONDITION)= S X=0 I ",112,102,"[(","_$P($G(^PRCA(430.3,+$P(^PRCA(430,D0,0),"^",8),0)),"^",3)_","),$P($G(^PRCA(430,D0,6)),"^",21)="" S X=1
+                                CREATE VALUE)= D NOW^%DTC S X=%
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= DATE ACCOUNT ACTIVATED
+                                This cross-reference triggers the Date Account Activated field.  When a bill is made Active or Open for a patient, new activity needs to be logged so that it may appear on the next patient statement.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^430^14 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCA(430,D0,0)):^(0),1:"") S X=$P(Y(1),U,14),X=X S DIU=X K Y S X=DIV S X=DT X ^DD(430,8,1,4,1.4)
+                                1.4)= S DIH=$S($D(^PRCA(430,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,14)=DIV,DIH=430,DIG=14 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= S X=DT
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= DATE STAT
+                                This trigger will set the DATE STATUS UPDATED to todays date whenever the STATUS of a bill changes.  
+
+
+              CROSS-REFERENCE:  430^ASDT1^MUMPS 
+                                1)= I $P(^PRCA(430,DA,0),U,14) S ^PRCA(430,"ASDT",X,$P($P(^PRCA(430,DA,0),U,14),"."),DA)=""
+                                2)= I $P(^PRCA(430,DA,0),U,14) K ^PRCA(430,"ASDT",X,$P($P(^PRCA(430,DA,0),U,14),"."),DA)
+                                This cross reference is used to sort bills by the status and the date the status was last updated.  
+
+
+
+430,9         DEBTOR                 0;9 POINTER TO AR DEBTOR FILE (#340) (Required)
+
+              INPUT TRANSFORM:  D EN6^PRCABIL D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 11, 1993 
+              DESCRIPTION:      This field points to the Debtor File, which in turn is a variable pointer to other files. This allows automatic look-up of debtors based on the category of the bill.  Adding new entries to the other files may not be
+                                allowed.  
+
+              SCREEN:           D EN6^PRCABIL
+              EXPLANATION:      DEBTOR
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  430^C 
+                                1)= S ^PRCA(430,"C",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(430,"C",$E(X,1,30),DA)
+                                3)= Needed to look-up bills by Debtor
+                                This cross-reference allows user look-up of bills belonging to a specific debtor.  
+
+
+              CROSS-REFERENCE:  430^AS1^MUMPS 
+                                1)= I $P(^PRCA(430,DA,0),"^",8) S ^PRCA(430,"AS",X,$P(^PRCA(430,DA,0),"^",8),DA)=""
+                                2)= I $P(^PRCA(430,DA,0),"^",8) K ^PRCA(430,"AS",X,$P(^PRCA(430,DA,0),"^",8),DA)
+                                3)= Needed to look-up bills by status for a specific debtor
+                                This cross-reference allows rapid look-up of bills by status for a specific debtor.  
+
+
+              CROSS-REFERENCE:  430^ATD^MUMPS 
+                                1)= D UPATDS^PRCAUTL I $D(^RCD(340,X,0)),$P(^(0),"^")[";DPT(",$D(^PRCA(430,DA,6)),$P(^(6),"^",21) S ^PRCA(430,"ATD",X,$P(^PRCA(430,DA,6),"^",21),DA)=""
+                                2)= D UPATDS^PRCAUTL I $D(^RCD(340,X,0)),$P(^(0),"^")[";DPT(",$D(^PRCA(430,DA,6)),$P(^(6),"^",21) S ^PRCA(430,"ATD",X,$P(^PRCA(430,DA,6),"^",21),DA)=""
+                                3)= Needed to update activity cross-reference when debtor edited
+                                This cross-reference is not actively used and only exists to update the activity for a debtor in the event the debtor field is ever changed, which should never happen.  
+
+
+
+430,10        DATE BILL PREPARED     0;10 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1!(X>DT) X
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      Enter the date on which the bill was established. 
+              DESCRIPTION:
+                                The date the bill was prepared. Time is not allowed.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  430^AE^MUMPS 
+                                1)= D AR^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+              CROSS-REFERENCE:  430^AJK1A^MUMPS 
+                                1)= I $P(^PRCA(430,+DA,0),"^",8)=16 S ^PRCA(430,"AJK1",X,DA)=""
+                                2)= K ^PRCA(430,"AJK1",X,DA)
+                                Maintains cross reference set on CURRENT STATUS field of active bills referenced by date prepared.  
+
+
+
+430,11        CURRENT BALANCE         ;  COMPUTED
+
+              MUMPS CODE:       S Y(430,11,1)=$S($D(^PRCA(430,D0,7)):^(7),1:"") S X=$P(Y(430,11,1),U,1)+$P(Y(430,11,1),U,2)+$P(Y(430,11,1),U,3)+$P(Y(430,11,1),U,4)+$P(Y(430,11,1),U,5) S X=$J(X,0,2)
+              ALGORITHM:        #71+#72+#73+#74+#75  (ALWAYS 2 DECIMAL DIGITS)
+              DESCRIPTION:
+                                This field computes the current balance of the account.  
+
+
+430,12        SITE                   0;12 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      FEB 14, 1993 
+              HELP-PROMPT:      Enter Station Number. 
+              DESCRIPTION:
+                                This is a pointer to the Admin. Activity Site Parameter File.  Adding new entries is allowed.  
+
+
+430,13        AGENT CASHIER          0;13 POINTER TO AR GROUP FILE (#342.1)
+
+              AGENT CASHIER ADDRESS                                                                                            
+              LAST EDITED:      FEB 22, 1993 
+              DESCRIPTION:
+                                This field is an inactive field and used to point to the AR SITE PARAMETER file (430.5) in AR v3.7.  
+
+
+430,13.1      ACCOUNT RECEIVABLE SECTION 0;6 POINTER TO AR GROUP FILE (#342.1)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),""^"",2)=4" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 22, 1993 
+              DESCRIPTION:
+                                This field is inactive and use to point to the AR SITE PARAMETER file (430.5) in AR v3.7.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),""^"",2)=4"
+              EXPLANATION:      SELECT ONLY AR SECTION
+
+430,14        DATE STATUS UPDATED    0;14 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      Enter the date the Status of this bill was updated. Time of day is not allowed. 
+              NOTES:            TRIGGERED by the CURRENT STATUS field of the ACCOUNTS RECEIVABLE File 
+
+              CROSS-REFERENCE:  430^ASDT2^MUMPS 
+                                1)= I $P(^PRCA(430,DA,0),U,8) S ^PRCA(430,"ASDT",+$P(^PRCA(430,DA,0),U,8),X,DA)=""
+                                2)= I $P(^PRCA(430,DA,0),U,8) K ^PRCA(430,"ASDT",+$P(^PRCA(430,DA,0),U,8),X,DA)
+                                This cross reference is used to sort bills by the status and the date the status was last updated.  
+
+
+              CROSS-REFERENCE:  430^AF^MUMPS 
+                                1)= D AR^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+
+430,15        STATUS REMARK          0;15 FREE TEXT
+
+              STATUS CHANGE REMARKS                                                                                            
+              INPUT TRANSFORM:  K:$L(X)>45!($L(X)<3) X
+              LAST EDITED:      OCT 06, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 3-45 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                An optional field that holds a brief remark regarding the status, reason for change in status, etc. 3-45 characters. 
+
+
+430,15.1      TYPE OF CARE           0;16 POINTER TO ACCOUNTS RECEIVABLE CATEGORY FILE (#430.2) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,7)<4" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUN 15, 1988 
+              HELP-PROMPT:      Enter a 'Type of Care' from the AR category File. 
+              DESCRIPTION:      This is a pointer to the AR category file. This entry should be 
+                                 'NURSING HOME CARE', 'OUTPATIENT CARE' or 'HOSPITAL CARE'.  Adding new entries is not allowed.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,7)<4"
+              EXPLANATION:      CHOOSE TYPE OF CARE
+
+430,16        DATE CALM DONE         0;11 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 17, 1988 
+              HELP-PROMPT:      Enter the date the PAT REF # was assigned and the CALM Code sheet was done. 
+              DESCRIPTION:
+                                The date the PAT reference number was assigned and the CALM code sheet was done.  
+
+
+430,17        STATUS UPDATED BY      0;17 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 11, 1992 
+              HELP-PROMPT:      Enter the name of the person making a change in this bill's status. 
+              DESCRIPTION:
+                                This is a pointer to the New Person File. It extracts the name of the person making a change to the bill's status. Adding new entries is not allowed.  
+
+
+430,18        APPROPRIATION SYMBOL   0;18 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>10!($L(X)<7) X
+              LAST EDITED:      MAR 31, 1988 
+              HELP-PROMPT:      Enter the Appropriation Symbol, 7-10 characters. 
+              DESCRIPTION:
+                                This is a free-text field holding the appropriation symbol. 7-10 characters.  
+
+
+430,19        SECONDARY INSURANCE CARRIER 0;19 POINTER TO INSURANCE COMPANY FILE (#36)
+
+              LAST EDITED:      MAY 31, 1988 
+              HELP-PROMPT:      Enter the insured's secondary insurance carrier. 
+              DESCRIPTION:
+                                This is a pointer to the Insurance Company File. Adding new entries is not allowed.  
+
+
+430,19.1      TERTIARY INSURANCE CARRIER 0;20 POINTER TO INSURANCE COMPANY FILE (#36)
+
+              LAST EDITED:      MAY 31, 1988 
+              HELP-PROMPT:      Enter the insured's tertiary insurance carrier. 
+              DESCRIPTION:
+                                This is a pointer to the Insurance Company File. Adding new entries is not allowed.  
+
+
+430,20.1      SEGMENT                0;21 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>500)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 18, 1988 
+              HELP-PROMPT:      Type a Number between 0 and 500, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of the billing category's AMIS reporting segment.  
+
+
+430,21        HOLD LETTER DATE       1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 20, 1987 
+              HELP-PROMPT:      Enter the date a hold was placed on follow-up letters for this account. 
+              DESCRIPTION:
+                                This is the date a hold is/was placed on follow-up letters for this account.  
+
+
+430,22        HOLD LETTER REASON     1;2 SET
+
+                                'L' FOR PERSONAL LETTER; 
+                                'P' FOR PHONE CALL; 
+                                'V' FOR PERSONAL VISIT; 
+                                'O' FOR OTHERS; 
+              LAST EDITED:      JUN 30, 1987 
+              HELP-PROMPT:      Enter code. Type '??' for a listing. 
+              DESCRIPTION:
+                                This is the reason a hold was placed on sending follow-up letters.  Select from the list of choices.  
+
+
+430,23        HOLD LETTER COMMENTS   1;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>45!($L(X)<3) X
+              LAST EDITED:      JUN 30, 1987 
+              HELP-PROMPT:      Enter a comment, 3-45 characters. 
+              DESCRIPTION:
+                                This field allows the user to enter expanded comments on the reason for holding follow-up letters.  
+
+
+430,31        DATE RETURNED TO SERVICE 3;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 14, 1988 
+              HELP-PROMPT:      Enter date, time not allowed. 
+              DESCRIPTION:
+                                This is the date a bill was returned to the originating service.  
+
+
+430,32        RETURNED BY            3;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 11, 1992 
+              HELP-PROMPT:      Enter your name: Last,First 
+              DESCRIPTION:
+                                This is the user from the New Person File who returned the bill to the originating service. Adding a new Person is not allowed.  
+
+
+430,33        AMENDED DATE           3;3 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 14, 1988 
+              HELP-PROMPT:      Enter date, time not allowed. 
+              DESCRIPTION:
+                                This is the date this bill was amended.  
+
+
+430,34        AMENDED BY             3;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 11, 1992 
+              HELP-PROMPT:      Enter your name: Last,First. 
+              DESCRIPTION:
+                                This is the user from the New Person File who amended this bill.  Adding a new Person is not allowed.  
+
+
+430,35        AMENDED AMOUNT         3;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              LAST EDITED:      JUL 14, 1988 
+              HELP-PROMPT:      Enter a dollar amount by which the bill should be increased or decreased:  -999999.99 thru 999999.99.  This is the dollar amount by which the bill should be increased or decreased NOT THE  NEW AMOUNT. 
+              DESCRIPTION:
+                                This is the dollar value of the amendment. It can be a positive or negative figure.  
+
+
+430,36        FISCAL COMMENTS (RETURN) 3;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<3) X
+              LAST EDITED:      NOV 04, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 3-100 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This text field holds Fiscal service comments regarding the return of a bill.  
+
+
+430,37        SERVICE COMMENTS (AMEND) 3;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<3) X
+              LAST EDITED:      NOV 04, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 3-100 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This text field holds the Service's comments regarding the amendment of a bill.  
+
+
+430,41        REPAYMENT PLAN DATE    4;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 14, 1987 
+              HELP-PROMPT:      Enter the date a repayment plan was established. 
+              DESCRIPTION:
+                                This is the date a repayment plan was established.  
+
+
+430,42        DAY OF MON. PAYMENT DUE 4;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>28)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 25, 1990 
+              HELP-PROMPT:      Type a Number between 1 and 28, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the day of the month that payments are due according to the repayment plan.  
+
+
+430,43        REPAYMENT AMOUNT DUE   4;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      AUG 14, 1987 
+              HELP-PROMPT:      Enter the monthly amount the debtor will pay in the repayment plan. 
+              DESCRIPTION:
+                                This is the monthly payment amount agreed upon in the repayment plan.  
+
+
+430,44        NUMBER OF PAYMENTS     4;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 14, 1987 
+              HELP-PROMPT:      Enter the number of payments in the repayment plan. Type a Number between 0 and 60. 
+              DESCRIPTION:
+                                This is the number of payments agreed upon in the repayment plan.  
+
+
+430,51        REPAYMENT DUE DATES    5;0 DATE Multiple #430.051 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple field holds information about each payment received during the repayment plan.  
+
+
+430.051,.01     REPAYMENT DUE DATES    0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 16, 1987 
+                HELP-PROMPT:      Enter a payment due date. 
+                DESCRIPTION:
+                                  This is the date a payment is due.  
+
+                CROSS-REFERENCE:  430.051^B 
+                                  1)= S ^PRCA(430,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCA(430,DA(1),5,"B",$E(X,1,30),DA)
+                                  This cross-reference is used for look-up and sorts for Repayment Due Dates.  
+
+
+
+430.051,1       PAYMENT RECEIVED       0;2 SET
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      AUG 14, 1987 
+                HELP-PROMPT:      Enter '1' if payment was received, '0' if not. 
+                DESCRIPTION:
+                                  This indicates whether or not a payment was received.  
+
+
+430.051,2       SEND STATEMENT         0;3 SET
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      DEC 09, 1987 
+                HELP-PROMPT:      Enter '1' if statement was mailed, '0' if not. 
+                DESCRIPTION:
+                                  This indicates whether or not a statement of account was mailed.  
+
+
+430.051,4       PAYMENT DATA           0;4 POINTER TO AR TRANSACTION FILE (#433)
+
+                LAST EDITED:      NOV 06, 1987 
+                DESCRIPTION:
+                                  This is the AR transaction for this repayment date.  
+
+
+430.051,5       DATE SENT PAYMENT STATEMENT 0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 16, 1987 
+                HELP-PROMPT:      Enter the date the payment statement is printed. 
+                DESCRIPTION:
+                                  This is the date the statement was sent to the debtor.  
+
+
+
+
+430,60        DATE ACCOUNT ACTIVATED 6;21 DATE
+
+              INPUT TRANSFORM:  S %DT="T",X="NOW" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      This sets the original date that the account first became active. 
+              WRITE AUTHORITY:  ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the CURRENT STATUS field of the ACCOUNTS RECEIVABLE File 
+
+              CROSS-REFERENCE:  430^AK^MUMPS 
+                                1)= I $P($G(^RCD(340,+$P(^PRCA(430,DA,0),"^",9),0)),"^")[(";DPT(") S ^PRCA(430,"ATD",$P(^PRCA(430,DA,0),"^",9),$E(X,1,30),DA)=""
+                                2)= I $P(^PRCA(430,DA,0),"^",9) K ^PRCA(430,"ATD",$P(^PRCA(430,DA,0),"^",9),$E(X,1,30),DA)
+                                3)= Needed to set cross-reference of patient activity
+                                This cross-reference is used to track accounts that have been made ACTIVE.  It is used by the patient statement procedures.  
+
+
+              CROSS-REFERENCE:  430^ACTDT^MUMPS 
+                                1)= S ^PRCA(430,"ACTDT",$P(X,"."),DA)=""
+                                2)= K ^PRCA(430,"ACTDT",$P(X,"."),DA)
+                                This cross reference is used to sort bills by the date they are activated.  
+
+
+              CROSS-REFERENCE:  430^AG^MUMPS 
+                                1)= D AR^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+
+430,61        LETTER1                6;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 17, 1987 
+              HELP-PROMPT:      Enter the date the 1st follow-up letter was sent. 
+              DESCRIPTION:
+                                This is the date the first debt collection letter was sent to the debtor.  
+
+
+430,62        LETTER2                6;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 17, 1987 
+              HELP-PROMPT:      Enter the date the 2nd letter was sent. 
+              DESCRIPTION:
+                                This is the date the second debt collection letter was sent to the debtor.  
+
+
+430,63        LETTER3                6;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 17, 1987 
+              HELP-PROMPT:      Enter the date the 3rd letter was sent. 
+              DESCRIPTION:
+                                This is the date the third debt collection letter was sent to the debtor.  
+
+
+430,64        REFERRAL DATE          6;4 DATE
+
+              RC/DOJ REFERRAL DATE                                                                                             
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      Enter the date the account was referred to RC/DOJ. 
+              DESCRIPTION:
+                                This is the date the account was referred to the Regional Counsel or the Department of Justice for collection.  
+
+              CROSS-REFERENCE:  430^AD 
+                                1)= S ^PRCA(430,"AD",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(430,"AD",$E(X,1,30),DA)
+                                3)= Needed to look-up bills by referral date
+                                This cross-reference is used to look-up bills by Referral Date.  
+
+
+              CROSS-REFERENCE:  430^AH^MUMPS 
+                                1)= D AR^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+
+430,65        REFERRAL CODE          6;5 SET
+
+              RC/DOJ REFERRAL CODE                                                                                             
+                                'RC' FOR REGIONAL COUNSEL; 
+                                'DOJ' FOR DEPT.OF JUSTICE; 
+                                'DC' FOR REGIONAL COUNSEL; 
+              LAST EDITED:      SEP 30, 1997 
+              HELP-PROMPT:      Enter 'RC' or 'DOJ' 
+              DESCRIPTION:
+                                This field indicates where an account was referred to.  
+
+
+430,66        REFERRAL AMOUNT        6;6 NUMBER
+
+              RC/DOJ REFERRAL AMOUNT                                                                                           
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      APR 23, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the account balance that was referred.  
+
+
+430,67        LAST INT/ADM CHARGE DATE 6;7 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 23, 1987 
+              HELP-PROMPT:      Enter the last date the monthly interest/administrative cost was charged. 
+              DESCRIPTION:
+                                This is the most recent date that Interest/Administrative costs were charged to the account.  
+
+
+430,68        LETTER4                6;8 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Enter date the 4th letter was sent. 
+              DESCRIPTION:
+                                This is the date the fourth debt collection letter was sent to the debtor.  
+
+
+430,68.1      LAST LETTER DATE       6;9 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 02, 1987 
+              HELP-PROMPT:      Enter date of the letter. 
+              DESCRIPTION:
+                                This is the date of the most recent debt collection letter.  
+
+
+430,68.2      RE-REFERRAL DATE       6;10 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      Enter the date the account was re-referred to RC/DOJ 
+              DESCRIPTION:
+                                This is the date the account was re-referred to the Regional Counsel or Department of Justice.  
+
+              CROSS-REFERENCE:  430^AI^MUMPS 
+                                1)= D AR^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+
+430,68.3      RETURNED DATE BY RC/DOJ 6;11 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      Enter the date the account was returned by RC/DOJ. 
+              DESCRIPTION:
+                                This is the date a referred account was returned by the Regional Counsel or Department of Justice.  
+
+              CROSS-REFERENCE:  430^AL^MUMPS 
+                                1)= D AR^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+
+430,68.4      REFERRAL DATE TO COWC  6;12 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      Enter the date the account was referred to COWC. 
+              DESCRIPTION:
+                                This is the date the account was referred to the DVB Committee on Waivers and Compromise.  
+
+              CROSS-REFERENCE:  430^AM^MUMPS 
+                                1)= D AR^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+
+430,68.5      REFERRED AMOUNT TO COWC 6;13 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+              LAST EDITED:      APR 11, 1988 
+              HELP-PROMPT:      Enter the dollar amount of the account referred to COWC. 
+              DESCRIPTION:
+                                This is the balance of an account referred to the DVB Committee on Waivers and Compromise.  
+
+
+430,68.6      IRS OFFSET LETTER      6;14 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 05, 1990 
+              HELP-PROMPT:      Enter the date the last time an IRS OFFSET letter was sent for this bill. 
+              DESCRIPTION:
+                                This field stores the last date an IRS Offset letter was printed that contained the amount due from the bill.  
+
+
+430,68.7      DATE FORWARDED TO IRS  6;15 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 05, 1990 
+              DESCRIPTION:
+                                This is the date the receivable was forwarded to the IRS.  
+
+
+430,68.8      IRS PRINCIPAL BALANCE  6;16 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 05, 1990 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the principal balance of the receivable forwarded to the IRS.  
+
+
+430,68.9      IRS INTEREST BALANCE   6;17 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 05, 1990 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the Interest Balance forwarded to the IRS.  
+
+
+430,68.91     IRS ADMIN. BALANCE     6;18 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 22, 1990 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the Administrative Balance forwarded to the IRS.  
+
+
+430,68.92     ORIGINAL IRS LETTER AMOUNT 6;19 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 19, 1990 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the Original Amount of the bill forwarded to the IRS.  
+
+
+430,68.93     ORIGINAL IRS OFFSET AMOUNT 6;20 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      OCT 19, 1990 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the Original IRS Offset Amount.  
+
+
+430,68.94     REFERRAL REASON CODE   6;22 SET (Required)
+
+                                '1' FOR LITIGATION ISSUES; 
+                                '2' FOR VET NOT RESP FOR COST OF CARE; 
+                                '3' FOR REFUSAL TO PAY GOV HOSPITAL; 
+                                '4' FOR VETERAN PAID DIRECTLY; 
+                                '5' FOR MCCR REF WITH RC CONSENT; 
+              LAST EDITED:      JAN 09, 2003 
+              HELP-PROMPT:      Enter the Reason Code for referring this claim to Regional Counsel. 
+              DESCRIPTION:
+                                This is a code for the transmission to Regional Counsel to let them know the reason for the referral.  This is required for the transmission.  
+
+
+430,68.95     REFERRAL COMMENT       6;23 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>65!($L(X)<3) X
+              LAST EDITED:      JAN 09, 2003 
+              HELP-PROMPT:      Enter detailed reason for referral and contact information at RC. 
+              DESCRIPTION:
+                                Enter specific information on the account pertaining to the reason for referral; date, time of call and contact person the staff spoke with at the Regional Counsel.  
+
+
+430,69        OVER LETTER3            ;  COMPUTED
+
+              MUMPS CODE:       S Y(430,69,1)=$S($D(^PRCA(430,D0,6)):^(6),1:""),X=DT S X=X,X1=X,X2=$P(Y(430,69,1),U,3),X="" D:X2 ^%DTC:X1
+              ALGORITHM:        TODAY-LETTER3
+              DESCRIPTION:
+                                This field computes the length of time since the third debt collection letter was mailed.  
+
+
+430,70        DELINQUENT DAYS         ;  COMPUTED
+
+              MUMPS CODE:       S Y(430,70,1)=$S($D(^PRCA(430,D0,6)):^(6),1:""),X=DT S X=X,X1=X,X2=$P(Y(430,70,1),U,1),X="" D:X2 ^%DTC:X1 S X=$J(X,0,0)
+              ALGORITHM:        TODAY-LETTER1  (ALWAYS 0 DECIMAL DIGITS)
+              DESCRIPTION:
+                                This field computes the number of days an account is delinquent by subtracting the date of the first debt collection letter from the current date.  
+
+
+430,71        PRINCIPAL BALANCE      7;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999.99)!(X<-999999.99) X
+              LAST EDITED:      AUG 28, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between -999999.99 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field is set to the original amount when a new bill is established.  
+
+              NOTES:            TRIGGERED by the ORIGINAL AMOUNT field of the ACCOUNTS RECEIVABLE File 
+
+
+430,72        INTEREST BALANCE       7;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      AUG 28, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the balance due for interest charges on this bill.  
+
+
+430,73        ADMINISTRATIVE COST BALANCE 7;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      AUG 28, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the balance due for administrative costs on this bill.  
+
+
+430,74        MARSHAL FEE            7;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      AUG 28, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount of the Marshal Fee included in this bill.  
+
+
+430,75        COURT COST             7;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      AUG 28, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount of court costs included in this bill.  
+
+
+430,77        TOTAL PAID PRINCIPAL   7;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-99999.99) X
+              LAST EDITED:      SEP 24, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the total amount received toward this bill's principal balance.  
+
+
+430,78        TOTAL PAID INTEREST    7;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-9999.99) X
+              LAST EDITED:      SEP 24, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the total amount received toward this bill's interest charges.  
+
+
+430,79        TOTAL PAID ADMINISTRATIVE COST 7;9 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-9999.99) X
+              LAST EDITED:      SEP 24, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the total amount received toward this bill's administrative cost charges.  
+
+
+430,79.1      TOTAL PAID MARSHAL FEE 7;10 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      NOV 06, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the total amount received toward this bill's Marshal Fee.  
+
+
+430,79.12     OUTSTANDING PB         7;12 NUMBER
+
+              OUTSTANDING PRINCIPAL BALANCE                                                                                    
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+              LAST EDITED:      APR 11, 1988 
+              HELP-PROMPT:      Type outstanding principal balance for this debtor. 
+              DESCRIPTION:
+                                This is the total outstanding principal balance for this debtor's account.  
+
+
+430,79.13     OUTSTANDING IB         7;13 NUMBER
+
+              OUTSTANDING INTEREST BALANCE                                                                                     
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      APR 11, 1988 
+              HELP-PROMPT:      Enter the outstanding interest balance for this debtor. 
+              DESCRIPTION:
+                                This is the total outstanding principal interest balance for this debtor's account.  
+
+
+430,79.14     OUTSTANDING AB         7;14 NUMBER
+
+              OUTSTANDING ADMINISTRATIVE COST BALANCE                                                                          
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      APR 11, 1988 
+              HELP-PROMPT:      Enter the outstanding admin. cost balance for this debtor. 
+              DESCRIPTION:
+                                This is the total outstanding administrative cost charges for this debtor's account.  
+
+
+430,79.15     OUTSTANDING MF         7;15 NUMBER
+
+              OUTSTANDING MARSHAL FEE                                                                                          
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      APR 11, 1988 
+              HELP-PROMPT:      Enter the outstanding marshal fee for the debtor. 
+              DESCRIPTION:
+                                This is the total outstanding marshal's fee for this debtor's account.  
+
+
+430,79.16     OUTSTANDING CC         7;16 NUMBER
+
+              OUTSTANDING COURT COST                                                                                           
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      APR 11, 1988 
+              HELP-PROMPT:      Enter the outstanding court cost balance for the debtor. 
+              DESCRIPTION:
+                                This is the total outstanding court cost for this debtor's account.  
+
+
+430,79.17     EXCESS PAYMENT AMOUNT  7;17 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              LAST EDITED:      FEB 21, 1989 
+              HELP-PROMPT:      Enter the amount of the excess payment. 
+              DESCRIPTION:
+                                This field stores the amount of a patient's excess payment.  
+
+
+430,79.18     REFUNDED AMOUNT        7;18 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              LAST EDITED:      FEB 21, 1989 
+              HELP-PROMPT:      Enter the amount refunded to the patient. 
+              DESCRIPTION:
+                                This field stores the dollar amount that has been refunded to the patient.  
+
+
+430,79.19     REFUNDED DATE          7;19 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 21, 1989 
+              HELP-PROMPT:      Enter the date the refund was made. 
+              DESCRIPTION:
+                                This field stores the date the refund was made.  
+
+
+430,79.2      TOTAL PAID COURT COST  7;11 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      NOV 06, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the total amount received toward this bill's court costs.  
+
+
+430,79.21     REFUNDED BY            7;21 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JAN 27, 1992 
+              HELP-PROMPT:      Enter the name of the person who approved this refund, Last Name,First 
+              DESCRIPTION:
+                                This field stores the name of the person who approved the refund.  It is a pointer to the New Person File.  
+
+
+430,81        IRS LOCATION COST      8;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount charged to the bill for an IRS locator search.  
+
+
+430,82        CREDIT REP. COST       8;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount charged to the bill for a credit report locator check.  
+
+
+430,83        DMV LOCATION COST      8;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount charged to the bill for a state agency/department of motor vehicles locator search.  
+
+
+430,83.1      DMV LOCATION CHECK     8;18 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      JAN 20, 1988 
+              HELP-PROMPT:      Enter 'Y' for Yes or 'N' for No. 
+              DESCRIPTION:
+                                This flag indicates whether or not a state agency/department of motor vehicles locator check was done.  
+
+
+430,84        CONSUMER REP. AGENCY COST 8;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount charged to the bill for a consumer rep. agency locator search.  
+
+
+430,85        POSTAL LOCATION COST   8;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount charged to the bill for a US Postal Service locator search.  
+
+
+430,86        ABLE TO PAY            8;6 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Enter 'Y' for Yes or 'N' for No. 
+              DESCRIPTION:
+                                This flag indicates whether or not the debtor is able to pay this bill.  
+
+
+430,87        ABLE TO LOCATE         8;7 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Enter 'Y' for Yes or 'N' for No. 
+              DESCRIPTION:
+                                This flag indicates whether or not the debtor could be located.  
+
+
+430,88        POSTAL LOC.DATE SENT   8;8 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Enter date locator request was sent to the Postal Service. 
+              DESCRIPTION:
+                                This is the date a request to locate the debtor was sent to the US Postal Service.  
+
+
+430,89        POSTAL LOC.DATE RECEIVED 8;9 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 14, 1987 
+              HELP-PROMPT:      Enter date reply from Postal Service was received. 
+              DESCRIPTION:
+                                This is the date a reply was received to the Postal locator request.  
+
+
+430,89.1      IRS ABLE TO LOCATE     8;10 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      FEB 09, 1988 
+              HELP-PROMPT:      Is IRS able to locate the debtor ? Enter 'Y' or 'N' 
+              DESCRIPTION:
+                                This flag indicates whether or not the IRS was able to locate the debtor.  
+
+
+430,89.2      IRS LOC. DATE SENT     8;11 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 06, 1987 
+              HELP-PROMPT:      Enter date locator request was sent to IRS. 
+              DESCRIPTION:
+                                This is the date a request to locate the debtor was sent to the IRS.  
+
+
+430,89.3      IRS LOC. DATE RECEIVED 8;12 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 06, 1987 
+              HELP-PROMPT:      Enter date reply received from IRS. 
+              DESCRIPTION:
+                                This is the date a reply was received to the IRS locator request.  
+
+
+430,89.4      CREDIT REP. ABLE TO PAY 8;13 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      FEB 09, 1988 
+              HELP-PROMPT:      Enter 'Y' for Yes or 'N' for No. 
+              DESCRIPTION:
+                                This flag indicates whether or not the credit report says the debtor is able to pay the bill.  
+
+
+430,89.5      CREDIT REPT. DATE SENT 8;14 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 06, 1987 
+              HELP-PROMPT:      Enter date request for credit report was sent. 
+              DESCRIPTION:
+                                This is the date a request for a credit report was sent.  
+
+
+430,89.6      CREDIT REP. DATE RECEIVED 8;15 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 06, 1987 
+              HELP-PROMPT:      Enter date credit report was received. 
+              DESCRIPTION:
+                                This is the date the requested credit report was received.  
+
+
+430,89.7      PATIENT FOLDER REVIEWED 8;16 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      FEB 09, 1988 
+              HELP-PROMPT:      Did you review the patient folder ? Enter 'Y' or 'N' 
+              DESCRIPTION:
+                                This flag indicates whether or not the debtor's Patient Folder was reviewed for locator information.  
+
+
+430,89.8      DATE FOLDER REVIEWED   8;17 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 06, 1987 
+              HELP-PROMPT:      Enter date Patient Folder was reviewed. 
+              DESCRIPTION:
+                                This is the date the debtor's Patient Folder was reviewed.  
+
+
+430,90        APPROVED BY (FISCAL)   9;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 11, 1992 
+              HELP-PROMPT:      Enter approving official's name. 
+              DESCRIPTION:
+                                This is the person in Fiscal who approved the bill.  
+
+
+430,91        AR ELECTRONIC SIGNATURE 9;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+              OUTPUT TRANSFORM: S Y="<HIDDEN>"
+              LAST EDITED:      FEB 07, 1997 
+              HELP-PROMPT:      Enter Electronic Signature code. 
+
+430,92        AR DATE SIGNED         9;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 19, 1987 
+              HELP-PROMPT:      Enter date bill was signed. 
+              DESCRIPTION:
+                                This is the date the bill was signed in Fiscal.  
+
+
+430,93        AR APPR.OFFICIAL'S TITLE 9;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>27!($L(X)<3) X
+              LAST EDITED:      NOV 19, 1987 
+              HELP-PROMPT:      Enter Approving Official's Title. 
+              DESCRIPTION:
+                                This is the approving official's title.  
+
+
+430,94        APPROVED BY (BILLING)  9;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JAN 27, 1992 
+              HELP-PROMPT:      Enter person who approved bill in Service. 
+              DESCRIPTION:
+                                This is the person who approved the bill in the Service or Section.  
+
+
+430,95        PREVIOUS STATUS        9;6 POINTER TO ACCOUNTS RECEIVABLE TRANS.TYPE FILE (#430.3)
+
+              LAST EDITED:      JUL 18, 1988 
+              HELP-PROMPT:      Enter bill's previous status. 
+              DESCRIPTION:
+                                This is the former status of the bill if it has been changed.  
+
+
+430,96        APPROVED DATE (SERVICE) 9;7 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 18, 1988 
+              HELP-PROMPT:      Enter date the bill was approved. 
+              DESCRIPTION:
+                                This is the date the bill was approved in the Service or Section.  
+
+
+430,97        PROCESSED BY (SERVICE) 9;8 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 19, 1992 
+              HELP-PROMPT:      Enter the name of the person who processed the bill. 
+              DESCRIPTION:
+                                This is the person in the Service or Section who processed the bill.  
+
+
+430,98        COMMENTS               10;0   WORD-PROCESSING #430.098
+
+              DESCRIPTION:
+                                This word processing field allows the AR Clerk or Supervisor to add optional comments at the time the bill is audited.  
+
+
+430,100       FORM TYPE              100;1 SET (Required)
+
+                                '1' FOR 1081; 
+                                '2' FOR 1080; 
+                                '3' FOR 1114; 
+              LAST EDITED:      OCT 25, 1988 
+              HELP-PROMPT:      Enter the code for the form to be used for the bill 
+              DESCRIPTION:
+                                This response indicates the type of form for the bill.  (1080, 1081 or 1114).  
+
+
+430,101       SERVICE                100;2 POINTER TO SERVICE/SECTION FILE (#49) (Required)
+
+              LAST EDITED:      SEP 21, 1988 
+              HELP-PROMPT:      Enter billing Service or Section. 
+              DESCRIPTION:
+                                This is the Service or Section that originated the bill.  
+
+
+430,104       VOUCHER NUMBER         100;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<3) X
+              LAST EDITED:      OCT 28, 1987 
+              HELP-PROMPT:      Enter optional voucher number, 3 - 9 characters. 
+              DESCRIPTION:
+                                This is the billing Service/Section's voucher number. It is used on the 1080, 1081 and 1114 bill forms.  
+
+
+430,106       DESCRIPTION            101;0 DATE Multiple #430.02 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is a description of the bill.  
+
+              IDENTIFIED BY:    
+                       "Z1":    W "   ",$E($P(^(0),U,2),4,5)_"-"_$E($P(^(0),U,2),6,7)_"-"_$E($P(^(0),U,2),2,3)
+                       "Z6":    W "   ",$P(^(0),U,6)
+
+430.02,.01      DATE OF CHARGES        0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 12, 1988 
+                HELP-PROMPT:      Enter date charges were incurred. 
+                DESCRIPTION:
+                                  This is the date that the charges were incurred.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  430.02^B 
+                                  1)= S ^PRCA(430,DA(1),101,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCA(430,DA(1),101,"B",$E(X,1,30),DA)
+                                  This cross-reference is used for look-up and sorts for the Date of Charges.  
+
+
+
+430.02,2        DESCRIPTION OF CHARGES 1;0   WORD-PROCESSING #430.22
+
+                DESCRIPTION:
+                                  This is a description of the individual charges on the bill.  
+
+
+430.02,3        QUANTITY (UNITS)       0;3 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."3N.N)!'X X
+                OUTPUT TRANSFORM: S:Y?1".".N Y="0"_Y
+                LAST EDITED:      MAR 15, 1993 
+                HELP-PROMPT:      Type a Number greater than 0 and less than or equal to 99999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  If the total amount of charges is computed using units of issue, then this is the number of units that are being billed.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  430.02^AC^MUMPS 
+                                  1)= I $P(^PRCA(430,DA(1),101,DA,0),U,4)]"" S Z0=($P(^(0),U,4)*X*100+.5\1/100),$P(^(0),U,6)=Z0 K Z0
+                                  2)= Q
+                                  This cross reference calculates and sets the Total Amount field 6.  
+
+
+
+430.02,4        UNIT COST              0;4 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."5N.N) X
+                LAST EDITED:      DEC 16, 2003 
+                HELP-PROMPT:      Type a Number between 0 and 9999999, 4 Decimal Digits 
+                DESCRIPTION:
+                                  This is the billing cost of a single unit of issue.  
+
+                CROSS-REFERENCE:  430.02^AD^MUMPS 
+                                  1)= I $P(^PRCA(430,DA(1),101,DA,0),U,3)]"" S Z0=($P(^(0),U,3)*X*100+.5\1/100),$P(^(0),U,6)=Z0 K Z0
+                                  2)= Q
+                                  This cross-reference calculates and sets the Total Amount field 6.  
+
+
+
+430.02,5        UNIT                   0;5 POINTER TO UNIT OF ISSUE FILE (#420.5)
+
+                LAST EDITED:      JUL 31, 1987 
+                HELP-PROMPT:      Enter unit of issue, 'EA' for Each, 'BX' for Box, etc. 
+                DESCRIPTION:
+                                  This is the unit of issue -- EA, BX, DZ, etc.  
+
+
+430.02,6        TOTAL AMOUNT           0;6 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999)!(X<0) X
+                LAST EDITED:      JUN 30, 2005 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This total is computed by multiplying the number of units by the cost per unit.  
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  430.02^AE^MUMPS 
+                                  1)= Q
+                                  2)= Q
+                                  Obsolete version 3.7 cross-reference.  
+
+
+
+430.02,7        ORDER NO.              0;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      JUL 31, 1987 
+                HELP-PROMPT:      Enter optional Order No., 1 - 10 characters. 
+                DESCRIPTION:
+                                  If the Service or Section has an order number associated with this bill it is entered here.  
+
+
+
+
+430,107       BILLING AGENCY         100;7 POINTER TO AR GROUP FILE (#342.1)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)=6" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 17, 1993 
+              DESCRIPTION:
+                                This is the billing agency from the AR Site Parameter file.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,2)=6"
+              EXPLANATION:      TAKE THE BILLING AGENCY TYPE
+
+430,108       AGENCY LOCATION CODE (ALC) 100;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<3) X
+              LAST EDITED:      OCT 28, 1987 
+              HELP-PROMPT:      Enter ALC, 3 - 12 characters. 
+              DESCRIPTION:
+                                This is the Agency Location Code.  
+
+
+430,110       DOCUMENT NUMBER        100;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 07, 1987 
+              HELP-PROMPT:      Type a Number between 1 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the Document Number used on the 1081 bill form.  
+
+
+430,111       APPROVING OFFICIAL (SERVICE) 104;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 11, 1992 
+              HELP-PROMPT:      Enter the person's name who approved the bill in the Service. 
+              DESCRIPTION:
+                                This is the person in the Service or Section who approved the bill.  
+
+
+430,112       ELECTRONIC SIGNATURE   104;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+              OUTPUT TRANSFORM: S Y="<HIDDEN>"
+              LAST EDITED:      FEB 07, 1997 
+              HELP-PROMPT:      Enter Electronic Signature Code 
+
+430,113       DATE SIGNED (APPROVED) 104;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 07, 1987 
+              HELP-PROMPT:      Enter date the bill was approved in the Service. 
+              DESCRIPTION:
+                                This is the date the bill was approved in the Service or Section.  
+
+
+430,114       APPR. OFFICIAL'S TITLE 104;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>27!($L(X)<3) X
+              LAST EDITED:      OCT 07, 1987 
+              HELP-PROMPT:      Enter Approving Official's Title, 3 - 27 characters. 
+              DESCRIPTION:
+                                This is the title of the person who approved the bill in the Service or Section.  
+
+
+430,121       DATE SENT TO DMC       12;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 19, 1997 
+              DESCRIPTION:
+                                This is the date that the bill was first sent to the Debt Management Center.  
+
+
+430,122       DMC PRINCIPAL BALANCE  12;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+              LAST EDITED:      MAR 19, 1997 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the current principal balance for the bill that is at the Debt Management Center.  
+
+
+430,123       DMC INTEREST BALANCE   12;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      MAR 19, 1997 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the current interest balance for the bill that is at the Debt Management Center.  
+
+
+430,124       DMC ADMIN BALANCE      12;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      MAR 19, 1997 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the current administrative cost balance for the bill that is at the Debt Management Center.  
+
+
+430,125       DMC Debt Valid         12.1;1 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'P' FOR PENDING; 
+              LAST EDITED:      AUG 09, 2007 
+              HELP-PROMPT:      Enter 'Y' for Yes or 'N' for No. 
+              DESCRIPTION:      If the field value is NULL the nightly DMC job will prevent the debt from being referred to DMC when the debtor is SC 50% to 100% or in Receipt of a VA Pension. It will then set this field value to PENDING so the users 
+                                will know this is what occurred.  
+                                 
+                                If a user sets this field value to YES and the debt meets all criteria to be sent to DMC it will be referred to DMC even if the debtor is SC 50% to 100% or in Receipt of a VA Pension.  
+                                 
+                                If a user sets this value to NO the debt will not be referred to DMC.  
+                                 
+                                Users should only interactively be able to set the value to YES or NO. PENDING is reserved for the nightly DMC job.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^430^126 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCA(430,D0,12.1)):^(12.1),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y X ^DD(430,125,1,1,1.1) S DIH=$G(^PRCA(430,DIV(0),12.1)),DIV=X S $P(^(12.1),U,2)=DIV,DIH=430,DIG=126 D ^DICR
+                                1.1)= S X=DIV X ^DD(430,125,1,1,49.2) S %=$S($D(^VA(200,+DUZ,0)):^(0),1:""),X=$S('DUZ:"??",X="#":DUZ,X="N":$P(%,U,1),X="I":$P(%,U,2),X="T":$S($D(^DIC(3.1,+$P(%,U,9),0)):$P(^(0),U,1),1:""),X="NN":$S($D(^VA(200,+DUZ,.1)):$P(
+                                ^(.1),U,4),1:""),1:"??") K %
+
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCA(430,D0,12.1)):^(12.1),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y X ^DD(430,125,1,1,2.1) S DIH=$G(^PRCA(430,DIV(0),12.1)),DIV=X S $P(^(12.1),U,2)=DIV,DIH=430,DIG=126 D ^DICR
+
+                                2.1)= S X=DIV X ^DD(430,125,1,1,59.2) S %=$S($D(^VA(200,+DUZ,0)):^(0),1:""),X=$S('DUZ:"??",X="#":DUZ,X="N":$P(%,U,1),X="I":$P(%,U,2),X="T":$S($D(^DIC(3.1,+$P(%,U,9),0)):$P(^(0),U,1),1:""),X="NN":$S($D(^VA(200,+DUZ,.1)):$P(
+                                ^(.1),U,4),1:""),1:"??") K %
+
+                                49.2)= S X="#"
+
+                                59.2)= S X="#"
+
+                                CREATE VALUE)= USER("#")
+                                DELETE VALUE)= USER("#")
+                                FIELD)= DMC Valid Debt Edited By
+                                Whenever the DMC Debt Valid field is changed it will update the DMC Debt Valid Edited By Field to the user who made the change.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^430^127 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCA(430,D0,12.1)):^(12.1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC S X=% X ^DD(430,125,1,2,1.4)
+                                1.4)= S DIH=$G(^PRCA(430,DIV(0),12.1)),DIV=X S $P(^(12.1),U,3)=DIV,DIH=430,DIG=127 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCA(430,D0,12.1)):^(12.1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC S X=% X ^DD(430,125,1,2,2.4)
+                                2.4)= S DIH=$G(^PRCA(430,DIV(0),12.1)),DIV=X S $P(^(12.1),U,3)=DIV,DIH=430,DIG=127 D ^DICR
+                                CREATE VALUE)= NOW
+                                DELETE VALUE)= NOW
+                                FIELD)= DMC Debt Valid Edited Date
+                                Whenever the DMC Debt Valid field is changed it will update the DMC Debt Valid Edited Date Field to the current Date and Time.  
+
+
+
+430,126       DMC Debt Valid Edited By 12.1;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 09, 2007 
+              HELP-PROMPT:      Enter the name of the user making a change to the DMC Debt Valid Field. 
+              DESCRIPTION:
+                                This is a pointer to the New Person File. It extracts the name of the last person making a change to the DMC Debt Valid field. Adding new entries to the New Person File is not allowed.  
+
+              NOTES:            TRIGGERED by the DMC Debt Valid field of the ACCOUNTS RECEIVABLE File 
+
+
+430,127       DMC Debt Valid Edited Date 12.1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 09, 2007 
+              HELP-PROMPT:      Enter Date/Time DMC Debt Valid Field Edited 
+              DESCRIPTION:
+                                This is the Date and Time a user last edited the DMC Debt Valid Field.  
+
+              NOTES:            TRIGGERED by the DMC Debt Valid field of the ACCOUNTS RECEIVABLE File 
+
+
+430,131       MEDICARE CONT. ADJUSTMENT 13;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999999.99)!(X<0) X
+              LAST EDITED:      MAR 24, 2004 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field will reflect the Medicare contractual adjustment for a bill.  
+
+
+430,132       MEDICARE UNREIMBURSABLE 13;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999999.99)!(X<0) X
+              LAST EDITED:      MAR 24, 2004 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field will reflect the Medicare Unreimbursable Expense for a bill.  
+
+
+430,141       DATE BILL REFERRED TO TOP 14;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 15, 1999 
+              DESCRIPTION:
+                                This field contains the date that the bill was originally referred to TOP.  
+
+              TECHNICAL DESCR:
+                                If a bill has been referred to TOP, this date is set by the system.  It is used to show that the bill has been referred to TOP on the bill profile.  
+
+
+430,142       TOP REFUND STATUS      14;2 SET
+
+                                '1' FOR REFUND; 
+                                '2' FOR REFUND TRANSMITTED; 
+                                '3' FOR REVERSAL; 
+                                '4' FOR REVERSAL TRANSMITTED; 
+              LAST EDITED:      JUN 16, 1999 
+              DESCRIPTION:
+                                This field contains the current status of a TOP refund.  
+
+              TECHNICAL DESCR:  If a  prepayment bill is approved for refund and the user indicates that it is a TOP refund, this field is set to 'Refund' status.  When the TOP document is sent, the status is changed to 'Refund Transmitted' status.  If
+                                the refund is subsequently reversed, this field is set to 'Reversal' status and upon transmission of the TOP document, the field is sent to 'Reversal Transmitted' status.  This field is also cross-referenced, so that the
+                                software can easily determine when a type 1 refund or refund reversal document should be sent to TOP.  
+
+              CROSS-REFERENCE:  430^TREF 
+                                1)= S ^PRCA(430,"TREF",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(430,"TREF",$E(X,1,30),DA)
+                                This field is cross-referenced, so that the software can easily determine when a type 1 refund or refund reversal document should be sent to TOP.  
+
+
+
+430,143       TOP TRACE NUMBER       14;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<10) X
+              LAST EDITED:      JUN 15, 1999 
+              HELP-PROMPT:      Answer must be 10 characters in length. 
+              DESCRIPTION:
+                                This field contains the trace number attached to the refund.  
+
+              TECHNICAL DESCR:
+                                This field is set  whenever a TOP refund is approved.  It will attach the Current TOP Trace Number from file 340 to the refund.  
+
+
+430,144       TOP REFUND YEAR        14;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<4) X
+              LAST EDITED:      JUN 15, 1999 
+              HELP-PROMPT:      Answer must be 4 characters in length. 
+              DESCRIPTION:
+                                This field contains the calendar year for which the refund is granted.  
+
+              TECHNICAL DESCR:
+                                This field will be set by user entry at the time of the refund approval.  It is necessary in case the refund must be reversed.  
+
+
+430,200       RECEIVABLE CODE         ;  COMPUTED
+
+              MUMPS CODE:       S X=$$REC^RCAMFN01($P(^PRCA(430,D0,0),"^",6)) S X=$S(X=1:"FEDERAL",X=2:"NON-FEDERAL",1:"UNKNOWN")
+              ALGORITHM:        S X=$$REC^RCAMFN01($P(^PRCA(430,D0,0),"^",6)) S X=$S(X=1:"FEDERAL",X=2:"NON-FEDERAL",1:"UNKNOWN")
+              DESCRIPTION:
+                                Identifies bill as Federal/Non-federal.  
+
+
+430,200.2     TYPE OF BILL           200;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3)!'(X?3N) X
+              LAST EDITED:      OCT 29, 1987 
+              HELP-PROMPT:      Enter the 3 digit code for this type of bill. 
+              DESCRIPTION:
+                                This is the type of bill code from the UB-82 bill form.  
+
+
+430,201       BEGINNING BUDGET FY    11;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2)!'(X?2N) X
+              LAST EDITED:      APR 14, 1994 
+              HELP-PROMPT:      Enter the last 2 digits of the beginning FISCAL YEAR.  ie. 94 
+              DESCRIPTION:
+                                Beginning Fiscal Year of accounting FUND.  
+
+
+430,202       ENDING BUDGET FY       11;16 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2)!'(X?2N) X
+              LAST EDITED:      APR 14, 1994 
+              HELP-PROMPT:      Enter the last 2 digits of the ENDING budget fiscal year on a multi-year appropriation.  ie. 95 
+              DESCRIPTION:
+                                Ending Fiscal Year of accounting FUND.  
+
+
+430,203       FUND                   11;17 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  D FUND^PRCAFUT S X=$P($G(FUND),U,2) K:$L(X)>6!($L(X)<4) X
+              LAST EDITED:      JUL 13, 1994 
+              HELP-PROMPT:      Enter the fund.  ie 5014. 
+              DESCRIPTION:
+                                FMS Accounting FUND.  
+
+              EXECUTABLE HELP:  D FUND^PRCAFBDU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+430,204       ADMIN OFFICE           11;18 SET
+
+                                '10' FOR VHA; 
+                                '20' FOR VBA; 
+                                '30' FOR NCS; 
+              LAST EDITED:      APR 10, 1994 
+              DESCRIPTION:
+                                Administrative Office code used by FMS.  
+
+
+430,205       ORGANIZATIONAL CTRL POINT 11;19 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<3) X
+              LAST EDITED:      APR 12, 1994 
+              HELP-PROMPT:      Answer must be 3-11 characters in length. 
+              DESCRIPTION:
+                                FMS accounting field.  
+
+
+430,206       FCP/PROJ               11;20 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<9) X
+              LAST EDITED:      APR 12, 1994 
+              HELP-PROMPT:      Answer must be 9 characters in length. 
+              DESCRIPTION:
+                                FMS accounting field.  
+
+
+430,239       INSURED NAME           202;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      JUN 19, 2000 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                This is the individual in whose name the insurance is carried.  
+
+
+430,240       INSURED SEX            202;2 SET
+
+                                'M' FOR MALE; 
+                                'F' FOR FEMALE; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      NOV 03, 1987 
+              HELP-PROMPT:      Enter code for insured's sex. 
+              DESCRIPTION:
+                                This is the insured individual's sex.  
+
+
+430,241       PT RELATIONSHIP        202;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2)!'(X?2N) X
+              LAST EDITED:      NOV 03, 1987 
+              HELP-PROMPT:      Enter the appropriate 2 digit code. 
+              DESCRIPTION:
+                                This is the two-digit code for the relationship between the insured individual and the patient.  It comes from the UB-82 bill form.  
+
+
+430,242       CERT SSN HIC ID NO.    202;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      MAY 25, 1990 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                This is the Certificate/Social Security Number/Health Insurance Claim/Identification Number from the UB-82 bill form.  
+
+
+430,243       GROUP NAME             202;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      MAY 25, 1990 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This is the name of the group through which the insurance is provided.  
+
+
+430,244       GROUP NUMBER           202;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>17!($L(X)<1) X
+              LAST EDITED:      JUN 19, 2000 
+              HELP-PROMPT:      Answer must be 1-17 characters in length. 
+              DESCRIPTION:
+                                This is the identification number of the group providing insurance.  
+
+
+430,245       EMPLOYEE INFORMATION DATA 202;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1)!'(X?1U) X
+              LAST EDITED:      NOV 03, 1987 
+              HELP-PROMPT:      Enter the appropriate code, a single upper case alphabetic character. 
+              DESCRIPTION:
+                                This is the employee information data code from the UB-82 bill form.  
+
+
+430,246       EMPLOYMENT STATUS CODE 202;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1)!'(X?1N) X
+              LAST EDITED:      NOV 03, 1987 
+              HELP-PROMPT:      Enter the appropriate single digit code. 
+              DESCRIPTION:
+                                This is the employment status code from the UB-82 bill form.  
+
+
+430,247       EMPLOYER NAME          202;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      FEB 11, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 3-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the employer's name from the UB-82 bill form.  
+
+
+430,248       EMPLOYEE ID NUMBER     202;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<3) X
+              LAST EDITED:      NOV 03, 1987 
+              HELP-PROMPT:      Enter the identification number for the employee, 3-11 characters in length. 
+              DESCRIPTION:
+                                This is the employee's identification number from the UB-82 bill form.  
+
+
+430,249       EMPLOYER LOCATION      202;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+              LAST EDITED:      FEB 11, 1988 
+              HELP-PROMPT:      Enter Employer's location, 3 - 40 characters. 
+              DESCRIPTION:
+                                This is the employer's location from the UB-82 bill form.  
+
+
+430,250       CONTROL POINT          11;1 FREE TEXT
+
+              INPUT TRANSFORM:  S:$D(X) CP=X D:$D(CP) CP^PRCAFUT D:$D(CP) CPTBL^PRCAFUT S X=$G(CP) K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      SEP 06, 1994 
+              HELP-PROMPT:      Answer must be 1-15 characters in length. 
+              DESCRIPTION:
+                                IFCAP control point.  
+
+              EXECUTABLE HELP:  D CPHLP^PRCAFUT
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+430,251       COST CENTER            11;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  D CC^PRCAFBDU S X=$G(CC) K:$L(X)>6!($L(X)<6)!'(X?6N) X
+              LAST EDITED:      MAY 20, 1994 
+              HELP-PROMPT:      Answer must be 6 characters in length. 
+              DESCRIPTION:
+                                This field is required for spending transactions and is used to record expenditure of funds by various organizations within DVA.  
+
+              EXECUTABLE HELP:  D CCDISP^PRCAFBDU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+430,252       SUB COST CENTER        11;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2) X
+              LAST EDITED:      MAY 19, 1994 
+              HELP-PROMPT:      Answer must be 2 characters in length. 
+              DESCRIPTION:
+                                This code is a further breakdown of the Cost Center.  
+
+
+430,253       BOC (SUB ACCOUNT)      11;21 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  D BOC^PRCAFBDU S X=$G(BOC) K:$L(X)>4!($L(X)<4)!'(X?4N) X
+              LAST EDITED:      MAY 20, 1994 
+              HELP-PROMPT:      Answer must be 4 characters in length. 
+              DESCRIPTION:
+                                This code is equivalent to the CALM subaccount.  Required for spending transactions and is used to determine the budget operating expense account to effect.  
+
+              EXECUTABLE HELP:  D BOCDISP^PRCAFBDU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+430,254       SUB BOC                11;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2) X
+              LAST EDITED:      MAY 20, 1994 
+              HELP-PROMPT:      Enter sub boc on SALARY OVERPAYMENTS ONLY 
+              DESCRIPTION:
+                                This code is a further breakdown of the Budget Object Code.  
+
+
+430,255       REVENUE SOURCE         11;6 POINTER TO REVENUE SOURCE CODE FILE (#347.3) (Required)
+
+              INPUT TRANSFORM:  D RSC^RCXFMSUR
+              LAST EDITED:      AUG 31, 2005 
+              HELP-PROMPT:      Enter the revenue source code to be sent to FMS for this bill.  Only active Revenue Source Codes can be selected. 
+              DESCRIPTION:
+                                This code is required for revenue transactions.  It is used to group collected revenue and to determine whether the revenue will credit actual reimbursement receivables for the associated fund.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+430,255.1     RSC (CALC FOR ACCRUED BILLS) 11;23 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<4) X
+              LAST EDITED:      OCT 01, 1997 
+              HELP-PROMPT:      Answer must be 4 characters in length. 
+              DESCRIPTION:      This field was added with patch PRCA*4.5*90.  
+                                 
+                                This field is used to store the calculated revenue source code for bills which are accrued.  It is calculated and set in the field by the routine RCXFMSUR.  
+
+
+430,256       SUB-REV SOURCE         11;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2) X
+              LAST EDITED:      APR 04, 1994 
+              HELP-PROMPT:      Answer must be 2 characters in length. 
+              DESCRIPTION:
+                                This code is a further breakdown of the Revenue Source Code.  
+
+
+430,257       STATION                11;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+              LAST EDITED:      MAY 19, 1994 
+              HELP-PROMPT:      Answer must be 1-4 characters in length. 
+              DESCRIPTION:
+                                FMS accounting station number.  
+
+
+430,258       FEDERAL/NON-FEDERAL/EMPLOYEE 11;9 SET
+
+                                '0' FOR FEDERAL; 
+                                '1' FOR NON-FEDERAL; 
+                                '2' FOR EMPLOYEE; 
+              LAST EDITED:      APR 01, 1994 
+              HELP-PROMPT:      This field will be used to identify the vendor as a Federal, Non-federal or employee vendor. 
+              DESCRIPTION:
+                                FMS accounting field to identify type of bill.  
+
+
+430,259       REFUND/REIBURSMENT     11;10 SET
+
+                                '01' FOR REFUND; 
+                                '02' FOR REIMBURSEMENT; 
+                                '3' FOR SF REIBURSMENT; 
+                                '4' FOR SF REFUND; 
+                                '24' FOR INELIG. HEALTH; 
+                                '09' FOR GENERAL FUND; 
+                                '20' FOR EMPLOYEE; 
+                                '50' FOR TORT FEASOR; 
+              LAST EDITED:      MAR 02, 1995 
+              HELP-PROMPT:      This field will detmine if the refund or reibursment receivable will be established in FMS 
+              DESCRIPTION:
+                                Identifies bill category for FMS 
+
+
+430,260       SAT STATION            11;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2) X
+              LAST EDITED:      JUL 13, 1994 
+              HELP-PROMPT:      Answer must be 2 characters in length. 
+              DESCRIPTION:
+                                This field is the Satellite station number 
+
+
+430,261       JOB NUMBER             11;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<8) X
+              LAST EDITED:      APR 04, 1994 
+              HELP-PROMPT:      This field is used by FMS to record a job number on receivables 
+              DESCRIPTION:
+                                FMS accounting element.  
+
+
+430,262       XPROGAM                11;13 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<9) X
+              LAST EDITED:      APR 04, 1994 
+              HELP-PROMPT:      used by FMS to indicate program within Organization Control Point 
+              DESCRIPTION:
+                                FMS accounting element.  
+
+
+430,263       REPORTING CATEGORY     11;14 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<4) X
+              LAST EDITED:      APR 04, 1994 
+              HELP-PROMPT:      Answer must be 4 characters in length. 
+              DESCRIPTION:
+                                 FMS accounting element.  
+
+
+430,264       FMS LINE NUMBER        11;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+              LAST EDITED:      SEP 09, 1997 
+              HELP-PROMPT:      Answer must be 1-3 characters in length. 
+              DESCRIPTION:
+                                This field contains the line number assigned to an FMS billing document.  This field will only be populated if the line number is different than 001.  Line number 001 is the default line number (for null entries).  
+
+
+430,265       VENDOR ID              11;22 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<5) X
+              LAST EDITED:      SEP 16, 1998 
+              HELP-PROMPT:      Answer must be 5-12 characters in length. 
+              DESCRIPTION:
+                                This field contains the vendor ID that was sent on the billing document.  
+
+
+430,266       FMS TRANSMISSION DATE  203;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 19, 2003 
+              DESCRIPTION:
+                                This field contains the date this document was transmitted to FMS.  
+
+              TECHNICAL DESCR:   
+                                 
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  430^FMS 
+                                1)= S ^PRCA(430,"FMS",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(430,"FMS",$E(X,1,30),DA)
+                                This is a cross-reference on the FMS TRANSMISSION DATE field.  That field stores the date that the document was transmitted to FMS.  
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ACCOUNTS RECEIVABLE CATEGORY 
+                   (#430.2)       CATEGORY (#2)
+                                  TYPE OF CARE (#15.1)
+
+ACCOUNTS RECEIVABLE TRANS.TYPE 
+                   (#430.3)       CURRENT STATUS (#8)
+                                  PREVIOUS STATUS (#95)
+
+AR DEBT LIST (#430.6)             BILL RESULTING FROM (#4.5)
+
+AR DEBTOR (#340)                  DEBTOR (#9)
+
+AR GROUP (#342.1)                 AGENT CASHIER (#13)
+                                  ACCOUNT RECEIVABLE SECTION (#13.1)
+                                  BILLING AGENCY (#107)
+
+AR TRANSACTION (#433)             REPAYMENT DUE DATES:PAYMENT DATA (#4)
+
+INSTITUTION (#4)                  SITE (#12)
+
+INSURANCE COMPANY (#36)           SECONDARY INSURANCE CARRIER (#19)
+                                  TERTIARY INSURANCE CARRIER (#19.1)
+
+NEW PERSON (#200)                 STATUS UPDATED BY (#17)
+                                  RETURNED BY (#32)
+                                  AMENDED BY (#34)
+                                  REFUNDED BY (#79.21)
+                                  APPROVED BY (FISCAL) (#90)
+                                  APPROVED BY (BILLING) (#94)
+                                  PROCESSED BY (SERVICE) (#97)
+                                  APPROVING OFFICIAL (SERVICE) (#111)
+                                  DMC Debt Valid Edited By (#126)
+
+PATIENT (#2)                      PATIENT (#7)
+
+PRCD FUND/APPROPRIATION CODE 
+                   (#420.3)       FISCAL YEAR:ALD CODE (#4)
+
+REVENUE SOURCE CODE (#347.3)      REVENUE SOURCE (#255)
+
+SERVICE/SECTION (#49)             SERVICE (#101)
+
+UNIT OF ISSUE (#420.5)            DESCRIPTION:UNIT (#5)
+
+
+
+INPUT TEMPLATE(S):
+PRCA BILL 1080                APR 16, 1999@09:35  USER #0    
+     This template inputs information for the 1080 bill form.
+     OPTION: PRCA BIL ENTER
+PRCA BILL 1081                APR 16, 1999@09:39  USER #0    
+     This template inputs information for the 1081 bill form.
+     OPTION: PRCA BIL ENTER
+PRCA BILL 1114                AUG 03, 2004@10:37  USER #0    
+     This template inputs information for the 1114 bill form.
+     OPTION: PRCA BIL ENTER
+PRCA CAT SET                  DEC 13, 1991@15:25  USER #0    
+     This template changes a bill's category.
+     OPTION: PRCAA SET/AUDIT NEW BILL
+PRCA CAUSED BY                AUG 20, 2003@12:24  USER #0    
+     This template changes the cause of a bill.
+     OPTION: PRCA BILL RESULTING
+PRCA CREATE BILL STUB         JAN 29, 1997@15:40  USER #0    
+PRCA OLD SET                  JUL 26, 1999        USER #0    ^PRCATA 
+     This template enters 'old' established bills in the system.
+     COMPILED:  ^PRCATA
+     OPTION: PRCAA OLD BILL
+PRCA SET                      SEP 24, 1997@16:20  USER #0    ^PRCATE 
+     This template set up new bills.
+     COMPILED: ^PRCATE
+     OPTION: PRCAA SET/AUDIT NEW BILL
+PRCAC COWC REFER              APR 11, 1988        USER #0    
+     This template records a referral to the DVB Committee on Waivers
+     and Compromise.
+     OPTION: PRCAC COWC REFER
+PRCAC LOCATE DEBTOR           AUG 05, 1992@13:25  USER #0    
+     This template records efforts to locate the debtor.
+     OPTION: PRCAC LOCATE DEBTOR
+PRCAC RC INFO                 DEC 12, 2002@10:56  USER #0    
+PRCAE AUDIT                   JAN 14, 1998@14:53  USER #0    
+     This template allows editing of the debtor's address that is
+     maintained in the AR files. It does not affect the Patient,
+     Vendor, or other source file.
+     OPTION: PRCAA AUDIT
+PRCAE INSURANCE DATA          JUN 06, 1988        USER #0    
+     This template allows editing of the bill's insurance data. It
+     does not affect the Insurance File.
+     OPTION: PRCAC 3RD DATA
+PRCAF RETURN BILL             FEB 18, 1992@14:49  USER #0    
+     This template records the date and a comment when a bill is returned
+     to the originating Service/Section.
+     OPTION: PRCAF RETURN BILL
+PRCASV REL                    OCT 06, 1997@11:01  USER #0    ^PRCATSE 
+     This template files some information about the bill in the AR
+     File and releases the number for the Service/Section completion.
+     The user does not interact with this template.
+PRCASV STATUS                 APR 22, 1991@12:24  USER #0    
+     This template stuffs the billing Service/Section Status into the
+     Current Status field and changes the Date Status Changed to the
+     current date.
+     OPTION: PRCAA AUDIT
+PRCAT EDIT GL                 DEC 14, 1987        USER #0    
+     This template edits the General Ledger information.
+     OPTION: PRCAT PAT REF NUMBER
+RCFM CAF FILE ENTRIES         AUG 15, 1994@08:58  USER #0    
+
+PRINT TEMPLATE(S):
+PRCA 3RD PROFILE              MAY 27, 1994@08:34  USER #0    ^PRCATP5                                                                                                                                                                                        @
+     This template prints a profile of 3rd party bills.
+     COMPILED: ^PRCATP5
+     OPTION: PRCAC PROFILE
+PRCA 3RD REPORT               DEC 04, 1997@12:05  USER #0                                                                                                                                                                        3RD PARTY ACCOUNTS RECEIVABLE
+     This template prints a listing of 3rd party bills.
+     OPTION: PRCAD R 3RD
+PRCA AR LIST                  JAN 29, 1988        USER #0                                                                                                                                                                                                    @
+     This template print a formatted listing of bills and their principal
+     balances.
+     OPTION: PRCAL LIST MENU
+PRCA BILL LIST                DEC 06, 2011@10:48  USER #0                                                                                                                                                                             ACCOUNTS RECEIVABLE LIST
+     This template prints a listing of bills and their original amounts.
+     OPTION: PRCA BILL LIST
+PRCA DISP AUDIT               MAR 12, 1998@15:48  USER #0    ^PRCATO2                                                                                                                                                                                        @
+     This template is used to display a bill during the AR Clerk's audit.
+     COMPILED: ^PRCATO2
+     OPTION: PRCAA AUDIT
+PRCA DISP AUDIT2              NOV 10, 2005@16:51  USER #0                                                                                                                                                                                                    @
+PRCA LAST ACTIVITY            MAY 06, 1996@08:40  USER #0                                                                                                                                                             ACCOUNTS RECEIVABLE LAST ACTIVITY REPORT
+PRCA LIST HOLD                SEP 07, 1993@08:25  USER #0                                                                                                                                                                                                    @
+     This template prints a list of accounts with holds on the
+     debt collection letters.
+     OPTION: PRCAE LIST HOLD
+PRCA MEANS PROFILE            MAY 27, 1994@08:31  USER #0    ^PRCATP2                                                                                                                                                                                        @
+     This template prints a profile of a Category 'C' (Means Test) account.
+     COMPILED: ^PRCATP2
+     OPTION: PRCAC PROFILE
+PRCA NEWB LIST                APR 14, 1988        USER #0                                                                                                                                                                                                    @
+     This template prints a listing of new bills.
+     OPTION: PRCAL L NEW
+PRCA OTHER PROFILE            MAY 27, 1994@08:29  USER #0    ^PRCATP4                                                                                                                                                                                        @
+     This template prints a profile of an account where the debtor is
+     an employee or ex-employee.
+     OPTION: PRCAC PROFILE
+PRCA PROFILE                  DEC 27, 1993@11:09  USER #0    ^PRCATP1                                                                                                                                                                                        @
+     This template prints a profile of an account where the debtor
+     is not an employee, ex-employee, Category 'C' (Means Test),
+     or Vendor.
+     OPTION: PRCAC PROFILE
+PRCA VENDOR PROFILE           FEB 19, 2004@14:07  USER #0    ^PRCATP3                                                                                                                                                                                        @
+PRCAA AMEND AUDIT             FEB 13, 1992@10:47  USER #0    ^PRCATR2                                                                                                                                                                                        @
+     This template prints a display of the amended bill data during
+     the AR Clerk's audit.
+     COMPILED: ^PRCATR2
+     OPTION: PRCAA AMEND AUDIT
+PRCAC RETURN AR               APR 03, 1989        USER #0                                                                                                                                                                             ACCOUNTS RECEIVABLE LIST
+     This template prints a listing of bills that have been returned
+     to the originating Service/Section.
+     OPTION: PRCAL RETURN AR
+PRCAD COWC LIST               SEP 21, 1988        USER #0                                                                                                                                                                       ACCOUNTS RECEIVABLE STATISTICS
+     Tthis template prints a listing of bills that been referred to the
+     DVB Committee on Waivers and Compromise.
+     OPTION: PRCAD COWC LIST
+PRCAD DC DOJ                  DEC 04, 1997@11:41  USER #0                                                                                                                                                                                         PRCAD DC DOJ
+     This template prints a listing of bills that have been referred to
+     the Regional Counsel or the Department of Justice.
+     OPTIONS:  PRCAD R DC, PRCAD R DOJ
+PRCAD DELINQ                  JAN 20, 1998@11:55  USER #0                                                                                                                                                                                              AR LIST
+     This template prints a listing of bills that are delinquent and the
+     number of days they are past due.
+     OPTION: PRCAD R DELINQUENT MENU
+PRCAL CAT LIST                APR 30, 1997@10:51  USER #0                                                                                                                                                                                                    @
+     This template prints a listing of bills with Category, Current
+     Status, and balances.
+     OPTION: PRCAL OTHER LIST
+PRCAL L DC-DOJ                AUG 12, 1988        USER #0                                                                                                                                                                                              AR LIST
+     This template prints a listing of bills that may need to be referred
+     to the District Counsel or the Department of Justice.
+     OPTIONS: PRCAL REFER DC, PRCAL REFER DOJ
+PRCAL MEANS LIST              APR 04, 1989        USER #0                                                                                                                                                                                                    @
+     This template produces a listing of Means Test (Category 'C') bills
+     by AMIS Segment.
+     OPTION: PRCAL MEANS LIST
+PRCAP DEBTOR LOCATE           AUG 02, 1990@10:20  USER #0    ^PRCATO9                                                                                                                                                                                        @
+     This template prints a report of locator information for a debtor.
+     COMPILED: ^PRCATO9
+     OPTION: PRCAC LOCATE DEBTOR
+PRCAP ESTABLISH AMIS          JUN 16, 1988        USER #0                                                                                                                                                                       ACCOUNTS RECEIVABLE STATISTICS
+     This template prints a listing of bills for the AMIS reports.
+     OPTION: PRCAD AMIS REPORT
+PRCAP OUTSTAND AMIS           JUN 17, 1988        USER #0                                                                                                                                                                       ACCOUNTS RECEIVABLE STATISTICS
+     This template is used to print the total amount of the outstanding
+     balances.
+     OPTION: PRCAD AMIS REPORT
+PRCAP REPAYMENT               DEC 16, 1987        USER #0    ^PRCATR1                                                                                                                                                                                        @
+     This template prints a profile of a repayment plan.
+     OPTION: PRCAC REPAYMENT MENU
+PRCAP RETURN BILL             AUG 07, 1990@13:53  USER #0    ^PRCATP6                                                                                                                                                                                        @
+     This template prints a listing in the Service/Section of bills that
+     have been returned by Accounts Receivable.
+     OPTION: PRCAL RETURNED BILL
+PRCAR CONTINGENT REPORT       APR 06, 1998@14:36  USER #0                                                                                                                                                                        3RD PARTY ACCOUNTS RECEIVABLE
+     This template prints the Contingent 3rd Party AR Report.
+     OPTION: PRCAD CONTINGENT 3RD
+PRCAR MAS REPORT              APR 03, 1989        USER #0                                                                                                                                                                       ACCOUNTS RECEIVABLE MAS REPORT
+     This template prints the MAS Reconciliation Report.
+     OPTION: PRCAD RECON MAS
+PRCARFD                       AUG 19, 1994@14:34  USER #0    ^PRCATRF                                                                                                                                            REFUNDS TO BE APPROVED BY CERTIFYING OFFICIAL
+     This template is used to print all refunds that have not be REFUNDED
+     and passed to the CERTIFYING OFFICIAL.
+PRCAT DISP CP                 DEC 27, 1993@11:01  USER #0    ^PRCATO8                                                                                                                                                                                        @
+     This template display a bill's data for the Accounting Technician
+     to assign a PAT reference number.
+     COMPILED: ^PRCATO8
+     OPTION: PRCAT PAT REF NUMBER
+PRCAT NEW AR                  AUG 31, 1999@13:35  USER #0    ^PRCATP7                                                                                                                                                                                        @
+     This template displays a new bill for the Accounting Technician
+     after the AR Clerk has released it.
+     COMPILED: ^PRCATP7
+     OPTION: PRCAT LIST PENDING CALM
+RCDMC REFERRED DEBTS          JUN 04, 1998@15:23  USER #0                                                                                                                                                                                   DMC REFERRED DEBTS
+RCXV ACTIVE PRINT             FEB 18, 2004@11:37  USER #0                                                                                                                                                                       ACCOUNTS RECEIVABLE STATISTICS
+
+SORT TEMPLATE(S):
+PRCA LAST ACTIVITY            JUN 08, 1993@11:40  USER #0    
+SORT BY: @+#CATEGORY//    (User is asked range)
+  WITHIN CATEGORY, SORT BY: @PRCA LAST ACTIVITY;"DATE OF LAST ACTIVITY"//    (User is asked range)
+
+PRCARFD                       FEB 03, 1994@09:59  USER #0                                                                                                                                                                 'PRCARFD' Print Template always used
+SORT BY: ]CURRENT STATUS="REFUND REVIEW";L1//     From '0'  To '1'
+  WITHIN CURRENT STATUS="REFUND REVIEW", SORT BY: REFUNDED DATE//
+     This template is used to list all refunds that have not been REFUNDED
+     and passed to the CERTIFYING OFFICIAL yet.
+
+PRCAS ESTABLISH AMIS          APR 04, 1989        USER #0    
+SORT BY: +SEGMENT//    (User is asked range)
+  WITHIN SEGMENT, SORT BY: DATE CALM DONE//    (User is asked range)
+     This template sorts by AMIS Segment and date CALM code sheet was
+     done.
+     OPTION: PRCAD AMIS REPORT
+
+PRCAS OUTSTAND AMIS           JUN 16, 1988        USER #0    
+SORT BY: +SEGMENT//    (User is asked range)
+  WITHIN SEGMENT, SORT BY: @CURRENT STATUS//    (User is asked range)
+     This template sorts by AMIS Segment and Current Status.
+     OPTION: PRCAD AMIS REPORT
+
+RCXV ACTIVE SORT              FEB 18, 2004@11:56  USER #0    
+SORT BY: (CURRENT STATUS="ACTIVE")!(CURRENT STATUS="SUSPENDED");L1// ((CURRENT STATUS=""ACTIVE"")!(CURRENT STATUS=""SUSPENDED""))
+  WITHIN (CURRENT STATUS="ACTIVE")!(CURRENT STATUS="SUSPENDED"), SORT BY: +CATEGORY// (CATEGORY not null)
+     Active Sort Template for the CBO AR Data Extract project.
+
+
+FORM(S)/BLOCK(S):

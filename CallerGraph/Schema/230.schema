@@ -1,0 +1,767 @@
+STANDARD DATA DICTIONARY #230 -- ED LOG FILE                                                                                                                                                                                      MAY 20,2014@15:32:33  PAGE 1
+STORED IN ^EDP(230,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file serves as the log of emergency department visits.  It works together with the ED LOG HISTORY file to track when activities of a typical emergency department visit are done.  It records where the patient went, who was responsible, and when key
+things happened (such as triage and disposition).  
+ 
+This file serves as the key source of information for data that is displayed on the emergency department display board (an electronic "white board").  Patient visits that are currently active are shown on the display board.  The display board is
+refreshed every 30 seconds.  Many of the indexes in this file assist in making the refresh code as efficient as possible.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: LOG ENTRY field (#.01) of the ED LOG HISTORY File (#230.1) 
+               
+
+CROSS
+REFERENCED BY: VISIT(AVISIT), LOG ENTRY TIME(B), VISIT(V)
+
+INDEXED BY:    INSTITUTION & AREA & CLOSED (AC), INSTITUTION & AREA & PATIENT NAME & CLOSED (ADUP1), INSTITUTION & AREA & PATIENT BRIEF ID & CLOSED (ADUP2), INSTITUTION & AREA & HELD LOC & CLOSED (AH), INSTITUTION & AREA & LOC & CLOSED (AL), INSTITUTION
+               & AREA & PATIENT NAME & CLOSED (AN), ORDER (AO), INSTITUTION & AREA & PATIENT ID & CLOSED (AP), PATIENT ID & CLOSED (APA), RESTORED DATE/TIME (ARIE), INSTITUTION & AREA & PATIENT SSN* & CLOSED (AS), INSTITUTION & TIME IN (ATI), INSTITUTION
+               & TIME OUT (ATO), INSTITUTION & AREA & PATIENT ID (PDFN), INSTITUTION & AREA & PATIENT NAME (PN)
+
+
+230,.01       LOG ENTRY TIME         0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 21, 2007 
+              HELP-PROMPT:      Enter the time the record was created. 
+              DESCRIPTION:
+                                This is the date/time that this log record was added to the file.  
+
+              CROSS-REFERENCE:  230^B 
+                                1)= S ^EDP(230,"B",$E(X,1,30),DA)=""
+                                2)= K ^EDP(230,"B",$E(X,1,30),DA)
+
+
+230,.02       INSTITUTION            0;2 POINTER TO INSTITUTION FILE (#4) (Required)
+
+              LAST EDITED:      JUL 10, 2009 
+              HELP-PROMPT:      Select the institution for this log entry. 
+              DESCRIPTION:
+                                This allows the log entry to be associated with the station that originated it.  It allows multiple institutions to be served by the same system.  
+
+              RECORD INDEXES:   AC (#626), ADUP1 (#856), ADUP2 (#857), AH (#979), AL (#858), AN (#859), AP (#861), AS (#863), ATI (#864), ATO (#865), PDFN (#866), PN (#867)
+
+230,.03       AREA                   0;3 POINTER TO TRACKING AREA FILE (#231.9) (Required)
+
+              LAST EDITED:      JUL 10, 2009 
+              HELP-PROMPT:      Select the area for this record. 
+              DESCRIPTION:
+                                This is the area in the hospital for which this record applies.  Initially, the only area is the emergency department.  This field allows use to be expanded into other departments.  
+
+              TECHNICAL DESCR:
+                                The area field is also used for training classes.  In the class, each user may be assigned a separate area so as to avoid conflicts when setting up configurations.  
+
+              RECORD INDEXES:   AC (#626), ADUP1 (#856), ADUP2 (#857), AH (#979), AL (#858), AN (#859), AP (#861), AS (#863), PDFN (#866), PN (#867)
+
+230,.04       PATIENT NAME           0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      OCT 03, 2008 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:      This is the name of the patient.  It allows a name to be entered in the case of humanitarian care when the patient has not been entered into VistA yet.  
+                                 
+                                LastName,FirstName is the name format that should be used.  
+
+              TECHNICAL DESCR:  This field also assists in checking for duplicates and similar names on the display board within a single area.  This allows appropriate indicators to be shown on the display board.  
+                                 
+                                The clerk only enters the name in this field if the patient is not in VistA.  If the patient gets added to VistA during the visit, the name used in VistA replaces the clerk-entered name.  If the patient is selected from
+                                VistA, the software gets the VistA name and places it here.  This allows the software to flag patients with similar names that might be active in the Emergency Department simultaneously.  
+                                 
+                                This field is set to "(ambulance en route)" in the case where an ambulance is arriving but the name of the patient is unknown.  
+
+              RECORD INDEXES:   ADUP1 (#856), AN (#859), PN (#867)
+
+230,.05       PATIENT SSN*           0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<1) X
+              LAST EDITED:      OCT 03, 2008 
+              HELP-PROMPT:      Answer must be 1-9 characters in length. 
+              DESCRIPTION:
+                                This is the patient social security number in the case of humanitarian care for a patient that does not exist in VistA.  
+
+              TECHNICAL DESCR:
+                                It was part of the class 3 product, but is not currently used.  It may be used in the future again, but is currently marked for deletion.  
+
+              RECORD INDEXES:   AS (#863)
+
+230,.06       PATIENT ID             0;6 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      DEC 22, 2008 
+              HELP-PROMPT:      Select a patient. 
+              DESCRIPTION:
+                                This is the patient in VistA for whom this log record is created.  
+
+              TECHNICAL DESCR:  This field may be absent in the case of an arriving ambulance, where the patient is not yet known.  It may also be absent when humanitarian aid is rendered for a non-VA patient.  
+                                 
+                                If the patient is in VistA, the software gets the name field from file 2 and places it in the PATIENT NAME field in this file. This allows the software to flag patients with similar names who are active in the emergency
+                                department at the same time.  The clerk does not enter the PATIENT NAME field directly if the patient is in VistA.  
+
+              RECORD INDEXES:   AP (#861), APA (#862), PDFN (#866)
+
+230,.07       CLOSED                 0;7 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      OCT 18, 2011 
+              HELP-PROMPT:      Enter "Yes" when the patient should be removed from the board. 
+              DESCRIPTION:
+                                This flag is set to YES when the patient has left the area (Emergency Department) and has been properly dispositioned.  At this time, the entry no longer appears on the display board.  
+
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  ^^TRIGGER^230^.071 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^EDP(230,D0,0)):^(0),1:"") S X=$P(Y(1),U,15),X=X S DIU=X K Y S X=DIV S X=$$NOW^XLFDT S DIH=$G(^EDP(230,DIV(0),0)),DIV=X S $P(^(0),U,15)=DIV,DIH=230,DIG=.071 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^EDP(230,D0,0)):^(0),1:"") S X=$P(Y(1),U,15),X=X S DIU=X K Y S X="" S DIH=$G(^EDP(230,DIV(0),0)),DIV=X S $P(^(0),U,15)=DIV,DIH=230,DIG=.071 D ^DICR
+                                CREATE VALUE)= S X=$$NOW^XLFDT
+                                DELETE VALUE)= S X=""
+                                FIELD)= CLOSED DATE
+
+              RECORD INDEXES:   AC (#626), ADUP1 (#856), ADUP2 (#857), AH (#979), AL (#858), AN (#859), AP (#861), APA (#862), AS (#863)
+
+230,.071      CLOSED DATE/TIME       0;15 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 16, 2011 
+              DESCRIPTION:
+                                This is the Date/Time when the 'CLOSED' field was set to true.  
+
+              NOTES:            TRIGGERED by the CLOSED field of the ED LOG File 
+
+
+230,.072      CLOSED BY              0;16 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      OCT 18, 2011 
+              WRITE AUTHORITY:  ^
+
+230,.073      REMOVED IN ERROR       0;17 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 18, 2011 
+
+230,.074      RESTORED BY            0;18 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      OCT 18, 2011 
+              DESCRIPTION:
+                                This is the user who restored the patient to the board.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^230^.075 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^EDP(230,D0,0)):^(0),1:"") S X=$P(Y(1),U,19),X=X S DIU=X K Y S X=DIV S X=$$NOW^XLFDT S DIH=$G(^EDP(230,DIV(0),0)),DIV=X S $P(^(0),U,19)=DIV,DIH=230,DIG=.075 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=$$NOW^XLFDT
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= RESTORED BY DATE
+
+
+230,.075      RESTORED DATE/TIME     0;19 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 18, 2011 
+              DESCRIPTION:
+                                Date/Time when a patient was restored to the board. This only occurs if the patient was 'Removed in Error'.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the RESTORED BY field of the ED LOG File 
+
+              FIELD INDEX:      ARIE (#1089)    REGULAR    IR    SORTING ONLY
+                  Short Descr:  Restored Date/Time index
+                  Description:  This index identifies entries removed in error. Since we do not know if an entry is removed in error unless it is added back to the board, we can use the RESTORED DATE/TIME field to index the entries that were 'Removed in
+                                Error' by date.  
+                    Set Logic:  S ^EDP(230,"ARIE",X,DA)=""
+                   Kill Logic:  K ^EDP(230,"ARIE",X,DA)
+                   Whole Kill:  K ^EDP(230,"ARIE")
+                         X(1):  RESTORED DATE/TIME  (230,.075)  (Subscr 1)  (forwards)
+
+
+230,.08       TIME IN                0;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 20, 2007 
+              HELP-PROMPT:      Enter the actual time of arrival. 
+              DESCRIPTION:
+                                This is the time that the patient actually arrived at the emergency department.  The length of the visit is measured from this point in time.  
+
+              RECORD INDEXES:   ATI (#864)
+
+230,.09       TIME OUT               0;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 18, 2007 
+              HELP-PROMPT:      Enter the time the patient left. 
+              DESCRIPTION:
+                                This is the time that the patient was discharged from the emergency department (sent home, admitted, transferred somewhere else).  
+
+              TECHNICAL DESCR:
+                                Prompting for delay reasons is based on the difference between the time in and the time out.  
+
+              RECORD INDEXES:   ATO (#865)
+
+230,.1        ARRIVAL MODE           0;10 POINTER TO TRACKING CODE FILE (#233.1)
+
+              LAST EDITED:      SEP 13, 2007 
+              HELP-PROMPT:      Select the source of the patient visit. 
+              DESCRIPTION:
+                                This is the source of the emergency department visit.  For example, the patient may have arrived from a nursing home, VA Hospital, walked in, etc.  
+
+              TECHNICAL DESCR:
+                                The values for this field are associated with the <stn>.arrival and the edp.arrival code sets.  
+
+
+230,.11       PATIENT BRIEF ID       0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<4) X
+              LAST EDITED:      NOV 29, 2007 
+              HELP-PROMPT:      Answer must be 4-10 characters in length. 
+              DESCRIPTION:      This is a patient identifier that shows on the display board.  In the case of an ambulance or non-VA patient, this identifier may be constructed and stored here.  The identifier should be in the format:  last initial +
+                                last 4 of ssn.  For example, given a fictional patient named TWENTY VEHU with an SSN of 000-00-0020, this field would be V0020.  
+
+              TECHNICAL DESCR:  Since last initial + last 4 digits of the social security number are commonly used to identify patients, this field assists in checking for patients with the same last initial / last 4.  When a VistA patient is selected,
+                                the last initial / last 4 is constructed from information in file 2 and stored here.  This allows patients with the same last initial / last 4 to be indicated on the display board.  
+                                 
+                                If an ambulance is en route and the patient is not known, the value of this field is "(amb)".  
+
+              RECORD INDEXES:   ADUP2 (#857)
+
+230,.12       VISIT                  0;12 POINTER TO VISIT FILE (#9000010)
+
+              LAST EDITED:      APR 18, 2008 
+              HELP-PROMPT:      Select a visit. 
+              DESCRIPTION:
+                                This is the VISIT associated with this emergency department encounter.  
+
+              TECHNICAL DESCR:  Since emergency departments don't use appointments, the arrival of the patient is recorded in the emergency department tracking system itself.  The tracking system can then create a visit in PCE so that subsequent care
+                                givers can associate orders and progress notes with that same visit.  The visit is created once any PCE related field is collected so that DATA2PCE may be called.  This is usually the triage nurse.  
+
+              CROSS-REFERENCE:  230^AVISIT^MUMPS 
+                                1)= D ADD^AUPNVSIT
+                                2)= D SUB^AUPNVSIT
+                                This increments and decrements the dependency counter in the VISIT file (9000010).  
+
+
+              CROSS-REFERENCE:  230^V 
+                                1)= S ^EDP(230,"V",$E(X,1,30),DA)=""
+                                2)= K ^EDP(230,"V",$E(X,1,30),DA)
+                                This is used by PCE to help identify dependent entries.  
+
+
+
+230,.13       CREATION SOURCE        0;13 SET
+
+                                '0' FOR EDIS; 
+                                '1' FOR SCHEDULING; 
+                                '2' FOR CPRS; 
+              LAST EDITED:      JUL 22, 2008 
+              HELP-PROMPT:      Enter the mechanism which caused this entry to be created. 
+              DESCRIPTION:
+                                This field identifies the route by which the visit was created.  
+
+              TECHNICAL DESCR:  Generally the VISIT field is populated by calling DATA2PCE from EDIS.  It is possible that the visit may be created by entering an appointment to the emergency department or writing a progress note for the emergency 
+                                department location.  This field records which mechanism was responsible for creating the entry in the VISIT file.  
+
+
+230,.14       CLINIC                 0;14 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      DEC 15, 2008 
+              HELP-PROMPT:      Select a clinic. 
+              DESCRIPTION:
+                                This is the specific clinic within the department (if multiple clinics are used) that will be associated with this visit.  
+
+              TECHNICAL DESCR:
+                                When a patient is checked in via scheduling, the selected clinic is stored here until a visit can be created.  When the visit is created, the location stored here is used.  
+
+
+230,1.1       COMPLAINT              1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      JUL 20, 2007 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                This is the complaint that the patient presents with.  It is usually shown on the display board, so it should be brief enough to fit in the column on the display board.  
+
+
+230,1.2       DISPOSITION            1;2 POINTER TO TRACKING CODE FILE (#233.1)
+
+              LAST EDITED:      JUL 20, 2007 
+              HELP-PROMPT:      Select the disposition of the patient. 
+              DESCRIPTION:
+                                This is how the patient is dispositioned at the end of the visit.  
+
+              TECHNICAL DESCR:
+                                The values for this field are associated with the <stn>.disposition and the edp.disposition code sets.  
+
+
+230,1.3       DISPOSITION TIME       1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 20, 2007 
+              HELP-PROMPT:      Enter the time of disposition. 
+              DESCRIPTION:
+                                This is the time that the disposition field was last updated.  
+
+
+230,1.4       DIAGNOSIS TIME         1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 20, 2007 
+              HELP-PROMPT:      Enter the time the diagnosis was made. 
+              DESCRIPTION:
+                                This is the time that the diagnoses were last updated.  
+
+
+230,1.5       DELAY REASON           1;5 POINTER TO TRACKING CODE FILE (#233.1)
+
+              LAST EDITED:      OCT 03, 2008 
+              HELP-PROMPT:      Select a delay reason. 
+              DESCRIPTION:
+                                This is the reason for delay in the case where the visit has taken longer than the time recommended.  
+
+              TECHNICAL DESCR:
+                                This field is associated with the <stn>.delay and edp.delay code sets.  
+
+
+230,1.51      DELAY REASON START TIME 1;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 19, 2011 
+
+230,1.52      DELAY REASON END TIME  1;7 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 19, 2011 
+
+230,2         COMPLAINT (LONG)       2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>220!($L(X)<1) X
+              LAST EDITED:      JUL 20, 2007 
+              HELP-PROMPT:      Answer must be 1-220 characters in length. 
+              DESCRIPTION:
+                                This is an optional field that allows the complaint to be entered in a form that is longer than that allowed by the complaint column on the display board.  
+
+
+230,3.2       STATUS                 3;2 POINTER TO TRACKING CODE FILE (#233.1)
+
+              LAST EDITED:      MAR 05, 2008 
+              HELP-PROMPT:      Select a patient status. 
+              DESCRIPTION:
+                                This is the status of the patient during the course of the emergency department visit (awaiting triage, ed patient, etc.).  
+
+              TECHNICAL DESCR:
+                                This field is associated with the <stn>.status and the edp.status code sets.  
+
+
+230,3.3       ACUITY                 3;3 POINTER TO TRACKING CODE FILE (#233.1)
+
+              LAST EDITED:      NOV 29, 2007 
+              HELP-PROMPT:      Select an acuity level. 
+              DESCRIPTION:
+                                This is the acuity of the patient.  The acuity is based on the ESI scale with acuity levels 1-5.  
+
+              TECHNICAL DESCR:
+                                This field is associated with the edp.acuity code set.  
+
+
+230,3.4       LOC                    3;4 POINTER TO TRACKING ROOM-BED FILE (#231.8)
+
+              LAST EDITED:      NOV 29, 2007 
+              HELP-PROMPT:      Select a room or area. 
+              DESCRIPTION:      This is the room / area where the patient is.  This may be a physical room or a specific bed.  It may also be a "conceptual area", such as the hallway, parking lot, x-ray, etc.  It does not necessarily need to be a 
+                                physical location.  
+
+              RECORD INDEXES:   AL (#858)
+
+230,3.5       MD ASSIGNED            3;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 05, 2008 
+              HELP-PROMPT:      Select a provider. 
+              DESCRIPTION:
+                                This is the provider currently assigned to the patient.  
+
+
+230,3.6       NURSE ASSIGNED         3;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 05, 2008 
+              HELP-PROMPT:      Select a nurse. 
+              DESCRIPTION:
+                                This is the nurse assigned to the patient.  
+
+
+230,3.7       RESIDENT ASSIGNED      3;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 05, 2008 
+              HELP-PROMPT:      Select a resident. 
+              DESCRIPTION:
+                                This is the resident assigned to the patient.  
+
+
+230,3.8       COMMENT                3;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      NOV 29, 2007 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                This is a comment that may be entered or updated for this particular visit.  The comment may be optionally shown on the display board.  
+
+
+230,3.9       HELD LOC               3;9 POINTER TO TRACKING ROOM-BED FILE (#231.8)
+
+              LAST EDITED:      JUL 10, 2009 
+              RECORD INDEXES:   AH (#979)
+
+230,4         DISCHARGE DIAGNOSIS    4;0 Multiple #230.04 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple contains the diagnosis or diagnoses for the visit.  
+
+              TECHNICAL DESCR:  This multiple serves two purposes: 
+                                 
+                                1)  If the site has chosen to allow free text diagnoses, the list of diagnoses entered is stored here.  In this case there will be no ICD 9 code.  Clerical staff will enter the diagnosis list into PCE at a later time using
+                                information from this list.  
+                                 
+                                2)  If the site has chosen to use coded diagnoses, this multiple is used to hold the selected diagnoses until a PCE visit is created.  In that case, PCE becomes the real holder of the diagnosis list.  
+                                 
+                                The parameter that controls the behavior of this list is in the TRACKING AREA file (231.9).  
+
+
+230.04,.01      DISCHARGE DIAGNOSIS    0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                LAST EDITED:      JUL 20, 2007 
+                HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                DESCRIPTION:
+                                  This is the free text of the diagnosis.  
+
+                TECHNICAL DESCR:  If the parameters are set so that coded diagnoses will be required, the text will match the Clinical Lexicon text.  Some Clinical Lexicon entries map to more than one ICD code.  $$ICDONE^LEXU is used to determine which 
+                                  code to store here.  
+
+                CROSS-REFERENCE:  230.04^B 
+                                  1)= S ^EDP(230,DA(1),4,"B",$E(X,1,30),DA)=""
+                                  2)= K ^EDP(230,DA(1),4,"B",$E(X,1,30),DA)
+
+
+230.04,.02      ICD9 CODE              0;2 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+                LAST EDITED:      OCT 08, 2008 
+                HELP-PROMPT:      Select the ICD Code for this diagnosis. 
+                DESCRIPTION:
+                                  This is the ICD code for the diagnosis.  
+
+                TECHNICAL DESCR:  Clinical Lexicon utilities are used by the application to look up diagnoses.  Some Clinical Lexicon entries map to more than one ICD code.  $$ICDONE^LEXU is used to determine which code to store here.  This also becomes
+                                  the code that is stored in PCE.  
+
+
+230.04,.03      PRIMARY                0;3 SET
+
+                                  '0' FOR NO (secondary); 
+                                  '1' FOR YES (primary); 
+                LAST EDITED:      JUN 05, 2008 
+                HELP-PROMPT:      Enter 'yes' if this is the primary diagnosis. 
+                DESCRIPTION:
+                                  This flag indicates which of the diagnoses is to be considered the primary diagnosis.  
+
+
+
+
+230,7.1       FREQUENCY              7;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 2009 
+              HELP-PROMPT:      Enter the #minutes between each set of vital measurements. 
+              DESCRIPTION:
+                                This is the number of minutes desired between each set of repeated vital measurements taken.  
+
+
+230,7.2       TIMER ON               7;2 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAY 20, 2009 
+              HELP-PROMPT:      Enter YES to continue taking vitals, or NO if done. 
+              DESCRIPTION:
+                                This is an on/off switch, whether to continue taking vital measurements.  
+
+
+230,8         ORDERS                 8;0 Multiple #230.08 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple tracks orders during the course of the patient stay in the emergency department.  
+
+              TECHNICAL DESCR:  This multiple is populated by an order entry event monitor, which identifies orders related to the current emergency department visit.  The display board is refreshed frequently (every few seconds).  The board constantly
+                                shows the status of emergency department related orders, and this multiple allows a quick up to date display.  It allows the reports to track the history of orders related to an emergency department visit.  
+
+
+230.08,.01      ORDER                  0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      MAY 27, 2008 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This is the order id for an emergency department related order.  
+
+                CROSS-REFERENCE:  230.08^B 
+                                  1)= S ^EDP(230,DA(1),8,"B",$E(X,1,30),DA)=""
+                                  2)= K ^EDP(230,DA(1),8,"B",$E(X,1,30),DA)
+
+                FIELD INDEX:      AO (#860)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#230)
+                    Short Descr:  ORDER,IEN for all patients
+                    Description:  This is used to locate orders when they need to be updated from the event monitor.  
+                      Set Logic:  S ^EDP(230,"AO",$E(X,1,30),DA(1),DA)=""
+                     Kill Logic:  K ^EDP(230,"AO",$E(X,1,30),DA(1),DA)
+                     Whole Kill:  K ^EDP(230,"AO")
+                           X(1):  ORDER  (230.08,.01)  (Subscr 1)  (Len 30)  (forwards)
+
+
+230.08,.02      SERVICE                0;2 SET
+
+                                  'M' FOR Medication; 
+                                  'L' FOR Lab; 
+                                  'R' FOR Radiology; 
+                                  'C' FOR Consult; 
+                                  'A' FOR All Other; 
+                LAST EDITED:      OCT 03, 2008 
+                HELP-PROMPT:      Select the service filling the order. 
+                DESCRIPTION:
+                                  This is a general identification of the service to which the order is related.  
+
+                CROSS-REFERENCE:  230.08^AC 
+                                  1)= S ^EDP(230,DA(1),8,"AC",$E(X,1,30),DA)=""
+                                  2)= K ^EDP(230,DA(1),8,"AC",$E(X,1,30),DA)
+                                  Allows quick check for the existence of various types of orders for this ED visit.  
+
+
+
+230.08,.03      STATUS                 0;3 SET
+
+                                  'N' FOR New; 
+                                  'A' FOR Active; 
+                                  'C' FOR Complete; 
+                LAST EDITED:      OCT 03, 2008 
+                HELP-PROMPT:      Select the current status of the order. 
+                DESCRIPTION:
+                                  This is the general status of the order.  
+
+                TECHNICAL DESCR:
+                                  The status may be used to highlight orders on the display board and monitor for those that have been outstanding too long.  
+
+
+230.08,.04      STAT                   0;4 SET
+
+                                  '1' FOR Stat; 
+                                  '0' FOR Not Stat; 
+                LAST EDITED:      OCT 03, 2008 
+                HELP-PROMPT:      Enter stat if this is a stat order. 
+                DESCRIPTION:
+                                  This flag identifies the order as being STAT.  
+
+                TECHNICAL DESCR:
+                                  STAT orders may be optionally highlighted by color on the display board.  
+
+
+230.08,.05      RELEASE TIME           0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 15, 2007 
+                HELP-PROMPT:      Enter the date/time the order was released to the filling service. 
+                DESCRIPTION:
+                                  This is the time the order was released to the service.  It is used to monitor orders that may be delayed.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+HOSPITAL LOCATION (#44)           CLINIC (#.14)
+
+ICD DIAGNOSIS (#80)               DISCHARGE DIAGNOSIS:ICD9 CODE (#.02)
+
+INSTITUTION (#4)                  INSTITUTION (#.02)
+
+NEW PERSON (#200)                 CLOSED BY (#.072)
+                                  RESTORED BY (#.074)
+                                  MD ASSIGNED (#3.5)
+                                  NURSE ASSIGNED (#3.6)
+                                  RESIDENT ASSIGNED (#3.7)
+
+PATIENT (#2)                      PATIENT ID (#.06)
+
+TRACKING AREA (#231.9)            AREA (#.03)
+
+TRACKING CODE (#233.1)            ARRIVAL MODE (#.1)
+                                  DISPOSITION (#1.2)
+                                  DELAY REASON (#1.5)
+                                  STATUS (#3.2)
+                                  ACUITY (#3.3)
+
+TRACKING ROOM-BED (#231.8)        LOC (#3.4)
+                                  HELD LOC (#3.9)
+
+VISIT (#9000010)                  VISIT (#.12)
+
+
+File #230
+
+  Record Indexes:
+
+  AC (#626)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  SITE,AREA,IEN when entry is active (not closed)
+      Description:  List the patients that are currently active on the display board.  
+        Set Logic:  S ^EDP(230,"AC",$E(X(1),1,30),$E(X(2),1,30),DA)=""
+         Set Cond:  S X='X2(3)
+       Kill Logic:  K ^EDP(230,"AC",$E(X(1),1,30),$E(X(2),1,30),DA)
+       Whole Kill:  K ^EDP(230,"AC")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (Len 30)  (forwards)
+             X(3):  CLOSED  (230,.07)  (Len 2)  (forwards)
+
+  ADUP1 (#856)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  SITE,AREA,LASTNAME,IEN for active patients
+      Description:  This contributes the last name to the ADUP xref, which helps in identifying patients with similar names or similar brief identifiers.  Only active (not closed) entries are in the cross reference.  
+        Set Logic:  S ^EDP(230,"ADUP",X(1),X(2),X(3),DA)=""
+         Set Cond:  S X='X2(4)
+       Kill Logic:  K ^EDP(230,"ADUP",X(1),X(2),X(3),DA)
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (forwards)
+             X(3):  PATIENT NAME  (230,.04)  (Subscr 3)  (forwards)
+                      Transform (Storage):  S X=$P(X,",")
+             X(4):  CLOSED  (230,.07)  (forwards)
+
+  ADUP2 (#857)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  SITE,AREA,LAST4,IEN for active patients
+      Description:  This contributes the last initial / last 4 to the ADUP xref, which helps in identifying patients with similar names or similar brief identifiers.  Only active (not closed) entries are in the cross reference.  
+        Set Logic:  S ^EDP(230,"ADUP",X(1),X(2),X(3),DA)=""
+         Set Cond:  S X='X2(4)
+       Kill Logic:  K ^EDP(230,"ADUP",X(1),X(2),X(3),DA)
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (forwards)
+             X(3):  PATIENT BRIEF ID  (230,.11)  (Subscr 3)  (forwards)
+             X(4):  CLOSED  (230,.07)  (forwards)
+
+  AH (#979)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  SITE,AREA,HELD,IEN when entry is active
+      Description:  Allows checking for beds / areas that are currently held for the occupant.  
+        Set Logic:  S ^EDP(230,"AH",X(1),X(2),X(3),DA)=""
+         Set Cond:  S X='X2(4)
+       Kill Logic:  K ^EDP(230,"AH",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^EDP(230,"AH")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (forwards)
+             X(3):  HELD LOC  (230,3.9)  (Subscr 3)  (forwards)
+             X(4):  CLOSED  (230,.07)  (forwards)
+
+  AL (#858)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  SITE, AREA, LOC, IEN when entry is active
+      Description:  Allows checking for beds / areas that are currently occupied.  
+        Set Logic:  S ^EDP(230,"AL",X(1),X(2),X(3),DA)=""
+         Set Cond:  S X='X2(4)
+       Kill Logic:  K ^EDP(230,"AL",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^EDP(230,"AL")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (forwards)
+             X(3):  LOC  (230,3.4)  (Subscr 3)  (forwards)
+             X(4):  CLOSED  (230,.07)  (forwards)
+
+  AN (#859)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  SITE,AREA,PTNAME,IEN for active patients
+      Description:  Allows for checking to see if the patient is already active in the case where the patient does not have a DFN (i.e., humanitarian).  It is referenced when adding a new patient to the board.  
+                     
+                    The AN cross reference contains the full name.  It differs from the ADUP cross reference in that the ADUP cross reference contains specific attributes that are to be monitored (such as last name & last initial / last 4) for special
+                    indication on the display board.  
+        Set Logic:  S ^EDP(230,"AN",X(1),X(2),X(3),DA)=""
+         Set Cond:  S X='X2(4)
+       Kill Logic:  K ^EDP(230,"AN",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^EDP(230,"AN")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (forwards)
+             X(3):  PATIENT NAME  (230,.04)  (Subscr 3)  (forwards)
+             X(4):  CLOSED  (230,.07)  (forwards)
+
+  AP (#861)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  SITE,AREA,DFN,IEN for active patients at site (not closed)
+      Description:  Allows testing of duplicate patient entry when selecting patients to add to the display board in the case where the patient has a DFN.  The cross reference is set only for entries that are active (not closed).  
+        Set Logic:  S ^EDP(230,"AP",X(1),X(2),X(3),DA)=""
+         Set Cond:  S X='X2(4)
+       Kill Logic:  K ^EDP(230,"AP",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^EDP(230,"AP")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (forwards)
+             X(3):  PATIENT ID  (230,.06)  (Subscr 3)  (forwards)
+             X(4):  CLOSED  (230,.07)  (forwards)
+
+  APA (#862)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  DFN,IEN for currently active patients
+      Description:  Used by the event monitors to identify a patient that is actively being tracked through a visit (regardless of area).  
+        Set Logic:  S ^EDP(230,"APA",X(1),DA)=""
+         Set Cond:  S X='X2(2)
+       Kill Logic:  K ^EDP(230,"APA",X(1),DA)
+       Whole Kill:  K ^EDP(230,"APA")
+             X(1):  PATIENT ID  (230,.06)  (Subscr 1)  (forwards)
+             X(2):  CLOSED  (230,.07)  (forwards)
+
+  AS (#863)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  SITE,AREA,SSN,IEN for active patients
+      Description:  Allows for checking to see if the patient is already on the display board in the case where there is no DFN and a social security number is used to identify the patient.  
+        Set Logic:  S ^EDP(230,"AS",X(1),X(2),X(3),DA)=""
+         Set Cond:  S X='X2(4)
+       Kill Logic:  K ^EDP(230,"AS",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^EDP(230,"AS")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (forwards)
+             X(3):  PATIENT SSN*  (230,.05)  (Subscr 3)  (forwards)
+             X(4):  CLOSED  (230,.07)  (forwards)
+
+  ATI (#864)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  SITE,TIME IN for reports
+      Description:  Used for reports to get a range of visits within a time range.  
+        Set Logic:  S ^EDP(230,"ATI",X(1),+X(2),DA)=""
+       Kill Logic:  K ^EDP(230,"ATI",X(1),+X(2),DA)
+       Whole Kill:  K ^EDP(230,"ATI")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  TIME IN  (230,.08)  (Subscr 2)  (forwards)
+
+  ATO (#865)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  SITE,TIME OUT for reports
+      Description:  Used for reports to get a range of visits that were closed within a time range.  
+        Set Logic:  S ^EDP(230,"ATO",X(1),X(2),DA)=""
+       Kill Logic:  K ^EDP(230,"ATO",X(1),X(2),DA)
+       Whole Kill:  K ^EDP(230,"ATO")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  TIME OUT  (230,.09)  (Subscr 2)  (forwards)
+
+  PDFN (#866)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  SITE,AREA,DFN,IEN for all patients
+      Description:  Indexes all entries by patient DFN.  When special lookups are done against the patient file (by SSN, for example), a DFN is returned.  This index allows finding the visits for the DFN.  This index contains all visits (closed or
+                    active) where a DFN has been assigned.  
+        Set Logic:  S ^EDP(230,"PDFN",X(1),X(2),X(3),DA)=""
+       Kill Logic:  K ^EDP(230,"PDFN",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^EDP(230,"PDFN")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (forwards)
+             X(3):  PATIENT ID  (230,.06)  (Subscr 3)  (forwards)
+
+  PN (#867)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  SITE,AREA,PTNAME,IEN for all patients
+      Description:  Indexes all patient names.  This is for selecting patients when a visit (closed or otherwise) needs to be corrected.  Since some of the visits may be patients without DFN's, this index allows them to be included in the selection.  All
+                    visits (with and without DFN's) are included in the index.  
+        Set Logic:  S ^EDP(230,"PN",X(1),X(2),X(3),DA)=""
+       Kill Logic:  K ^EDP(230,"PN",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^EDP(230,"PN")
+             X(1):  INSTITUTION  (230,.02)  (Subscr 1)  (forwards)
+             X(2):  AREA  (230,.03)  (Subscr 2)  (forwards)
+             X(3):  PATIENT NAME  (230,.04)  (Subscr 3)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

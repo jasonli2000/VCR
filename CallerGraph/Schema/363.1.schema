@@ -1,0 +1,133 @@
+STANDARD DATA DICTIONARY #363.1 -- CHARGE SET FILE                                                                                                                                                                                MAY 20,2014@15:35:57  PAGE 1
+STORED IN ^IBE(363.1,  (38 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                          (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the definitions of all Charge Sets.  A Charge Set defines a charge rate for a single type of billable event.  
+ 
+DO NOT edit data in this file with VA FileManager.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: AWP CHARGE SET field (#9.12) of the IB SITE PARAMETERS File (#350.9) 
+               CHARGE SET field (#.01) of the CHARGE SET sub-field (#363.0011) of the RATE SCHEDULE File (#363) 
+               CHARGE SET field (#.02) of the CHARGE ITEM File (#363.2) 
+               CHARGE SET field (#.02) of the BILLING RATE/SET sub-field (#363.3211) of the BILLING SPECIAL GROUPS File (#363.32) 
+               
+
+CROSS
+REFERENCED BY: NAME(B), BILLING RATE(C)
+
+363.1,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      JUL 01, 1996 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                Descriptive name to help identify the billable items and the rated defined by the Charge Set.  
+
+              DELETE TEST:      363,0)= I $O(^IBE(363,"C",DA,0)) W !,"Can not Delete a Charge Set that is assigned to a Rate Schedule!",!
+
+                                363.2,0)= I $O(^IBA(363.2,"AIVDTS"_DA,0)) W !,"Can not Delete a Charge Set that has Charge Items defined!",!
+
+              CROSS-REFERENCE:  363.1^B 
+                                1)= S ^IBE(363.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(363.1,"B",$E(X,1,30),DA)
+
+
+363.1,.02     BILLING RATE           0;2 POINTER TO BILLING RATE FILE (#363.3) (Required)
+
+              LAST EDITED:      JUL 16, 1996 
+              HELP-PROMPT:      Enter the type of rate this Charge Set is a subset of. 
+              DESCRIPTION:
+                                This is the type of rate which defines the charges associated with this Charge Set.  
+
+              CROSS-REFERENCE:  363.1^C 
+                                1)= S ^IBE(363.1,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBE(363.1,"C",$E(X,1,30),DA)
+                                Cross-reference on Billing Rate.  
+
+
+
+363.1,.03     BILLABLE EVENT         0;3 POINTER TO MCCR UTILITY FILE (#399.1) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I +$P(^(0),U,14)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 01, 1996 
+              HELP-PROMPT:      Enter the type of event billed by this rate. 
+              DESCRIPTION:
+                                This is the type of care being billed or itemized on a bill that the payer is charged for.  This should correspond to an actual item that may be found on a bill.  
+
+              SCREEN:           S DIC("S")="I +$P(^(0),U,14)=1"
+              EXPLANATION:      Billable Events Only!
+
+363.1,.04     CHARGE TYPE            0;4 SET
+
+                                '1' FOR INSTITUTIONAL; 
+                                '2' FOR PROFESSIONAL; 
+              LAST EDITED:      SEP 23, 1996 
+              HELP-PROMPT:      If the charges in this set are exclusively professional or institutional, enter 1 or 2. 
+              DESCRIPTION:      Defines the charges in this Charge Set as exclusively either professional charges or institutional charges.  
+                                 
+                                This is used to identify the charges to add to bills that are defined as exclusively professional or institutional bills.  
+
+
+363.1,.05     DEFAULT REVENUE CODE   0;5 POINTER TO REVENUE CODE FILE (#399.2)
+
+              INPUT TRANSFORM:  S DIC("S")="I +$P(^(0),U,3)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 22, 1996 
+              HELP-PROMPT:      Enter the Revenue Code that should be used as the default when adding charges to a bill. 
+              DESCRIPTION:      This revenue code will be the default for all items in this Charge Set.  If a Charge Item does not have a Revenue Code defined for it, this code will be used.  Therefore, if most charges for this set should have the same
+                                revenue code, enter that code here.  
+                                 
+                                If there is no Default Revenue Code for a Charge Set, then each Charge Item of that set will be required to have a Revenue Code.  
+
+              SCREEN:           S DIC("S")="I +$P(^(0),U,3)=1"
+              EXPLANATION:      Active Revenue Codes Only!
+
+363.1,.06     DEFAULT BEDSECTION     0;6 POINTER TO MCCR UTILITY FILE (#399.1)
+
+              INPUT TRANSFORM:  S DIC("S")="I +$P(^(0),U,5)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 22, 1996 
+              HELP-PROMPT:      Enter the bedsection that should be added to a bill with the charges for the items in this set. 
+              DESCRIPTION:      Bedsection is required to add charges to a bill.  This is a bedsection that represents the service responsible for the charges in this Set.  
+                                 
+                                If the charge for this Billing Rate is not associated with a bedsection, then add the bedsection that should be added to a bill with the charges for this Set.  
+
+              SCREEN:           S DIC("S")="I +$P(^(0),U,5)=1"
+              EXPLANATION:      Billable Bedsections Only!
+
+363.1,.07     REGION                 0;7 POINTER TO BILLING REGION FILE (#363.31)
+
+              LAST EDITED:      AUG 22, 1996 
+              HELP-PROMPT:      Enter the region which defines the divisions this set of charges apply to. 
+              DESCRIPTION:
+                                This is the region the charges this set apply to.  This is only needed if the charges for this set are modified based on locality/region.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILLING RATE (#363.3)             BILLING RATE (#.02)
+
+BILLING REGION (#363.31)          REGION (#.07)
+
+MCCR UTILITY (#399.1)             BILLABLE EVENT (#.03)
+                                  DEFAULT BEDSECTION (#.06)
+
+REVENUE CODE (#399.2)             DEFAULT REVENUE CODE (#.05)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

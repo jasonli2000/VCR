@@ -1,0 +1,121 @@
+STANDARD DATA DICTIONARY #354.7 -- IB PATIENT COPAY ACCOUNT FILE                                                                                                                                                                  MAY 20,2014@15:35:39  PAGE 1
+STORED IN ^IBAM(354.7,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DO NOT delete entries in this file.  DO NOT edit data in this file with VA File Manager.  
+ 
+This file stores summary information about a patient's copay account.  The information will be used to determine if a patient has reached his copay cap for the month or year.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: PATIENT field (#.02) of the IB COPAY TRANSACTIONS File (#354.71) 
+               
+
+CROSS
+REFERENCED BY: PATIENT(B)
+
+INDEXED BY:    MONTH/YEAR & CAP REACHED (AC)
+
+
+354.7,.01     PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X
+              LAST EDITED:      NOV 16, 2000 
+              HELP-PROMPT:      Enter a patient's name 
+              DESCRIPTION:
+                                This is a pointer to the patient file.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  354.7^B 
+                                1)= S ^IBAM(354.7,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBAM(354.7,"B",$E(X,1,30),DA)
+
+
+354.7,1       MONTH/YEAR             1;0 DATE Multiple #354.701
+
+
+354.701,.01     MONTH/YEAR             0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="EM" D ^%DT S X=Y,DINUM=X K:X<1 X
+                LAST EDITED:      NOV 16, 2000 
+                HELP-PROMPT:      Enter the month and year for this patient's account 
+                DESCRIPTION:
+                                  This is the month and year for the information stored in this multiple.  Every month/year value will have a new multiple entry.  This will store the totals for that month/year value for this patient.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  354.701^B 
+                                  1)= S ^IBAM(354.7,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBAM(354.7,DA(1),1,"B",$E(X,1,30),DA)
+
+                RECORD INDEXES:   AC (#64) (WHOLE FILE #354.7)
+
+354.701,.02     TOTAL AMOUNT BILLED    0;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+                LAST EDITED:      FEB 19, 2001 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the total amount billed for this patient for this month. This will be used to determine if the patient can be billed again for this month.  
+
+
+354.701,.03     CAP REACHED            0;3 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                                  '2' FOR OVER; 
+                LAST EDITED:      SEP 19, 2001 
+                HELP-PROMPT:      Has the patient reached his cap. 
+                DESCRIPTION:
+                                  This flag indicates if the patient has reached the cap for this month.  
+
+                RECORD INDEXES:   AC (#64) (WHOLE FILE #354.7)
+
+354.701,.04     TOTAL AMOUNT NON-BILLABLE 0;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+                LAST EDITED:      FEB 19, 2001 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the total amount non-billable for this patient, for this timeframe from this site only.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+PATIENT (#2)                      PATIENT (#.01)
+
+
+Subfile #354.701
+
+  Record Indexes:
+
+  AC (#64)    RECORD    REGULAR    IR    SORTING ONLY    WHOLE FILE (#354.7)
+      Short Descr:  This index will indicate what patients have reached their cap
+        Set Logic:  S ^IBAM(354.7,"AC",X(1),X(2),DA(1),DA)=""
+       Kill Logic:  K ^IBAM(354.7,"AC",X(1),X(2),DA(1),DA)
+       Whole Kill:  K ^IBAM(354.7,"AC")
+             X(1):  MONTH/YEAR  (354.701,.01)  (Subscr 1)  (forwards)
+             X(2):  CAP REACHED  (354.701,.03)  (Subscr 2)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

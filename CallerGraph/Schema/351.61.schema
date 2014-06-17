@@ -1,0 +1,497 @@
+STANDARD DATA DICTIONARY #351.61 -- TRANSFER PRICING TRANSACTIONS FILE                                                                                                                                                            MAY 20,2014@15:35:31  PAGE 1
+STORED IN ^IBAT(351.61,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+ 
+This file holds all transfer pricing transactions 
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: PARENT TRANSACTION POINTER field (#.08) of the TRANSFER PRICING TRANSACTIONS File (#351.61) 
+               
+
+CROSS
+REFERENCED BY: EVENT SOURCE(AD), PRICED DATE(AE), TRANSACTION STATUS(AF), EVENT DATE(AG), PARENT TRANSACTION POINTER(AI), TRANSACTION NUMBER(B), TRANSFER PRICING PATIENT(C)
+
+INDEXED BY:    TRANSFER PRICING PATIENT & EVENT DATE (AH)
+
+
+351.61,.01    TRANSACTION NUMBER     0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1000)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 04, 1998 
+              HELP-PROMPT:      Type a Number between 1000 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the Transfer Pricing transaction number.  This number is generated automatically in the format of station number with a sequential number after.  
+
+              CROSS-REFERENCE:  351.61^B 
+                                1)= S ^IBAT(351.61,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBAT(351.61,"B",$E(X,1,30),DA)
+
+
+351.61,.02    TRANSFER PRICING PATIENT 0;2 POINTER TO TRANSFER PRICING PATIENT FILE (#351.6) (Required)
+
+              LAST EDITED:      MAY 23, 2000 
+              HELP-PROMPT:      Select a Transfer Pricing patient 
+              DESCRIPTION:
+                                This is a pointer to the transfer pricing patient file (351.6), which is the same ien as in the patient file (#2).  
+
+              CROSS-REFERENCE:  351.61^C 
+                                1)= S ^IBAT(351.61,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBAT(351.61,"C",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AH (#42)
+
+351.61,.03    TRANSACTION DATE       0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 04, 1998 
+              HELP-PROMPT:      This is the date the transaction was created 
+              DESCRIPTION:
+                                This is the date this transaction was added to the file.  
+
+
+351.61,.04    EVENT DATE             0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 23, 2000 
+              HELP-PROMPT:      This is the date of the event. 
+              DESCRIPTION:      This is the date of the event.  
+                                 
+                                       Outpatient Visits = Visit Date 
+                                       Inpatient Stays   = Admission Date 
+                                       Prescriptions     = Drug Dispense Date 
+                                       Prosthetics       = Date Prosthetic Device issued to Patient 
+
+              CROSS-REFERENCE:  351.61^AG 
+                                1)= S ^IBAT(351.61,"AG",$E(X,1,30),DA)=""
+                                2)= K ^IBAT(351.61,"AG",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AH (#42)
+
+351.61,.05    TRANSACTION STATUS     0;5 SET
+
+                                'X' FOR CANCELLED; 
+                                'E' FOR ENTERED; 
+                                'C' FOR COMPLETED; 
+                                'P' FOR PRICED; 
+              LAST EDITED:      APR 21, 2000 
+              HELP-PROMPT:      This is the status of the transaction 
+              DESCRIPTION:      The status of the transaction.  
+                                 
+                                Entered = only used for inpatient upon admission.  
+                                 
+                                Completed = used for when the transaction information has been fully entered, but not yet priced.  For inpatient this usually means the patient has been discharged, but the PTF has not yet been coded.  This can also mean
+                                that any other type of transaction could not be priced for various reasons.  
+                                 
+                                Priced = transaction is complete.  
+                                 
+                                Cancelled = treating facility has cancelled transaction.  
+
+              CROSS-REFERENCE:  351.61^AF 
+                                1)= S ^IBAT(351.61,"AF",$E(X,1,30),DA)=""
+                                2)= K ^IBAT(351.61,"AF",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^351.61^.13 
+                                1)= X ^DD(351.61,.05,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^IBAT(351.61,D0,0)):^(0),1:"") S X=$P(Y(1),U,13),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC X ^DD(351.61,.05,1,2,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(351.61,.05,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_Y(0)_":",2),$C(59),1)="PRICED"
+                                1.4)= S DIH=$S($D(^IBAT(351.61,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,13)=DIV,DIH=351.61,DIG=.13 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= TRANSACTION STATUS="PRICED"
+                                CREATE VALUE)= TODAY
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PRICED DATE
+
+
+351.61,.06    APPROVAL DATE          0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 17, 2000 
+              HELP-PROMPT:      This is the date the transaction was approved 
+              DESCRIPTION:      This is the date the transaction was set to a complete status.  Once a transaction is complete, it can no longer be edited.  It can only be cancelled and a new transaction created.  This date is used for report printing
+                                since another site cannot be billed until a transaction is complete.  An inpatient transaction can be completed as an interim transaction and a new one started.  
+
+              DELETE AUTHORITY: 
+
+351.61,.07    INTERIM TRANSACTION FLAG 0;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 18, 2000 
+              HELP-PROMPT:      This indicates an interim transaction 
+              DESCRIPTION:
+                                Only used on inpatient transactions, this flag indicates if this transaction is an interim transaction or not.  
+
+
+351.61,.08    PARENT TRANSACTION POINTER 0;8 POINTER TO TRANSFER PRICING TRANSACTIONS FILE (#351.61) (Required)
+
+              LAST EDITED:      FEB 25, 2000 
+              HELP-PROMPT:      This points to the parent transaction 
+              DESCRIPTION:
+                                Used to lookup transactions and adjustment to transactions for future adjustments.  The parent should always have this filled in pointing to it self, children should always have this filled in pointing to their parent.  
+
+              CROSS-REFERENCE:  351.61^AI 
+                                1)= S ^IBAT(351.61,"AI",$E(X,1,30),DA)=""
+                                2)= K ^IBAT(351.61,"AI",$E(X,1,30),DA)
+                                This is used to find all the transactions that relate to one another.  
+
+
+
+351.61,.09    FROM DATE              0;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 04, 1998 
+              HELP-PROMPT:      Date the transaction covers from 
+              DESCRIPTION:
+                                This is the period this service is covered from.  
+
+
+351.61,.1     TO DATE                0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 04, 1998 
+              HELP-PROMPT:      Date the transaction covers to 
+              DESCRIPTION:
+                                This is the period this service is covered to.  
+
+
+351.61,.11    PREFERRED FACILITY     0;11 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      MAR 06, 1999 
+              HELP-PROMPT:      This is the preferred facility for this transaction. 
+              DESCRIPTION:
+                                This indicates which facility is the patient's preferred facility at the time of the transaction.  This is used to identify what facility this transaction is for.  
+
+
+351.61,.12    EVENT SOURCE           0;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      FEB 16, 1999 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:      This is the source of the event.  
+                                 
+                                Inpatient    =  ien in file #405;DGPM( Outpatient   =  ien in file #409.68;SCE( Pharmacy     =  ien in file #52;PSRX(;fill/refill no Prosthetics  =  ien in file #660;RMPR(660, 
+
+              CROSS-REFERENCE:  351.61^AD 
+                                1)= S ^IBAT(351.61,"AD",$E(X,1,30),DA)=""
+                                2)= K ^IBAT(351.61,"AD",$E(X,1,30),DA)
+
+
+351.61,.13    PRICED DATE            0;13 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 06, 1999 
+              HELP-PROMPT:      This is the date the transaction became priced. 
+              DESCRIPTION:
+                                This is the date the transaction was priced.  
+
+              NOTES:            TRIGGERED by the TRANSACTION STATUS field of the TRANSFER PRICING TRANSACTIONS File 
+
+              CROSS-REFERENCE:  351.61^AE 
+                                1)= S ^IBAT(351.61,"AE",$E(X,1,30),DA)=""
+                                2)= K ^IBAT(351.61,"AE",$E(X,1,30),DA)
+
+
+351.61,1.01   DRG                    1;1 POINTER TO DRG FILE (#80.2)
+
+              LAST EDITED:      MAR 11, 1999 
+              HELP-PROMPT:      This is the DRG used to determine the cost 
+              DESCRIPTION:
+                                This is the inpatient DRG that was calculated for the admission that the costing of this transaction is based upon.  
+
+
+351.61,1.02   DRG AMOUNT             1;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<.01) X
+              LAST EDITED:      MAY 26, 2000 
+              HELP-PROMPT:      Type a Dollar Amount between .01 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the dollar amount the DRG was priced at.  
+
+
+351.61,1.03   INPATIENT LOS          1;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 11, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the total length of stay for this inpatient stay.  
+
+
+351.61,1.04   HIGH TRIM DAYS         1;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 11, 1999 
+              HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the arithmetic means LOS, or the outlier threshold.  This corresponds to the DRG file (#80.2), field HIGH TRIM(days) (#4).  Any stays over this number will be calculated at the outlier rate.  
+
+
+351.61,1.05   OUTLIER DAYS           1;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 16, 1999 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:      This is the number of days to calculate charge at the outlier rates.  This number is calculated by: 
+                                 
+                                       INPATIENT LOS - HIGH TRIM DAYS = OUTLIER DAYS 
+
+              CROSS-REFERENCE:  ^^TRIGGER^351.61^6.01 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBAT(351.61,D0,6)):^(6),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X=DIV S X=DIV X ^DD(351.61,1.05,1,1,1.4)
+                                1.4)= S DIH=$S($D(^IBAT(351.61,DIV(0),6)):^(6),1:""),DIV=X S $P(^(6),U,1)=DIV,DIH=351.61,DIG=6.01 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBAT(351.61,D0,6)):^(6),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y X ^DD(351.61,1.05,1,1,2.1) X ^DD(351.61,1.05,1,1,2.4)
+                                2.1)= S X=DIV S Y(1)=$S($D(^IBAT(351.61,D0,1)):^(1),1:"") S X=$P(Y(1),U,5)
+                                2.4)= S DIH=$S($D(^IBAT(351.61,DIV(0),6)):^(6),1:""),DIV=X S $P(^(6),U,1)=DIV,DIH=351.61,DIG=6.01 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= OUTLIER DAYS
+                                DELETE VALUE)= OUTLIER DAYS
+                                FIELD)= TOTAL OUTLIER DAYS
+
+
+351.61,1.06   OUTLIER RATE           1;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999.99)!(X<.01) X
+              LAST EDITED:      MAY 26, 2000 
+              HELP-PROMPT:      Type a Dollar Amount between .01 and 999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the daily rate for the outlier days.  This is based upon 80% of the tort rate.  
+
+
+351.61,1.07   PTF POINTER            1;7 POINTER TO PTF FILE (#45)
+
+              LAST EDITED:      MAR 11, 1999 
+              HELP-PROMPT:      This is the pointer to the PTF file 
+              DESCRIPTION:
+                                This is the pointer to the PTF record for which the charge was calculated.  
+
+
+351.61,1.08   DISCHARGE MOVEMENT     1;8 POINTER TO PATIENT MOVEMENT FILE (#405)
+
+              LAST EDITED:      MAR 13, 1999 
+              HELP-PROMPT:      This is the pointer to the discharge movement 
+              DESCRIPTION:
+                                This is to store the discharge movement.  
+
+
+351.61,2      ICD DIAGNOSIS          2;0 POINTER Multiple #351.612
+
+              DESCRIPTION:
+                                This is the diagnosis codes for this event.  This will play into the DRG calculation.  
+
+
+351.612,.01     ICD DIAGNOSIS          0;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+                INPUT TRANSFORM:  S DIC("S")="I $$ICD9ACT^IBACSV(+Y,$P($G(^IBAT(351.61,+$G(DA(1)),0)),U,4))" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+                LAST EDITED:      APR 21, 2003 
+                HELP-PROMPT:      This is the diagnosis codes for this transaction. 
+                DESCRIPTION:
+                                  This is the diagnosis codes for this event.  This will play into the DRG calculation.  
+
+                SCREEN:           S DIC("S")="I $$ICD9ACT^IBACSV(+Y,$P($G(^IBAT(351.61,+$G(DA(1)),0)),U,4))"
+                EXPLANATION:      Only codes active on the Event Date may be selected.
+                CROSS-REFERENCE:  351.612^B 
+                                  1)= S ^IBAT(351.61,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBAT(351.61,DA(1),2,"B",$E(X,1,30),DA)
+
+
+
+
+351.61,3      PROCEDURES             3;0 POINTER Multiple #351.613
+
+              DESCRIPTION:
+                                This is the multiple where the procedures performed either inpatient or outpatient are stored.  
+
+
+351.613,.01     PROCEDURES             0;1 POINTER TO CPT FILE (#81) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $$CPTACT^IBACSV(+Y,$P($G(^IBAT(351.61,+$G(DA(1)),0)),U,4))" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+                LAST EDITED:      APR 21, 2003 
+                HELP-PROMPT:      Select a procedure to determine the price of this transaction. 
+                DESCRIPTION:
+                                  This is the multiple where the procedures performed either inpatient or outpatient are stored.  The procedures are used to calculate the transaction price.  
+
+                SCREEN:           S DIC("S")="I $$CPTACT^IBACSV(+Y,$P($G(^IBAT(351.61,+$G(DA(1)),0)),U,4))"
+                EXPLANATION:      Only codes active on the Event Date may be selected.
+                CROSS-REFERENCE:  351.613^B 
+                                  1)= S ^IBAT(351.61,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBAT(351.61,DA(1),3,"B",$E(X,1,30),DA)
+                                  3)= Required Index for Variable Pointer
+
+
+351.613,.02     QUANTITY               0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 01, 1999 
+                HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of times this procedure was performed.  
+
+
+351.613,.03     PROCEDURE COST         0;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+                LAST EDITED:      MAY 26, 2000 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the unit cost per procedure.  
+
+
+
+
+351.61,4.01   DRUG                   4;1 POINTER TO DRUG FILE (#50)
+
+              LAST EDITED:      DEC 04, 1998 
+              HELP-PROMPT:      This is a pointer to the drug for this transaction 
+              DESCRIPTION:
+                                This pointer to the drug file indicates what prescription was issued.  
+
+
+351.61,4.02   QUANTITY               4;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 04, 1998 
+              HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the quantity of the drug issued.  
+
+
+351.61,4.03   DRUG COST              4;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999.999)!(X<.001)!(X?.E1"."4N.N) X
+              LAST EDITED:      MAR 16, 1999 
+              HELP-PROMPT:      Type a Number between .001 and 9999.999, 3 Decimal Digits 
+              DESCRIPTION:
+                                This is the cost per unit of the drug.  
+
+
+351.61,4.04   *PROSTHETIC ITEM       4;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              OUTPUT TRANSFORM: PROSTHETIC ITEM:NAME:NAME:SHORT DESCRIPTION
+              LAST EDITED:      MAR 07, 2008 
+              HELP-PROMPT:      This is a pointer to the prosthetic device for this transaction 
+              DESCRIPTION:
+                                This is a pointer to the prosthetic item file for the prosthetic device issued to the patient.  
+
+              TECHNICAL DESCR:
+                                This field was marked for deletion 04/01/08.  Field was a pointer to PROS ITEM MASTER (#661) which is out of date.  
+
+
+351.61,4.05   PROSTHETIC ITEM COST   4;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+              LAST EDITED:      APR 11, 2000 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the cost of the prosthetic device.  Determined by looking at file 660 at the TOTAL COST field.  
+
+
+351.61,5.01   AUTHORIZING PERSON     5;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+              LAST EDITED:      DEC 04, 1998 
+              HELP-PROMPT:      Answer must be 3-50 characters in length. 
+              DESCRIPTION:
+                                This is the name of the person authorizing this transaction from the patient's preferred facility.  
+
+
+351.61,6.01   TOTAL OUTLIER DAYS     6;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 29, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the total of the outlier days for all the DRGs.  
+
+              NOTES:            TRIGGERED by the OUTLIER DAYS field of the TRANSFER PRICING TRANSACTIONS File 
+
+
+351.61,6.02   GROSS BILL AMOUNT      6;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<.01) X
+              LAST EDITED:      JUL 29, 1999 
+              HELP-PROMPT:      Type a Dollar Amount between .01 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the gross amount either from the drg's, cpt's, or rx's before any deductions of billed amounts.  
+
+
+351.61,6.03   CATAGORY C BILL AMOUNT 6;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+              LAST EDITED:      DEC 29, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the dollar amount billed for the cat c patient's co-payment(s).  
+
+
+351.61,6.04   INSURANCE BILL AMOUNT  6;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+              LAST EDITED:      DEC 29, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount of the insurance bill to be deducted from the total amount.  
+
+
+351.61,6.05   NET AMOUNT             6;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<.01) X
+              LAST EDITED:      DEC 29, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between .01 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the total bill amount that is due from the preferred facility.  This is calculated based upon the service provided less any other reimbursements.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CPT (#81)                         PROCEDURES:PROCEDURES (#.01)
+
+DRG (#80.2)                       DRG (#1.01)
+
+DRUG (#50)                        DRUG (#4.01)
+
+ICD DIAGNOSIS (#80)               ICD DIAGNOSIS:ICD DIAGNOSIS (#.01)
+
+INSTITUTION (#4)                  PREFERRED FACILITY (#.11)
+
+PATIENT MOVEMENT (#405)           DISCHARGE MOVEMENT (#1.08)
+
+PTF (#45)                         PTF POINTER (#1.07)
+
+TRANSFER PRICING PATIENT 
+                   (#351.6)       TRANSFER PRICING PATIENT (#.02)
+
+TRANSFER PRICING TRANSACTIONS 
+                   (#351.61)      PARENT TRANSACTION POINTER (#.08)
+
+
+File #351.61
+
+  Record Indexes:
+
+  AH (#42)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  XREF BETWEEN PATIENT AND EVENT DATE FOR SORTING
+        Set Logic:  S ^IBAT(351.61,"AH",X(1),X(2),DA)=""
+       Kill Logic:  K ^IBAT(351.61,"AH",X(1),X(2),DA)
+       Whole Kill:  K ^IBAT(351.61,"AH")
+             X(1):  TRANSFER PRICING PATIENT  (351.61,.02)  (Subscr 1)  (forwards)
+             X(2):  EVENT DATE  (351.61,.04)  (Subscr 2)  (forwards)
+
+
+INPUT TEMPLATE(S):
+IBAT OUT PRICING EDIT         APR 13, 1999@11:05  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

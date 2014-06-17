@@ -1,0 +1,184 @@
+STANDARD DATA DICTIONARY #394.71 -- VAQ - DATA SEGMENT FILE                                                                                                                                                                       MAY 20,2014@15:39:52  PAGE 1
+STORED IN ^VAT(394.71,  (68 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                         (VERSION 1.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file defines each data segment currently supported by PDX.  
+ 
+ 
+Global format of Extraction Array: 
+     Root@("VALUE",file,field,sequence number)=value 
+     Root@("ID",file,field,sequence number)=identifier 
+ 
+Extraction methods must account for data encryption.  
+ 
+Display methods must take the output of their associated extraction method as input.  
+ 
+Global format of Display Array: 
+     Root@("DISPLAY",line number,0)=information displayed on specified 
+                                    line number of screen 
+ 
+Methods must use the following parameters (where needed): 
+     ROOT - Where to store the information (full global reference) 
+     DFN - Internal file number for requested patient (pointer to PATIENT 
+           File) 
+     SEGPTR - Internal file number of segment (pointer to VAQ - DATA 
+              SEGMENT File) 
+     XTRCT - Where the extracted information resides (full global 
+             reference) 
+     OFFSET - Where line numbering should begin from 
+     TIMLIM - Time limit to apply to extraction 
+     OCCLIM - Occurrence limit to apply to extraction 
+ 
+Methods must return the following: 
+     0 - Extraction was successful (if an Extraction Array was returned) 
+     n - Number of lines in display (if a Display Array was returned) 
+     -1^ErrorText - Method was not successful 
+ 
+Sample methods: 
+     $$EXTRACT^VAQZZZ(DFN,SEGPTR,TIMLIM,OCCLIM,ROOT,OFFSET) - Display 
+                                                              Array is 
+                                                              returned 
+     $$EXTRACT^VAQZZZ(DFN,SEGPTR,TIMLIM,OCCLIM,ROOT)  - Extraction Array 
+                                                        is returned 
+     $$DISPLAY^VAQZZZ(XTRCT,SEGPTR,ROOT,OFFSET) - Display Array, built from 
+                                                  input extraction array, 
+                                                  is returned 
+ 
+Sample use: 
+     S ROOT="^TMP(""VAQ"","_$J_")" 
+     S SEGPTR=internal file number for segment 
+     S DFN=internal file number of patient 
+     S TIMLIM=time limit to use when extracting segment (if applicable) 
+     S OCCLIM=occurrence limit to use when extracting segment (if 
+              applicable) 
+     X ("S X="_^VAT(394.71,SEGPTR,"XRTN")) 
+     The variable X is now set to the proper exit code (X<0 on error) 
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: 
+     "WRITE1": W ?40,"(",$P(^(0),U,2),")"
+
+POINTED TO BY: Data Segment field (#.01) of the Data Segment sub-field (#394.618) of the VAQ - TRANSACTION File (#394.61) 
+               Segment field (#.02) of the VAQ - DATA File (#394.62) 
+               Data Segment field (#.01) of the Data Segment sub-field (#394.841) of the VAQ - SEGMENT GROUP File (#394.84) 
+               Segment in Transaction field (#.01) of the Segment in Transaction sub-field (#394.873) of the VAQ - WORKLOAD File (#394.87) 
+               
+
+CROSS
+REFERENCED BY: Data Segment Name(B), Abbreviation(C), Data Segment Name(D)
+
+394.71,.01    Data Segment Name      0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>80!($L(X)<1)!'(X'?1P.E) X
+              LAST EDITED:      JUL 28, 1993 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                 Name of the data segment.  
+
+              CROSS-REFERENCE:  394.71^B 
+                                1)= S ^VAT(394.71,"B",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.71,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  394.71^D^MUMPS 
+                                1)= S ^VAT(394.71,"CAPS",$TR($E(X,1,30),"abcdefghijklmnopqrstuvwxyz","ABCDEFGHIJKLMNOPQRSTUVWXYZ"),DA)=""
+                                2)= K ^VAT(394.71,"CAPS",$TR($E(X,1,30),"abcdefghijklmnopqrstuvwxyz","ABCDEFGHIJKLMNOPQRSTUVWXYZ"),DA)
+                                Creates a cross reference of field Data Segment Name (.01) in upper case format.  
+                                 
+                                Resulting node ==> ^VAT(394.71,"CAPS",[.01 in all caps],DA) 
+                                    Where:  [.01 in all caps] is field number .01 converted to upper case 
+                                            DA is the entry number 
+
+
+
+394.71,.02    Abbreviation           0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>7!($L(X)<1) X
+              LAST EDITED:      MAR 16, 1993 
+              HELP-PROMPT:      Answer must be 1-7 characters in length. 
+              DESCRIPTION:
+                                Abbreviation for the data segment.  
+
+              CROSS-REFERENCE:  394.71^C 
+                                1)= S ^VAT(394.71,"C",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.71,"C",$E(X,1,30),DA)
+
+
+394.71,.03    Extract Is Display Ready 0;3 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      FEB 01, 1993 
+              DESCRIPTION:
+                                Set to YES if the Extraction Method returns information in display ready format (returns Display Array instead of Extraction Array).  Set to NO if Extraction Method does not (returns Extraction Array).  
+
+
+394.71,.04    Health Summary Component 0;4 POINTER TO HEALTH SUMMARY COMPONENT FILE (#142.1)
+
+              LAST EDITED:      SEP 02, 1993 
+              DESCRIPTION:
+                                 Set to the Health Summary Component that this data segment is associated with.  Leave blank if data segment is not a Health Summary Component.  
+
+
+394.71,.05    Maximum Time Limit     0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<2)!($$VALOCC^VAQDBIH2(X,0)<0) X
+              LAST EDITED:      SEP 15, 1993 
+              HELP-PROMPT:      Enter a valid time limit (1-5 digits followed by 'Y' or 'M' or 'D') 
+              DESCRIPTION:
+                                 Maximum time limit facility will allow when automatically processing a PDX Request with this segment 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+394.71,.06    Maximum Occurrence Limit 0;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 09, 1993 
+              HELP-PROMPT:      Enter a valid occurrence limit (1-5 digits) 
+              DESCRIPTION:
+                                 Maximum occurrence limit facility will allow when automatically processing a PDX Request with this segment 
+
+
+394.71,10     Extraction Method      XRTN;E1,240 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>240!($L(X)<1) X
+              LAST EDITED:      NOV 30, 1992 
+              HELP-PROMPT:      Answer must be 1-240 characters in length. 
+              DESCRIPTION:
+                                Function call to extract data segment.  
+
+
+394.71,20     Display Method         DRTN;E1,240 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>240!($L(X)<1) X
+              LAST EDITED:      DEC 22, 1992 
+              HELP-PROMPT:      Answer must be 1-240 characters in length. 
+              DESCRIPTION:
+                                Function call to display data segment.  This field is not used when the Extraction Method returns information in display ready format.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+HEALTH SUMMARY COMPONENT 
+                   (#142.1)       Health Summary Component (#.04)
+
+
+
+INPUT TEMPLATE(S):
+VAQ EDIT FILE                 SEP 15, 1993@09:51  USER #0    
+
+PRINT TEMPLATE(S):
+VAQ DATA SEGMENT LIST         APR 02, 1993@11:39  USER #0                                                                                                                                                                                    PDX Data Segments
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

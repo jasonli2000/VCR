@@ -1,0 +1,522 @@
+STANDARD DATA DICTIONARY #9000011 -- PROBLEM FILE                                                                                                                                                                                 MAY 20,2014@15:40:10  PAGE 1
+STORED IN ^AUPNPROB(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains patient specific problems entered by the various providers of service.  The PATIENT NAME field (.02) is a backward pointer to the IHS PATIENT file.  This file contains one record for each problem for each patient, therefore, the KEY
+field (.01) is duplicated.  
+ 
+As of March 17, 1986 the FACILITY must be entered prior to the NUMBER.  If the NUMBER is entered without previously entering the FACILITY the "AA" index is created with no FACILITY pointer.  
+
+
+              DD ACCESS: @
+             DEL ACCESS: @
+IDENTIFIED BY: PATIENT NAME (#.02)[R], FACILITY (#.06)[R], NMBR (#.07)[R]
+
+POINTED TO BY: PROBLEM field (#.01) of the PROBLEM LIST AUDIT File (#125.8) 
+               PROBLEM field (#.02) of the TIU PROBLEM LINK File (#8925.9) 
+               PROBLEM LIST ENTRY field (#.16) of the V POV File (#9000010.07) 
+               
+
+CROSS
+REFERENCED BY: NMBR(AA), PATIENT NAME(AATOO), FACILITY(AATOO2), PATIENT NAME(AC), STATUS(ACTIVE), PATIENT NAME(ACTIVE1), FACILITY(AV1), DIAGNOSIS(AV9), DIAGNOSIS(B), PROBLEM(C), DATE LAST MODIFIED(MODIFIED)
+
+INDEXED BY:    DIAGNOSIS & PATIENT NAME & DATE LAST MODIFIED & STATUS & PRIORITY & CONDITION (ACR)
+
+
+9000011,.01   DIAGNOSIS              0;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I 1 Q:$G(DUZ(""AG""))=""V""  I $E(^(0))'=""E"",$P(^(0),U,9)="""" Q:$P(^(0),U,10)=""""  I $P(^(0),U,10)=AUPNSEX" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 12, 1994 
+              HELP-PROMPT:      Enter the ICD Code for this problem. 
+              DESCRIPTION:
+                                This is the ICD coded diagnosis of the narrative entered describing this problem.  
+
+              TECHNICAL DESCR:  The DHCP Problem List application derives its entries from a lookup into the Clinical Lexicon Utility rather than the ICD Diagnosis file.  If the term selected from the CLU is not coded to ICD, then code 799.99 "Other
+                                Unknown or Unspecified Cause, NEC" will be used here in order to be able to create a new entry.  This field may later be edited.  
+
+              SCREEN:           S DIC("S")="I 1 Q:$G(DUZ(""AG""))=""V""  I $E(^(0))'=""E"",$P(^(0),U,9)="""" Q:$P(^(0),U,10)=""""  I $P(^(0),U,10)=AUPNSEX"
+              EXPLANATION:      Cannot be an E code or an inactive code and must be appropriate for the sex of the Patient.
+              CROSS-REFERENCE:  9000011^B 
+                                1)= S ^AUPNPROB("B",$E(X,1,30),DA)=""
+                                2)= K ^AUPNPROB("B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000011^AV9^MUMPS 
+                                1)= S:$D(APCDLOOK) DIC("DR")=""
+                                2)= Q
+                                Controls the behaviour of the input templates used by IHS to populate and maintain this file.  
+
+
+              RECORD INDEXES:   ACR (#459)
+
+9000011,.02   PATIENT NAME           0;2 POINTER TO PATIENT/IHS FILE (#9000001) (Required)
+
+              LAST EDITED:      SEP 09, 1993 
+              HELP-PROMPT:      Enter the name of the patient for whom this problem has been observed. 
+              DESCRIPTION:
+                                This is the patient for whom this problem has been observed and recorded.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000011^AC 
+                                1)= S ^AUPNPROB("AC",$E(X,1,30),DA)=""
+                                2)= K ^AUPNPROB("AC",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000011^AATOO^MUMPS 
+                                1)= I $P(^AUPNPROB(DA,0),U,6)]"",$P(^(0),U,7)]"" S X1=$P($P(^(0),U,7),"."),X2=$P($P(^(0),U,7),".",2),^AUPNPROB("AA",X,$P(^(0),U,6)," "_$E("000",1,4-$L(X1)-1)_X1_"."_X2_$E("00",1,3-$L(X2)-1),DA)="" K X1,X2
+                                2)= I $P(^AUPNPROB(DA,0),U,6)]"",$P(^(0),U,7)]"" S X1=$P($P(^(0),U,7),"."),X2=$P($P(^(0),U,7),".",2) K ^AUPNPROB("AA",X,$P(^(0),U,6)," "_$E("000",1,4-$L(X1)-1)_X1_"."_X2_$E("00",1,3-$L(X2)-1),DA),X1,X2
+                                Allows problem retrieval by patient, facility, and problem number (Nmbr); the number is used as a string in " 000.00" format to assure a consistent ordering.  
+
+
+              CROSS-REFERENCE:  9000011^ACTIVE1^MUMPS 
+                                1)= S:$L($P(^AUPNPROB(DA,0),U,12)) ^AUPNPROB("ACTIVE",X,$P(^(0),U,12),DA)=""
+                                2)= K:$L($P(^AUPNPROB(DA,0),U,12)) ^AUPNPROB("ACTIVE",X,$P(^(0),U,12),DA)
+                                Allows problem retrieval by patient and status, in order of entry.  
+
+
+              RECORD INDEXES:   ACR (#459)
+
+9000011,.03   DATE LAST MODIFIED     0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:DT<X!(2000000>X) X
+              LAST EDITED:      MAR 19, 1999 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1900 AND TODAY 
+              DESCRIPTION:
+                                This is the last date/time this problem was changed.  
+
+              SOURCE OF DATA:   018/PRCOND
+              CROSS-REFERENCE:  9000011^MODIFIED^MUMPS 
+                                1)= K ^AUPNPROB("MODIFIED",$P(^AUPNPROB(DA,0),"^",2)) D NOW^%DTC S ^AUPNPROB("MODIFIED",$P(^AUPNPROB(DA,0),"^",2),%)=""
+                                2)= Q
+                                This Index will keep track of the last time this Patients problem list was modified.  ^AUPNPROB("MODIFIED"),PATIENT,DATE 
+
+
+              RECORD INDEXES:   ACR (#459)
+
+9000011,.04   CLASS                  0;4 SET
+
+                                'P' FOR PERSONAL HISTORY; 
+                                'F' FOR FAMILY HISTORY; 
+              LAST EDITED:      OCT 07, 1987 
+              HELP-PROMPT:      If this problem is historical, indicate if it is Personal or Family history. 
+              DESCRIPTION:
+                                This flag is used by the IHS Problem List to indicate if this problem is documented for historical purposes.  
+
+              TECHNICAL DESCR:
+                                VA sites using the DHCP Problem List application will not be prompted for this information.  
+
+
+9000011,.05   PROVIDER NARRATIVE     0;5 POINTER TO PROVIDER NARRATIVE FILE (#9999999.27) (Required)
+
+              INPUT TRANSFORM:  S DIC(0)=$S($D(APCDALVR):"LO",1:"EMQLO") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 28, 1988 
+              HELP-PROMPT:      Enter a description of this patient's problem. 
+              DESCRIPTION:
+                                This contains the actual text used by the provider to describe this problem.  
+
+              SCREEN:           S DIC(0)=$S($D(APCDALVR):"LO",1:"EMQLO")
+              EXPLANATION:      OLD LOOKUP
+
+9000011,.06   FACILITY               0;6 POINTER TO LOCATION FILE (#9999999.06) (Required)
+
+              LAST EDITED:      JAN 10, 1994 
+              HELP-PROMPT:      Enter the location at which this problem was first observed and recorded. 
+              DESCRIPTION:
+                                This is the facility at which this problem was originally observed and documented.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000011^AV1^MUMPS 
+                                1)= Q
+                                2)= Q
+                                No longer in use.  
+
+
+              CROSS-REFERENCE:  9000011^AATOO2^MUMPS 
+                                1)= I $P(^AUPNPROB(DA,0),U,2)]"",$P(^(0),U,7)]"" S X1=$P($P(^(0),U,7),"."),X2=$P($P(^(0),U,7),".",2),^AUPNPROB("AA",$P(^(0),U,2),X," "_$E("000",1,4-$L(X1)-1)_X1_"."_X2_$E("00",1,3-$L(X2)-1),DA)="" K X1,X2
+                                2)= I $P(^AUPNPROB(DA,0),U,2)]"",$P(^(0),U,7)]"" S X1=$P($P(^(0),U,7),"."),X2=$P($P(^(0),U,7),".",2) K ^AUPNPROB("AA",$P(^(0),U,2),X," "_$E("000",1,4-$L(X1)-1)_X1_"."_X2_$E("00",1,3-$L(X2)-1),DA),X1,X2
+                                Allows problem retrieval by patient, facility, and problem number (Nmbr); the number is used as a string in " 000.00" format to assure a consistent ordering.  
+
+
+
+9000011,.07   NMBR                   0;7 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999.99)!(X<1)!(X?.E1"."3N.N) X Q:'$D(X)  K:$D(^AUPNPROB("AA",$P(^AUPNPROB(DA,0),U,2),$P(^(0),U,6)," "_$E("000",1,4-$L($P(X,".",1))-1)_$P(X,".",1)_"."_$P(X,".",2)_$E("00",1,3-$L($P(X,".",2))-1))) X
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      TYPE A NUMBER BETWEEN 1 AND 999.99 
+              DESCRIPTION:      This is a number which, together with the Patient (#.02) and Facility (#.06) fields, serves as a unique identifier for this problem.  Up to 2 decimal places may be used to indicate that a problem is a result of, or related 
+                                to, another problem.  
+
+              SOURCE OF DATA:   018/PRNUMB
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  9000011^AA^MUMPS 
+                                1)= S ^AUPNPROB("AA",$P(^AUPNPROB(DA,0),U,2),$P(^(0),U,6)," "_$E("000",1,4-$L($P(X,".",1))-1)_$P(X,".",1)_"."_$P(X,".",2)_$E("00",1,3-$L($P(X,".",2))-1),DA)=""
+                                2)= K ^AUPNPROB("AA",$P(^AUPNPROB(DA,0),U,2),$P(^(0),U,6)," "_$E("000",1,4-$L($P(X,".",1))-1)_$P(X,".",1)_"."_$P(X,".",2)_$E("00",1,3-$L($P(X,".",2))-1),DA)
+                                Allows problem retrieval by patient, facility, and problem number (Nmbr); the number is used as a string in " 000.00" format to assure a consistent ordering.  
+
+
+
+9000011,.08   DATE ENTERED           0;8 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:DT<X!(2000000>X) X
+              LAST EDITED:      MAR 07, 1988 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1900 AND TODAY 
+              DESCRIPTION:
+                                This is the date this problem was entered into this file.  
+
+              SOURCE OF DATA:   018/PREDAT
+                                UNEDITABLE
+
+9000011,.12   STATUS                 0;12 SET (Required)
+
+                                'A' FOR ACTIVE; 
+                                'I' FOR INACTIVE; 
+              LAST EDITED:      JUL 06, 1993 
+              HELP-PROMPT:      Enter the current status of this problem, active or inactive. 
+              DESCRIPTION:
+                                This is the current activity status of this problem, whether active or inactive; if more detail is needed, a notation may be filed with this problem.  
+
+              SOURCE OF DATA:   018/PRSTAT
+              CROSS-REFERENCE:  9000011^ACTIVE^MUMPS 
+                                1)= S:$P(^AUPNPROB(DA,0),U,2) ^AUPNPROB("ACTIVE",+$P(^(0),U,2),X,DA)=""
+                                2)= K ^AUPNPROB("ACTIVE",+$P(^AUPNPROB(DA,0),U,2),X,DA)
+                                Allows problem retrieval by patient and status, in order of entry.  
+
+
+              RECORD INDEXES:   ACR (#459)
+
+9000011,.13   DATE OF ONSET          0;13 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:DT<X!(1800000>X) X
+              LAST EDITED:      JUN 13, 1993 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1880 AND TODAY 
+              DESCRIPTION:
+                                This is the approximate date this problem appeared, as precisely as known.  
+
+
+9000011,1.01  PROBLEM                1;1 POINTER TO EXPRESSIONS FILE (#757.01)
+
+              LAST EDITED:      JUL 28, 1993 
+              HELP-PROMPT:      Enter the problem observed for this patient. 
+              DESCRIPTION:
+                                This field contains the standardized text stored in the Clinical Lexicon for this problem.  
+
+              CROSS-REFERENCE:  9000011^C 
+                                1)= S ^AUPNPROB("C",$E(X,1,30),DA)=""
+                                2)= K ^AUPNPROB("C",$E(X,1,30),DA)
+
+
+9000011,1.02  CONDITION              1;2 SET
+
+                                'T' FOR TRANSCRIBED; 
+                                'P' FOR PERMANENT; 
+                                'H' FOR HIDDEN; 
+              LAST EDITED:      JUL 26, 1993 
+              DESCRIPTION:
+                                This reflects the current condition of this entry, whether transcribed by a clerk from the paper chart, entered or verified by a provider, or marked as removed from the patient's list.  
+
+              TECHNICAL DESCR:  This flag is used internally by the DHCP Problem List; entries having an H in this field have been "deleted" and are maintained for historical use but are generally ignored.  If the parameter "Verify Transcribed Entries"
+                                is turned on in File #125.99, entries made by a clerk will have a T here, and a flag will appear on the clinician's display of the list.  P entries have been entered or verified by a provider.  
+
+              RECORD INDEXES:   ACR (#459)
+
+9000011,1.03  ENTERED BY             1;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      Enter the name of the current user. 
+              DESCRIPTION:
+                                This is the user who actually entered this problem into this file.  
+
+
+9000011,1.04  RECORDING PROVIDER     1;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      Enter the name of the provider who first recorded this data. 
+              DESCRIPTION:
+                                This is the provider who first recorded this problem, either on the paper chart or online.  
+
+
+9000011,1.05  RESPONSIBLE PROVIDER   1;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      Enter the name of the local provider treating this problem. 
+              DESCRIPTION:
+                                This is the provider currently responsible for treating this problem.  
+
+
+9000011,1.06  SERVICE                1;6 POINTER TO SERVICE/SECTION FILE (#49)
+
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      Enter the service to be associated with this problem. 
+              DESCRIPTION:      This is the service primarily involved in the treatment of this problem; the DHCP Problem List defaults this field to the service defined in File #200 for the Recording Provider of this problem, upon entry of the problem. 
+                                It may later be used to categorize problems for screening and sorting.  
+
+
+9000011,1.07  DATE RESOLVED          1;7 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      Enter the date this problem became resolved or inactive, as precisely as known. 
+              DESCRIPTION:
+                                This is the date this problem was resolved or inactivated, as precisely as known.  
+
+
+9000011,1.08  CLINIC                 1;8 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)=""C""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 12, 1994 
+              HELP-PROMPT:      Enter the clinic in which the patient is being seen for this problem. 
+              DESCRIPTION:
+                                This is the clinic in which this patient is being seen for this problem.  The problem list may be screened based on this value, to change one's view of the list.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,3)=""C"""
+              EXPLANATION:      Only clinics are allowed here.
+
+9000011,1.09  DATE RECORDED          1;9 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:DT<X!(2000000>X) X
+              LAST EDITED:      JAN 11, 1994 
+              HELP-PROMPT:      Enter the date this problem was first recorded, as precisely as known. 
+              DESCRIPTION:
+                                This is the date this problem was originally recorded, either online or in the paper chart; it may be the same as, or earlier than, the Date Entered.  
+
+
+9000011,1.1   SERVICE CONNECTED      1;10 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      If this problem is service connected, enter YES here. 
+              DESCRIPTION:
+                                If the patient has service connection on file in the DHCP Patient file #2, this problem specifically may be flagged as being service connected.  
+
+              TECHNICAL DESCR:
+                                This data will be prompted for in the DHCP Problem List only if the patient is indicated for service connection.  Non-VA sites will not be prompted for this information.  
+
+
+9000011,1.11  AGENT ORANGE EXPOSURE  1;11 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      Enter YES if this problem is related to exposure to Agent Orange. 
+              DESCRIPTION:
+                                If this problem is related to a patient's exposure to Agent Orange, it may be flagged here.  
+
+              TECHNICAL DESCR:
+                                This data will be prompted for in the DHCP Problem List only if a patient has Agent Orange exposure indicated.  Non-VA sites will not be prompted for this information.  
+
+
+9000011,1.12  IONIZING RADIATION EXPOSURE 1;12 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      Enter YES if this problem is related to exposure to ionizing radiation. 
+              DESCRIPTION:
+                                If this problem is related to a patient's exposure to ionizing radiation, it may be flagged here.  
+
+              TECHNICAL DESCR:
+                                This data will be prompted for in the DHCP Problem List only if the patient has ionizing radiation exposure indicated.  Non-VA sites will not be prompted for this information.  
+
+
+9000011,1.13  PERSIAN GULF EXPOSURE  1;13 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUL 26, 1993 
+              HELP-PROMPT:      Enter YES if this problem is related to a Persian Gulf exposure. 
+              DESCRIPTION:
+                                If this problem is related to a patient's service in the Persian Gulf, it may be flagged here.  
+
+              TECHNICAL DESCR:
+                                This data will be prompted for only if a patient has Persian Gulf service indicated.  Non-VA sites will not be prompted for this information.  
+
+
+9000011,1.14  PRIORITY               1;14 SET
+
+                                'A' FOR ACUTE; 
+                                'C' FOR CHRONIC; 
+              LAST EDITED:      FEB 01, 1994 
+              HELP-PROMPT:      You may further refine the status of this problem by assigning it a priority. 
+              DESCRIPTION:
+                                This is a flag to indicate how critical this problem is for this patient; problems marked as Acute will be flagged on the Problem List display.  
+
+              RECORD INDEXES:   ACR (#459)
+
+9000011,1.15  HEAD AND/OR NECK CANCER 1;15 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 07, 2002 
+              DESCRIPTION:
+                                If this problem is related to the treatment of head and/or neck cancer associated with nose or throat radium treatments, it may be flagged here.  
+
+              TECHNICAL DESCR:
+                                This data will be prompted for only if a patient has received nose or throat radium treatments.  
+
+
+9000011,1.16  MILITARY SEXUAL TRAUMA 1;16 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 07, 2002 
+              DESCRIPTION:
+                                If this problem is related to the treatment of military sexual trauma, it may be flagged here.  
+
+              TECHNICAL DESCR:
+                                This data will be prompted for only if a patient has been treated for military sexual trauma.  
+
+
+9000011,1.17  COMBAT VETERAN         1;17 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      NOV 25, 2003 
+              HELP-PROMPT:      If this problem is a result of combat it may be flagged here 
+
+9000011,1.18  SHIPBOARD HAZARD & DEFENSE 1;18 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      SEP 18, 2006 
+              HELP-PROMPT:      If this problem is a result of SHAD, it may be flagged here 
+
+9000011,1101  NOTE FACILITY          11;0 POINTER Multiple #9000011.11 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is the location at which the notes in this multiple originated.  
+
+
+9000011.11,.01  NOTE FACILITY          0;1 POINTER TO LOCATION FILE (#9999999.06) (Multiply asked)
+
+                LAST EDITED:      SEP 09, 1993 
+                HELP-PROMPT:      Enter the location at which these notes originated. 
+                DESCRIPTION:
+                                  This is the location at which the notes in this multiple originated.  
+
+                CROSS-REFERENCE:  9000011.11^B 
+                                  1)= S ^AUPNPROB(DA(1),11,"B",$E(X,1,30),DA)=""
+                                  2)= K ^AUPNPROB(DA(1),11,"B",$E(X,1,30),DA)
+
+
+9000011.11,1101 NOTE                   11;0 Multiple #9000011.1111 (Add New Entry without Asking)
+
+                DESCRIPTION:      Each entry in this multiple is a notation appended to a problem for further clarification or information.  Data includes a note number and status, the date the note was added, the provider who added it, and the actual
+                                  text of the note.  
+
+                IDENTIFIED BY:    NOTE NARRATIVE(#.03)[R]
+
+9000011.1111,.01  NOTE NMBR              0;1 NUMBER (Required)
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JAN 25, 1994 
+                  HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the unique note identifier.  
+
+                  CROSS-REFERENCE:  9000011.1111^B 
+                                    1)= S ^AUPNPROB(DA(2),11,DA(1),11,"B",$E(X,1,30),DA)=""
+                                    2)= K ^AUPNPROB(DA(2),11,DA(1),11,"B",$E(X,1,30),DA)
+
+                  CROSS-REFERENCE:  9000011.1111^AV9^MUMPS 
+                                    1)= S:$D(APCDLOOK) DIC("DR")=""
+                                    2)= Q
+                                    Controls the behaviour of the input templates used by IHS to populate and maintain this file.  
+
+
+
+9000011.1111,.03  NOTE NARRATIVE         0;3 FREE TEXT (Required)
+
+                  INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                  LAST EDITED:      JUL 26, 1993 
+                  HELP-PROMPT:      Answer must be 3-60 characters in length. 
+                  DESCRIPTION:
+                                    Additional comments may be entered here to further describe this problem.  
+
+
+9000011.1111,.04  STATUS                 0;4 SET (Required)
+
+                                    'A' FOR ACTIVE; 
+                  LAST EDITED:      MAY 01, 1990 
+                  HELP-PROMPT:      If this note is currently ACTIVE, indicate it here. 
+                  DESCRIPTION:
+                                    This flag indicates if this note is currently active.  
+
+
+9000011.1111,.05  DATE NOTE ADDED        0;5 DATE
+
+                  INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:DT<X!(1800000>X) X
+                  LAST EDITED:      JUL 26, 1993 
+                  HELP-PROMPT:      TYPE A DATE BETWEEN 1880 AND TODAY 
+                  DESCRIPTION:
+                                    This is the date this note was entered into this file.  
+
+
+9000011.1111,.06  AUTHOR                 0;6 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      MAR 30, 1993 
+                  HELP-PROMPT:      Enter the name of the provider who authored the text of this note. 
+                  DESCRIPTION:
+                                    This is the provider who authored the text of this note.  
+
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+EXPRESSIONS (#757.01)             PROBLEM (#1.01)
+
+HOSPITAL LOCATION (#44)           CLINIC (#1.08)
+
+ICD DIAGNOSIS (#80)               DIAGNOSIS (#.01)
+
+LOCATION (#9999999.06)            FACILITY (#.06)
+                                  NOTE FACILITY:NOTE FACILITY (#.01)
+
+NEW PERSON (#200)                 ENTERED BY (#1.03)
+                                  RECORDING PROVIDER (#1.04)
+                                  RESPONSIBLE PROVIDER (#1.05)
+                                  NOTE:AUTHOR (#.06)
+
+PATIENT/IHS (#9000001)            PATIENT NAME (#.02)
+
+PROVIDER NARRATIVE (#9999999.27)  PROVIDER NARRATIVE (#.05)
+
+SERVICE/SECTION (#49)             SERVICE (#1.06)
+
+
+File #9000011
+
+  Record Indexes:
+
+  ACR (#459)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  Clinical Reminders index for ICD9 lookup.
+      Description:  This cross-reference builds two indexes, one for finding all patients with a particular ICD9 code and one for finding all the ICD9 codes a patient has. The indexes are stored in the Clinical Reminders index global as: 
+                     ^PXRMINDX(9000011,"ISPP",ICD9,STATUS,PRIORITY,DFN,DLM,DAS) 
+                     ^PXRMINDX(9000011,"PSPI",DFN,STATUS,PRIORITY,ICD9,DLM,DAS) respectively.  
+                     
+                    STATUS can be "A" for active or "I" for inactive.  PRIORITY can be "A" for acute or "C" for chronic. If PRIORITY is missing then a "U" will be stored in the index.  For Problems whose PRIORITY is "C" Clinical Reminders uses today's
+                    date for the date of the Problem. In all other cases Clinical Reminders uses DLM where DLM is the date last modified.  When Problems are "removed" then CONDITION is set to "H" for hidden. Hidden Problems are not indexed.  For all the
+                    details, see the Clinical Reminders Index Technical Guide/Programmer's Manual.  
+        Set Logic:  D SPROB^GMPLPXRM(.X,.DA)
+       Kill Logic:  D KPROB^GMPLPXRM(.X,.DA)
+       Whole Kill:  K ^PXRMINDX(9000011)
+             X(1):  DIAGNOSIS  (9000011,.01)  (Subscr 1)  (forwards)
+             X(2):  PATIENT NAME  (9000011,.02)  (Subscr 2)  (forwards)
+             X(3):  DATE LAST MODIFIED  (9000011,.03)  (Subscr 3)  (forwards)
+             X(4):  STATUS  (9000011,.12)  (Subscr 4)  (forwards)
+             X(5):  PRIORITY  (9000011,1.14)
+             X(6):  CONDITION  (9000011,1.02)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

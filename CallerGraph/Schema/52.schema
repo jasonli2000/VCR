@@ -1,0 +1,3551 @@
+STANDARD DATA DICTIONARY #52 -- PRESCRIPTION FILE                                                                                                                                                                                 MAY 20,2014@15:39:17  PAGE 1
+STORED IN ^PSRX(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                 (VERSION 7.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Contains all outpatient RX data used by the outpatient pharmacy package.  As the above indicates, this is the hub of the outpatient system.  It will easily be the largest pharmacy file in time and is pointed to very heavily.  Deletion of an entry in this
+file must be handled VERY carefully and is not allowed if refills have been issued.  
+ 
+Of particular interest is that essentially all the history pertaining to a particular Rx is contained in each Rx entry.  
+
+
+COMPILED CROSS-REFERENCE ROUTINE: PSOXZA
+IDENTIFIED BY: ISSUE DATE (#1)[R], PATIENT (#2)[R], DRUG (#6)[R], DELETION COMMENTS (#108)[R]
+
+POINTED TO BY: RX # field (#3) of the DUE ANSWER SHEET File (#50.0731) 
+               PREVIOUS ORDER # field (#39.4) of the PRESCRIPTION File (#52) 
+               FORWARD ORDER # field (#39.5) of the PRESCRIPTION File (#52) 
+               PRESCRIPTION(S) field (#.01) of the PRESCRIPTION(S) sub-field (#52.1112) of the PATIENT NOTIFICATION (Rx READY) File (#52.11) 
+               RX# field (#.01) of the RX VERIFY File (#52.4) 
+               RENEWED FROM RX# field (#3) of the RX VERIFY File (#52.4) 
+               RX # field (#.01) of the RX SUSPENSE File (#52.5) 
+               RX # field (#.01) of the PHARMACY EXTERNAL INTERFACE File (#52.51) 
+               PRESCRIPTION NUMBER field (#1) of the CLOZAPINE PRESCRIPTION OVERRIDES File (#52.52) 
+               RX # field (#.01) of the PHARMACY ARCHIVE File (#52.8) 
+               PRESCRIPTION field (#1) of the PSO AUDIT LOG File (#52.87) 
+               RX # field (#.01) of the RX # sub-field (#52.9002) of the LABEL/PROFILE sub-field (#52.9001) of the PHARMACY PRINTED QUEUE File (#52.9) 
+               PRESCRIPTION PROFILE field (#.01) of the PRESCRIPTION PROFILE sub-field (#55.03) of the PHARMACY PATIENT File (#55) 
+               RX # field (#18) of the ORDERS sub-field (#58.800118) of the DRUG sub-field (#58.8001) of the DRUG ACCOUNTABILITY STATS File (#58.8) 
+               RX # field (#60) of the DRUG ACCOUNTABILITY TRANSACTION File (#58.81) 
+               PRESCRIPTION field (#.08) of the CLAIMS TRACKING File (#356) 
+               RECORD field (#.05) of the IB BILL/CLAIMS PRESCRIPTION REFILL File (#362.4) 
+               PRESCRIPTION field (#.201) of the EVENT sub-field (#366.141) of the IB NCPDP EVENT LOG File (#366.14) 
+               RX # field (#.212) of the EVENT sub-field (#366.141) of the IB NCPDP EVENT LOG File (#366.14) 
+               RX NUMBER field (#.01) of the RX NUMBER sub-field (#550.1101) of the CMOP RX QUEUE File (#550.1) 
+               PRESCRIPTIONS field (#.01) of the PRESCRIPTIONS sub-field (#550.215) of the CMOP TRANSMISSION File (#550.2) 
+               PRESCRIPTION NUMBER field (#.05) of the TRANSACTIONS sub-field (#9002313.0201) of the BPS CLAIMS File (#9002313.02) 
+               PRESCRIPTION NUMBER field (#1.11) of the BPS LOG OF TRANSACTIONS File (#9002313.57) 
+               PRESCRIPTION NUMBER field (#1.11) of the BPS TRANSACTION File (#9002313.59) 
+               RX NUMBER field (#1.13) of the BPS REQUESTS File (#9002313.77) 
+               
+
+CROSS
+REFERENCED BY: ISSUE DATE(AC), FILL DATE(ACP), PATIENT(ACP1), RELEASED DATE/TIME(ACP2), MAIL/WINDOW(ACP3), MAIL/WINDOW(ACP4), FILL DATE(AD), REFILL DATE(AD), FILL DATE(ADL), DRUG(ADL1), PARTIAL DATE(ADP), FILL DATE(AE), DRUG(AF), 
+               FINISH DATE/TIME(AFDT), EXPIRATION DATE(AG), HOLD REASON(AH), EXPIRATION DATE(AI), RETURNED TO STOCK(AJ), RETURNED TO STOCK(AJ1), CANCEL DATE(AK), RELEASED DATE/TIME(AL), RELEASED DATE/TIME(AL1), RELEASED DATE/TIME(AM), 
+               RETURNED TO STOCK(AN), COSIGNING PHYSICIAN(ANCO), PREVIOUS ORDER #(AO), DIVISION(AP), PLACER ORDER #(APL), PATIENT(APSOD), FORWARD ORDER #(AQ), FILL DATE(AR), STATUS(AR), STATUS(AS), RX #(B), PATIENT(C), ICD DIAGNOSIS(E)
+
+INDEXED BY:    DAYS SUPPLY & RELEASED DATE/TIME (ACRO), DAYS SUPPLY & RELEASED DATE/TIME (ACRP), DAYS SUPPLY & RELEASED DATE/TIME (ACRR), ISSUE DATE (APKI), EXTERNAL PLACER ORDER NUMBER & EXTERNAL APPLICATION (D), DATE/TIME DETECTED (REJDAT), STATUS
+               (REJSTS)
+
+
+52,.01        RX #                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<1) X
+              LAST EDITED:      NOV 26, 1990 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 999999999 
+              DESCRIPTION:
+                                This is the prescription number.  
+
+              EXECUTABLE HELP:  D RXHLP^PSOHELP4
+              DELETE TEST:      1,0)= I 1 D EN^DDIOL("DELETE THROUGH PACKAGE ONLY!","","$C(7),!?5")
+
+                                52,0)= S X1=$S($D(^PSRX(D0,2)):$P(^(2),"^",6),1:0) S:'X1 RX0=^(0),J=D0 D ^PSOEXDT:'X1 I DT'>$P(^(2),U,6),$O(^PSRX(DA,1,0)) D EN^DDIOL("CANNOT DELETE PRESCRIPTIONS WITH REFILLS.","","$C(7),!?5")
+
+              GROUP:            PSO
+              CROSS-REFERENCE:  52^B 
+                                1)= S ^PSRX("B",$E(X,1,30),DA)=""
+                                2)= K ^PSRX("B",$E(X,1,30),DA)
+
+
+52,1          ISSUE DATE             0;13 DATE (Required)
+
+              INPUT TRANSFORM:  D CID^PSOUTL S X=Y K:Y<1 X
+              OUTPUT TRANSFORM: I $G(^PSRX("AC",$E(X,1,30),DA))=""
+              LAST EDITED:      APR 25, 2003 
+              DESCRIPTION:
+                                Date when doctor wrote prescription.  
+
+              TECHNICAL DESCR:
+                                (Required) Date.  
+
+              EXECUTABLE HELP:  D CIDH^PSOUTL
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52^AC 
+                                1)= S ^PSRX("AC",$E(X,1,30),DA)=""
+                                2)= K ^PSRX("AC",$E(X,1,30),DA)
+                                3)= Do Not Delete!
+                                This xref is used to index file by Issue Date.  
+
+
+              FIELD INDEX:      APKI (#250)    MUMPS    IR    SORTING ONLY
+                  Short Descr:  This indexes the issue date.
+                  Description:  This cross-reference is used only to index digitally signed CPRS placed orders by the issue date. It is primarily used to generate digitally signed prescriptions in the Digitally Signed Orders Report, which is made 
+                                available in the Controlled Substance package, as part of the PKI project.  
+                    Set Logic:  I +$P($G(^PSRX(DA,"PKI")),"^")=1 S ^PSRX("APKI",$E(X,1,30),DA)=""
+                   Kill Logic:  K ^PSRX("APKI",$E(X,1,30),DA)
+                   Whole Kill:  K ^PSRX("APKI")
+                         X(1):  ISSUE DATE  (52,1)  (Subscr 1)  (Len 30)  (forwards)
+
+
+52,2          PATIENT                0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  I $D(X) D PAT^PSOHELP
+              LAST EDITED:      MAY 15, 2002 
+              DESCRIPTION:
+                                The patient receiving treatment.  
+
+              TECHNICAL DESCR:
+                                (Required) Pointer to Patient File (#2) 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52^C^MUMPS 
+                                1)= S:$P($G(^PSRX(DA,0)),"^",11)="W"&($P($G(^(2)),"^",2))&('$P($G(^(2)),"^",13))&('$P($G(^(2)),"^",15))&(+$G(^("IB"))) ^PSRX("ACP",X,$P(^PSRX(DA,2),"^",2),0,DA)=""
+                                2)= K:$P($G(^PSRX(DA,0)),"^",11)="W"&($P($G(^(2)),"^",2))&('$P($G(^(2)),"^",13))&('$P($G(^(2)),"^",15))&(+$G(^("IB"))) ^PSRX("ACP",X,$P(^PSRX(DA,2),"^",2),0,DA)
+                                3)= Do Not Delete!
+                                This cross reference is used to index copay fills that have not been billed through the IB package. It sets the global ^PSRX("ACP",Patient,Fill Date,0,DA)="".  
+
+
+              CROSS-REFERENCE:  52^ACP1^MUMPS 
+                                1)= I +$G(^PSRX(DA,"IB")) F RFN=0:0 S RFN=$O(^PSRX(DA,1,RFN)) Q:'RFN  S:$P($G(^PSRX(DA,1,RFN,0)),"^")&($P($G(^(0)),"^",2)="W")&('$P($G(^(0)),"^",16))&('$P($G(^(0)),"^",18))&('$G(^("IB"))) ^PSRX("ACP",X,$P(^PSRX(DA,1,RFN,0)
+                                ,"^"),RFN,DA)=""
+
+                                2)= I +$G(^PSRX(DA,"IB")) F RFN=0:0 S RFN=$O(^PSRX(DA,1,RFN)) Q:'RFN  K:$P($G(^PSRX(DA,1,RFN,0)),"^")&('$P($G(^(0)),"^",16))&('$P($G(^(0)),"^",18))&($G(^("IB"))) ^PSRX("ACP",X,$P(^PSRX(DA,1,RFN,0),"^"),RFN,DA)
+                                3)= Do Not Delete!
+                                This xref is used to index copay refills that have not been billed through the IB package. It sets the global ^PSRX("ACP",Patient,Refill Date,Refill number,DA)="".  
+
+
+              CROSS-REFERENCE:  52^APSOD^MUMPS 
+                                1)= S:$G(PSODEATH) ^PSRX("APSOD",X,DA)=""
+                                2)= K:$G(PSODEATH) ^PSRX("APSOD",X,DA)
+                                3)= Do not delete.
+                                This xref will be set only when a Rx is discontinued because a date of death was entered. This xref will be set by the APSOD xref of the Date of death field in file #2. ^PSRX("APSOD",patient pointer,da) Set by routine
+                                PSOCAN3.  
+
+
+
+52,3          PATIENT STATUS         0;3 POINTER TO RX PATIENT STATUS FILE (#53) (Required)
+
+              INPUT TRANSFORM:  D:$D(X) STATDAY^PSOUTLA
+              LAST EDITED:      AUG 25, 1994 
+              DESCRIPTION:
+                                This field is used to show the status of the patient at the time the medication was filled.  
+
+              TECHNICAL DESCR:
+                                Pointer to RX Patient Status File (#53).  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,4          PROVIDER               0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="S X(1)=$G(^(""PS"")) I +X(1),$S('$P(X(1),""^"",4):1,1:$P(X(1),""^"",4)'<DT)" D ^DIC K DIC,X(1) S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 05, 1996 
+              HELP-PROMPT:      Enter the name of a Provider. 
+              DESCRIPTION:
+                                Doctor who wrote the prescription.  
+
+              TECHNICAL DESCR:
+                                (Required) Pointer to New Person File (#200) 
+
+              SCREEN:           S DIC("S")="S X(1)=$G(^(""PS"")) I +X(1),$S('$P(X(1),""^"",4):1,1:$P(X(1),""^"",4)'<DT)"
+              EXPLANATION:      Only valid providers are to be selected.
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,5          CLINIC                 0;5 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P($G(^(""SL"")),""^"",5)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUN 29, 2001 
+              DESCRIPTION:
+                                Clinic where treatment was given and prescription was written.  
+
+              TECHNICAL DESCR:
+                                Pointer to Hospital Location File (#44) 
+
+              SCREEN:           S DIC("S")="I '$P($G(^(""SL"")),""^"",5)"
+              EXPLANATION:      Only primary clinics are allowed.
+              EXECUTABLE HELP:  S DIC=44,DIC(0)="M",DIC("S")="I '$P($G(^(""SL"")),""^"",5)" D ^DIC
+
+52,6          DRUG                   0;6 POINTER TO DRUG FILE (#50) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $S('$D(^PSDRUG(Y,""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0),$S('$D(^PSDRUG(Y,2)):1,$P(^(2),""^"",3)'[""O"":0,1:1)" I $D(X) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X) D INP526^PSOFUNC
+              LAST EDITED:      SEP 28, 1998 
+              DESCRIPTION:
+                                The actual medication.  
+
+              TECHNICAL DESCR:
+                                (Required) Pointer to Drug File (#50) 
+
+              SCREEN:           S DIC("S")="I $S('$D(^PSDRUG(Y,""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0),$S('$D(^PSDRUG(Y,2)):1,$P(^(2),""^"",3)'[""O"":0,1:1)"
+              EXPLANATION:      inactive drugs and those not marked for outpatient are not allowed
+              GROUP:            PS
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52^ADL1^MUMPS 
+                                1)= I X,$P(^PSRX(DA,2),"^",2) S ^PSRX("ADL",$P(^PSRX(DA,2),"^",2),X,DA)=""
+                                2)= I X,$P(^PSRX(DA,2),"^",2) K ^PSRX("ADL",$P(^PSRX(DA,2),"^",2),X,DA)
+                                3)= Please do not delete.
+                                This xref will be used to index Rxs by filldate and drug pointer. This xref will be used to find Rxs with drug whose price have changed in the Drug file (#50) and needs updating in this file.  
+                                 
+                                Cross reference will look like the following: 
+                                 ^PSRX("ADL",FILLDATE,DRUG POINTER,DA)="" 
+
+
+              CROSS-REFERENCE:  52^AF^MUMPS 
+                                1)= S:'$D(PSOPAR) PSOPAR=$S($D(^PS(59,$O(^PS(59,0)),1)):^(1),1:"") S P(7)=$P(^PSRX(DA,0),U,8),P(5)=$P(^PSRX(DA,0),U,6),P(2)=$P(^(0),U,3) D MAX^PSOHELP K P(2),P(7),P(5) S:$P(^PSRX(DA,0),U,9)="" $P(^(0),U,9)=MAX K MIN,MAX,RE
+                                F
+
+                                2)= Q
+                                3)= Do not delete.
+                                Determines maximum number of refill allowed. It sets piece 9 of ^PSRX(DA,0)= maximum number of refills allowed.  
+
+
+
+52,6.5        TRADE NAME             TN;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>32!($L(X)<1)!'(X'?1." ")!(X?1N.N) X
+              LAST EDITED:      JUL 06, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 1-32 CHARACTERS IN LENGTH, MUST NOT BE BLANK, AND CONTAIN AT LEAST ONE NON-NUMERIC CHARACTER. 
+              DESCRIPTION:
+                                Free Text that, if it exists, will replace the DRUG name on the RX label.  
+
+
+52,7          QTY                    0;7 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:(+X'>0)!(+X>99999999)!(X'?.8N.1".".2N)!($L(X)>11) X D:$D(X) QTY^PSOHELP
+              LAST EDITED:      NOV 30, 2007 
+              DESCRIPTION:
+                                This field is used to show the amount of medication that was dispensed.  
+
+              TECHNICAL DESCR:  This field allows numeric entries only, both for CMOP prescriptions and non-CMOP prescriptions. It requires a number between .01 and 99999999, with a maximum of 2 fractional decimal places.  
+                                 
+                                NOTE: QTY values that were on file prior to patch PSO*7*29 (released 2/17/00) may contain alpha characters.  
+
+              EXECUTABLE HELP:  D HELP^PSOHELP
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,8          DAYS SUPPLY            0;8 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>90)!(X<1)!(X?.E1"."1N.N) X D:$G(X) DAYS^PSOHELP1
+              LAST EDITED:      OCT 17, 1995 
+              HELP-PROMPT:      Type a Number between 1 and 90, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter a whole number between 1 and 90.  The maximum upper limit is 90, but may be lower based on the maximum specified for this patient status.  This parameter is defined in the RX PATIENT STATUS file.  
+
+              TECHNICAL DESCR:
+                                Numeric.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              FIELD INDEX:      ACRO (#461)    MUMPS    IR    ACTION
+                  Short Descr:  Clinical Reminders index.
+                  Description:  This cross-reference builds two indexes, one for finding all patients with a particular drug and one for finding all the drugs a patient has. The indexes are stored in the Clinical Reminders index global as: 
+                                 ^PXRMINDX(52,"IP",DRUG,DFN,START DATE,STOP DATE,DAS) 
+                                 ^PXRMINDX(52,"PI",DFN,DRUG,START DATE,STOP DATE,DAS) respectively. START DATE is the RELEASE DATE and STOP DATE is calculated by adding the DAYS SUPPLY to the RELEASE DATE.  For all the details, see the Clinical Reminders
+                                Index Technical Guide/Programmer's Manual.  
+                    Set Logic:  D SKIDX^PSOPXRMU(.X,.DA,"O","S")
+                   Kill Logic:  D SKIDX^PSOPXRMU(.X,.DA,"O","K")
+                   Whole Kill:  Q
+                         X(1):  DAYS SUPPLY  (52,8)  (Subscr 1)  (forwards)
+                         X(2):  RELEASED DATE/TIME  (52,31)  (Subscr 2)  (forwards)
+
+
+52,9          # OF REFILLS           0;9 NUMBER (Required)
+
+              INPUT TRANSFORM:  D REF^PSOHELP
+              LAST EDITED:      AUG 16, 1994 
+              HELP-PROMPT:      Enter number of refills for this RX, if refillable. 
+              DESCRIPTION:
+                                The number of refills allowed per prescription.  
+
+              TECHNICAL DESCR:
+                                (Required) Number.  
+
+              EXECUTABLE HELP:  S EXH=1 D MAX^PSOHELP K EXH
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,10         SIG                    SIG;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X D:$D(X) SIG^PSOHELP D:$D(X) EN^DDIOL(" ("_$E(INS1,2,9999999)_")")
+              LAST EDITED:      AUG 22, 2001 
+              HELP-PROMPT:      Enter medication instructions for this prescription. 
+              DESCRIPTION:
+                                Enter the medication instruction for this prescription. Entries should be no longer than 200 total characters, including spaces, with no one set of characters longer than 32 characters in length.  
+
+              EXECUTABLE HELP:  S DIC=51,DIC(0)="Q",DIC("S")="I $P(^(0),""^"",4)<2" D ^DIC S DIC=52 K DIC("S")
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,10.1       OERR SIG               SIG;2 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      FEB 27, 1995 
+              DESCRIPTION:
+                                This field is used to determined if the original medication instructions was accepted.  This field for all Rxs entered prior v7 will be null or no.  This field is uneditable.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+                                UNEDITABLE
+
+52,10.2       SIG1                   SIG1;0 Multiple #52.04 (Add New Entry without Asking)
+
+
+52.04,.01       SIG1                   0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                LAST EDITED:      JUL 30, 2001 
+                HELP-PROMPT:      Answer must be 1-200 characters in length. 
+                DESCRIPTION:
+                                  This holds a Sig from OERR.  
+
+                                  UNEDITABLE
+
+52.04,1         SIG1                   0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                LAST EDITED:      JUL 30, 2001 
+                                  UNEDITABLE
+
+
+
+52,10.3       ORDER CONVERTED        0;19 SET
+
+                                '1' FOR ORDER CONVERTED; 
+                                '2' FOR EXPIRATION TO CPRS; 
+              LAST EDITED:      AUG 04, 1997 
+              HELP-PROMPT:      This field is set automatically at conversion and order expiration. 
+              DESCRIPTION:
+                                This field is used to indicate V7 order conversion complete to OERR.  It's also used to indicate the updating of CPRS on expiration of the order.  
+
+
+52,10.6       COPIES                 0;18 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 20, 1994 
+              HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+              DESCRIPTION:
+                                The number of copies made of the label for the prescription.  
+
+              TECHNICAL DESCR:
+                                Number.  
+
+
+52,11         MAIL/WINDOW            0;11 SET (Required)
+
+                                'M' FOR MAIL; 
+                                'W' FOR WINDOW; 
+              LAST EDITED:      JUL 27, 1994 
+              DESCRIPTION:
+                                Indicates if the medication will be picked up or mailed to the patient.  
+
+              TECHNICAL DESCR:
+                                Set 'M' for Mail, 'W' for Window.  
+
+              CROSS-REFERENCE:  52^ACP3^MUMPS 
+                                1)= S:X="W"&($P(^PSRX(DA,0),"^",2))&($P($G(^(2)),"^",2))&('$P($G(^(2)),"^",13))&('$P($G(^(2)),"^",15))&(+$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA,0),"^",2),$P(^(2),"^",2),0,DA)=""
+                                2)= K:X="W"&($P(^PSRX(DA,0),"^",2))&($P($G(^(2)),"^",2))&('$P($G(^(2)),"^",13))&('$P($G(^(2)),"^",15))&(+$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA,0),"^",2),$P(^(2),"^",2),0,DA)
+                                3)= Do not Delete!
+                                This cross reference is used to update the ACP xref if the routing should changed. It sets the global ^PSRX("ACP",Patient,Fill Date,0,DA)="".  
+
+
+
+52,12         REMARKS                3;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>75!($L(X)<1) X
+              LAST EDITED:      JUL 22, 1997 
+              HELP-PROMPT:      ANSWER MUST BE 1-75 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Any additional comments.  
+
+              TECHNICAL DESCR:
+                                Free Text.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,16         ENTERED BY             0;16 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      FEB 15, 1995 
+              HELP-PROMPT:      Enter the name of the person who requested the medication. 
+              DESCRIPTION:
+                                This field will show who requested the rx.  
+
+              TECHNICAL DESCR:
+                                Pointer to New Person file (#200).  
+
+              GROUP:            PS
+
+52,17         UNIT PRICE OF DRUG     0;17 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."5N.N) X
+              LAST EDITED:      OCT 04, 2000 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 4 Decimal Digits 
+              DESCRIPTION:
+                                Price per dispense unit.  
+
+              TECHNICAL DESCR:  This is the price per dispense unit (per ML/MG etc.) that is calculated when entering the price per order unit, e.g. Price per order unit (bottle) =$0.49, dispense unit is ML & the bottle has 1000ML. Price per dispense 
+                                unit = $(0.49/1000) = $0.00049 = $0.0005 (rounded to the 4th decimal).  
+
+
+52,20         DIVISION               2;9 POINTER TO OUTPATIENT SITE FILE (#59) (Required)
+
+              LAST EDITED:      MAY 15, 1995 
+              DESCRIPTION:
+                                Tells which Outpatient Pharmacy Division filled the prescription.  
+
+              TECHNICAL DESCR:
+                                Pointer to Pharmacy Site File (#59) 
+
+              CROSS-REFERENCE:  52^AP^MUMPS 
+                                1)= D SAS^PSOSUTL
+                                2)= D KAS^PSOSUTL
+                                This is used to maintain the AS x-ref in Suspense. It sets piece 6 of ^PS(52.5,DA,0)=Division. For a non-CMOP prescription, it can also set the global ^PS(52.5,"AS",Print Date,Printed By,Division,Sequence,DA)="".  For a
+                                CMOP prescription it can set the global ^PS(52.5,"APR",Print Date,Printed By,Division,Sequence,DA)="".  For a CMOP prescription division edit it can set the global ^PS(52.5,"CMP",Cmop Activity,Rx CMOP
+                                Type,Division,Suspense Date,DFN,DA)="".  
+
+
+
+52,21         LOGIN DATE             2;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 14, 1993 
+              DESCRIPTION:
+                                The date the prescription was entered.  
+
+              TECHNICAL DESCR:
+                                (Required) Date/Time.  
+
+
+52,22         FILL DATE              2;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X),$D(^PSRX(DA,0)),X<$P(^(0),U,13) D EN^DDIOL("FILL DATE CANNOT BE BEFORE ISSUE DATE","","!?5") K X
+              LAST EDITED:      SEP 28, 1998 
+              DESCRIPTION:
+                                The date the prescription was filled.  
+
+              TECHNICAL DESCR:
+                                Date.  
+
+              EXECUTABLE HELP:  I $P($G(^PSRX(DA,2)),"^",6) S X=$P(^PSRX(DA,2),"^",6),%DT="X" D ^%DT X ^DD("DD") D EN^DDIOL("Fill Date must be less than or equal to "_Y,"","!") S %DT(0)=-$P(^PSRX(DA,2),"^",6)
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52^AD^MUMPS 
+                                1)= S ^PSRX("AD",X,DA,0)=""
+                                2)= K ^PSRX("AD",X,DA,0)
+                                This cross reference lists the fill date and the internal entry number.  It sets the global ^PSRX("AD",Fill Date,DA,0)="".  
+
+
+              CROSS-REFERENCE:  52^AE^MUMPS 
+                                1)= I '$O(^PSRX(DA,1,0)) S $P(^PSRX(DA,3),"^")=X
+                                2)= Q
+                                This xref is used to update last dispense date field (#101).  It sets piece 1 of ^PSRX(DA,3)=Fill date.  
+
+
+              CROSS-REFERENCE:  52^ACP^MUMPS 
+                                1)= S:$P($G(^PSRX(DA,0)),"^",2)&($P($G(^(0)),"^",11)="W")&('$P($G(^(2)),"^",13))&('$P($G(^(2)),"^",15))&(+$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA,0),"^",2),X,0,DA)=""
+                                2)= K:$P($G(^PSRX(DA,0)),"^",2)&($P($G(^(0)),"^",11)="W")&('$P($G(^(2)),"^",13))&('$P($G(^(2)),"^",15))&('+$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA,0),"^",2),X,0,DA)
+                                3)= Do Not Delete!
+                                This cross reference is used to index copay fills that have not been billed through the IB package. It sets the global ^PSRX("ACP",Patient,Fill Date,0,DA)="".  
+
+
+              CROSS-REFERENCE:  52^AR^MUMPS 
+                                1)= D SUSFDS^PSOUTLA
+                                2)= D SUSFDK^PSOUTLA
+                                This cross reference is used to the the suspense date up to date if the Rx is in suspense. It sets piece 2 of ^PS(52.5,DA,0)=Fill Date, sets ^PS(52.5,"C",Fill Date,DA)="", and ^PS(52.5,"AC",Patient,Fill Date,DA)="".  
+
+
+              CROSS-REFERENCE:  52^ADL^MUMPS 
+                                1)= I X,$P(^PSRX(DA,0),"^",6) S ^PSRX("ADL",X,$P(^PSRX(DA,0),"^",6),DA)=""
+                                2)= I X,$P(^PSRX(DA,0),"^",6) K ^PSRX("ADL",X,$P(^PSRX(DA,0),"^",6),DA)
+                                3)= Please do not delete.
+                                This xref will be used to index Rxs by filldate and drug pointer. This xref will be used to find Rxs with drug whose price have changed in the Drug file (#50) and needs updating in this file.  
+                                 
+                                Cross reference will look like the following: 
+                                 ^PSRX("ADL",FILLDATE,DRUG POINTER,DA)="" 
+
+
+
+52,23         PHARMACIST             2;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^XUSEC(""PSORPH"",Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 26, 1993 
+              DESCRIPTION:
+                                This field is used to identify the pharmacist that filled the medication request.  
+
+              TECHNICAL DESCR:
+                                (Required) Pointer to New Person File (#200).  
+
+              SCREEN:           S DIC("S")="I $D(^XUSEC(""PSORPH"",Y))"
+              EXPLANATION:      Only select a user with a pharmacist's key.
+
+52,24         LOT #                  2;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>55!($L(X)<1) X
+              LAST EDITED:      JUN 02, 2004 
+              HELP-PROMPT:      Answer must be 1-55 characters in length. 
+              DESCRIPTION:
+                                The vendor code for this product.  It is required to be on the label if the medication is sent to a nursing home.  
+
+              TECHNICAL DESCR:
+                                Free Text.  
+
+
+52,25         DISPENSED DATE         2;5 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 30, 1992 
+              HELP-PROMPT:      Enter date medication was dispensed. 
+              DESCRIPTION:
+                                This field will be used to show the actual date the medication was dispensed.  
+
+              TECHNICAL DESCR:
+                                date.  
+
+
+52,26         EXPIRATION DATE        2;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 10, 1995 
+              HELP-PROMPT:      This date is the date on which the prescription is no longer fillable. 
+              DESCRIPTION:
+                                The date the medication expires.  This is required to be put on the labels of medication sent to a nursing home.  
+
+              TECHNICAL DESCR:
+                                Date.  
+
+              CROSS-REFERENCE:  52^AG 
+                                1)= S ^PSRX("AG",$E(X,1,30),DA)=""
+                                2)= K ^PSRX("AG",$E(X,1,30),DA)
+                                3)= DO NOT DELETE !
+                                This cross refrence is used to index the file by the Expiration Date of the RX.  
+
+
+              CROSS-REFERENCE:  52^AI^MUMPS 
+                                1)= S:$P($G(^PSRX(DA,"STA")),"^")'=12 ^PS(55,$P($G(^PSRX(DA,0)),"^",2),"P","A",X,DA)=""
+                                2)= K:$P($G(^PSRX(DA,"STA")),"^")'=12 ^PS(55,$P($G(^PSRX(DA,0)),"^",2),"P","A",X,DA)
+                                3)= DO NOT DELETE !
+                                This xref is used to keep the pharmacy patient file "P","A" xref in sync with the expiration date. It sets the global ^PS(55,Patient,"P","A",Expiration Date,DA)="".  
+
+
+
+52,26.1       CANCEL DATE            3;5 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X K:$P(^(0),"^",15)'=12 X
+              LAST EDITED:      AUG 10, 1995 
+              HELP-PROMPT:      Enter the date this medication is no longer active for dispensing. 
+              DESCRIPTION:
+                                This date is used to indicate when the medication was cancelled. 
+
+              TECHNICAL DESCR:
+                                Date.  This field will only accept input if the status is cancelled.  
+
+              GROUP:            PSO
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52^AK^MUMPS 
+                                1)= I $P($G(^PSRX(DA,"STA")),"^")=12 S ^PS(55,+$P(^PSRX(DA,0),"^",2),"P","A",X,DA)="" K ^PS(55,+$P(^PSRX(DA,0),"^",2),"P","A",$P($G(^PSRX(DA,2)),"^",6),DA)
+                                2)= S ^PS(55,$P(^PSRX(DA,0),"^",2),"P","A",$P(^PSRX(DA,2),"^",6),DA)="" K ^PS(55,$P(^PSRX(DA,0),"^",2),"P","A",X,DA)
+                                3)= DO NOT DELETE !
+                                This xref is used to update the "P","A" xref in file 55 when prescriptions are cancelled, or the cancel date is edited using fileman. It sets the global ^PS(55,Patient,"P","A",Cancel Date,DA)="".  
+
+
+
+52,27         NDC                    2;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<5) X
+              LAST EDITED:      APR 14, 1992 
+              HELP-PROMPT:      Answer must be 5-13 characters in length. 
+              DESCRIPTION:
+                                This field is used for the National Drug Code.  
+
+
+52,28         MANUFACTURER           2;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<5) X
+              LAST EDITED:      APR 14, 1992 
+              HELP-PROMPT:      Answer must be 5-50 characters in length. 
+              DESCRIPTION:
+                                This field is used to enter the manufacturer of the drug issued.  
+
+
+52,29         DRUG EXPIRATION DATE   2;11 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 05, 2004 
+              HELP-PROMPT:      Enter date the medication expires in the package/bottle from the manufacturer. 
+              DESCRIPTION:
+                                This date is used to show the expiration date of the medication.  The date reflects the manufacturer's expiration date, not the date the Rx can no longer be filled.  
+
+              TECHNICAL DESCR:
+                                date 
+
+              GROUP:            PSO
+
+52,30         GENERIC PROVIDER       2;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<3) X
+              LAST EDITED:      APR 14, 1992 
+              HELP-PROMPT:      Answer must be 3-35 characters in length. 
+              DESCRIPTION:
+                                This field is used to to show a generic provider.  A generic provider is a provider of care to the patient outside of the VA.  
+
+              TECHNICAL DESCR:
+                                FREE TEXT.  
+
+
+52,31         RELEASED DATE/TIME     2;13 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 03, 1993 
+              HELP-PROMPT:      Enter the date/time the medication was released. 
+              DESCRIPTION:      This field is used to show the actual date and time the medication was released for inventory purposes and copay billing if applicable.  
+                                 
+                                 
+
+              TECHNICAL DESCR:
+                                date.  
+
+              CROSS-REFERENCE:  52^AL^MUMPS 
+                                1)= S ^PSRX("AL",X,DA,0)=""
+                                2)= K ^PSRX("AL",X,DA,0)
+                                3)= This xref should not be deleted.  It is used by the Drug Accountability software(v2).
+                                This xref creates a 'AL' index for the release date. It sets the global ^PSRX("AL",Released Date/Time,DA,0)="".  
+
+
+              CROSS-REFERENCE:  52^ACP2^MUMPS 
+                                1)= K:$P(^PSRX(DA,0),"^",2)&($P($G(^(2)),"^",2))&('$P($G(^(2)),"^",15))&($G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA,0),"^",2),$P(^(2),"^",2),0,DA)
+                                2)= S:$P(^PSRX(DA,0),"^",2)&($P(^(0),"^",11)="W")&($P($G(^(2)),"^",2))&('$P($G(^(2)),"^",15))&(+$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA,0),"^",2),$P(^(2),"^",2),0,DA)=""
+                                3)= Do Not Delete!
+                                This cross reference is used to remove the 'ACP' xref once a Rx is released.  It can set the global ^PSRX("ACP",Patient,Fill Date,0,DA)="".  
+
+
+              FIELD INDEX:      ACRO (#461)    MUMPS    IR    ACTION
+                  Short Descr:  Clinical Reminders index.
+                  Description:  This cross-reference builds two indexes, one for finding all patients with a particular drug and one for finding all the drugs a patient has. The indexes are stored in the Clinical Reminders index global as: 
+                                 ^PXRMINDX(52,"IP",DRUG,DFN,START DATE,STOP DATE,DAS) 
+                                 ^PXRMINDX(52,"PI",DFN,DRUG,START DATE,STOP DATE,DAS) respectively. START DATE is the RELEASE DATE and STOP DATE is calculated by adding the DAYS SUPPLY to the RELEASE DATE.  For all the details, see the Clinical Reminders
+                                Index Technical Guide/Programmer's Manual.  
+                    Set Logic:  D SKIDX^PSOPXRMU(.X,.DA,"O","S")
+                   Kill Logic:  D SKIDX^PSOPXRMU(.X,.DA,"O","K")
+                   Whole Kill:  Q
+                         X(1):  DAYS SUPPLY  (52,8)  (Subscr 1)  (forwards)
+                         X(2):  RELEASED DATE/TIME  (52,31)  (Subscr 2)  (forwards)
+
+
+52,32         LABEL DATE/TIME        L;0 DATE Multiple #52.032 (Add New Entry without Asking)
+
+              LAST EDITED:      MAR 05, 1992 
+              HELP-PROMPT:      Enter date/time when and if medication was returned to inventory due not being icked up or mailed to the patient. 
+              DESCRIPTION:
+                                This sub-file is used to indicate when labels are printed for this prescription.  
+
+
+52.032,.01      LABEL DATE/TIME        0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAR 20, 1990 
+                HELP-PROMPT:      Enter the date and time the label was printed. 
+                DESCRIPTION:
+                                  This field is used to track when the label was printed for this RX.  
+
+                TECHNICAL DESCR:
+                                  Date/Time label was printed.  
+
+
+52.032,1        RX REFERENCE           0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X
+                OUTPUT TRANSFORM: S Y=$S(Y:"REFILL #"_Y,1:"ORIGINAL")
+                LAST EDITED:      MAR 20, 1990 
+                HELP-PROMPT:      Enter 0 for the original fill or the refill number. 
+                DESCRIPTION:
+                                  This field is used to indicate the prescription fill number.  
+
+
+52.032,2        LABEL COMMENT          0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>75!($L(X)<10) X
+                LAST EDITED:      APR 29, 1992 
+                HELP-PROMPT:      Answer must be 10-75 characters in length. 
+                DESCRIPTION:
+                                  This field is used for comments about the printed label.  
+
+
+52.032,3        PRINTED BY             0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      MAY 19, 1992 
+                HELP-PROMPT:      Enter name of person who printed the label. 
+                DESCRIPTION:
+                                  This field is used to show the person who printed the medication label.  
+
+                TECHNICAL DESCR:
+                                  pointer to #200.  
+
+
+52.032,4        WARNING LABEL TYPE     0;5 SET
+
+                                  '1' FOR DRUG INTERACTION; 
+                                  '2' FOR DRUG ALLERGY; 
+                LAST EDITED:      MAR 07, 1996 
+                DESCRIPTION:
+                                  This field describes the type drug warning that printed.  This field will be populated only if a drug warning label is printed.  
+
+
+52.032,5        DEVICE                 0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      JUL 31, 1996 
+                HELP-PROMPT:      Answer must be 1-40 characters in length. 
+                DESCRIPTION:
+                                  This filed is used to show which printer the label printed on.  
+
+
+52.032,35       FDA MED GUIDE FILENAME FDA;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+                LAST EDITED:      AUG 23, 2011 
+                HELP-PROMPT:      Answer must be 1-100 characters in length. 
+                DESCRIPTION:
+                                  This field contains the filename of the FDA Medication Guide for the drug in this prescription at the time the label for the specific fill was printed.  
+
+
+
+
+52,32.1       RETURNED TO STOCK      2;15 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 08, 1993 
+              HELP-PROMPT:      Enter date/time when and if medication was returned to inventory due to not being picked up or mailed to the patient. 
+              DESCRIPTION:
+                                This field is used to show when and if the medication was returned to stock because the patient did not pick up the meds or it was not mailed.  
+
+              CROSS-REFERENCE:  52^AJ^MUMPS 
+                                1)= S ^PSRX("AJ",X,DA,0)=""
+                                2)= K ^PSRX("AJ",X,DA,0)
+                                3)= This xref should not be deleted. It is used by the Drug Accountability software (v2).
+                                The xref creates a 'AJ' index for the returned to stock date. It sets the global ^PSRX("AJ",Return to Stock,DA,0)="".  
+
+
+
+52,32.2       REPRINT                2;14 SET
+
+                                '1' FOR REPRINTED; 
+              LAST EDITED:      NOV 23, 1994 
+              HELP-PROMPT:      Not set directly by Fileman 
+              DESCRIPTION:
+                                This field is used to determined if the original fill was reprinted after being returned to stock.  If fill was returned to stock and reprinted this fill will be re-released.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+
+52,32.3       BINGO WAIT TIME        2;16 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 27, 1997 
+              HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field reflects, in minutes, the total wait time for bingo board purposes.  
+
+
+52,33         SEVERITY               DRI;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1)!('$G(PSODI)) X
+              LAST EDITED:      APR 05, 1993 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:      This field is used to store the significant drug interactions encountered by technicians during new/renew order entry.  The data will be stored in the form of a string, i.e., 23,43,201.  Each number will represent the 
+                                drug/drug interaction found in file #56.  Data is not added directly by FileMan.  
+
+              TECHNICAL DESCR:
+                                free text.  
+
+              GROUP:            PSO
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,34         AFFECTED MEDICATION    DRI;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>120!($L(X)<1)!('$G(PSODI)) X
+              LAST EDITED:      APR 05, 1993 
+              HELP-PROMPT:      Answer must be 1-120 characters in length. 
+              DESCRIPTION:
+                                This field is used to store the active medication pointer values that is considered to be drug interactions.  
+
+              TECHNICAL DESCR:
+                                free text 
+
+              GROUP:            PSO
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,34.1       DRUG ALLERGY INDICATION 3;6 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 13, 1995 
+              HELP-PROMPT:      This data is not entered directly with FileMan. 
+              DESCRIPTION:
+                                This field is used to indicate if a drug allergy event occured.  
+
+
+52,34.11      DRUG ALLERGY INGREDIENTS DAI;0 Multiple #52.03 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This sub-file is used to store drug ingredients of a possible drug allergy and/or an adverse reaction to the medication dispensed in a Rx.  
+
+              TECHNICAL DESCR:
+                                sub-file/multiple 
+
+
+52.03,.01       INGREDIENTS            0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      DEC 13, 1995 
+                HELP-PROMPT:      Data is not entered directly using FileMan. 
+                DESCRIPTION:
+                                  This field is used to store igredients of a possible drug allergy/adverse reaction to a medication.  
+
+                TECHNICAL DESCR:
+                                  free text.  
+
+
+
+
+52,35         METHOD OF PICK-UP      MP;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<2) X
+              LAST EDITED:      OCT 22, 1984 
+              HELP-PROMPT:      ANSWER MUST BE 2-60 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Enter any special instructions that should appear on mailing address portion of the label, specifing where, or when the RX(s) should be picked up.  
+
+
+52,36         ARCHIVED               ARC;1 SET
+
+                                '1' FOR ARCHIVED; 
+              LAST EDITED:      AUG 28, 1997 
+              HELP-PROMPT:      This field should only be set if the Rx has been archived in Pharmacy. 
+              DESCRIPTION:      This field is used to indicate if the Rx has been archived.  Once the Rx is marked to be archived and then actually saved to the archived device should this field be populated.  This will later be used to determine if the
+                                Rx can be purged.  
+
+
+52,37         MEDICATION ROUTES      MEDR;0 POINTER Multiple #52.037 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This subfile contains possible medication routes from OERR, from the Medication Instructions (SIG) or both.  
+
+              TECHNICAL DESCR:
+                                pointer 
+
+              GROUP:            PSO
+
+52.037,.01      MEDICATION ROUTES      0;1 POINTER TO MEDICATION ROUTES FILE (#51.2)
+
+                LAST EDITED:      APR 17, 1996 
+                HELP-PROMPT:      Data is not enter directly by using File Manager. 
+                DESCRIPTION:
+                                  This field contain possible medication routes. 
+
+                TECHNICAL DESCR:
+                                  pointer 
+
+                GROUP:            PSO
+
+
+
+52,37.1       SCHEDULES              SCH;0 Multiple #52.038 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This sub-file contains possible schedules from OERR, Medication Instructions or both.  
+
+              TECHNICAL DESCR:
+                                free text.  
+
+
+52.038,.01      SCHEDULES              0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      APR 17, 1996 
+                HELP-PROMPT:      Data is not entered directly using FileMan. 
+                DESCRIPTION:
+                                  This field contains possible shedules from OERR, Medication Instruction or both.  
+
+                TECHNICAL DESCR:
+                                  free text.  
+
+                GROUP:            PSO
+
+
+
+52,38         FINISHING PERSON       OR1;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 18, 1997 
+              HELP-PROMPT:      Data not entered directly with FM. 
+              DESCRIPTION:
+                                This field is used to indicate the person who finished the order in Pharmacy.  
+
+              TECHNICAL DESCR:
+                                poniter.  
+
+
+52,38.1       FILLING PERSON         OR1;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 05, 2004 
+              HELP-PROMPT:      Data not entered directly with FM. 
+              DESCRIPTION:
+                                The name of the pharmacist who scanned the barcode before filling the medication request.  
+
+              TECHNICAL DESCR:
+                                pointer 
+
+
+52,38.2       CHECKING PHARMACIST    OR1;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 05, 2004 
+              HELP-PROMPT:      Data not entered directly with FM. 
+              DESCRIPTION:
+                                The name of the pharmacist that checked the medication request.  
+
+              TECHNICAL DESCR:
+                                pointer 
+
+
+52,38.3       FINISH DATE/TIME       OR1;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 05, 2007 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                Date/time prescription is finished.  
+
+              TECHNICAL DESCR:
+                                Date/time prescription is finished.  
+
+              CROSS-REFERENCE:  52^AFDT 
+                                1)= S ^PSRX("AFDT",$E(X,1,30),DA)=""
+                                2)= K ^PSRX("AFDT",$E(X,1,30),DA)
+
+
+52,39         PROVIDER COMMENTS      PRC;0   WORD-PROCESSING #52.039
+
+              DESCRIPTION:
+                                This field stores any provider comments that are passed to Pharmacy from CPRS.  
+
+
+52,39.1       PHARMACY INSTRUCTIONS  PI;0   WORD-PROCESSING #52.02
+
+              DESCRIPTION:
+                                This field contains Pharmacy Instructions passed to Pharmacy from CPRS.  
+
+
+52,39.2       PHARMACY ORDERABLE ITEM OR1;1 POINTER TO PHARMACY ORDERABLE ITEM FILE (#50.7)
+
+              LAST EDITED:      MAY 15, 1995 
+              HELP-PROMPT:      This data should not be entered by using File Manager. 
+              DESCRIPTION:      This is the Pharmacy Orderable Item associated with the drug.  This data should not be entered by using File Manager.  If the Rx does not have a Pharmacy Orderable Item entered check the drug for the RX.  If the drug is
+                                missing an orderable item match the drug not the Rx.  Only matching the Rx will cause problems when renewing the Rx.  
+
+              TECHNICAL DESCR:
+                                pointer.  
+
+
+52,39.3       PLACER ORDER #         OR1;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 17, 1996 
+              HELP-PROMPT:      Type a Number between 1 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the CPRS entry number for this order.  
+
+              CROSS-REFERENCE:  52^APL 
+                                1)= S ^PSRX("APL",$E(X,1,30),DA)=""
+                                2)= K ^PSRX("APL",$E(X,1,30),DA)
+                                3)= Do Not Delete!
+                                This xref is used to index the Rx by oerr's placer number.  this is the pointer to oerr's orders file.  
+
+
+
+52,39.4       PREVIOUS ORDER #       OR1;3 POINTER TO PRESCRIPTION FILE (#52)
+
+              LAST EDITED:      JUL 28, 1996 
+              DESCRIPTION:
+                                This field is used to indicate rx number renewed from 
+
+              CROSS-REFERENCE:  52^AO 
+                                1)= S ^PSRX("AO",$E(X,1,30),DA)=""
+                                2)= K ^PSRX("AO",$E(X,1,30),DA)
+                                3)= Do not delete
+
+
+52,39.5       FORWARD ORDER #        OR1;4 POINTER TO PRESCRIPTION FILE (#52)
+
+              LAST EDITED:      JUL 28, 1996 
+              DESCRIPTION:
+                                This field is used to stored the pointer to the rx that was renewed.  
+
+              CROSS-REFERENCE:  52^AQ 
+                                1)= S ^PSRX("AQ",$E(X,1,30),DA)=""
+                                2)= K ^PSRX("AQ",$E(X,1,30),DA)
+                                3)= do not delete.
+
+
+52,40         ACTIVITY LOG           A;0 DATE Multiple #52.3 (Add New Entry without Asking)
+
+              LAST EDITED:      MAR 24, 1993 
+              DESCRIPTION:
+                                Activity Log.  
+
+              TECHNICAL DESCR:
+                                Date.  Multiple #52.3 (Add new entry without asking).  
+
+              WRITE AUTHORITY:  ^
+
+52.3,.01        ACTIVITY LOG           0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 28, 1992 
+                DESCRIPTION:
+                                  Date when activity occured.  
+
+                TECHNICAL DESCR:
+                                  Date (Multiply asked).  
+
+
+52.3,.02        REASON                 0;2 SET
+
+                                  'H' FOR HOLD; 
+                                  'U' FOR UNHOLD; 
+                                  'C' FOR DISCONTINUED; 
+                                  'E' FOR EDIT; 
+                                  'L' FOR RENEWED; 
+                                  'P' FOR PARTIAL; 
+                                  'R' FOR REINSTATE; 
+                                  'W' FOR REPRINT; 
+                                  'S' FOR SUSPENDED; 
+                                  'I' FOR RETURNED; 
+                                  'V' FOR INTERVENTION; 
+                                  'D' FOR DELETED; 
+                                  'A' FOR DRUG INTERACTION; 
+                                  'B' FOR PROCESSED; 
+                                  'X' FOR INTERFACE; 
+                                  'G' FOR PATIENT INST; 
+                                  'K' FOR PKI/DEA; 
+                                  'N' FOR DISPENSE COMPLETION; 
+                                  'M' FOR ECME; 
+                LAST EDITED:      JUN 21, 2005 
+                HELP-PROMPT:      Enter code to indicate the activity taking place for this prescription. 
+                DESCRIPTION:
+                                  What was done that caused activity to happen.  
+
+                TECHNICAL DESCR:  Set 'H' for Hold, 'U' for Unhold, 'C' for Discontinued, 'E' for Edit, 'L' for Lost, 'P' for Partial, 'R' for Reinstate, 'W' for Reprint, 'S' for Suspended, 'I' for Returned to Stock, 'V' for Intervention 'D' for Deleted,
+                                  'A' for Pending due to drug interactions, 'B' for Unpending.  X will stand for External Interface, 'G' will indicate if patient instructions was added when the order was received from CPRS. 'K' for PKI Certificate
+                                  regarding digitally signed orders, introduced for the PKI/DEA project, 'N' will indicate that an Rx was dispensed by an external interface. 'M' indicates an ECME activity (3rd Party Billing).  
+
+
+52.3,.03        INITIATOR OF ACTIVITY  0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      SEP 03, 1996 
+                DESCRIPTION:
+                                  The name of the person entering an activity is entered.  
+
+                TECHNICAL DESCR:
+                                  With the release of v7 this field will no longer require data.  
+
+
+52.3,.04        RX REFERENCE           0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>12)!(X<0)!(X?.E1"."1N.N) X
+                OUTPUT TRANSFORM: S Y=$S(Y=6:"PARTIAL",Y>0&(Y<6):"REFILL #"_Y,Y>6:"REFILL #"_(Y-1),1:"ORIGINAL")
+                LAST EDITED:      AUG 17, 1994 
+                HELP-PROMPT:      Type a Number between 0 and 12, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field is used to indicate which fill the activity took place.  
+
+                TECHNICAL DESCR:  0 indicates the Original fill, 1-5 is for refills, 6 for partial, and 7-12 indicates refill.  
+                                   
+                                   
+
+                                  UNEDITABLE
+
+52.3,.05        COMMENT                0;5 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+                LAST EDITED:      JUN 18, 2012 
+                HELP-PROMPT:      Answer must be 1-100 characters in length. 
+                DESCRIPTION:
+                                  Any additional comments.  
+
+                TECHNICAL DESCR:
+                                  (Required) Free Text.  
+
+
+52.3,1          FIELD EDITED           1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>25!($L(X)<5) X
+                LAST EDITED:      MAR 05, 1992 
+                HELP-PROMPT:      Enter the name of the field that was edited.  Answer must be 5-25 characters in length. 
+                DESCRIPTION:
+                                  This field is used to indicate any editing to a data field of a presciption.  This field will contain the name of the field edited.  
+
+
+52.3,2          OLD VALUE              1;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+                LAST EDITED:      MAR 05, 1992 
+                HELP-PROMPT:      Enter the old value of the edited field of the RX.  Answer must be 1-25 characters in length. 
+                DESCRIPTION:
+                                  This field is used to show the old value of an edited field.  
+
+
+52.3,3          NEW VALUE              1;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+                HELP-PROMPT:      Enter the new value of the edited field of the RX.  Answer must be 1-25 characters in length. 
+                DESCRIPTION:
+                                  This field is ued to show the new value of an edited field of a RX.  
+
+
+52.3,4          OTHER COMMENTS         2;0 Multiple #52.34 (Add New Entry without Asking)
+
+
+52.34,.01         OTHER COMMENTS         0;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                  LAST EDITED:      JUN 07, 2000 
+                  HELP-PROMPT:      Answer must be 1-200 characters in length. 
+                  DESCRIPTION:
+                                    This field will be used to store original front door medication instructions for Pre-POE Rxs.  
+
+
+
+
+
+
+52,41         WAS THE PATIENT COUNSELED PC;1 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAY 02, 1995 
+              HELP-PROMPT:      If patient was counseled about this Rx enter Yes. 
+              DESCRIPTION:
+                                This field indicates whether or not the patient received counseling about the prescription.  
+
+
+52,42         WAS COUNSELING UNDERSTOOD PC;2 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAY 02, 1995 
+              HELP-PROMPT:      If patient understood counseling received enter 'Yes'. 
+              DESCRIPTION:
+                                This field indicates whether or not the patient understood the counseling on the prescription, if the patient was counseled.  
+
+
+52,52         REFILL                 1;0 DATE Multiple #52.1
+
+              OUTPUT TRANSFORM: 
+              LAST EDITED:      OCT 11, 1991 
+              DESCRIPTION:
+                                This is the date the prescription is refilled.  
+
+              TECHNICAL DESCR:
+                                Date Multiple #52.1 (Add new entry without asking).  
+
+              SOURCE OF DATA:   VAF 10-2577
+
+52.1,.01        REFILL DATE            0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                                  9.2 = S Z0=0,Z1=+$P(^PSRX(DA(1),0),U,9),Z2=$P(^(0),U,13),I=0 F  S I=$O(^PSRX(DA(1),1,I)) Q:'I  Q:+^(I,0)=X  S Z0=Z0+1 S:+^(0)>Z2 Z2=+^(0)
+                                  9.3 = S (XS,X1)=X,X2=Z2 D ^%DTC K:X<20 X,XS W:'$D(XS) "   LESS THAN 20 DAYS." I $D(XS) S X2=+$P(^PSRX(DA(1),0),U,13),X1=XS D ^%DTC K:X>185 XS,X W:'$D(XS) "  MORE THAN 180 DAYS."
+                LAST EDITED:      JUL 30, 1993 
+                HELP-PROMPT:      Enter Date of refill 
+                DESCRIPTION:
+                                  This is the date the prescription is refilled.  
+
+                TECHNICAL DESCR:
+                                  Date.  
+
+                EXECUTABLE HELP:  I $P($G(^PSRX(DA,2)),"^",6) S X=$P(^PSRX(DA,2),"^",6),%DT="X" D ^%DT X ^DD("DD") W !,"Refill Date must be less than or equal to "_Y S %DT(0)=-$P(^PSRX(DA,2),"^",6)
+                DELETE TEST:      1,0)= D WARN^PSOCPC I $T
+
+                                  2,0)= D WARN^PSOUTL
+
+                CROSS-REFERENCE:  52.1^B 
+                                  1)= S ^PSRX(DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSRX(DA(1),1,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  52^AD 
+                                  1)= S ^PSRX("AD",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PSRX("AD",$E(X,1,30),DA(1),DA)
+
+                CROSS-REFERENCE:  52.1^AC^MUMPS 
+                                  1)= I '$O(^PSRX(DA(1),1,0)) S $P(^PSRX(DA(1),3),"^")=X
+                                  2)= F IK=DA-1:-1 S:IK<1 $P(^(3),"^")=$P(^PSRX(DA(1),2),"^",2) Q:IK<1  I $D(^PSRX(DA(1),1,IK,0)) S $P(^PSRX(DA(1),3),"^")=+^(0) Q
+                                  This cross reference sets the Last Dispensed Date field with the refill date. It sets piece 1 of ^PSRX(DA,3)=Refill Date.  
+
+
+                CROSS-REFERENCE:  52.1^AB^MUMPS 
+                                  1)= D S52^PSOUTL
+                                  2)= D K52^PSOUTL
+                                  3)= DO NOT DELETE.
+                                  This cross reference kills the SUSPENSE File record and cross references the SUSPENSE File. It sets piece 2 of ^PS(52.5,DA,0)=Refill Date, ^PS(52.5,"C",Refill Date,DA)="",^PS(52.5,"AC",Patient,Refill Date,DA)="".  
+
+
+                CROSS-REFERENCE:  52.1^AE^MUMPS 
+                                  1)= D SPR^PSOUTL
+                                  2)= D KPR^PSOUTL
+                                  This cross reference updates the Prior Fill Date field.  It sets piece 4 of ^PSRX(DA,3)=Fill Date.  
+
+
+                CROSS-REFERENCE:  52.1^ACP^MUMPS 
+                                  1)= I +$G(^PSRX(DA(1),"IB")) S:$P($G(^PSRX(DA(1),0)),"^",2)&($P($G(^PSRX(DA(1),1,DA,0)),"^",2)="W")&('$P($G(^(0)),"^",16))&('$P($G(^(0)),"^",18))&('$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA(1),0),"^",2),X,DA,DA(1))=""
+                                  2)= I +$G(^PSRX(DA(1),"IB")) K:$P($G(^PSRX(DA(1),0)),"^",2)&($P($G(^PSRX(DA(1),1,DA,0)),"^",2)="W")&('$P($G(^(0)),"^",16))&('$P($G(^(0)),"^",18))&('$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA(1),0),"^",2),X,DA,DA(1))
+                                  3)= Do Not Delete!
+                                  This cross reference is used to index copay refills that have not been billed through the IB package. It sets the global ^PSRX("ACP",Patient,Refill Date,Refill Number,DA)="".  
+
+
+
+52.1,1          QTY                    0;4 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:(+X'>0)!(+X>99999999)!(X'?.8N.1".".2N)!($L(X)>11) X D:$D(X) QTY^PSOHELP
+                LAST EDITED:      NOV 30, 2007 
+                TECHNICAL DESCR:  This field allows numeric entries only, both for CMOP prescriptions and non-CMOP prescriptions. It requires a number between .01 and 99999999, with a maximum of 2 fractional decimal places.  
+                                   
+                                  NOTE: QTY values that were on file prior to patch PSO*7*29 (released 2/17/00) may contain alpha characters.  
+
+                EXECUTABLE HELP:  D HELP^PSOHELP
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.1,1.1        DAYS SUPPLY            0;10 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>90)!(X<1)!(X?.E1"."1N.N) X D:$G(X) DAYS1^PSOHELP1
+                LAST EDITED:      AUG 15, 1994 
+                HELP-PROMPT:      Type a Number between 1 and 90, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field is used to show days of supply of refill.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                FIELD INDEX:      ACRR (#462)    MUMPS    IR    ACTION    WHOLE FILE (#52)
+                    Short Descr:  Clinical Reminders index.
+                    Description:  This cross-reference builds two indexes, one for finding all patients with a particular drug and one for finding all the drugs a patient has. The indexes are stored in the Clinical Reminders index global as: 
+                                   ^PXRMINDX(52,"IP",DRUG,DFN,START DATE,STOP DATE,DAS) 
+                                   ^PXRMINDX(52,"PI",DFN,DRUG,START DATE,STOP DATE,DAS) respectively. START DATE is the RELEASE DATE and STOP DATE is calculated by adding the DAYS SUPPLY to the RELEASE DATE.  For all the details, see the Clinical
+                                  Reminders Index Technical Guide/Programmer's Manual.  
+                      Set Logic:  D SKIDX^PSOPXRMU(.X,.DA,"R","S")
+                     Kill Logic:  D SKIDX^PSOPXRMU(.X,.DA,"R","K")
+                     Whole Kill:  Q
+                           X(1):  DAYS SUPPLY  (52.1,1.1)  (Subscr 1)  (forwards)
+                           X(2):  RELEASED DATE/TIME  (52.1,17)  (Subscr 2)  (forwards)
+
+
+52.1,1.2        CURRENT UNIT PRICE OF DRUG 0;11 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."5N.N) X
+                LAST EDITED:      OCT 04, 2000 
+                HELP-PROMPT:      Type a Number between 0 and 9999, 4 Decimal Digits 
+                DESCRIPTION:
+                                  This field is used to show the current unit cost of the drug at time of refill.  
+
+                TECHNICAL DESCR:
+                                  This is the price per dispense unit (per ML/MG) at the time of fill.  
+
+                WRITE AUTHORITY:  ^
+
+52.1,2          MAIL/WINDOW            0;2 SET (Required)
+
+                                  'M' FOR MAIL; 
+                                  'W' FOR WINDOW; 
+                LAST EDITED:      AUG 03, 1993 
+                DESCRIPTION:
+                                  This field contains 'M' if the refill is to be mailed to the patient and 'W' if the refill is to be picked up at the pharmacy window.  
+
+                TECHNICAL DESCR:
+                                  (Required) Set 'M' for Mail, 'W' for Window.  
+
+                CROSS-REFERENCE:  52^ACP4^MUMPS 
+                                  1)= I X="W",+$G(^PSRX(DA(1),"IB")) S:$P($G(^PSRX(DA(1),0)),"^",2)&('$P($G(^PSRX(DA(1),1,DA,0)),"^",16))&('$P($G(^(0)),"^",18))&('$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA(1),0),"^",2),$P(^PSRX(DA(1),1,DA,0),"^"),DA,DA(1))=""
+                                  2)= I X="W",+$G(^PSRX(DA(1),"IB")) K:$P($G(^PSRX(DA(1),0)),"^",2)&('$P($G(^PSRX(DA(1),1,DA,0)),"^",16))&('$P($G(^(0)),"^",18))&('$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA(1),0),"^",2),+$P($G(^PSRX(DA(1),1,DA,0)),"^"),DA,DA(1)
+                                  )
+                                  3)= Do Not Delete!
+                                  This cross reference is used to update the 'ACP' xref if the routing should be edited. It sets the global ^PSRX("ACP",Patient,Refill Date,Refill Number,DA)="".  
+
+
+
+52.1,3          REMARKS                0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<2) X
+                HELP-PROMPT:      ANSWER MUST BE 2-60 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  This field contains comments as deemed necessary by the pharmacy staff.  
+
+                TECHNICAL DESCR:
+                                  Free Text.  
+
+
+52.1,4          PHARMACIST NAME        0;5 POINTER TO NEW PERSON FILE (#200)
+
+                INPUT TRANSFORM:  S DIC("S")="I $D(^XUSEC(""PSORPH"",Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 26, 1993 
+                DESCRIPTION:
+                                  This field contains the name of the pharmacist responsible for this Rx.  
+
+                TECHNICAL DESCR:
+                                  Pointer to New Person File (#200).  
+
+                SCREEN:           S DIC("S")="I $D(^XUSEC(""PSORPH"",Y))"
+                EXPLANATION:      Only select a user who has a pharmacist key.
+
+52.1,5          LOT #                  0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      MAY 27, 2004 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This field contains the lot # of the prescription.  
+
+                TECHNICAL DESCR:
+                                  Free Text.  
+
+
+52.1,6          CLERK CODE             0;7 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      APR 14, 1992 
+                DESCRIPTION:
+                                  This field contains the NEW PERSON File entry number of the clerk.  
+
+                TECHNICAL DESCR:
+                                  (Required) pointer to #200 
+
+
+52.1,7          LOGIN DATE             0;8 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                DESCRIPTION:
+                                  This is the date the refill request was entered.  
+
+                TECHNICAL DESCR:
+                                  Date.  
+
+
+52.1,8          DIVISION               0;9 POINTER TO OUTPATIENT SITE FILE (#59) (Required)
+
+                LAST EDITED:      JUL 27, 1994 
+                DESCRIPTION:
+                                  This field contains the Pharmacy Division associated with this Rx.  
+
+                TECHNICAL DESCR:
+                                  Pointer to Pharmacy Site File (#59) 
+
+                CROSS-REFERENCE:  52.1^AF^MUMPS 
+                                  1)= D SAS1^PSOSUTL
+                                  2)= D KAS1^PSOSUTL
+                                  This is used to maintain the AS cross reference in Suspense.  It sets piece 6 of ^PS(52.5,DA,0)=Division. For a non-CMOP prescription, it can set ^PS(52.5,"AS",Print Date,Printed By,Division,Sequence,DA)="".  For a CMOP
+                                  prescription, it can set ^PS(52.5,"APR",Print Date,Printed By,Division,Sequence,DA)="".  
+
+
+
+52.1,9          IB NUMBER              IB;1 POINTER TO INTEGRATED BILLING ACTION FILE (#350)
+
+                LAST EDITED:      MAR 01, 1991 
+                DESCRIPTION:
+                                  This field contains the internal entry number of the pointer to the Integrated Billing Action file (#350).  
+
+                DELETE AUTHORITY: ^
+                WRITE AUTHORITY:  ^
+
+52.1,9.1        COPAY EXCEEDING CAP    IB;2 POINTER TO IB COPAY TRANSACTIONS FILE (#354.71)
+
+                LAST EDITED:      SEP 04, 2001 
+                HELP-PROMPT:      This field contains the internal entry number of the IB COPAY TRANSACTIONS file (#354.71) 
+                DESCRIPTION:
+                                  This field contains the internal entry number of the pointer to the IB COPAY TRANSACTIONS file (#354.71).  There will only be data in this field if this Rx's copay exceeded the annual copay cap.  
+
+                TECHNICAL DESCR:
+                                  This field contains the internal entry number of the pointer to the IB COPAY TRANSACTIONS file (#354.71).  There will only be data in this field if this Rx's copay exceeded the annual copay cap.  
+
+
+52.1,10.1       DISPENSED DATE         0;19 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 14, 1992 
+                HELP-PROMPT:      Enter date and time medication was placed into packaging. 
+                DESCRIPTION:
+                                  This field is used to show date/time the medication was placed into packaging.  
+
+
+52.1,11         NDC                    1;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>13!($L(X)<5) X
+                LAST EDITED:      AUG 26, 1999 
+                HELP-PROMPT:      Answer must be 5-13 characters in length. 
+                DESCRIPTION:
+                                  This field is used for the National Drug Code for the issued drug.  
+
+
+52.1,12         MANUFACTURER           0;14 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+                LAST EDITED:      APR 14, 1992 
+                HELP-PROMPT:      Answer must be 3-50 characters in length. 
+                DESCRIPTION:
+                                  This field is used to show the manufacturer of the drug issued.  
+
+
+52.1,13         DRUG EXPIRATION DATE   0;15 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 05, 2004 
+                HELP-PROMPT:      Enter date the medication expires for this refill. 
+                DESCRIPTION:
+                                  This field is used to show the date that the medication expires for this refill.  
+
+                TECHNICAL DESCR:
+                                  date 
+
+                GROUP:            PSO
+
+52.1,14         RETURNED TO STOCK      0;16 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 09, 1993 
+                HELP-PROMPT:      Enter date/time the medication was returned to inventory due to the prescription not being pickup or mailed. 
+                DESCRIPTION:
+                                  This field is used to indicate when and if the medication was returned to inventory due to the prescription not being picked up or mailed to the patient.  
+
+                TECHNICAL DESCR:
+                                  date/time.  
+
+                CROSS-REFERENCE:  52^AJ1^MUMPS 
+                                  1)= S ^PSRX("AJ",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PSRX("AJ",$E(X,1,30),DA(1),DA)
+                                  3)= This xref should not be deleted.  It is used by the Drug Accountability software (v2).
+                                  This xref creates a 'AJ' index on the returned to stock field. It sets the global ^PSRX("AJ",Return to Stock,DA(1),DA)="".  
+
+
+
+52.1,15         PROVIDER               0;17 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="S X(1)=$G(^(""PS"")) I +X(1),$S('$P(X(1),""^"",4):1,1:$P(X(1),""^"",4)'<DT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      APR 05, 1996 
+                HELP-PROMPT:      Enter provider that is currently seeing the patient. 
+                DESCRIPTION:
+                                  This field is used to show the current provider seeing the patient.  
+
+                TECHNICAL DESCR:
+                                  Pointer to file 200.  
+
+                SCREEN:           S DIC("S")="S X(1)=$G(^(""PS"")) I +X(1),$S('$P(X(1),""^"",4):1,1:$P(X(1),""^"",4)'<DT)"
+                EXPLANATION:      Only valid providers are to be selected.
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.1,16         GENERIC PROVIDER       1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>45!($L(X)<10) X
+                LAST EDITED:      MAR 05, 1992 
+                HELP-PROMPT:      Answer must be 10-45 characters in length. 
+                DESCRIPTION:
+                                  This field is used to show a provider outside of the medical center.  
+
+
+52.1,17         RELEASED DATE/TIME     0;18 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 30, 1993 
+                HELP-PROMPT:      Enter date/time medication was released. 
+                DESCRIPTION:      This field is used to show the date/time the medication was released for inventory purposes and copay billing if applicable.  
+                                   
+                                   
+
+                TECHNICAL DESCR:
+                                  date/time.  
+
+                CROSS-REFERENCE:  52^AL1^MUMPS 
+                                  1)= S ^PSRX("AL",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PSRX("AL",$E(X,1,30),DA(1),DA)
+                                  3)= This xref should not be deleted.  It is used by the Drug Accountability software (v2).
+                                  The xref creates a 'AL" index on the release date/time field. It sets the global ^PSRX("AL",Released Date/Time,DA(1),DA)="".  
+
+
+                CROSS-REFERENCE:  52.1^ACP1^MUMPS 
+                                  1)= I +$G(^PSRX(DA(1),"IB")) K:$P($G(^PSRX(DA(1),1,DA,0)),"^")&($P($G(^(0)),"^",18)) ^PSRX("ACP",$P(^PSRX(DA(1),0),"^",2),$P(^PSRX(DA(1),1,DA,0),"^"),DA,DA(1))
+                                2)= I $P($G(^PSRX(DA(1),0)),"^",2),+$G(^("IB")) S:$P($G(^PSRX(DA(1),1,DA,0)),"^")&($P($G(^(0)),"^",2)="W")&('$P($G(^(0)),"^",16))&('$G(^("IB"))) ^PSRX("ACP",$P(^PSRX(DA(1),0),"^",2),$P(^PSRX(DA(1),1,DA,0),"^"),DA,DA(1))=""
+                                3)= Do Not Delete!
+                                This cross reference is used to remove the "ACP" xref once the Rx is released and copay charges have been billed. It sets the global ^PSRX("ACP",Patient,Refill Date,DA(1),DA)="".  
+
+
+                FIELD INDEX:    ACRR (#462)    MUMPS    IR    ACTION    WHOLE FILE (#52)
+                  Short Descr:  Clinical Reminders index.
+                  Description:  This cross-reference builds two indexes, one for finding all patients with a particular drug and one for finding all the drugs a patient has. The indexes are stored in the Clinical Reminders index global as: 
+                                 ^PXRMINDX(52,"IP",DRUG,DFN,START DATE,STOP DATE,DAS) 
+                                 ^PXRMINDX(52,"PI",DFN,DRUG,START DATE,STOP DATE,DAS) respectively. START DATE is the RELEASE DATE and STOP DATE is calculated by adding the DAYS SUPPLY to the RELEASE DATE.  For all the details, see the Clinical Reminders
+                                Index Technical Guide/Programmer's Manual.  
+                    Set Logic:  D SKIDX^PSOPXRMU(.X,.DA,"R","S")
+                   Kill Logic:  D SKIDX^PSOPXRMU(.X,.DA,"R","K")
+                   Whole Kill:  Q
+                         X(1):  DAYS SUPPLY  (52.1,1.1)  (Subscr 1)  (forwards)
+                         X(2):  RELEASED DATE/TIME  (52.1,17)  (Subscr 2)  (forwards)
+
+
+52.1,18         BINGO WAIT TIME      1;2 NUMBER
+
+                INPUT TRANSFORM:K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:    FEB 27, 1997 
+                HELP-PROMPT:    Type a Number between 1 and 9999, 0 Decimal Digits 
+                DESCRIPTION:
+                                This field specifies, in minutes, the total wait time for bingo board purposes.  
+
+
+52.1,19         FILLING PERSON       1;4 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:    FEB 05, 2004 
+                HELP-PROMPT:    Data not entered directly with FM. 
+                DESCRIPTION:
+                                The name of the person who scanned the barcode before refilling the medication request.  
+
+                TECHNICAL DESCR:
+                                pointer 
+
+
+52.1,20         CHECKING PHARMACIST  1;5 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:    FEB 05, 2004 
+                HELP-PROMPT:    Data not entered directly with FM. 
+                DESCRIPTION:
+                                The name of the pharmacist that checked the medication refill request.  
+
+                TECHNICAL DESCR:
+                                pointer 
+
+
+52.1,21         PFSS ACCOUNT REFERENCE PFS;1 POINTER TO PFSS ACCOUNT FILE (#375)
+
+                LAST EDITED:    MAY 18, 2005 
+                DESCRIPTION:
+                                This is a reference number to an external medical billing system Account Number for the purposes of uniquely identifying prescription charges for 1st or 3rd party billing.  
+
+                TECHNICAL DESCR:This field was introduced as part of the Patient Financial Services System (PFSS) project to implement a new COTS billing system. It requires that every prescription fill passed to the external billing system to attach a
+                                unique account/visit number. The IBB API GETACCT^IBBAPI provides this data and is stored during prescription order creation as part of the data.  
+
+                DELETE AUTHORITY: ^
+                WRITE AUTHORITY:^
+                                UNEDITABLE
+
+52.1,22         PFSS CHARGE ID       PFS;2 NUMBER
+
+                INPUT TRANSFORM:K:+X'=X!(X>99999999)!(X<90000000)!(X?.E1"."1.N) X
+                LAST EDITED:    MAY 18, 2005 
+                HELP-PROMPT:    Type a number between 90000000 and 99999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                This is another unique identifier required when prescription charge messages are passed to the external billing system.  
+
+                TECHNICAL DESCR:This field was introduced as part of the Patient Financial Services System (PFSS) project to implement a new COTS billing system. It requires that every prescription charge transaction passed to the external billing system
+                                to attach a unique charge identifier. The IBB API GETCHGID^IBBAPI provides this data.  
+
+                DELETE AUTHORITY: ^
+                WRITE AUTHORITY:^
+
+52.1,81         DAW CODE             EPH;1 FREE TEXT
+
+                INPUT TRANSFORM:D INPUT^PSSDAWUT
+                LAST EDITED:    JUN 27, 2005 
+                DESCRIPTION:
+                                Dispensed As Written code. This information is used for NCPDP electronic claim transmission to third party payers (insurance companies).  
+
+                EXECUTABLE HELP:D HLP^PSSDAWUT
+                NOTES:          XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.1,82         RE-TRANSMIT FLAG     EPH;2 SET
+
+                                '1' FOR YES; 
+                LAST EDITED:    OCT 19, 2005 
+                DESCRIPTION:
+                                This field is used to indicate that a claim should be electronically re-transmitted to the 3rd party insurance. It will be primarily used by CMOP and local mail prescriptions.  
+
+
+52.1,83         DATE NDC VALIDATED   EPH;3 DATE
+
+                INPUT TRANSFORM:S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:    JAN 18, 2008 
+                HELP-PROMPT:    Enter the date and time that the prescription was validated. 
+                DESCRIPTION:
+                                This field contains the date and time that the NDC was validated prior to release of the prescription fill.  
+
+                TECHNICAL DESCR:
+                                This field is set by the NDC Validation [PSO NDC VALIDATE] option when the NDC on the prescription matches the NDC on the stock bottle.  
+
+                                UNEDITABLE
+
+52.1,84         NDC VALIDATED BY     EPH;4 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:    JAN 14, 2008 
+                HELP-PROMPT:    Enter the User's ID who validated the NDC. 
+                DESCRIPTION:
+                                This field contains the user ID of the person who validated the NDC prior to release of the prescription fill.  
+
+                TECHNICAL DESCR:
+                                This field is set by the NDC Validation [PSO NDC VALIDATE] option when the NDC on the prescription matches the NDC on the stock bottle.  
+
+                                UNEDITABLE
+
+52.1,85         BILLING ELIGIBILITY INDICATOR EPH;5 SET
+
+                                'T' FOR TRICARE; 
+                                'V' FOR VETERAN; 
+                                'C' FOR CHAMPVA; 
+                LAST EDITED:    FEB 25, 2008 
+                HELP-PROMPT:    Enter T for TRICARE, V for VETERAN or C for CHAMPVA.   
+                DESCRIPTION:
+                                This field is set when a prescription is third party insurance billable and will contain T for TRICARE, V for VETERAN or C for CHAMPVA.  
+
+                TECHNICAL DESCR:
+                                This field contains the billing eligibility flag passed from ECME upon submission of a claim for the fill.  
+
+
+52.1,86         EPHARMACY SUSPENSE HOLD DATE EPH;6 DATE
+
+                INPUT TRANSFORM:S %DT="ES" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:    MAY 07, 2008 
+                HELP-PROMPT:    Enter the date the refill can be removed from suspense hold. 
+                DESCRIPTION:
+                                This field is defined when a host reject error is received as a result of an ePharmacy claims submission.  The prescription fill will be held on suspense until the next day.  
+
+                TECHNICAL DESCR:This field is defined with a date/time of 24 hours from the date/time the refill was rejected with either a M6, M8, NN, or 99 host reject error code. This allows the software to resubmit a claim the following day to 
+                                attempt a successful acceptance.  
+
+
+
+
+52,52.25      REJECT INFO            REJ;0 Multiple #52.25 (Add New Entry without Asking)
+
+              WRITE AUTHORITY:  ^
+
+52.25,.01       NCPDP REJECT CODE      0;1 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X S DIC(0)="QM",DIC="^BPSF(9002313.93," D ^DIC S X=$P(Y,U,2) K:Y<0 X
+                LAST EDITED:      JUN 29, 2005 
+                HELP-PROMPT:      Answer must be 1-4 characters in length. 
+                DESCRIPTION:
+                                  NCPDP Reject Code that indicates the reason for the claim rejection for this prescription.  
+
+                TECHNICAL DESCR:
+                                  Although this fields does not point to the BPS NCPDP REJECT CODES file (#9002313.93), the value should have a corresponding entry in that file.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  52.25^B 
+                                  1)= S ^PSRX(DA(1),"REJ","B",$E(X,1,30),DA)=""
+                                  2)= K ^PSRX(DA(1),"REJ","B",$E(X,1,30),DA)
+
+
+52.25,1         DATE/TIME DETECTED     0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      DEC 13, 2005 
+                HELP-PROMPT:      Date/time when the reject was detected by Outpatient Pharmacy or CMOP. 
+                DESCRIPTION:
+                                  Date/Time when the reject was detected by Outpatient Pharmacy.  
+
+                FIELD INDEX:      REJDAT (#652)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#52)
+                    Short Descr:  Cross-reference to sort REJECTs by the DATE/TIME DETECTED field.
+                      Set Logic:  S ^PSRX("REJDAT",X,DA(1),DA)=""
+                     Kill Logic:  K ^PSRX("REJDAT",X,DA(1),DA)
+                     Whole Kill:  K ^PSRX("REJDAT")
+                           X(1):  DATE/TIME DETECTED  (52.25,1)  (Subscr 1)  (forwards)
+
+
+52.25,2         PAYER MESSAGE          1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>140!($L(X)<1) X
+                LAST EDITED:      JUN 16, 2005 
+                HELP-PROMPT:      Answer must be 1-140 characters in length 
+                DESCRIPTION:
+                                  Message from the 3r party payer regarding the rejection of the claim.  
+
+
+52.25,3         REASON                 1;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+                LAST EDITED:      APR 19, 2005 
+                HELP-PROMPT:      Answer must be 1-100 characters in length 
+                DESCRIPTION:
+                                  Reason why the claim is being rejected by the 3rd party payer.  
+
+
+52.25,4         PHARMACIST             0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      APR 19, 2005 
+                HELP-PROMPT:      Pharmacist using the Outpatient Pharmacy appliction when the REJECT was detected. 
+                DESCRIPTION:
+                                  Pharmacist using the application when the reject was detected.  
+
+
+52.25,5         FILL NUMBER            0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>12)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      APR 19, 2005 
+                HELP-PROMPT:      Type a number between 0 and 12, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field is used to indicate which fill the reject is related to.  
+
+
+52.25,6         GROUP NAME             2;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUN 16, 2005 
+                HELP-PROMPT:      Answer must be 1-30 characters in length 
+                DESCRIPTION:
+                                  This is the patient's insurance group name.  
+
+
+52.25,7         PLAN CONTACT           2;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUN 16, 2005 
+                HELP-PROMPT:      Answer must be 1-30 characters in length 
+                DESCRIPTION:
+                                  This is the patient's insurance company contact information.  
+
+
+52.25,8         PLAN PREVIOUS FILL DATE 2;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      MAY 02, 2005 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  In case of a REFILL TOO SOON reject (#79) and the payer returns the last date the prescription was filled, it will be stored on this field.  
+
+
+52.25,9         STATUS                 0;5 SET
+
+                                  '0' FOR OPEN/UNRESOLVED; 
+                                  '1' FOR CLOSED/RESOLVED; 
+                LAST EDITED:      APR 19, 2005 
+                HELP-PROMPT:      Status of the REJECT. The null value is the same as 0 (zero). 
+                DESCRIPTION:
+                                  This field indicates whether the reject is OPEN/UNRESOLVED or CLOSED/RESOLVED.  
+
+                FIELD INDEX:      REJSTS (#653)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#52)
+                    Short Descr:  Cross-reference for the STATUS field in the REJECT INFO (#52.25) sub-file.
+                      Set Logic:  S ^PSRX("REJSTS",X,DA(1),DA)=""
+                     Kill Logic:  K ^PSRX("REJSTS",X,DA(1),DA)
+                     Whole Kill:  K ^PSRX("REJSTS")
+                           X(1):  STATUS  (52.25,9)  (Subscr 1)  (forwards)
+
+
+52.25,10        CLOSED DATE/TIME       0;6 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      APR 19, 2005 
+                HELP-PROMPT:      Date/time the Third Party Reject was closed (resolved) by the user. 
+                DESCRIPTION:
+                                  Date/Time when the reject was marked CLOSED/RESOLVED.  
+
+
+52.25,11        CLOSED BY              0;7 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      APR 19, 2005 
+                HELP-PROMPT:      User responsible for closing (resolving) the Third Party Reject. 
+                DESCRIPTION:
+                                  User responsible for marking the reject CLOSED/RESOLVED.  
+
+
+52.25,12        CLOSE REASON           0;8 SET
+
+                                  '1' FOR CLAIM RE-SUBMITTED; 
+                                  '2' FOR RX ON HOLD; 
+                                  '3' FOR RX SUSPENDED; 
+                                  '4' FOR RX RETURNED TO STOCK; 
+                                  '5' FOR RX DELETED; 
+                                  '6' FOR IGNORED - NO RESUBMISSION; 
+                                  '7' FOR RX DISCONTINUED; 
+                                  '8' FOR RX EDITED; 
+                                  '99' FOR OTHER; 
+                LAST EDITED:      JUL 08, 2005 
+                DESCRIPTION:
+                                  This field indicates the reason for marking the reject CLOSED/RESOLVED.  
+
+
+52.25,13        CLOSE COMMENTS         3;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+                LAST EDITED:      APR 19, 2005 
+                HELP-PROMPT:      Answer must be 1-100 characters in length 
+                DESCRIPTION:
+                                  User entered comments.  
+
+
+52.25,14        REASON FOR SERVICE CODE 0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+                LAST EDITED:      MAY 18, 2005 
+                HELP-PROMPT:      Answer must be 1-4 characters in length 
+                DESCRIPTION:
+                                  NCPDP field indicating the resason for service code. See NCPDP REASON FOR SERVICE CODE file (#9002313.23) for possible values.  
+
+
+52.25,15        PROFESSIONAL SERVICE CODE 0;10 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+                LAST EDITED:      MAY 18, 2005 
+                HELP-PROMPT:      Answer must be 1-4 characters in length 
+                DESCRIPTION:
+                                  NCPDP field indicating the professional service code. See NCPDP PROFESSIONAL SERVICE CODE file (#9002313.21) for possible values.  
+
+
+52.25,16        RESPONSE ID            0;11 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      MAY 12, 2005 
+                HELP-PROMPT:      Type a number between 0 and 9999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field is used to make sure the reject is recorded only once.  
+
+
+52.25,17        OTHER REJECTS          0;12 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      APR 25, 2005 
+                HELP-PROMPT:      Answer must be 1-15 characters in length 
+                DESCRIPTION:
+                                  List of other reject codes that were returned at the same time.  
+
+
+52.25,18        DUR TEXT               4;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+                LAST EDITED:      APR 29, 2005 
+                HELP-PROMPT:      Answer must be 1-100 characters in length 
+                DESCRIPTION:
+                                  In case of a DUR reject (#88) the 3rd party payer returns an explanation of the DUR (Drug Usability Review).  
+
+
+52.25,19        RESULT OF SERVICE CODE 0;13 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+                LAST EDITED:      MAY 18, 2005 
+                HELP-PROMPT:      Answer must be 1-4 characters in length 
+                DESCRIPTION:
+                                  NCPDP field indicating the result of service code. See NCPDP RESULT OF SERVICE CODE file (#9002313.22) for possible values.  
+
+
+52.25,20        INSURANCE NAME         2;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUN 16, 2005 
+                HELP-PROMPT:      Answer must be 1-30 characters in length 
+                DESCRIPTION:
+                                  Patient's insurance company name.  
+
+
+52.25,21        GROUP NUMBER           2;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUN 16, 2005 
+                HELP-PROMPT:      Answer must be 1-30 characters in length 
+                DESCRIPTION:
+                                  Patient's insurance group number.  
+
+
+52.25,22        CARDHOLDER ID          2;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUN 16, 2005 
+                HELP-PROMPT:      Answer must be 1-20 characters in length 
+                DESCRIPTION:
+                                  ID number assigned to Cardholder/Subscriber.  
+
+
+52.25,23        RE-OPENED              0;14 SET
+
+                                  '1' FOR YES; 
+                LAST EDITED:      NOV 14, 2005 
+                DESCRIPTION:
+                                  This flag indicates that the user has manually re-opened another reject and this one was created.  
+
+                TECHNICAL DESCR:
+                                  In order to identify the original reject, use the RESPONSED ID field. It should match with the RESPONSED ID from the re-opened reject.  
+
+
+52.25,24        CLARIFICATION CODE     0;15 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+                LAST EDITED:      MAY 03, 2011 
+                HELP-PROMPT:      Enter between 1 and 3 Submission Clarification Codes separated by "~". 
+                DESCRIPTION:
+                                  This field contains up to 3 NCPDP Clarification Codes for the reject. Clarification codes are copied from the CODE (#.01) field of the BPS NCPDP CLARIFICATION CODES (#9002313.25) file.  
+
+                TECHNICAL DESCR:
+                                  Up to 3 Submission Clarification Codes can be submitted. They are stored in this free text field as follows: SCC1~SCC2~SCC3 
+
+
+52.25,25        PRIOR AUTHORIZATION TYPE 0;16 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      OCT 21, 2010 
+                HELP-PROMPT:      Type a number between 0 and 99, 0 decimal digits. 
+                DESCRIPTION:
+                                  This is the Prior Authorization Type that will be sent to ECME and placed in NCPDP field 461-EU (Prior Authorization Type) on the NCPDP claim that is sent to the third-party payer.  
+
+
+52.25,26        PRIOR AUTHORIZATION NUMBER 0;17 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      FEB 21, 2007 
+                HELP-PROMPT:      Type a number between 0 and 999999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  NCPDP Prior Authorization Number. This field may be left blank if the claim does not require a number.  
+
+
+52.25,27        COORDINATION OF BENEFITS 2;7 SET
+
+                                  '1' FOR PRIMARY; 
+                                  '2' FOR SECONDARY; 
+                                  '3' FOR TERTIARY; 
+                LAST EDITED:      AUG 31, 2010 
+                HELP-PROMPT:      Enter the Coordination of Benefits indicator. 
+                DESCRIPTION:
+                                  This field contains the Coordination of Benefits indicator for the third party insurance rejection for the fill.  
+
+                TECHNICAL DESCR:
+                                  This field is set automatically to store the Coordination of Benefits indicator for the reject third party claim.  
+
+
+52.25,28        DUR ADD MSG TEXT       5;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+                LAST EDITED:      AUG 27, 2010 
+                HELP-PROMPT:      Answer must be 1-100 characters in length. 
+                DESCRIPTION:
+                                  In case of a DUR reject (#88) the 3rd party payer may return additional text in the DUR Additional Message NCPDP field (570-NS).  
+
+
+52.25,29        BIN                    2;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>6!($L(X)<6) X
+                LAST EDITED:      JUN 21, 2011 
+                HELP-PROMPT:      Answer must be 6 characters in length. 
+                DESCRIPTION:
+                                  Card Issuer ID or Bank ID Number used for network routing.  
+
+                TECHNICAL DESCR:
+                                  Data from BPS CLAIMS (#9002313.02) file, BIN NUMBER (#101) field.  
+
+
+52.25,51        COMMENTS               COM;0 DATE Multiple #52.2551 (Add New Entry without Asking)
+
+
+52.2551,.01       DATE/TIME              0;1 DATE
+
+                  INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:X<1 X
+                  LAST EDITED:      NOV 03, 2006 
+                  HELP-PROMPT:      (No range limit on date) 
+                  DESCRIPTION:
+                                    Reject comment 
+
+                  TECHNICAL DESCR:
+                                    Date and Time 
+
+                  CROSS-REFERENCE:  52.2551^B 
+                                    1)= S ^PSRX(DA(2),"REJ",DA(1),"COM","B",$E(X,1,30),DA)=""
+                                    2)= K ^PSRX(DA(2),"REJ",DA(1),"COM","B",$E(X,1,30),DA)
+
+
+52.2551,1         USER                   0;2 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      NOV 02, 2006 
+                  HELP-PROMPT:      Enter the user who makes the comment. 
+                  DESCRIPTION:
+                                    The user who makes the comment.  
+
+
+52.2551,2         COMMENTS               0;3 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>150!($L(X)<1) X
+                  LAST EDITED:      NOV 03, 2006 
+                  HELP-PROMPT:      Answer must be 1-150 characters in length. 
+                  DESCRIPTION:
+                                    Reject comment.  
+
+
+
+
+
+
+52,60         PARTIAL DATE           P;0 DATE Multiple #52.2
+
+              DESCRIPTION:
+                                This sub-file is used to store data on partial prescriptions filled.  
+
+              TECHNICAL DESCR:
+                                DATE.  
+
+
+52.2,.01        PARTIAL DATE           0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 20, 1995 
+                DESCRIPTION:
+                                  This is the date the partial was made.  
+
+                TECHNICAL DESCR:
+                                  Date 
+
+                EXECUTABLE HELP:  I $P($G(^PSRX(DA,2)),"^",6) S X=$P(^PSRX(DA,2),"^",6),%DT="X" D ^%DT X ^DD("DD") W !,"Partial Date must be less than or equal to "_Y S %DT(0)=-$P(^PSRX(DA,2),"^",6)
+                DELETE TEST:      1,0)= D WARN1^PSOUTL
+
+                CROSS-REFERENCE:  52^ADP 
+                                  1)= S ^PSRX("ADP",$E(X,1,7),DA(1),DA)=""
+                                  2)= K ^PSRX("ADP",$E(X,1,7),DA(1),DA)
+
+                CROSS-REFERENCE:  52.2^APAR^MUMPS 
+                                  1)= Q
+                                  2)= D:'$G(PSOSUSPA) PARKILL^PSOUTLA
+                                  3)= DO NOT DELETE
+                                  This xref is used to indicate when a partial fill is deleted. It can set the global ^PSRX(DA(1),"A",0)=Activity log sub-header information. It can also set the global ^PSRX(DA(1),"A",Activity entry,0)=Activity Log 
+                                  information.  
+
+
+
+52.2,.02        MAIL/WINDOW            0;2 SET (Required)
+
+                                  'M' FOR MAIL; 
+                                  'W' FOR WINDOW; 
+                LAST EDITED:      SEP 03, 1982 
+                DESCRIPTION:
+                                  This field tells whether the medication was picked up or mailed to the patient.  
+
+                TECHNICAL DESCR:
+                                  (Required) Set 'M' for Mail, 'W' for Window.  
+
+
+52.2,.03        REMARKS                0;3 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<2) X
+                LAST EDITED:      AUG 27, 1982 
+                HELP-PROMPT:      ANSWER MUST BE 2-60 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  These are any additional comments.  
+
+                TECHNICAL DESCR:
+                                  (Required) Free Text.  
+
+
+52.2,.04        QTY                    0;4 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:(+X'>0)!(+X>99999999)!(X'?.8N.1".".2N)!($L(X)>11) X I $D(X),X>$P(^PSRX(DA(1),0),U,7) D EN^DDIOL("QTY CANNOT BE GREATER THAN THE ORIGINAL QTY OF "_$P($G(^(0)),U,7)) K X
+                LAST EDITED:      NOV 30, 2007 
+                HELP-PROMPT:      Type a number between .01 and 99999999. Two fractional decimal places are allowed, with no alpha characters. The total length of the entry cannot exceed 11 characters. 
+                DESCRIPTION:
+                                  This field is used to show the amount of medication that was dispensed.  
+
+                TECHNICAL DESCR:  This field allows numeric entries only, both for CMOP prescriptions and non-CMOP prescriptions. It requires a number between .01 and 99999999, with a maximum of 2 fractional decimal places.  
+                                   
+                                  NOTE: QTY values that were on file prior to patch PSO*7*29 (released 2/17/00) may contain alpha characters.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.2,.041       DAYS SUPPLY            0;10 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 27, 1992 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field is used to indicate the days of supply for partial RX fill.  
+
+                FIELD INDEX:      ACRP (#463)    MUMPS    IR    ACTION    WHOLE FILE (#52)
+                    Short Descr:  Clinical Reminders index.
+                    Description:  This cross-reference builds two indexes, one for finding all patients with a particular drug and one for finding all the drugs a patient has. The indexes are stored in the Clinical Reminders index global as: 
+                                   ^PXRMINDX(52,"IP",DRUG,DFN,START DATE,STOP DATE,DAS) 
+                                   ^PXRMINDX(52,"PI",DFN,DRUG,START DATE,STOP DATE,DAS) respectively. START DATE is the RELEASE DATE and STOP DATE is calculated by adding the DAYS SUPPLY to the RELEASE DATE.  For all the details, see the Clinical
+                                  Reminders Index Technical Guide/Programmer's Manual.  
+                      Set Logic:  D SKIDX^PSOPXRMU(.X,.DA,"P","S")
+                     Kill Logic:  D SKIDX^PSOPXRMU(.X,.DA,"P","K")
+                     Whole Kill:  Q
+                           X(1):  DAYS SUPPLY  (52.2,.041)  (Subscr 1)  (forwards)
+                           X(2):  RELEASED DATE/TIME  (52.2,8)  (Subscr 2)  (forwards)
+
+
+52.2,.042       CURRENT UNIT PRICE OF DRUG 0;11 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."5N.N) X
+                LAST EDITED:      OCT 04, 2000 
+                HELP-PROMPT:      Type a Number between 0 and 9999, 4 Decimal Digits 
+                DESCRIPTION:
+                                  This field is used to show current unit cost of the drug at time of fill.  
+
+                TECHNICAL DESCR:
+                                  This is the price per dispense unit (per ML/MG) at the time of fill.  
+
+                WRITE AUTHORITY:  ^
+
+52.2,.05        PHARMACIST NAME        0;5 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $D(^XUSEC(""PSORPH"",Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 17, 1995 
+                HELP-PROMPT:      Enter name of the pharmacist entering the parital rx. 
+                DESCRIPTION:
+                                  This is the name of the pharmacist.  
+
+                TECHNICAL DESCR:
+                                  Pointer to New Person File (#200).  required 
+
+                SCREEN:           S DIC("S")="I $D(^XUSEC(""PSORPH"",Y))"
+                EXPLANATION:      Only select a user who has a pharmacist key.
+
+52.2,.06        LOT #                  0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      MAY 27, 2004 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This field shows the vendor's lot number.  
+
+                TECHNICAL DESCR:
+                                  Free Text.  
+
+
+52.2,.07        CLERK CODE             0;7 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      APR 14, 1992 
+                DESCRIPTION:
+                                  This is the user number of the clerk that keyed in the prescription.  
+
+                TECHNICAL DESCR:
+                                  (Required) Poniter to #200 
+
+
+52.2,.08        LOGIN DATE             0;8 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                DESCRIPTION:
+                                  This is the date that the prescription was entered.  
+
+                TECHNICAL DESCR:
+                                  Date.  
+
+
+52.2,.09        DIVISION               0;9 POINTER TO OUTPATIENT SITE FILE (#59)
+
+                LAST EDITED:      MAY 16, 1995 
+                HELP-PROMPT:      Enter division where partial rx is entered. 
+                DESCRIPTION:
+                                  This field contains the Pharmacy Division associated with this RX.  
+
+                TECHNICAL DESCR:
+                                  Pointer to Outpatient Site File (#59) 
+
+                CROSS-REFERENCE:  52.2^AC^MUMPS 
+                                  1)= D SAS2^PSOSUTL
+                                  2)= D KAS2^PSOSUTL
+                                  This is used to maintain the AC x-ref in Suspense. It sets piece 6 of ^PS(52.5,DA,0)=Division. For a non-CMOP Rx, it sets ^PS(52.5,"AS",Print Date,Printed By,Division,Sequence,DA)="". For a CMOP prescription, it sets
+                                  ^PS(52.5,"APR",Print Date,Printed By,Division, Sequence,DA)="".  
+
+
+
+52.2,1          NDC                    0;12 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>13!($L(X)<3) X
+                LAST EDITED:      APR 14, 1992 
+                HELP-PROMPT:      Answer must be 3-13 characters in length. 
+                DESCRIPTION:
+                                  This field is used to show the National Drug Code of the drug issued.  
+
+
+52.2,2          MANUFACTURER           1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+                LAST EDITED:      APR 14, 1992 
+                HELP-PROMPT:      Answer must be 3-50 characters in length. 
+                DESCRIPTION:
+                                  This field is used to store the name of the manufacturer of the drug being dispensed.  
+
+                TECHNICAL DESCR:
+                                  free text.  
+
+
+52.2,5          RETURNED TO STOCK      0;16 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 09, 1993 
+                HELP-PROMPT:      Enter date the partial prescription was returned to stock. 
+                DESCRIPTION:
+                                  This field is used to show when and if the medication in the prescription was returned to inventory due to not being picked up or mailed.  
+
+                TECHNICAL DESCR:
+                                  date 
+
+                CROSS-REFERENCE:  52^AN 
+                                  1)= S ^PSRX("AN",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PSRX("AN",$E(X,1,30),DA(1),DA)
+                                  3)= This xref should not be deleted.  It is used by the Drug Accountability software (v2).
+                                  This xref creates a 'AN' index on the returned to stock date.  
+                                   
+
+
+
+52.2,6          PROVIDER               0;17 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="S X(1)=$G(^(""PS"")) I +X(1),$S('$P(X(1),""^"",4):1,1:$P(X(1),""^"",4)'<DT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      OCT 23, 1996 
+                HELP-PROMPT:      Enter name of provider that is currently seeing the patient. 
+                DESCRIPTION:
+                                  This field is used to show the provider that is currently seeing the patient.  
+
+                TECHNICAL DESCR:
+                                  Pointer to file 200.  
+
+                SCREEN:           S DIC("S")="S X(1)=$G(^(""PS"")) I +X(1),$S('$P(X(1),""^"",4):1,1:$P(X(1),""^"",4)'<DT)"
+                EXPLANATION:      Only valid providers are selected.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.2,7          GENERIC PROVIDER       0;18 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>45!($L(X)<10) X
+                LAST EDITED:      MAR 05, 1992 
+                HELP-PROMPT:      Answer must be 10-45 characters in length. 
+                DESCRIPTION:
+                                  This field is used to show if there is a provider outside of the medical center providing care to the patient.  
+
+
+52.2,7.5        DISPENSED DATE         0;13 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 10, 1992 
+                DESCRIPTION:
+                                  This field is used to indicate the date the partial medication was dispensed.  
+
+
+52.2,8          RELEASED DATE/TIME     0;19 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 09, 1993 
+                HELP-PROMPT:      Enter date/time the medication was released. 
+                DESCRIPTION:
+                                  This field is used to show the date the medication was released.  
+
+                TECHNICAL DESCR:
+                                  date/time.  
+
+                CROSS-REFERENCE:  52^AM 
+                                  1)= S ^PSRX("AM",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PSRX("AM",$E(X,1,30),DA(1),DA)
+                                  3)= This xref should not be deleted.  It is used by the Drug Accountability software (v2).
+                                  This xref creates a 'AM' index on the release date.  
+
+
+                FIELD INDEX:      ACRP (#463)    MUMPS    IR    ACTION    WHOLE FILE (#52)
+                    Short Descr:  Clinical Reminders index.
+                    Description:  This cross-reference builds two indexes, one for finding all patients with a particular drug and one for finding all the drugs a patient has. The indexes are stored in the Clinical Reminders index global as: 
+                                   ^PXRMINDX(52,"IP",DRUG,DFN,START DATE,STOP DATE,DAS) 
+                                   ^PXRMINDX(52,"PI",DFN,DRUG,START DATE,STOP DATE,DAS) respectively. START DATE is the RELEASE DATE and STOP DATE is calculated by adding the DAYS SUPPLY to the RELEASE DATE.  For all the details, see the Clinical
+                                  Reminders Index Technical Guide/Programmer's Manual.  
+                      Set Logic:  D SKIDX^PSOPXRMU(.X,.DA,"P","S")
+                     Kill Logic:  D SKIDX^PSOPXRMU(.X,.DA,"P","K")
+                     Whole Kill:  Q
+                           X(1):  DAYS SUPPLY  (52.2,.041)  (Subscr 1)  (forwards)
+                           X(2):  RELEASED DATE/TIME  (52.2,8)  (Subscr 2)  (forwards)
+
+
+52.2,9          BINGO WAIT TIME        1;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 27, 1997 
+                HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field specifies, in minutes, the total wait time for bingo board purposes.  
+
+
+52.2,10         FILLING PERSON         1;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      FEB 05, 2004 
+                HELP-PROMPT:      Data not entered directly with FM. 
+                DESCRIPTION:
+                                  The name of the person who scanned the barcode before dispensing a partial medication request.  
+
+                TECHNICAL DESCR:
+                                  pointer 
+
+
+52.2,11         CHECKING PHARMACIST    1;4 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      FEB 05, 2004 
+                HELP-PROMPT:      Data not entered directly with FM. 
+                DESCRIPTION:
+                                  The name of the pharmacist that checked the partial medication request.  
+
+                TECHNICAL DESCR:
+                                  pointer 
+
+
+52.2,12         DRUG EXPIRATION DATE   1;5 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 05, 2004 
+                HELP-PROMPT:      Enter date the medication expires for this partial. 
+                DESCRIPTION:
+                                  This field is used to show the date that the medication expires for this partial fill.  
+
+
+
+
+52,81         DAW CODE               EPH;1 FREE TEXT
+
+              INPUT TRANSFORM:  D INPUT^PSSDAWUT
+              LAST EDITED:      JUN 27, 2005 
+              DESCRIPTION:
+                                Dispensed As Written code. This information is used for electronic claim transmission to third party payers (insurance companies).  
+
+              EXECUTABLE HELP:  D HLP^PSSDAWUT
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,82         RE-TRANSMIT FLAG       EPH;2 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 19, 2005 
+              DESCRIPTION:
+                                This field is used to indicate that a claim should be electronically re-transmitted to the 3rd party insurance. It will be primarily used by CMOP and local mail prescriptions.  
+
+
+52,83         DATE NDC VALIDATED     EPH;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 18, 2008 
+              HELP-PROMPT:      Enter the date and time that the prescription was validated. 
+              DESCRIPTION:
+                                This field contains the date and time that the NDC was validated prior to release of the prescription fill.  
+
+              TECHNICAL DESCR:
+                                This field is set by the NDC Validation [PSO NDC VALIDATE] option when the NDC on the prescription matches the NDC on the stock bottle.  
+
+                                UNEDITABLE
+
+52,84         NDC VALIDATED BY       EPH;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 03, 2007 
+              HELP-PROMPT:      Enter the User's ID who validated the NDC. 
+              DESCRIPTION:
+                                This field will contain the user ID of the person who validated the NDC prior to release of the prescription fill.  
+
+              TECHNICAL DESCR:
+                                This field is set by the NDC Validation [PSO NDC VALIDATE] option when the NDC on the prescription matches the NDC on the stock bottle.  
+
+                                UNEDITABLE
+
+52,85         BILLING ELIGIBILITY INDICATOR EPH;5 SET
+
+                                'T' FOR TRICARE; 
+                                'V' FOR VETERAN; 
+                                'C' FOR CHAMPVA; 
+              LAST EDITED:      AUG 03, 2011 
+              HELP-PROMPT:      Enter T for TRICARE , V for VETERAN, or C for CHAMPVA. 
+              DESCRIPTION:
+                                This field is set when a prescription is third party insurance billable and will contain T for TRICARE, V for VETERAN or C for CHAMPVA.  
+
+              TECHNICAL DESCR:
+                                This field contains the billing eligibility flag passed from ECME upon submission of a claim for the fill.  
+
+
+52,86         EPHARMACY SUSPENSE HOLD DATE EPH;6 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      MAY 07, 2008 
+              HELP-PROMPT:      Enter the date the prescription can be removed from suspense hold. 
+              DESCRIPTION:
+                                This field is defined when a host reject error is received as a result of an ePharmacy claims submission.  The prescription fill will be held on suspense until the next day.  
+
+              TECHNICAL DESCR:  This field is defined with a date/time of 24 hours from the date/time the original RX was rejected with either a M6, M8, NN, or 99 host reject error code. This allows the software to resubmit a claim the following day to
+                                attempt a successful acceptance.  
+
+
+52,99         HOLD REASON            H;1 SET (Required)
+
+                                '1' FOR INSUFFICIENT QTY IN STOCK; 
+                                '2' FOR DRUG-DRUG INTERACTION; 
+                                '4' FOR PROVIDER TO BE CONTACTED; 
+                                '6' FOR ADVERSE DRUG REACTION; 
+                                '7' FOR BAD ADDRESS; 
+                                '8' FOR PER PATIENT REQUEST; 
+                                '9' FOR CONSULT/PRIOR APPROVAL NEEDED; 
+                                '98' FOR OTHER/TECH (NON-CLINICAL); 
+                                '99' FOR OTHER/RPH (CLINICAL); 
+              LAST EDITED:      MAY 31, 2012 
+              HELP-PROMPT:      Enter reason medication is placed in a 'Hold' status. 
+              DESCRIPTION:
+                                This field tells why the prescription was put on hold.  
+
+              TECHNICAL DESCR:
+                                Enter reason medication is being placed in a 'Hold' status.  
+
+              CROSS-REFERENCE:  52^AH 
+                                1)= S ^PSRX("AH",$E(X,1,30),DA)=""
+                                2)= K ^PSRX("AH",$E(X,1,30),DA)
+
+
+52,99.1       HOLD COMMENTS          H;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<10) X
+              LAST EDITED:      MAY 06, 1992 
+              HELP-PROMPT:      Enter brief comments on why medication was placed on 'Hold'.  Answer must be 10-100 characters in length. 
+              DESCRIPTION:
+                                This field is used to enter brief comments on why the medication was placed on 'Hold' status.  
+
+              TECHNICAL DESCR:
+                                Free text.  
+
+              GROUP:            PSO
+
+52,99.2       HOLD DATE              H;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 13, 1992 
+              HELP-PROMPT:      Enter date that medication was placed in a 'Hold' status. 
+              DESCRIPTION:
+                                This field is used to indicate the date that a prescription was placed on hold.  
+
+
+52,100        STATUS                 STA;1 SET (Required)
+
+                                '0' FOR ACTIVE; 
+                                '1' FOR NON-VERIFIED; 
+                                '2' FOR REFILL; 
+                                '3' FOR HOLD; 
+                                '4' FOR DRUG INTERACTIONS; 
+                                '5' FOR SUSPENDED; 
+                                '10' FOR DONE; 
+                                '11' FOR EXPIRED; 
+                                '12' FOR DISCONTINUED; 
+                                '13' FOR DELETED; 
+                                '14' FOR DISCONTINUED BY PROVIDER; 
+                                '15' FOR DISCONTINUED (EDIT); 
+                                '16' FOR PROVIDER HOLD; 
+              LAST EDITED:      NOV 04, 1997 
+              DESCRIPTION:
+                                This field represents the current status of the prescription.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+
+52,100.1      DISCONTINUE TYPE       7;1 SET
+
+                                '1' FOR HOSPITAL ADMISSION; 
+                                '2' FOR EDITED BY PROVIDER; 
+              LAST EDITED:      MAY 10, 2007 
+              HELP-PROMPT:      Data should not be entered directly with FileMan. 
+              DESCRIPTION:
+                                This field is used to distinguish what type of external discontinue action occurred.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+
+52,101        LAST DISPENSED DATE    3;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 05, 1992 
+              HELP-PROMPT:      Enter date that he presciption was last filled. 
+              DESCRIPTION:
+                                This field contains the last fill date.  
+
+              TECHNICAL DESCR:
+                                Date.  
+
+
+52,102        NEXT POSSIBLE FILL     3;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 20, 1992 
+              DESCRIPTION:
+                                This field contains the next possible fill date.  
+
+              TECHNICAL DESCR:
+                                Date.  
+
+
+52,102.1      PRIOR FILL DATE        3;4 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 25, 1993 
+              HELP-PROMPT:      Data is not entered through file manager. 
+              DESCRIPTION:
+                                This field is used to indicate the last date the prescription was filled.  The dates in this field will be the date of the last renew from a previous rx, and any subsequent fills.  
+
+              TECHNICAL DESCR:
+                                date.  
+
+              GROUP:            PSO
+
+52,102.2      PENDING NEXT POSSIBLE FILLDATE 3;8 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 27, 1996 
+              DESCRIPTION:
+                                This field is to contain the next possible filldate if the Rx was discontinued prior to the original label printing.  If the Rx is reinstated this date will be restored to field 102 (next possbile filldate).  
+
+
+52,103        NEW DRUG               DRG;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      SEP 14, 1985 
+              HELP-PROMPT:      ANSWER MUST BE 1-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field is used to enter a new drug.  
+
+
+52,104        VERIFYING PHARMACIST   2;10 POINTER TO NEW PERSON FILE (#200)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^XUSEC(""PSORPH"",Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 26, 1993 
+              HELP-PROMPT:      Enter name of pharmacist that is verifing the prescription. 
+              DESCRIPTION:
+                                This field is used to show the pharmacist that verified the prescription 
+
+              SCREEN:           S DIC("S")="I $D(^XUSEC(""PSORPH"",Y))"
+              EXPLANATION:      Only valid verifying pharmacist are to be selected.
+                                UNEDITABLE
+
+52,105        COPAY TRANSACTION TYPE IB;1 POINTER TO IB ACTION TYPE FILE (#350.1)
+
+              LAST EDITED:      APR 17, 1991 
+              DESCRIPTION:
+                                This field contains the internal entry number of the pointer to the IB Action Type file (#350.1).  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+
+52,106        IB NUMBER              IB;2 POINTER TO INTEGRATED BILLING ACTION FILE (#350)
+
+              LAST EDITED:      APR 17, 1991 
+              DESCRIPTION:
+                                This field contains the internal entry number of the pointer to the Integrated Billing Action file (#350).  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+
+52,106.5      COPAY TYPE AUDIT       IB;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+              LAST EDITED:      DEC 11, 1996 
+              HELP-PROMPT:      Answer must be 1 character in length. 
+              DESCRIPTION:
+                                This field serves as an audit of the original copay status. It is not changed or reset if the orignal status is changed.  
+
+                                UNEDITABLE
+
+52,106.6      COPAY EXCEEDING CAP    IB;4 POINTER TO IB COPAY TRANSACTIONS FILE (#354.71)
+
+              LAST EDITED:      SEP 04, 2001 
+              HELP-PROMPT:      This field contains the internal entry number of the pointer to the IB COPAY TRANSACTIONS FILE (#354.71) 
+              DESCRIPTION:
+                                This field contains the internal entry number of the pointer to the IB COPAY TRANSACTIONS file (#354.71).  There will only be data in this field if this Rx's copay exceeded the annual copay cap.  
+
+              TECHNICAL DESCR:
+                                This field contains the internal entry number of the pointer to the IB COPAY TRANSACTIONS file (#354.71).  There will only be data in this field if this Rx's copay exceeded the annual copay cap.  
+
+
+52,107        COPAY ACTIVITY LOG     COPAY;0 DATE Multiple #52.0107 (Add New Entry without Asking)
+
+              LAST EDITED:      JUL 16, 2001 
+
+52.0107,.01     COPAY ACTIVITY LOG     0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      AUG 30, 2001 
+                HELP-PROMPT:      Enter the date the Activity occurred (No range limit on date). 
+                DESCRIPTION:
+                                  This is the date when activity occurred.  
+
+                TECHNICAL DESCR:
+                                  Date (Multiply asked) 
+
+
+52.0107,1       REASON                 0;2 SET
+
+                                  'A' FOR ANNUAL CAP REACHED; 
+                                  'R' FOR RESET COPAY STATUS; 
+                                  'I' FOR IB-INITIATED CHARGE; 
+                                  'C' FOR REMOVE COPAY CHARGE; 
+                                  'E' FOR RX EDIT; 
+                LAST EDITED:      OCT 17, 2001 
+                HELP-PROMPT:      Enter code to indicate copay activity taking place for this prescription. 
+                DESCRIPTION:      What was done to cause the copay activity to occur.  'A' will indicate that the Annual Copay Cap was reached for a patient when this prescription was released.  'R' will indicate that the prescription's copay status was
+                                  reset due to a patient eligibility, copay exemption status change, etc.  'I' will indicate that a copay change was initiated by the Integrated Billing application and not through the release function. 'C' is for
+                                  cancellation of existing copay charges. 'E' is copay edited, e.g. the Days Supply is changed.  
+
+                TECHNICAL DESCR:  What was done to cause the copay activity to occur.  'A' will indicate that the Annual Copay Cap was reached for a patient when this prescription was released.  'R' will indicate that the prescription's copay status was
+                                  reset due to a patient eligibility, copay exemption status change, etc.  'I' will indicate that a copay change was initiated by the Integrated Billing application and not through the release function. 'C' is for
+                                  cancellation of existing copay charges. 'E' is copay edited, e.g. the Days Supply is changed.  
+
+
+52.0107,2       INITIATOR OF COPAY ACTIVITY 0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      AUG 29, 2001 
+                DESCRIPTION:
+                                  The name of the person responsible for the copay activity.  
+
+
+52.0107,3       RX REFERENCE           0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>11)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      AUG 29, 2001 
+                HELP-PROMPT:      Type a number between 0 and 11, 0 Decimal Digits 
+                DESCRIPTION:      This field is used to indicate which fill corresponds to the copay activity.  
+                                  .
+
+                TECHNICAL DESCR:
+                                  0 indicates the original fill and 1-11 indicates refills.  
+
+
+52.0107,4       COMMENT                0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>75!($L(X)<1) X
+                LAST EDITED:      AUG 29, 2001 
+                HELP-PROMPT:      Answer must be 1-75 characters in length 
+                DESCRIPTION:
+                                  Additional information will be entered here to detail why the copay activity occurred.  
+
+
+52.0107,5       OLD VALUE              0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+                LAST EDITED:      AUG 29, 2001 
+                HELP-PROMPT:      Answer must be 1-25 characters in length 
+                DESCRIPTION:
+                                  This field is used to show the old copay status value for the prescription if the reason for the copay activity is set to 'R' 'Reset Copay Status'.  
+
+                TECHNICAL DESCR:
+                                  Enter the old Rx copay status value.  Answer must be 1-25 characters in length.  
+
+
+52.0107,6       NEW VALUE              0;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+                LAST EDITED:      AUG 29, 2001 
+                HELP-PROMPT:      Answer must be 1-25 characters in length 
+                DESCRIPTION:
+                                  This field is used to show the new copay status value for the prescription if the reason for the copay activity is set to 'R' 'Reset Copay Status'.  
+
+                TECHNICAL DESCR:
+                                  Enter the new Rx copay status value.  Answer must be 1-25 characters in length.  
+
+
+
+
+52,108        DELETION COMMENTS      D;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<5) X
+              LAST EDITED:      NOV 15, 1990 
+              HELP-PROMPT:      Answer must be 5-100 characters in length. 
+              DESCRIPTION:
+                                This field is used to enter comments on why a prescription was marked as deleted.  
+
+              TECHNICAL DESCR:
+                                required.  
+
+
+52,109        COSIGNING PHYSICIAN    3;3 POINTER TO NEW PERSON FILE (#200)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^(""PS"")),$P(^(""PS""),""^""),'$P(^(""PS""),""^"",7),$S('$P(^(""PS""),""^"",4):1,1:$P(^(""PS""),""^"",4)'<DT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 23, 1993 
+              DESCRIPTION:
+                                This field identifies the cosigning physician for prescriptions written by a provider for whom a counter signature is required, for example a nurse practitioner.  
+
+              TECHNICAL DESCR:
+                                pointer 
+
+              SCREEN:           S DIC("S")="I $D(^(""PS"")),$P(^(""PS""),""^""),'$P(^(""PS""),""^"",7),$S('$P(^(""PS""),""^"",4):1,1:$P(^(""PS""),""^"",4)'<DT)"
+              EXPLANATION:      Select an active provider who does not require a cosigner.
+              CROSS-REFERENCE:  52^ANCO^MUMPS 
+                                1)= K ^PSRX("ANCO",DA)
+                                2)= I $D(^VA(200,+$P(^PSRX(DA,0),"^",4),"PS")),$P(^("PS"),"^",7) S ^PSRX("ANCO",DA)=""
+                                3)= Do not delete.
+                                This cross reference lists the internal record number if the physician requires a cosigning physician. It sets the global ^PSRX("ANCO",DA)="".  
+
+
+
+52,110        TYPE OF RX             TYPE;1 NUMBER
+
+              INPUT TRANSFORM:  K X
+              LAST EDITED:      JUN 10, 1992 
+              HELP-PROMPT:      Data is not entered directly with FileMan. 
+              DESCRIPTION:
+                                This field is used to indicate if the rx dispensed is a partial or normal process rx.  If partial medication was dispensed this will be equal to the entry number else the field will be equal to zero.  
+
+              TECHNICAL DESCR:
+                                number 
+
+              GROUP:            pso
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,111        POE RX                 POE;1 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 06, 2000 
+              HELP-PROMPT:      This field will be set for all prescriptions, this includes prescriptions entered before installation of PSO*7*46. 
+              DESCRIPTION:      This field shall be set whenever a new/renew prescription is entered after the Pharmacy Ordering Enhancements software for Outpatient Pharmacy has been installed.  This field will set to 1 for all pre-POE Rxs during the
+                                install of PSO*7*46.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+
+52,112        ORIGINAL QTY           3;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<.01)!(X?.E1"."3N.N) X
+              LAST EDITED:      MAY 06, 2000 
+              HELP-PROMPT:      This field allows numeric entries only, both for CMOP Rxs and non-CMOP Rxs.  It requires a number between .01 and 99999999, a maximum of 2 fractional decimals. 
+              DESCRIPTION:
+                                This field will hold the quantity that was filled for the original fill of the Rx.  
+
+              TECHNICAL DESCR:
+                                numeric.  
+
+
+52,113        MEDICATION INSTRUCTIONS 6;0 Multiple #52.0113
+
+              LAST EDITED:      MAY 06, 2000 
+              DESCRIPTION:
+                                This sub-file will contain the dispense units per dosage ordered, dosage ordered, units, noun, duration and conjunction fields.  
+
+              TECHNICAL DESCR:
+                                sub-file.  
+
+
+52.0113,.01     DOSAGE ORDERED         0;1 FREE TEXT (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+                LAST EDITED:      JUL 30, 2001 
+                HELP-PROMPT:      Answer must be 1-80 characters in length. 
+                DESCRIPTION:
+                                  This is a single dose of medication the patient will receive for this Rx order.  
+
+                TECHNICAL DESCR:
+                                  free text.  
+
+                                  UNEDITABLE
+
+52.0113,1       DISPENSE UNITS PER DOSE 0;2 NUMBER
+
+                Dispense Units Per Dosage Ordered                                                                              
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      JUL 30, 2001 
+                HELP-PROMPT:      Type a Number between 0 and 99999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of Units (tablets, capsules, etc.) to be dispensed as a dose for this order.  
+
+                TECHNICAL DESCR:
+                                  numeric.  
+
+                                  UNEDITABLE
+
+52.0113,2       UNITS                  0;3 POINTER TO DRUG UNITS FILE (#50.607)
+
+                LAST EDITED:      JUL 30, 2001 
+                HELP-PROMPT:      Enter the unit associated with dosage ordered. 
+                DESCRIPTION:
+                                  Unit of measure.  Pointer to the Drug Units file (50.607).  
+
+                TECHNICAL DESCR:
+                                  pointer to file 50.607.  
+
+                                  UNEDITABLE
+
+52.0113,3       NOUN                   0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUL 30, 2001 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  These are the nouns that are associated with this Dosage form.  It will be used by the Outpatient Pharmacy software to build a SIG for an OE/RR order.  
+
+                                  UNEDITABLE
+
+52.0113,4       DURATION               0;5 FREE TEXT
+
+                INPUT TRANSFORM:  D DUR^PSOFSIG
+                LAST EDITED:      AUG 01, 2001 
+                HELP-PROMPT:      This is the length of time a medication should be given. Enter a numeric value followed by a 'M' for Minutes, 'H' for Hours, 'D' for Days, 'W' for Weeks, 'L' for Months.  THIS IS NOT DAYS SUPPLY! 
+                DESCRIPTION:      This is the length of time that a medication order should be given. If you enter a numeric value, Days will be assumed. You may also enter a numeric value followed by a letter. The letters can be entered as 'M' for
+                                  Minutes, 'H' for Hours, 'D' for Days, 'W' for Weeks, 'L' for Months.  
+                                   
+                                  THIS IS NOT DAYS SUPPLY! 
+
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.0113,5       CONJUNCTION            0;6 SET
+
+                                  'A' FOR AND; 
+                                  'T' FOR THEN; 
+                                  'X' FOR EXCEPT; 
+                LAST EDITED:      JUL 30, 2001 
+                HELP-PROMPT:      A code should only be entered if a complex order is being entered. 
+                DESCRIPTION:
+                                  This code is used to help build a Possible Sig for a complex medication dose.  This code usually expands to an "and", a "then", or an "except".  
+
+                TECHNICAL DESCR:
+                                  set of codes.  
+
+                                  UNEDITABLE
+
+52.0113,6       ROUTE                  0;7 POINTER TO MEDICATION ROUTES FILE (#51.2)
+
+                LAST EDITED:      JUL 30, 2001 
+                HELP-PROMPT:      Enter how medication is to be administered. 
+                DESCRIPTION:
+                                  This is how the medication is taken, applied, or used.  
+
+                TECHNICAL DESCR:
+                                  pointer to file 51.2.  
+
+                                  UNEDITABLE
+
+52.0113,7       SCHEDULE               0;8 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUL 30, 2001 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This field is used to tell the patient how often the medication is to be used.  
+
+                TECHNICAL DESCR:
+                                  free text.  
+
+                                  UNEDITABLE
+
+52.0113,8       VERB                   0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUL 30, 2001 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This verb will be used to describe how the medication will be taken/used.  
+
+                                  UNEDITABLE
+
+52.0113,9       OTHER LANGUAGE DOSAGE  1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+                LAST EDITED:      MAR 31, 2003 
+                HELP-PROMPT:      Answer must be 1-80 characters in length. 
+                DESCRIPTION:
+                                  This is a single dose of medication the patient will receive for this Rx order.  Data should be entered into the field when the patient has another language preference and there is a free-text of a local dosage entered.  
+
+
+
+
+52,114        PATIENT INSTRUCTIONS   INS;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>240!($L(X)<1) X
+              LAST EDITED:      MAY 11, 2000 
+              HELP-PROMPT:      Enter patient instructions.  Answer must be 1-240 characters in length. 
+              DESCRIPTION:
+                                The text in this field shall be used for the Patient Instructions in the Outpatient Pharmacy package when entering orders, if the Dispense Drug selected is matched to a Pharmacy Orderable Item with patient instructions.  
+
+              TECHNICAL DESCR:
+                                free text.  
+
+
+52,114.1      OTHER PATIENT INSTRUCTIONS INSS;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      OCT 09, 2002 
+              HELP-PROMPT:      Enter Other Patient Instructions. Answer must be 1-245 characters in length. 
+              DESCRIPTION:
+                                This field will be used to store the Other Language Patient Instructions when added.  
+
+              TECHNICAL DESCR:
+                                free text.  
+
+              GROUP:            PSO
+
+52,115        EXPANDED PATIENT INSTRUCTIONS INS1;0   WORD-PROCESSING #52.0115
+
+
+52,116        SERVICE CONNECTED      IBQ;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 14, 2001 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is for a Service Connected condition. 
+              DESCRIPTION:      During Outpatient Pharmacy order entry, a pharmacist may be asked if the medication being prescribed is for a service connected condition. This field will store the pharmacist's response to this question. The value in this
+                                field will be used to evaluate whether or not a copay should be applied to the prescription. This value will also be used as a default should this question be raised again during the life of the prescription when a
+                                prescription fill is being released, or as the default for the question upon renewal of the prescription through CPRS or Outpatient Pharmacy.  
+
+
+52,117        MILITARY SEXUAL TRAUMA IBQ;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 14, 2001 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used for treatment of Military Sexual Trauma. 
+              DESCRIPTION:      During Outpatient Pharmacy order entry, if a veteran has been identified as having been treated for Military Sexual Trauma, the pharmacist may be asked to identify whether or not the medication prescribed is being used to
+                                treat a condition related to Military Sexual Trauma. This field will store the pharmacist's response to this question. The value in this field will be used to evaluate whether or not a copay should be applied to the 
+                                prescription. This value will also be used as a default should this question be raised again during the life of the prescription when a prescription fill is being released, or as the default for the question upon renewal
+                                of the prescription through CPRS or Outpatient Pharmacy.  
+
+
+52,118        AGENT ORANGE EXPOSURE  IBQ;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 23, 2001 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used for treatment of Vietnam-Era herbicide exposure. 
+              DESCRIPTION:      During Outpatient Pharmacy order entry, if a veteran has been identified as having been exposed to Agent Orange during Vietnam service, the pharmacist may be asked to identify whether or not the medication prescribed is
+                                being used to treat a condition due to this exposure. This field will store the pharmacist's response to this question. The value in this field will be used to evaluate whether or not a copay should be applied to the
+                                prescription. This value will also be used as a default should this question be raised again during the life of the prescription when a prescription fill is being released, or as the default for the question upon renewal
+                                of the prescription through CPRS or Outpatient Pharmacy.  
+
+
+52,119        IONIZING RADIATION EXPOSURE IBQ;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 23, 2001 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat a condition due to ionizing radiation exposure during military service. 
+              DESCRIPTION:      During Outpatient Pharmacy order entry, if a veteran has been identified as having been exposed to ionizing radiation during military service, the pharmacist may be asked to identify whether or not the medication 
+                                prescribed is being used to treat a condition due to this exposure. This field will store the pharmacist's response to this question. The value in this field will be used to evaluate whether or not a copay should be 
+                                applied to the prescription. This value will also be used as a default should this question be raised again during the life of the prescription when a prescription fill is being released, or as the default for the question
+                                upon renewal of the prescription through CPRS or Outpatient Pharmacy.  
+
+
+52,120        SOUTHWEST ASIA CONDITIONS IBQ;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 27, 2006 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat a condition related to service in Southwest Asia. 
+              DESCRIPTION:      During Outpatient Pharmacy order entry, if a veteran has been identified as having been exposed to Southwest Asia Conditions (formerly referred to as Environmental Contaminants), the pharmacist may be asked to identify 
+                                whether or not the medication prescribed is being used to treat a condition due to this exposure. This field will store the pharmacist's response to this question. The value in this field will be used to evaluate whether
+                                or not a copay should be applied to the prescription.  This value will also be used as a default should this question be raised again during the life of the prescription when a prescription fill is being released, or as
+                                the default for the question upon renewal of the prescription through CPRS or Outpatient Pharmacy.  
+
+
+52,120.01     DDSTATUS               DDSTA;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      MAY 13, 2002 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This field will hold the status of the prescription at the time a date of death was entered.  
+
+              TECHNICAL DESCR:
+                                free text.  
+
+
+52,120.02     DATE OF DEATH HISTORY  DDSTA;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>235!($L(X)<1) X
+              LAST EDITED:      MAY 13, 2002 
+              HELP-PROMPT:      Answer must be 1-235 characters in length. 
+              DESCRIPTION:      This field will be used to take a snapshot of the Rx at the time it was discontinued due to a date of death being entered for the patient.  This data will be used to restore the Rx to the state before the date of death was
+                                entered.  
+
+              TECHNICAL DESCR:
+                                free text.  
+
+
+52,121        HEAD AND/OR NECK CANCER IBQ;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 23, 2001 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat Head and/or Neck Cancer due to nose or throat radium treatments while in the military. 
+              DESCRIPTION:      During Outpatient Pharmacy order entry, if a veteran has been identified as having been treated for Head and/or Neck Cancer due to nose or throat radium treatments while in the military, the pharmacist may be asked to 
+                                identify whether or not the medication prescribed is being used to treat this condition. This field will store the pharmacist's response to this question. The value in this field will be used to evaluate whether or not a
+                                copay should be applied to the prescription. This value will also be used as a default should this question be raised again during the life of the prescription when a prescription fill is being released, or as the default
+                                for the question upon renewal of the prescription through CPRS or Outpatient Pharmacy.  
+
+
+52,122        COMBAT VETERAN         IBQ;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 11, 2003 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat a condition related to Combat Services. 
+              DESCRIPTION:      During Outpatient Pharmacy order entry, a pharmacist may be asked if the medication being prescribed is for a condition related to Combat Services while in the military. This field will store the pharmacist's response to 
+                                this question. The value in this field will be used to evaluate whether or not a copay should be applied to the prescription. This value will also be used as a default should this question be raised again during the life
+                                of the prescription.  
+
+
+52,122.01     PROJ 112/SHAD          IBQ;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 17, 2006 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat a condition related to PROJ 112/SHAD 
+              DESCRIPTION:      During Outpatient Pharmacy order entry, a pharmacist may be asked if the medication being prescribed is for a condition related to PROJ 112/SHAD while in the military. This field will store the pharmacist's response to 
+                                this question. The value in this field will be used to evaluate whether or not a copay should be applied to the prescription. This value will also be used as a default should this question be raised again during the life
+                                of the prescription.  
+
+
+52,123        EXTERNAL PLACER ORDER NUMBER EXT;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      AUG 05, 2002 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field represents the external system order number of this order. This field will only be populated if this order was originally received from an external system into Vista.  
+
+                                UNEDITABLE
+              RECORD INDEXES:   D (#175)
+
+52,124        EXTERNAL APPLICATION   EXT;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 05, 2002 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This field represents the name of the external system from where the external order was received.  
+
+                                UNEDITABLE
+              RECORD INDEXES:   D (#175)
+
+52,125        PFSS ACCOUNT REFERENCE PFS;1 POINTER TO PFSS ACCOUNT FILE (#375)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 12, 2005 
+              DESCRIPTION:
+                                This is a reference number to an external medical billing system Account Number for the purposes of uniquely identifying prescription charges for 1st or 3rd party billing.  
+
+              TECHNICAL DESCR:  This field was introduced as part of the Patient Financial Services System (PFSS) project to implement a new COTS billing system. It requires that every prescription fill passed to the external billing system to attach a 
+                                unique account/visit number. The IBB API GETACCT^IBBAPI provides this data and is stored during prescription order creation as part of the data.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52,126        PFSS CHARGE ID         PFS;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<90000000)!(X?.E1"."1.N) X
+              LAST EDITED:      MAY 18, 2005 
+              HELP-PROMPT:      Type a number between 90000000 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is another unique identifier required when prescription charge messages are passed to the external billing system.  
+
+              TECHNICAL DESCR:  This field was introduced as part of the Patient Financial Services System (PFSS) project to implement a new COTS billing system. It requires that every prescription charge transaction passed to the external billing system
+                                to attach a unique charge identifier. The IBB API GETCHGID^IBBAPI provides this data.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+
+52,127        LAST DISPENSED DATE HOLDER 3;10 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 13, 2006 
+              DESCRIPTION:
+                                This field is a holder for the last dispensed date.  
+
+
+52,201        TPB RX                 TPB;1 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      DEC 16, 2003 
+              HELP-PROMPT:      Enter 'Yes' is this prescription is part of the Transitional Pharmacy Benefit project. 
+              DESCRIPTION:
+                                If this field is set to 'Yes', that indicates that this prescription has been created as part of the Transitional Pharmacy Benefit project. This field is controlled by the software.  
+
+
+52,301        CLOZAPINE DOSAGE (MG/DAY) SAND;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>3000)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 16, 1991 
+              HELP-PROMPT:      Type a Number between 0 and 3000, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the total daily dosage of clozapine if this prescription is for the drug clozapine.  This is used only for clozapine.  
+
+
+52,302        WBC RESULTS            SAND;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."4.N) X
+              LAST EDITED:      JUL 18, 2006 
+              HELP-PROMPT:      Type a number between 0 and 99999, 3 Decimal Digits 
+              DESCRIPTION:
+                                This is the results of the WBC test which was used to authorize the clozapine prescription. This will exist only for clozapine prescriptions.  
+
+              TECHNICAL DESCR:
+                                This is provided by the Mental Health API $$CL^YSCLTST2(DFN) patch YS*5.01*90 as Mental Health monitor the Clozapine patient.  
+
+
+52,303        DATE OF WBC TEST       SAND;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 01, 1992 
+              DESCRIPTION:
+                                This is the date of the WBC test which authorized the clozapine prescription.  It is used only for clozapine prescriptions.  
+
+
+52,304        ANC RESULTS            SAND;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."4.N) X
+              LAST EDITED:      JUL 18, 2006 
+              HELP-PROMPT:      Type a number between 0 and 99999, 3 Decimal Digits 
+              DESCRIPTION:
+                                This is the results of the ANC test that was used to authorize the clozapine prescription. This will exist only for clozapine prescriptions.  
+
+              TECHNICAL DESCR:
+                                This is provided by the Mental Health API $$CL^YSCLTST2(DFN) patch YS*5.01*90 as Mental Health monitor the Clozapine patient.  
+
+
+52,310        SIGNATURE STATUS       PKI;1 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      AUG 09, 2002 
+              HELP-PROMPT:      Data not entered directly with file manager. 
+              DESCRIPTION:
+                                Digital Signature status indicator.  
+
+              TECHNICAL DESCR:
+                                This field will be used to indicate the digital signature status of an order. A value of '1' will indicate that the original order was digitally signed.  
+
+
+52,400        CMOP EVENT             4;0 POINTER Multiple #52.01 (Add New Entry without Asking)
+
+              LAST EDITED:      JUN 16, 1994 
+              TECHNICAL DESCR:
+                                Pointer to the CMOP Transmission file #550.2.  
+
+
+52.01,.01       TRANSMISSION NUMBER    0;1 POINTER TO CMOP TRANSMISSION FILE (#550.2)
+
+                LAST EDITED:      SEP 15, 1994 
+                DESCRIPTION:       This the number of the transmission which contained this prescription.  
+                                    
+
+                TECHNICAL DESCR:
+                                  Pointer to the CMOP Transmission file #550.2.  
+
+                CROSS-REFERENCE:  52.01^B 
+                                  1)= S ^PSRX(DA(1),4,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSRX(DA(1),4,"B",$E(X,1,30),DA)
+
+
+52.01,1         SEQUENCE #             0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 01, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+                DESCRIPTION:       This is the message number of the Rx when it was transmitted to the CMOP.  
+                                   
+
+
+52.01,2         RX INDICATOR           0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 01, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+                DESCRIPTION:       This is the fill number of the Rx.  A '0' indicates that it was an original fill.  
+                                    
+
+
+52.01,3         STATUS                 0;4 SET
+
+                                  '0' FOR TRANSMITTED; 
+                                  '1' FOR DISPENSED; 
+                                  '2' FOR RETRANSMITTED; 
+                                  '3' FOR NOT DISPENSED; 
+                LAST EDITED:      JUN 12, 1996 
+                DESCRIPTION:      The current status of the prescription fill for the Consolidated Mail Outpatient Pharmacy.  A status of Transmitted means that the Rx has been transmitted to the CMOP for processing.  A status of Dispensed means that the
+                                  Rx has been filled and mailed by the CMOP.  A status of Retransmitted means that the original transmission with this Rx had to be retransmitted to the CMOP.  A status of Not Dispensed means that the vendor system was not
+                                  able to fill the Rx.  If the status is Not Dispensed, the reason will be in the Reason field.  
+
+                TECHNICAL DESCR:
+                                  Set of codes 
+
+                CROSS-REFERENCE:  52.01^A^MUMPS 
+                                  1)= K:X'=0 ^PSRX(DA(1),4,"A",$P(^PSRX(DA(1),4,DA,0),"^",3),DA) S:X=0 ^PSRX(DA(1),4,"A",$P(^PSRX(DA(1),4,DA,0),"^",3),DA)=""
+                                  2)= K ^PSRX(DA(1),4,"A",$P(^PSRX(DA(1),4,DA,0),"^",3),DA)
+                                   Used to file Vendor Data in the appropriate Event multiple.  
+
+
+                CROSS-REFERENCE:  52^AR^MUMPS 
+                                  1)= I X=1 N X S X="PSXREF" X ^%ZOSF("TEST") Q:'$T  S X=1 D AR^PSXREF
+                                  2)= Q
+                                   This cross reference is set when the fill for an Rx is released by the CMOP.  
+
+
+                CROSS-REFERENCE:  52^AS^MUMPS 
+                                  1)= I X=0 N X S X="PSXREF" X ^%ZOSF("TEST") Q:'$T  S X=0 D AS^PSXREF
+                                  2)= S TMP=X N X S X="PSXREF" X ^%ZOSF("TEST") Q:'$T  S X=TMP D ASKILL^PSXREF
+                                  This cross reference is set when the Rx is transmitted to the CMOP. Format is transmission date/time,DA(1),DA.  
+
+
+
+52.01,4         NDC RECEIVED           0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUN 07, 2005 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  The National Drug Code (NDC) returned for this prescription.  
+
+
+52.01,5         CANCELLED DATE/TIME    0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 28, 1993 
+                DESCRIPTION:       This is the date and time the Rx was cancelled at the CMOP.  If cancelled, the Rx was not filled.  
+                                   
+
+
+52.01,6         RESUBMIT STATUS        0;6 SET
+
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      JUN 21, 1996 
+                DESCRIPTION:
+                                  This field is used to track whether this fill has been resubmitted to the CMOP.  If the field contains "yes" then the fill has been resubmitted and cannot be resubmitted again.  
+
+
+52.01,8         CANCELLED REASON       1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+                LAST EDITED:      JUL 05, 1995 
+                HELP-PROMPT:      Answer must be 3-40 characters in length. 
+                DESCRIPTION:       This is the free text reason the Rx was not filled at the CMOP.  
+                                    
+
+
+52.01,9         DATE SHIPPED           1;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 05, 1995 
+                HELP-PROMPT:      DATE/TIME Rx shipped from the vendor. 
+                DESCRIPTION:
+                                  The date/time the prescription was shipped to the patient from the CMOP.  
+
+
+52.01,10        CARRIER                1;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+                LAST EDITED:      JUL 05, 1995 
+                HELP-PROMPT:      Answer must be 3-40 characters in length. 
+                DESCRIPTION:
+                                  The carrier responsible for shipping the prescription to the patient.  
+
+
+52.01,11        PACKAGE ID             1;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+                LAST EDITED:      JUL 05, 1995 
+                HELP-PROMPT:      Answer must be 3-40 characters in length. 
+                DESCRIPTION:
+                                  A unique identification code assigned by the non-DHCP system for tracking the  prescription shipment.  
+
+
+52.01,12        NDC SENT               0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      MAR 23, 2005 
+                HELP-PROMPT:      Answer must be 1-20 characters in length 
+                DESCRIPTION:
+                                  The National Drug Code (NDC) sent for this prescription.  
+
+
+52.01,35        FDA MED GUIDE FILENAME FDA;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+                LAST EDITED:      AUG 23, 2011 
+                HELP-PROMPT:      Answer must be 1-100 characters in length. 
+                DESCRIPTION:
+                                  This field contains the filename of the FDA Medication Guide for the drug in this prescription at the time the fill was transmitted to CMOP.  
+
+
+
+
+52,401        LOT/EXP                5;0 Multiple #52.0401 (Add New Entry without Asking)
+
+
+52.0401,.01     LOT/EXP                0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      MAY 12, 1993 
+                HELP-PROMPT:      Answer must be 1-40 characters in length. 
+                DESCRIPTION:
+                                  The lot number used to fill this prescription.  
+
+
+52.0401,1       EXPIRATION DATE        0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 15, 1993 
+                DESCRIPTION:
+                                  The expiration date of the lot number for this prescription.  
+
+
+52.0401,2       RX INDICATOR           0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 15, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 9, 0 Decimal Digits 
+                DESCRIPTION:
+                                  The fill number for this prescription. A '0' indicates the original fill.  
+
+
+
+
+52,52311      ICD DIAGNOSIS          ICD;0 POINTER Multiple #52.052311
+
+              LAST EDITED:      APR 01, 2004 
+
+52.052311,.01   ICD DIAGNOSIS          0;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Multiply asked)
+
+                LAST EDITED:      OCT 15, 2003 
+                HELP-PROMPT:      Enter a pointer to file #80 
+                DESCRIPTION:
+                                  Diagnoses (up to nine) assigned for this prescription by the Ordering Provider.  
+
+                CROSS-REFERENCE:  52.052311^B 
+                                  1)= S ^PSRX(DA(1),"ICD","B",$E(X,1,30),DA)=""
+                                  2)= K ^PSRX(DA(1),"ICD","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  52^E 
+                                  1)= S ^PSRX("E",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PSRX("E",$E(X,1,30),DA(1),DA)
+
+
+52.052311,1     AGENT ORANGE           0;2 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 30, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to direclty identify the corresponding ICD-9 code in the .01 field as related to Agent Orange for 3rd party billing.  
+
+
+52.052311,2     IONIZING RADIATION     0;3 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 30, 2004 
+                HELP-PROMPT:      Enter NO for YES. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the  .01 field as IONIZING RADIATION related for 3rd party billing.  
+
+
+52.052311,3     SERVICE CONNECTION     0;4 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 30, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Service Connection for 3rd Party Billing.  
+
+
+52.052311,4     SOUTHWEST ASIA CONDITIONS 0;5 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JUN 26, 2006 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Southwest Asia Conditions for 3rd Party Billing.  
+
+
+52.052311,5     MILITARY SEXUAL TRAUMA 0;6 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 29, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Military Sexual Trauma for 3rd Party Billing.  
+
+
+52.052311,6     HEAD AND/OR NECK CANCER 0;7 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 29, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Head and/or Neck Cancer for 3rd Party Billing.  
+
+
+52.052311,7     COMBAT VETERAN         0;8 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 29, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Combat Veteran for 3rd Party Billing.  
+
+
+52.052311,8     PROJ 112/SHAD          0;9 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 17, 2006 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to PROJ 112/SHAD for 3rd Party Billing.  
+
+
+
+
+52,521011     HOSPITAL COVERAGE       ;  BOOLEAN COMPUTED
+
+              MUMPS CODE:       S X=$S('$D(^PSRX(D0,0)):0,$P(^PSRX(D0,0),"^",2)="":0,$D(^DPT($P(^PSRX(D0,0),"^",2),4)):$P(^(4),"^",5),1:0)
+              ALGORITHM:        S X=$S('$D(^PSRX(D0,0)):0,$P(^PSRX(D0,0),"^",2)="":0,$D(^DPT($P(^PSRX(D0,0),"^",2),4)):$P(^(4),"^",5),1:0)
+              LAST EDITED:      JUN 09, 1990 
+              DESCRIPTION:
+                                This field is used to compute hospital coverage from MAS.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CMOP TRANSMISSION (#550.2)        CMOP EVENT:TRANSMISSION NUMBER (#.01)
+
+DRUG (#50)                        DRUG (#6)
+
+DRUG UNITS (#50.607)              MEDICATION INSTRUCTIONS:UNITS (#2)
+
+HOSPITAL LOCATION (#44)           CLINIC (#5)
+
+IB ACTION TYPE (#350.1)           COPAY TRANSACTION TYPE (#105)
+
+IB COPAY TRANSACTIONS (#354.71)   COPAY EXCEEDING CAP (#106.6)
+                                  REFILL:COPAY EXCEEDING CAP (#9.1)
+
+ICD DIAGNOSIS (#80)               ICD DIAGNOSIS:ICD DIAGNOSIS (#.01)
+
+INTEGRATED BILLING ACTION 
+                   (#350)         IB NUMBER (#106)
+                                  REFILL:IB NUMBER (#9)
+
+MEDICATION ROUTES (#51.2)         MEDICATION INSTRUCTIONS:ROUTE (#6)
+                                  MEDICATION ROUTES:MEDICATION ROUTES (#.01)
+
+NEW PERSON (#200)                 PROVIDER (#4)
+                                  ENTERED BY (#16)
+                                  PHARMACIST (#23)
+                                  FINISHING PERSON (#38)
+                                  FILLING PERSON (#38.1)
+                                  CHECKING PHARMACIST (#38.2)
+                                  NDC VALIDATED BY (#84)
+                                  VERIFYING PHARMACIST (#104)
+                                  COSIGNING PHYSICIAN (#109)
+                                  COPAY ACTIVITY LOG:INITIATOR OF COPAY ACTIVITY (#2)
+                                  LABEL DATE/TIME:PRINTED BY (#3)
+                                  REFILL:PHARMACIST NAME (#4)
+                                  CLERK CODE (#6)
+                                  PROVIDER (#15)
+                                  FILLING PERSON (#19)
+                                  CHECKING PHARMACIST (#20)
+                                  NDC VALIDATED BY (#84)
+                                  PARTIAL DATE:PHARMACIST NAME (#.05)
+                                  CLERK CODE (#.07)
+                                  PROVIDER (#6)
+                                  FILLING PERSON (#10)
+                                  CHECKING PHARMACIST (#11)
+                                  REJECT INFO:PHARMACIST (#4)
+                                  CLOSED BY (#11)
+                                  COMMENTS:USER (#1)
+                                  ACTIVITY LOG:INITIATOR OF ACTIVITY (#.03)
+
+OUTPATIENT SITE (#59)             DIVISION (#20)
+                                  REFILL:DIVISION (#8)
+                                  PARTIAL DATE:DIVISION (#.09)
+
+PATIENT (#2)                      PATIENT (#2)
+
+PFSS ACCOUNT (#375)               PFSS ACCOUNT REFERENCE (#125)
+                                  REFILL:PFSS ACCOUNT REFERENCE (#21)
+
+PHARMACY ORDERABLE ITEM (#50.7)   PHARMACY ORDERABLE ITEM (#39.2)
+
+PRESCRIPTION (#52)                PREVIOUS ORDER # (#39.4)
+                                  FORWARD ORDER # (#39.5)
+
+RX PATIENT STATUS (#53)           PATIENT STATUS (#3)
+
+
+File #52
+
+  Record Indexes:
+
+  D (#175)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  This indexes the external placer order number and external application.
+      Description:  This cross reference sets the global ^PSRX("D",EXTERNAL PLACER ORDER NUMBER,EXTERNAL APPLICATION,DA)="".  
+        Set Logic:  S ^PSRX("D",$E(X(1),1,30),$E(X(2),1,60),DA)=""
+       Kill Logic:  K ^PSRX("D",$E(X(1),1,30),$E(X(2),1,60),DA)
+       Whole Kill:  K ^PSRX("D")
+             X(1):  EXTERNAL PLACER ORDER NUMBER  (52,123)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  EXTERNAL APPLICATION  (52,124)  (Subscr 2)  (Len 60)  (forwards)
+
+
+INPUT TEMPLATE(S):
+PSO PARTIAL                   FEB 13, 1997@15:15  USER #0    
+
+PRINT TEMPLATE(S):
+PSO DRUG WARNINGS             FEB 04, 2010@12:52  USER #0    ^PSOXWRN                                                                                                                                                               [PSO DRUG WARNINGS HEADER]
+     Outpatient Prescription Drug Warnings
+PSO DRUG WARNINGS HEADER      JAN 15, 2010@11:57  USER #0    ^PSOXWRH                                                                                                                                                                                        @
+     Outpatient Prescription Drug Warnings
+PSO HOLD                      MAY 19, 1994@12:13  USER #0                                                                                                                                                                                PRESCRIPTIONS ON HOLD
+PSO NARC LIST                 MAR 08, 1993@15:47  USER #0                                                                                                                                                                               NARCOTIC PRESCRIPTIONS
+
+SORT TEMPLATE(S):
+PSO DRUG WARNINGS             FEB 04, 2010@11:38  USER #0    ^DISZ*                                                                                                                                                              '' Print Template always used
+SORT BY: 'DIVISION//    (User is asked range)
+  WITHIN DIVISION, SORT BY: PATIENT// (PATIENT from A to Z)
+    WITHIN PATIENT, SORT BY: DRUG//    (User is asked range)
+      WITHIN DRUG, SORT BY: @FINISH DATE/TIME//    (User is asked range)
+     Outpatient Prescription Drug Warning List
+
+PSO HOLD LIST                 MAY 17, 1994@09:36  USER #0    
+SORT BY: #DIVISION//    (User is asked range)
+  WITHIN DIVISION, SORT BY: HOLD REASON;S2//    (User is asked range)
+    WITHIN HOLD REASON, SORT BY: HOLD DATE//    (User is asked range)
+
+PSO NARC LIST                 MAR 08, 1993@15:50  USER #0    
+SORT BY: +FILL DATE//    (User is asked range)
+  WITHIN FILL DATE, SORT BY: (DRUG:DEA, SPECIAL HDLG)["A";L1// ((DRUG:DEA, SPECIAL HDLG)[""A"")
+    WITHIN (DRUG:DEA, SPECIAL HDLG)["A", SORT BY: DRUG// (DRUG not null)
+
+PSOUPAT                       MAR 28, 1989        USER #0    
+SORT BY: DRUG//    (User is asked range)
+  WITHIN DRUG, SORT BY: RX #//
+    WITHIN RX #, SORT BY: ISSUE DATE//    (User is asked range)
+
+
+FORM(S)/BLOCK(S):

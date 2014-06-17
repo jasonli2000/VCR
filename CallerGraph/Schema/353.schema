@@ -1,0 +1,289 @@
+STANDARD DATA DICTIONARY #353 -- BILL FORM TYPE FILE                                                                                                                                                                              MAY 20,2014@15:35:35  PAGE 1
+STORED IN ^IBE(353,  (11 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This is a reference file containing the types of health insurance claim forms used in billing.  
+ 
+Sites may add local forms to this file however, the number of entries for locally added forms should be in the stations number range of Station number time 1000.  
+ 
+If other than UB-04 forms are pointed to by the BILL/CLAIMS file, then the follow-up letter job will create a separate tasked job for each bill to the Follow-up Printer for that form using the specified routine for that form.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: PARENT FORM field (#2.05) of the BILL FORM TYPE File (#353) 
+               PRINT FORM NAME field (#2.08) of the BILL FORM TYPE File (#353) 
+               LOCAL BILLING SCREEN field (#2.09) of the BILL FORM TYPE File (#353) 
+               BILL FORM field (#.01) of the IB FORM SKELETON DEFINITION File (#364.6) 
+               FORM TYPE field (#.19) of the BILL/CLAIMS File (#399) 
+               
+
+CROSS
+REFERENCED BY: NAME(B)
+
+353,.001      NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 27, 1992 
+              HELP-PROMPT:      Type a Number between 1 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter a number that is within the number range for your facility, that is xxx000 to xxx999 where xxx is your station number.  
+
+
+353,.01       NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      APR 10, 1992 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                This field names a type of form that is available for billing purposes.  
+
+              DELETE TEST:      1,0)= I DA<999 W !,"Deleting Standard entries not allowed"
+
+                                364.6,0)= I $O(^IBA(364.6,"B",DA,"")) W !,*7,"Cannot delete this form until its form fields are deleted",!
+
+              CROSS-REFERENCE:  353^B 
+                                1)= S ^IBE(353,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(353,"B",$E(X,1,30),DA)
+
+
+353,.02       DEFAULT PRINTER (BILLING) 0;2 FREE TEXT
+
+              INPUT TRANSFORM:  S IBL=X,X=$P(X,";"),DIC=3.5,DIC(0)="EQ" D ^DIC K:Y'>0!(X=" ") X S:$D(X) X=X_$S(IBL[";":";"_$P(IBL,";",2,99),1:"") K IBL S DIC=DIE
+              LAST EDITED:      APR 27, 1992 
+              HELP-PROMPT:      Enter the device that is the default billing printer for this form. 
+              DESCRIPTION:
+                                This is the default printer that will appear at selected prompts for this form type.  
+
+              EXECUTABLE HELP:  S DIC=3.5,DIC(0)="E",X="?" D ^DIC S DIC=DIE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+353,.03       FOLLOW-UP PRINTER (A/R) 0;3 FREE TEXT
+
+              INPUT TRANSFORM:  S IBL=X,X=$P(X,";"),DIC=3.5,DIC(0)="EQ" D ^DIC K:Y'>0!(X=" ") X S:$D(X) X=X_$S(IBL[";":";"_$P(IBL,";",2,99),1:"") K IBL S DIC=DIE
+              LAST EDITED:      JAN 16, 2007 
+              HELP-PROMPT:      Enter the device that is the default printer for follow-up bills for this form type. 
+              DESCRIPTION:
+                                For forms other than the UB-04, this is the default printer that has this form mounted for follow-up letter/forms for Accounts Receivable.  
+
+              EXECUTABLE HELP:  S DIC=3.5,DIC(0)="E",X="?" D ^DIC S DIC=DIE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+353,1.01      ROUTINE                1;E1,245 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1)!(X'?.1ANP.7AN.1"^"1ANP.7AN) X
+              LAST EDITED:      APR 27, 1992 
+              HELP-PROMPT:      Answer must be 1-25 characters in length.  It must be in the form of [TAG^]ROUTINE. 
+              DESCRIPTION:
+                                This is the routine that will get executed for follow-up letters and bills printed in a batch if this is not a UB-82 entry.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+353,2.01      BASE FILE              2;1 POINTER TO FILE FILE (#1)
+
+              LAST EDITED:      FEB 22, 1996 
+              HELP-PROMPT:      Enter the Fileman file to be used as a 'base' to extract Fileman flds from. 
+              DESCRIPTION:
+                                This is the number of the Fileman file to be used as a 'base' to extract Fileman fields for this form.  
+
+
+353,2.02      FORMAT TYPE            2;2 SET
+
+                                'P' FOR PRINTED FORM; 
+                                'T' FOR TRANSMITTED FORM; 
+                                'S' FOR BILLING SCREEN; 
+              LAST EDITED:      OCT 29, 1999 
+              HELP-PROMPT:      Enter the type of form that is being defined. 
+              DESCRIPTION:
+                                This is the type of form that is being defined.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^353^2.05 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=Y(0),X=X S X=X="S" I X S X=DIV S Y(1)=$S($D(^IBE(353,D0,2)):^(2),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X=DA X ^DD(353,2.02,1,1,1.4)
+                                1.4)= S DIH=$S($D(^IBE(353,DIV(0),2)):^(2),1:""),DIV=X S $P(^(2),U,5)=DIV,DIH=353,DIG=2.05 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBE(353,D0,2)):^(2),1:"") S X=$P(Y(1),U,2),X=X S X=X="S" I X S X=DIV S Y(1)=$S($D(^IBE(353,D0,2)):^(2),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X="" X ^DD(353,2.02,1
+                                ,1,2.4)
+
+                                2.4)= S DIH=$S($D(^IBE(353,DIV(0),2)):^(2),1:""),DIV=X S $P(^(2),U,5)=DIV,DIH=353,DIG=2.05 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                3)= Please don't delete or screen 9 functionality won't function
+                                CREATE CONDITION)= INTERNAL(FORMAT TYPE)="S"
+                                CREATE VALUE)= S X=DA
+                                DELETE CONDITION)= INTERNAL(FORMAT TYPE)="S"
+                                DELETE VALUE)= @
+                                FIELD)= PARENT FORM
+
+
+353,2.03      FORM LENGTH            2;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 20, 1995 
+              HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                If a printed form, this is the number of lines that the form has to be used to know when a form feed needs to be sent to the printer.  
+
+
+353,2.04      NATIONAL FORM          2;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 16, 1996 
+              HELP-PROMPT:      Answer YES if this is a national form 
+              DESCRIPTION:
+                                This field is set to YES (1) for nationally distributed forms, is null or 0 for locally defined billing forms.  
+
+
+353,2.05      PARENT FORM            2;5 POINTER TO BILL FORM TYPE FILE (#353)
+
+              INPUT TRANSFORM:  S DIC("S")="I $S($P($G(^(2)),U,2)=""S"":1,1:$P($G(^(2)),U,4)),$P($G(^IBE(353,Y,2)),U,2)=$P($G(^IBE(353,DA,2)),U,2),+$G(^IBE(353,Y,2))=+$G(^IBE(353,DA,2))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 29, 1999 
+              HELP-PROMPT:      Enter the name of the parent form that this local form will be associated with. 
+              DESCRIPTION:      This is the name of the national parent form that the local form is associated with.  Association in this way allows a site to override specific fields in the national form with local modifications without changing the 
+                                national form definition.  The output generator uses all national form fields associated with the local form except for those fields overridden.  
+
+              SCREEN:           S DIC("S")="I $S($P($G(^(2)),U,2)=""S"":1,1:$P($G(^(2)),U,4)),$P($G(^IBE(353,Y,2)),U,2)=$P($G(^IBE(353,DA,2)),U,2),+$G(^IBE(353,Y,2))=+$G(^IBE(353,DA,2))"
+              EXPLANATION:      Must point to a national file entry of the same format type and base file
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the FORMAT TYPE field of the BILL FORM TYPE File 
+
+
+353,2.06      SHORT DESCRIPTION      2;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      FEB 20, 1996 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                This field contains a brief explanantion of the purpose of the form.  
+
+
+353,2.07      FIELD DELIMITER        2;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+              LAST EDITED:      MAR 06, 1996 
+              HELP-PROMPT:      Answer must be 1 character in length.  For an '^', leave this field blank. 
+              DESCRIPTION:      This is the delimiter that will be placed between fields of a transmitted type form by the output generator.  If this field is left blank, an '^' is assumed to be the delimiter.  Fileman will not allow an '^' to be entered 
+                                in this field.  
+
+
+353,2.08      PRINT FORM NAME        2;8 POINTER TO BILL FORM TYPE FILE (#353)
+
+              INPUT TRANSFORM:  S DIC("S")="I $S(DA=+Y:1,1:$P($G(^IBE(353,Y,2)),U,5)=DA)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUN 20, 1996 
+              HELP-PROMPT:      Enter the name of the form to be used by the output formatter when this bill type is printed. 
+              DESCRIPTION:
+                                This is the pointer to the entry in this file (itself or another entry with this entry as its parent) that will be used to print bills of this form type.  
+
+              SCREEN:           S DIC("S")="I $S(DA=+Y:1,1:$P($G(^IBE(353,Y,2)),U,5)=DA)"
+              EXPLANATION:      Only the same entry or an entry with this entry as its parent can be chosen.
+
+353,2.09      LOCAL BILLING SCREEN   2;9 POINTER TO BILL FORM TYPE FILE (#353)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P($G(^IBE(353,+Y,2)),U,2)=""S""" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      JUN 06, 2011 
+              HELP-PROMPT:      Enter the name of the screen to be used as the local billing screen. 
+              DESCRIPTION:
+                                This is the form that will be used to build the local billing screen for enter/edit a bill.  
+
+              SCREEN:           S DIC("S")="I $P($G(^IBE(353,+Y,2)),U,2)=""S"""
+              EXPLANATION:      Must be a screen form.
+
+353,50        ENTRY PRE-PROCESSOR    PRE;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      DEC 07, 1995 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:
+                                The code that is executed before extracting data for an individual form entry using the forms output generator.  Can be used to set up any variables necessary before processing a single entry.  
+
+              TECHNICAL DESCR:  Used by the forms output generator before each entry is processed through the extract process.  If the form has an associated PARENT FORM, and this field is null, the PARENT FORM's ENTRY POST-PROCESSOR field will be
+                                executed.  
+
+              WRITE AUTHORITY:  @
+
+353,51        ENTRY POST-PROCESSOR   POST;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      DEC 07, 1995 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:      The code that is executed after extracting data for an individual form entry using the forms output generator.  Can be used to clean up variables or do some ancillary processing such as update print date or printed by 
+                                fields.  
+
+              TECHNICAL DESCR:  Used by the forms output generator after each entry is processed through the extract process.  If the form has an associated PARENT FORM, and this field is null, the PARENT FORM's ENTRY POST-PROCESSOR field will be
+                                executed.  
+
+
+353,52        OUTPUT CODE            OUT;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      DEC 07, 1995 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:
+                                The code to xecute to actually print or transmit the form entry after all fields have been extracted to the sort global.  
+
+              WRITE AUTHORITY:  @
+
+353,53        EXTRACT CODE           EXT;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      MAR 06, 1996 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:
+                                The code to xecute to actually extract data into the sort global for the form entry.  
+
+              WRITE AUTHORITY:  @
+
+353,54        FORM PRE-PROCESSOR     FPRE;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      MAR 07, 1996 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:
+                                The code that is executed before starting to extract any entries (using the forms output generator) for this form.  
+
+              TECHNICAL DESCR:  This code is executed when using the auto-generate feature of the forms output generator to set up variables or do preliminary processing before any entries selected have been extracted via the forms generator for a form. 
+                                If the form has an associated PARENT FORM, and this field is null, the PARENT FORM's FORM PRE-PROCESSOR field will be executed.  
+
+              WRITE AUTHORITY:  @
+
+353,55        FORM POST-PROCESSOR    FPOST;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      MAR 07, 1996 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:
+                                The code that is executed after all entries have been passed through the forms output generator extract for this form.  Can be used to clean up any variables used in processing.  
+
+              TECHNICAL DESCR:  This code is executed when using the auto-generate feature of the forms output generator to clean up or do any additional processing after all entries selected have been extracted via the forms generator for a form.  If
+                                the form has an associated PARENT FORM, and this field is null, the PARENT FORM's FORM POST-PROCESSOR field will be executed.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILL FORM TYPE (#353)             PARENT FORM (#2.05)
+                                  PRINT FORM NAME (#2.08)
+                                  LOCAL BILLING SCREEN (#2.09)
+
+FILE (#1)                         BASE FILE (#2.01)
+
+
+
+INPUT TEMPLATE(S):
+IB DEVICE                     AUG 22, 1996@13:24  USER #0    
+     Bill Form Print Device Setup.
+IBCE ADD/EDIT LOCAL FORM      JUL 08, 1996@13:12  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

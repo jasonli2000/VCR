@@ -1,0 +1,586 @@
+STANDARD DATA DICTIONARY #27.11 -- PATIENT ENROLLMENT FILE                                                                                                                                                                        MAY 20,2014@15:40:47  PAGE 1
+STORED IN ^DGEN(27.11,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains patient enrollment records.  Enrollment records should not be added, edited, or deleted except through the use of the enrollment software that is part of Registration.  Doing so would likely cause the enrollment database to become
+corrupted.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: PATIENT (#.02)[R]
+
+POINTED TO BY: CURRENT ENROLLMENT field (#27.01) of the PATIENT File (#2) 
+               PRIOR ENROLLMENT RECORD field (#.09) of the PATIENT ENROLLMENT File (#27.11) 
+               
+
+CROSS
+REFERENCED BY: ENROLLMENT STATUS(AC), ENROLLMENT PRIORITY(ADGRU07), ENROLLMENT APPLICATION DATE(AENR01), SOURCE OF ENROLLMENT(AENR03), ENROLLMENT STATUS(AENR04), FACILITY RECEIVED(AENR06), ENROLLMENT PRIORITY(AENR07), EFFECTIVE DATE(AENR08), 
+               ENROLLMENT DATE(AENR1), ENROLLMENT END DATE(AENR11), ENROLLMENT SUBGROUP(AENR12), ENROLLMENT STATUS(AENRC), ENROLLMENT APPLICATION DATE(B), PATIENT(C)
+
+27.11,.01     ENROLLMENT APPLICATION DATE 0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EPX" D ^%DT S X=Y K:Y<1 X I $D(X) D H^DGUTL K:X>DGTIME X K DGTIME,DGDATE I $G(X)>0 D ENRAPP^DGENDD
+              LAST EDITED:      MAY 31, 2007 
+              HELP-PROMPT:      Enter the date of the application for enrollment. Date must not be before 10/1/1996 or before patient's DOB. 
+              DESCRIPTION:       The date the enrollment application/registration was completed, i.e., the the signature date.  Enrollment Application Date: 
+                                   Must be a date prior or equal to the veterans 'Date of Death' 
+                                   Must be a precise date, i.e. a day, month and year MUST be included 
+                                   Cannot be a date prior to the veterans 'Date of Birth' 
+                                   Cannot be a date in the future 
+                                   Cannot be a date prior to 10/1/1996 
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  27.11^B 
+                                1)= S ^DGEN(27.11,"B",$E(X,1,30),DA)=""
+                                2)= K ^DGEN(27.11,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  27.11^AENR01^MUMPS 
+                                1)= D E2711^DGRTRIG(DA)
+                                2)= D E2711^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+27.11,.02     PATIENT                0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the patient to enroll. 
+              DESCRIPTION:
+                                The patient associated with the enrollment.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  27.11^C 
+                                1)= S ^DGEN(27.11,"C",$E(X,1,30),DA)=""
+                                2)= K ^DGEN(27.11,"C",$E(X,1,30),DA)
+                                This cross-reference allows look-up by patient.  
+
+
+
+27.11,.03     SOURCE OF ENROLLMENT   0;3 SET (Required)
+
+                                '1' FOR VAMC; 
+                                '2' FOR HEC; 
+                                '3' FOR OTHER VAMC; 
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Enter the source of the enrollment determination. 
+              DESCRIPTION:
+                                How the enrollment was determined.  
+
+              CROSS-REFERENCE:  27.11^AENR03^MUMPS 
+                                1)= D E2711^DGRTRIG(DA)
+                                2)= D E2711^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+27.11,.04     ENROLLMENT STATUS      0;4 POINTER TO ENROLLMENT STATUS FILE (#27.15) (Required)
+
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Enter the status of the application for enrollment. 
+              DESCRIPTION:
+                                The status of an application for enrollment.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  27.11^AENRC^MUMPS 
+                                1)= D SET2^DGENDD(DA,X)
+                                2)= D KILL2^DGENDD(DA,X)
+                                3)= DO NOT DELETE
+                                This index sorts the patients by their current enrollment status.  The CURRENT ENROLLMENT field of the PATIENT file also triggers this cross-reference.  
+                                 
+                                The format of the index is: 
+                                 
+                                ^DPT("AENRC",<current enrollment status>,<DFN>)="" 
+
+
+              CROSS-REFERENCE:  27.11^AC^MUMPS 
+                                1)= D SETREM^DGENDD(DA,X)
+                                2)= D SETREM^DGENDD(DA,X)
+                                This cross-reference calls an API that will update the Remarks field #.091 of the Patient file #2 depending on the value of the enrollment status.  If the enrollment status contains the word REJECTED, then the Remarks 
+                                field will be updated with the message **REJECTED**.  If the enrollment status is not a Rejected status then the message **REJECTED** will be removed from the Remarks field.  
+
+
+              CROSS-REFERENCE:  27.11^AENR04^MUMPS 
+                                1)= D E2711^DGRTRIG(DA)
+                                2)= D E2711^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+27.11,.05     REASON CANCELED/DECLINED 0;5 SET
+
+                                '1' FOR DISSATISFIED WITH CARE; 
+                                '2' FOR GEOGRAPHIC ACCESS; 
+                                '3' FOR OTHER INSURANCE; 
+                                '4' FOR OTHER; 
+              LAST EDITED:      MAY 19, 1997 
+              HELP-PROMPT:      Enter the reason the veteran is declining or cancelling enrollment. 
+              DESCRIPTION:
+                                When a patient self dis-enrolls or requests that his enrollment be ceased, s/he is asked to give a reason.  
+
+
+27.11,.06     FACILITY RECEIVED      0;6 POINTER TO INSTITUTION FILE (#4)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P($G(^(99)),""^"")]""""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Enter the facility that received the patient's application for enrollment. 
+              DESCRIPTION:
+                                This field should be used to document the VAMC that receives the application for enrollment.  
+
+              SCREEN:           S DIC("S")="I $P($G(^(99)),""^"")]"""""
+              EXPLANATION:      Allows only facilities that have a station number.
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  27.11^AENR06^MUMPS 
+                                1)= D E2711^DGRTRIG(DA)
+                                2)= D E2711^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+27.11,.07     ENROLLMENT PRIORITY    0;7 SET
+
+                                '1' FOR GROUP 1; 
+                                '2' FOR GROUP 2; 
+                                '3' FOR GROUP 3; 
+                                '4' FOR GROUP 4; 
+                                '5' FOR GROUP 5; 
+                                '6' FOR GROUP 6; 
+                                '7' FOR GROUP 7; 
+                                '8' FOR GROUP 8; 
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Enter the enrollment priority group determined for this patient. 
+              DESCRIPTION:
+                                This field will contain the enrollment priority group determined for this enrollment.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  27.11^ADGRU07^MUMPS 
+                                1)= N DG1 S DG1=+$P(^(0),"^",2) I +DG1>0,($T(ADGRU^DGRUDD01)'="") D ADGRU^DGRUDD01(DG1)
+                                2)= N DG1 S DG1=+$P(^(0),"^",2) I +DG1>0,($T(ADGRU^DGRUDD01)'="") D ADGRU^DGRUDD01(DG1)
+                                This cross reference is used to remember that changes were made to a monitored data field in the PATIENT ENROLLEMENT File (#27.11) required for a vendor RAI/MDS COTS system.  Execution of this cross reference will create
+                                an entry in the ADT/HL7 PIVOT file (#391.71) and mark it as requiring transmission of an HL7 demographic A08 update message to the COTS interface.  
+                                 
+                                The local variable DGRUGA08 will be set to 1 if the cross reference is not to be executed as part of a re-indexing.  
+
+
+              CROSS-REFERENCE:  27.11^AENR07^MUMPS 
+                                1)= D E2711^DGRTRIG(DA)
+                                2)= D E2711^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+27.11,.08     EFFECTIVE DATE         0;8 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Enter the effective date of the enrollment change. 
+              DESCRIPTION:
+                                For any change that may affect a patient's enrollment, this field documents the effective date of the change.  
+
+              CROSS-REFERENCE:  27.11^AENR08^MUMPS 
+                                1)= D E2711^DGRTRIG(DA)
+                                2)= D E2711^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+27.11,.09     PRIOR ENROLLMENT RECORD 0;9 POINTER TO PATIENT ENROLLMENT FILE (#27.11)
+
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the last enrollment record for the patient before this one. 
+              DESCRIPTION:      This field is used to maintain the enrollment history for the patient.  The enrollment history will be kept in the form of a linked list of enrollment records, with each record pointing to the enrollment record that came
+                                before it.  
+
+                                UNEDITABLE
+
+27.11,.1      ENROLLMENT DATE        0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Enter the date the enrollment period begins. 
+              DESCRIPTION:
+                                Beginning of the enrollment cycle.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  27.11^AENR1^MUMPS 
+                                1)= D E2711^DGRTRIG(DA)
+                                2)= D E2711^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+27.11,.11     ENROLLMENT END DATE    0;11 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Enter the last day of the veteran's enrollment period. 
+              DESCRIPTION:
+                                The date specifying the end of the veteran's enrollment period.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  27.11^AENR11^MUMPS 
+                                1)= D E2711^DGRTRIG(DA)
+                                2)= D E2711^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+27.11,.12     ENROLLMENT SUBGROUP    0;12 SET
+
+                                '1' FOR a; 
+                                '2' FOR b; 
+                                '3' FOR c; 
+                                '4' FOR d; 
+                                '5' FOR e; 
+                                '7' FOR g; 
+              LAST EDITED:      JAN 26, 2009 
+              HELP-PROMPT:      Enter the enrollment priority subgroup determined for this patient. 
+              DESCRIPTION:
+                                This field will contain the enrollment priority subgroup determined for this enrollment.  
+
+              CROSS-REFERENCE:  27.11^AENR12^MUMPS 
+                                1)= D E2711^DGRTRIG(DA)
+                                2)= D E2711^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+27.11,25      CANCELED/DECLINED REMARKS R;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      MAY 19, 1997 
+              HELP-PROMPT:      If REASON CANCELED/DECLINED is OTHER, enter an explanation of up to 60 characters. 
+              DESCRIPTION:
+                                This field is used to enter an explanation for why the veteran is canceling or declining enrollment if the only code that fits is OTHER.  
+
+
+27.11,50.01   ELIGIBILITY CODE       E;1 POINTER TO MAS ELIGIBILITY CODE FILE (#8.1)
+
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the eligibility code associated with the enrollment determination. 
+              DESCRIPTION:
+                                The eligibility code associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.02   SERVICE CONNECTED      E;2 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter YES if the veteran has a service connected disability, NO otherwise. 
+              DESCRIPTION:
+                                The service connection indicator associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+27.11,50.03   SERVICE CONNECTED PERCENTAGE E;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the service connected percentage associated with the enrollment determination. 
+              DESCRIPTION:
+                                The service connected percentage associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.04   POW STATUS INDICATED   E;4 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the POW status associated with the enrollment priority determination. 
+              DESCRIPTION:
+                                The POW status associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.05   RECEIVING A&A BENEFITS E;5 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the RECEIVING A&A BENEFITS status associated with the enrollment priority determination. 
+              DESCRIPTION:
+                                The RECEIVING A&A BENEFITS status associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.06   RECEIVING HOUSEBOUND BENEFITS E;6 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the RECEIVING HOUSEBOUND BENEFITS status that the enrollment priority determination is based on. 
+              DESCRIPTION:
+                                The RECEIVING HOUSEBOUND BENEFITS status that the enrollment priority determination is based on.  
+
+                                UNEDITABLE
+
+27.11,50.07   RECEIVING A VA PENSION E;7 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the RECEIVING A VA PENSION status that the enrollment priority determination is based on. 
+              DESCRIPTION:
+                                The RECEIVING A VA PENSION status that the enrollment priority determination is based on. 
+
+                                UNEDITABLE
+
+27.11,50.08   TOTAL ANNUAL VA CHECK AMOUNT E;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      AUG 29, 1997 
+              HELP-PROMPT:      Enter the TOTAL ANNUAL VA CHECK AMOUNT associated with the enrollment priority determination. 
+              DESCRIPTION:
+                                The TOTAL ANNUAL VA CHECK AMOUNT associated with the enrollment determination.  
+
+                                UNEDITABLE
+
+27.11,50.09   DISABILITY RET. FROM MILITARY E;9 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES, RECEIVING MILITARY RETIREMENT; 
+                                '2' FOR YES, RECEIVING MILITARY RETIREMENT IN LIEU OF VA COMPENSATION; 
+                                '3' FOR UNKNOWN; 
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the status of DISABILITY RETIREMENT FROM MILITARY associated with the enrollment priority determination. 
+              DESCRIPTION:
+                                The status of DISABILITY RET. FROM MILITARY that is associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.1    MEDICAID               E;10 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the Medicaid eligibility associated with the enrollment priority determination. 
+              DESCRIPTION:
+                                The Medicaid eligibility associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.11   EXPOSED TO AGENT ORANGE E;11 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the status of EXPOSED TO AGENT ORANGE associated with the enrollment priority determination. 
+              DESCRIPTION:
+                                The EXPOSED TO AGENT ORANGE status associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.12   RADIATION EXPOSURE INDICATED E;12 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      MAY 07, 2006 
+              HELP-PROMPT:      Enter the RADIATION EXPOSURE INDICATED status associated with the enrollment priority determination. 
+              DESCRIPTION:      Enter 'Y' if the veteran was exposed to ionizing radiation 1) at a nuclear device testing site (e.g. the Pacific Islands, NM or NV) or 2) as a POW or while serving in Hiroshima and/or Nagasaki, Japan from August 6, 1945
+                                through July 1, 1946, or 3) served at Department of Energy plants at Paducah, KY, Portsmouth, OH or the K25 area at Oak Ridge, TN for at least 250 days before February 1, 1992 or 4) served at Longshot, Milrow, or Cannikin
+                                underground nuclear tests at Amchitka Island, AK prior to January 1, 1974.  
+                                 
+                                Veterans exposed by method #3 or #4 are not eligible for copay exemption or enrollment in priority 6 based on their IR exposure.  
+                                 
+                                Enter 'N' if not exposed or 'U' if unknown.  
+                                 
+                                Once the record has been verified only HEC users may enter/edit this field.  
+                                 
+                                The RADIATION EXPOSURE INDICATED status associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.13   SOUTHWEST ASIA CONDITIONS E;13 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      JUN 21, 2006 
+              HELP-PROMPT:      Enter the SOUTHWEST ASIA CONDITIONS status associated with the enrollment priority determination. 
+              DESCRIPTION:
+                                The SOUTHWEST ASIA CONDITIONS status associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.14   MEANS TEST STATUS      E;14 POINTER TO MEANS TEST STATUS FILE (#408.32)
+
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the MEANS TEST STATUS associated with the enrollment priority determination. 
+              DESCRIPTION:
+                                The MEANS TEST STATUS associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+27.11,50.15   VETERAN CATASTROPHICALLY DISABLED E;15 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      JUN 18, 1999 
+              HELP-PROMPT:      This field must be "Y" or "N". 
+              DESCRIPTION:
+                                This field was created to capture the Veteran's CATASTROPHIC DISABILITY status associated with the enrollment priority determination.  
+
+
+27.11,50.16   PURPLE HEART INDICATED? E;16 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      DEC 19, 2000 
+              DESCRIPTION:      This field corresponds to the CURRENT PH INDICATOR field .531 in the PATIENT file 2.  It can be set by setting Purple Heart Indicated in the Registration screens, or by the Z11 Upload from HEC.  Acceptable values are Y and
+                                N.  
+
+              TECHNICAL DESCR:
+                                Added for Purple Heart DG*5.3*314.  
+
+
+27.11,50.17   UNEMPLOYABLE           E;17 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      MAY 19, 2004 
+              DESCRIPTION:
+                                Is this patient unemployable due to an SC condition as rated by VARO? 
+
+
+27.11,50.18   COMBAT VETERAN END DATE E;18 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      MAY 19, 2004 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                For veterans who have combat vet eligibility, this field represents the date when that eligibility ends.  
+
+
+27.11,50.19   PROJ 112/SHAD          E;19 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 02, 2005 
+
+27.11,50.2    DISCHARGED DUE TO DISABILITY E;20 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUL 08, 2005 
+              HELP-PROMPT:      Line of Duty disability discharge? 
+              DESCRIPTION:
+                                Indicates whether or not discharge was due to a disability incurred in the Line of Duty.  
+
+
+27.11,50.22   AGENT ORANGE EXPOSURE LOCATION E;22 SET
+
+                                'K' FOR KOREAN DMZ; 
+                                'V' FOR VIETNAM; 
+                                'O' FOR OTHER; 
+              LAST EDITED:      JUL 26, 2006 
+              HELP-PROMPT:      Enter where the patient was exposed to agent orange. 
+              DESCRIPTION:
+                                For this veteran applicant who was exposed to agent orange (EXPOSED TO AGENT ORANGE prompt must be answered YES) enter the location where the exposure occurred.  
+
+
+27.11,50.23   MEDAL OF HONOR INDICATED? E;23 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      FEB 14, 2011 
+              HELP-PROMPT:      If patient has received a Medal of Honor, enter 'Y'. If not, enter 'N' 
+              DESCRIPTION:
+                                This field corresponds to the CURRENT MOH INDICATOR (#.541) field in the PATIENT (#2) file. It is set by the Medal of Honor Indicated in the Registration screens, or by the Z11 Upload from HEC.  
+
+              TECHNICAL DESCR:
+                                This field is updated by the F cross-reference on the CURRENT MOH INDICATOR (#.541) field in the PATIENT (#2) file.  
+
+
+27.11,75.01   DATE/TIME ENTERED      U;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the date and time the record is being created. 
+              DESCRIPTION:
+                                This field is used as part of the audit trail for the enrollment process.  
+
+                                UNEDITABLE
+
+27.11,75.02   ENTERED BY             U;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 24, 1997 
+              HELP-PROMPT:      Enter the user who is enrolling the veteran. 
+              DESCRIPTION:
+                                For local enrollments, this field will point to the user who is enrolling the veteran.  
+
+                                UNEDITABLE
+
+27.11,76      RADIATION EXPOSURE METHOD E;21 SET
+
+                                '2' FOR HIROSHIMA/NAGASAKI; 
+                                '3' FOR ATMOSPHERIC NUCLEAR TESTING; 
+                                '4' FOR H/N AND ATMOSPHERIC NUCLEAR TESTING; 
+                                '5' FOR UNDERGROUND NUCLEAR TESTING; 
+                                '6' FOR EXPOSURE AT NUCLEAR FACILITY; 
+                                '7' FOR OTHER; 
+              LAST EDITED:      MAR 21, 2006 
+              DESCRIPTION:
+                                The RADIATION EXPOSURE METHOD associated with the enrollment priority determination.  
+
+                                UNEDITABLE
+
+
+      FILES POINTED TO                      FIELDS
+
+ENROLLMENT STATUS (#27.15)        ENROLLMENT STATUS (#.04)
+
+INSTITUTION (#4)                  FACILITY RECEIVED (#.06)
+
+MAS ELIGIBILITY CODE (#8.1)       ELIGIBILITY CODE (#50.01)
+
+MEANS TEST STATUS (#408.32)       MEANS TEST STATUS (#50.14)
+
+NEW PERSON (#200)                 ENTERED BY (#75.02)
+
+PATIENT (#2)                      PATIENT (#.02)
+
+PATIENT ENROLLMENT (#27.11)       PRIOR ENROLLMENT RECORD (#.09)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

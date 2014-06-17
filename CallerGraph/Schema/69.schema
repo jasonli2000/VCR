@@ -1,0 +1,772 @@
+STANDARD DATA DICTIONARY #69 -- LAB ORDER ENTRY FILE                                                                                                                                                                              MAY 20,2014@15:36:59  PAGE 1
+STORED IN ^LRO(69,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                               (VERSION 5.2)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file controls the orderly sequence of lab test ordering.  All ordering information is stored in the ^LRO global.  This file is pointed to by many other files, and supplies information for order entry and order status output.  No editing of the
+entries should take place, as it may cause corruption or loss of ordering information. The file contains print and sort templates that are used by a variety of lab routines and options to format reports.  
+ 
+CROSS REFERENCE DESCRIPTION: 
+ ^LRO(69,"C",'ORDER #',LRODT,LRSN) 
+ ^LRO(69,LRODT,1,"AA",LRDFN,LRSN) = Used by LROS (order status) 
+ ^LRO(69,"AT",LRDFN,LRTEST,LRSREC,LRODT) = "" This is used for maximum test order frequency.  
+  >>> THIS GROUP IS SET AT THE TIME OF VERIFICATION IF NOT A CONTROL. <<< 
+ ^LRO(69,DT,1,"AC",'REPORT ROUTING LOCATION',LRSN) = "" or 1 
+   Used by some of the reporting routines and collection list 
+   (set to 1 when on collection list) 
+ ^LRO(69,'DATE RESULTS AVAILABLE',1,"AR",'LOCATION','PT. NAME',LRDFN) 
+      This is used by the daily cummulative 
+ ^LRO(69,DT,1,"AR",'LOCATION','PT. NAME',LRDFN) = "" 
+ ^LRO(69,DT,1,"AN",'LOCATION',LRDFN,LRIDT) = "" 
+ ^LRO(69,'DRAW DATE',1,"AL",'LOCATION',PNM,LRDFN) = "" 
+ ^LRO(69,'DRAW DATE',1,"AP",'DOC NAME',PNM,LRDFN) = "" 
+ ^LRO(69,"AN",'LOCATION',LRDFN,LRIDT) = "" 
+    Used by LRWD to give a list of patients with new lab data since 
+    the start of the day.  
+ ^LRO(69,DT,1,"AD",'REPORT ROUTING LOCATION',LRDFN,LRSN)= "" Used by the cumm 
+
+
+POST-SELECTION ACTION  : W !,"  ",!
+
+CROSS
+REFERENCED BY: COLLECTION STATUS(AA), ORDERING SITE(AC), HOST UID(AD), CANCELED BY(AE), DATE/TIME RESULTS AVAILABLE(AN), DATE ORDERED(B), ORDER #(C), LRDFN(D)
+
+INDEXED BY:    PANEL PENDING & DATE OF SERVICE (APP)
+
+
+69,.01        DATE ORDERED           0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y,DINUM=Y K:Y<1 X,DINUM
+              LAST EDITED:      SEP 14, 1987 
+              DESCRIPTION:
+                                Date of order.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  69^B 
+                                1)= S ^LRO(69,"B",$E(X,1,30),DA)=""
+                                2)= K ^LRO(69,"B",$E(X,1,30),DA)
+
+
+69,.5         CURRENT ORDER NUMBER   2;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 03, 1984 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 9999999 
+              DESCRIPTION:
+                                The count of the order number for the current year.  
+
+              DELETE TEST:      1,0)= I '$D(^XUSEC("LRLIASON",DUZ))
+
+
+69,1          SPECIMEN #             1;0 POINTER Multiple #69.01 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                The sequential specimen number.  
+
+
+69.01,.001      SPECIMEN #               NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 999999 
+                DESCRIPTION:
+                                  The sequence number of individual specimens on orders for a given date.  
+
+
+69.01,.01       LRDFN                  0;1 POINTER TO LAB DATA FILE (#63) (Required)
+
+                OUTPUT TRANSFORM: S Y1=^DIC($P(^LR(Y(0),0),U,2),0,"GL")_$P(^LR(Y(0),0),U,3)_",0)",Y=$P(@Y1,U) K Y1
+                LAST EDITED:      AUG 30, 1990 
+                DESCRIPTION:
+                                  The internal number in the Lab Data file 63.  
+
+                CROSS-REFERENCE:  69.01^AA 
+                                  1)= S ^LRO(69,DA(1),1,"AA",$E(X,1,30),DA)=""
+                                  2)= K ^LRO(69,DA(1),1,"AA",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  69^D^MUMPS 
+                                  1)= S ^LRO(69,"D",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^LRO(69,"D",$E(X,1,30),DA(1),DA)
+
+
+69.01,.02       PARENT FILE             ;  COMPUTED
+
+                MUMPS CODE:       X ^DD(69.01,.02,9.2) S Y(69.01,.02,101)=$S($D(^LR(D0,0)):^(0),1:"") S X=$S('$D(^DIC(+$P(Y(69.01,.02,101),U,2),0)):"",1:$P(^(0),U,1)) S D0=Y(69.01,.02,2)
+                                  9.2 = S Y(69.01,.02,2)=$S($D(D0):D0,1:""),Y(69.01,.02,1)=$S($D(^LRO(69,D0,1,D1,0)):^(0),1:""),D0=$P(Y(69.01,.02,1),U,1) S:'$D(^LR(+D0,0)) D0=-1
+                ALGORITHM:        LRDFN:PARENT FILE
+                DESCRIPTION:
+                                  Computed field to give the parent file of the data in file 63.  
+
+
+69.01,.03       NAME                    ;  COMPUTED
+
+                MUMPS CODE:       X ^DD(69.01,.03,9.2) S Y(69.01,.03,101)=$S($D(^LR(D0,0)):^(0),1:""),Y(69.01,.03,102)=X,Y=$P(Y(69.01,.03,101),U,3) X:$D(^DD(63,.03,2)) ^(2) S X=Y S D0=Y(69.01,.03,2)
+                                  9.2 = S Y(69.01,.03,2)=$S($D(D0):D0,1:""),Y(69.01,.03,1)=$S($D(^LRO(69,D0,1,D1,0)):^(0),1:""),D0=$P(Y(69.01,.03,1),U,1) S:'$D(^LR(+D0,0)) D0=-1
+                ALGORITHM:        LRDFN:NAME
+                DESCRIPTION:
+                                  Computed field to give the name of the entry of the data in file 63 from the parent file for that entry.  
+
+
+69.01,.11       OERR ORDER #           0;11 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      APR 09, 1996 
+                HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                DESCRIPTION:
+                                  This field is used to store the OE/RR order number that links Lab with OE/RR.  
+
+
+69.01,1         ENTERING PERSON        0;2 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      MAR 31, 1992 
+                DESCRIPTION:
+                                  Points to NEW PERSON file.  Automatically stored.  
+
+
+69.01,2         SPECIMEN               4;0 POINTER Multiple #69.02 (Add New Entry without Asking)
+
+                DESCRIPTION:
+                                  Points to the specimen(s) for the given order.  (Some areas of lab treat a collection of samples as a SINGLE collection "sample").  
+
+
+69.02,.01         SPECIMEN               0;1 POINTER TO TOPOGRAPHY FIELD FILE (#61) (Multiply asked)
+
+                  DESCRIPTION:
+                                    Points to the specimen for the given order.  
+
+
+
+
+69.01,3         COLLECTION SAMPLE        0;3 POINTER TO COLLECTION SAMPLE FILE (#62) (Required)
+
+                  DESCRIPTION:
+                                    Points to the collection sample appropriate for the test(s) ordered.  
+
+
+69.01,4         LAB,IMM OR WARD COLLECT  0;4 SET
+
+                                    'LC' FOR LAB COLLECT; 
+                                    'WC' FOR WARD COLLECT; 
+                                    'SP' FOR SEND PATIENT; 
+                                    'I' FOR IMM. LAB COLLECT; 
+                                    'P' FOR POC; 
+                  LAST EDITED:      JUN 01, 2001 
+                  DESCRIPTION:
+                                    This designates how the sample or specimen is to reach the lab.  
+
+
+69.01,5         DATE/TIME ORDERED        0;5 DATE
+
+                  INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+                  HELP-PROMPT:      ENTER THE CURRENT DATE@TIME 
+                  DESCRIPTION:
+                                    Self explanatory.  
+
+
+69.01,5.5       EST. DATE/TIME OF COLLECTION 0;8 DATE
+
+                  INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      AUG 16, 1985 
+                  DESCRIPTION:
+                                    This is the estimated time of the collection.  
+
+
+69.01,6         TEST                     2;0 POINTER Multiple #69.03 (Add New Entry without Asking)
+
+                  DESCRIPTION:
+                                    The tests for the specimen.  
+
+
+69.03,.01         TEST/PROCEDURE           0;1 POINTER TO LABORATORY TEST FILE (#60)
+
+                    INPUT TRANSFORM:  S DIC("S")="I ""N""'[$P(^(0),U,3)!$D(^XUSEC(""LRSUPER"",DUZ))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                    LAST EDITED:      NOV 08, 2002 
+                    DESCRIPTION:
+                                      The tests for the specimen.  
+
+                    SCREEN:           S DIC("S")="I ""N""'[$P(^(0),U,3)!$D(^XUSEC(""LRSUPER"",DUZ))"
+                    EXPLANATION:      CHOOSE ORDERABLE TESTS ONLY
+                    CROSS-REFERENCE:  69.03^B 
+                                      1)= S ^LRO(69,DA(2),1,DA(1),2,"B",$E(X,1,30),DA)=""
+                                      2)= K ^LRO(69,DA(2),1,DA(1),2,"B",$E(X,1,30),DA)
+
+                    CROSS-REFERENCE:  69.03^AT^MUMPS 
+                                      1)= D AT^LRXREF1 ;  S ^LRO(69,"AT",LRDFN,LRTEST,LRSPEC,LRODT)="This is used for maximum test order frequency.",^(-LRODT)=""
+                                      2)= D ATD^LRXREF1 ;  K ^LRO(69,"AT",LRDFN,LRTEST,LRSPEC,LRODT),^(-LRODT)
+
+
+69.03,1           URGENCY                  0;2 POINTER TO URGENCY FILE (#62.05)
+
+                    LAST EDITED:      AUG 24, 1983 
+                    DESCRIPTION:
+                                      Routine, Stat, etc.  
+
+
+69.03,2           ACCESSION DATE           0;3 DATE
+
+                    INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                    DESCRIPTION:
+                                      The date piece of the accession.  
+
+
+69.03,3           ACCESSION AREA           0;4 POINTER TO ACCESSION FILE (#68)
+
+                    INPUT TRANSFORM:  S DIC("S")="I '$L($P(^(0),U,17))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                    LAST EDITED:      JAN 06, 1992 
+                    DESCRIPTION:
+                                      The accession area where the test may be found.  
+
+                    SCREEN:           S DIC("S")="I '$L($P(^(0),U,17))"
+                    EXPLANATION:      Can not select an Work Area Accession area.
+
+69.03,4           ACCESSION NUMBER         0;5 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 99999 
+                    DESCRIPTION:
+                                      The number piece of the accession where the test may be found.  
+
+
+69.03,5           COMBINED ON ORDER        0;6 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+                    LAST EDITED:      AUG 29, 1984 
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 9999999 
+                    DESCRIPTION:
+                                      If the test has been combined with another order (i.e., this test is a duplication of part of another order), this points to the order with which the test has been combined.  
+
+
+69.03,6           OERR INTERNAL FILE #     0;7 POINTER TO ORDER FILE (#100)
+
+                    LAST EDITED:      JUL 20, 1993 
+                    HELP-PROMPT:      Answer must be 1-20 characters in length and is automatically entered. 
+                    DESCRIPTION:
+                                      This provides the link to the correlate entry of the test ordered as it appears in OERR.  
+
+
+69.03,7           PANEL EXPLODED           0;8 SET
+
+                                      '1' FOR YES; 
+                    LAST EDITED:      FEB 28, 1991 
+                    HELP-PROMPT:      Enter a '1' if the panel has no accession area assigned and has been exploded and accessioned. 
+                    DESCRIPTION:
+                                      Used to determine if panel with no accession area assigned has previously been exploded and accessioned.  
+
+
+69.03,8           STATUS                   0;9 SET
+
+                                      'CA' FOR Canceled; 
+                                      'IP' FOR Accepted; 
+                    LAST EDITED:      APR 09, 1996 
+                    HELP-PROMPT:      Enter the status code for this ordered test. 
+                    DESCRIPTION:
+                                      This is the internal status for this test.  It is used to identify an order when it is canceled, and/or when it is accepted by OE/RR.  
+
+
+69.03,9           ORIGIN                   0;10 SET
+
+                                      'W' FOR Ward; 
+                                      'L' FOR Lab; 
+                                      'P' FOR Phone; 
+                                      'V' FOR Verbal; 
+                                      'S' FOR Standard Lab Protocol; 
+                    LAST EDITED:      APR 09, 1996 
+                    HELP-PROMPT:      Enter the origin of this ordered test. 
+                    DESCRIPTION:
+                                      This is how the test was ordered/entered into the system using the Lab (LR) options.  
+
+
+69.03,10          CANCELED BY              0;11 POINTER TO NEW PERSON FILE (#200)
+
+                    LAST EDITED:      APR 23, 2010 
+                    HELP-PROMPT:      Enter the person who canceled the order. 
+                    DESCRIPTION:
+                                      This is the person who canceled this test.  
+
+                    CROSS-REFERENCE:  69^AE^MUMPS 
+                                      1)= S:'$D(^LRO(69,DA(2),1,DA(1),"PCE")) ^LRO(69,"AE",$E(X,1,30),DA(2),DA(1),DA)=""
+                                      2)= K ^LRO(69,"AE",$E(X,1,30),DA(2),DA(1),DA)
+                                      3)= This cross reference is used to update PCE of canceled test
+                                       This cross reference is set when a test is canceled. The Lab PCE API uses these entries to notify PCE that this test was not performed. After notification of PCE the X-ref is removed.  
+                                       
+                                      This X-ref should not be set if no initial notification to PCE that this test was done.  
+
+
+
+69.03,11          PCE COUNTED              0;12 SET
+
+                                      '0' FOR NOT COUNTED; 
+                                      '1' FOR COUNTED; 
+                    LAST EDITED:      JUN 14, 1996 
+                    DESCRIPTION:
+                                      This field is used to indicate that the test has been counted for a patient encounter (PCE).  
+
+
+69.03,12          PCE VISIT #              0;13 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999999999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      OCT 19, 1996 
+                    HELP-PROMPT:      Type a Number between 0 and 9999999999999, 0 Decimal Digits 
+                    DESCRIPTION:       This field contains the NPCDB generated visit number. If this has the PCE counted field set to 1, this field will contain the visit number if the call to the API was successful.  
+                                       
+                                      This field became effective as of 11/1/96. Data submitted the NPCDB prior to the installation of LR*5.2*138 will not contain visit number information.  
+
+
+69.03,13          UID                      .3;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>15!($L(X)<10) X
+                    LAST EDITED:      JAN 27, 1997 
+                    HELP-PROMPT:      Answer must be 10-15 characters in length. 
+                    DESCRIPTION:       This is the UID used by the HOST LEDI system for this order/accession.  
+                                       
+                                      This field is used by LEDI software.  
+
+
+69.03,14          ORDERING SITE            .3;2 POINTER TO INSTITUTION FILE (#4)
+
+                    INPUT TRANSFORM:  S DIC("S")="I $G(^(Y,99))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                    LAST EDITED:      DEC 21, 1996 
+                    DESCRIPTION:       This field contains the pointer to the INSTITUTION file for the MailMan domain location of the computer system. All LEDI results are returned to the Ordering computer system.  
+                                       
+                                      Location to send LEDI HL7 result messages.  
+                                       
+                                      This field is used by LEDI software.  
+
+                    SCREEN:           S DIC("S")="I $G(^(Y,99))"
+                    EXPLANATION:      Must have a site number defined
+                    CROSS-REFERENCE:  69^AC 
+                                      1)= S ^LRO(69,"AC",$E(X,1,30),DA(2),DA(1),DA)=""
+                                      2)= K ^LRO(69,"AC",$E(X,1,30),DA(2),DA(1),DA)
+
+
+69.03,15          COLLECTING SITE          .3;3 POINTER TO INSTITUTION FILE (#4)
+
+                    LAST EDITED:      FEB 26, 1997 
+                    DESCRIPTION:       This field contain the pointer to the INSTITUTION file for the actual collection site. The ordering site is the MailMan location of the computer system. MailMan domain location and the collecting site may be
+                                      different.  
+                                       
+                                      This field is used by LEDI software.  
+
+
+69.03,16          HOST UID                 .3;4 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>15!($L(X)<10) X
+                    LAST EDITED:      JAN 27, 1997 
+                    HELP-PROMPT:      Answer must be 10-15 characters in length. 
+                    DESCRIPTION:       Each Order/Accession is given a HOST UID. The UID is stored in this location. If LEDI software is used to accession specimens, usually the collecting sites UID is used to track specimens. If the collecting UID 
+                                      conflict is the HOST system number sequence, the HOST UID will be used instead of the collecting site's UID.  
+                                       
+                                      This field is used by LEDI software.  
+
+                    CROSS-REFERENCE:  69^AD 
+                                      1)= S ^LRO(69,"AD",$E(X,1,30),DA(2),DA(1),DA)=""
+                                      2)= K ^LRO(69,"AD",$E(X,1,30),DA(2),DA(1),DA)
+
+
+69.03,17          ORDERING SITE UID        .3;5 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>15!($L(X)<10) X
+                    LAST EDITED:      FEB 26, 1997 
+                    HELP-PROMPT:      Answer must be 10-15 characters in length. 
+                    DESCRIPTION:       This field contains the collecting sites UID for this specimen.  
+                                       
+                                      This field is used by LEDI software.  
+
+
+69.03,20          COMBINED FROM            0;14 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                    LAST EDITED:      MAR 26, 1997 
+                    HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                    DESCRIPTION:
+                                      This is a reference to the entry that this test was combined from.  
+
+
+69.03,21          ICD-9 CODES              2;0 POINTER Multiple #69.05
+
+                    LAST EDITED:      SEP 17, 2003 
+                    DESCRIPTION:
+                                      ICD-9 ordering diagnosis code.  
+
+
+69.05,.01           ICD-9 CODES              0;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+                      LAST EDITED:      FEB 10, 2004 
+                      DESCRIPTION:      ICD-9 ordering diagnosis code.  For CPRS laboratory orders, the ordering provider enters this diagnosis via CPRS.  For internal laboratory orders, the provider must indicate the diagnosis code on paper for entry by
+                                        the laboratory staff.  When the lab test is resulted, the ordering diagnosis code will be sent to PCE/PTF for billing purposes.  
+
+                      CROSS-REFERENCE:  69.05^B 
+                                        1)= S ^LRO(69,DA(3),1,DA(2),2,DA(1),2,"B",$E(X,1,30),DA)=""
+                                        2)= K ^LRO(69,DA(3),1,DA(2),2,DA(1),2,"B",$E(X,1,30),DA)
+
+
+69.05,1             SERVICE CONNECTION INDICATOR 0;2 SET
+
+                                        '0' FOR NO; 
+                                        '1' FOR YES; 
+                      LAST EDITED:      SEP 17, 2003 
+                      DESCRIPTION:      Indicates if the care provided is for a service connected or non-service connected condition.  The ordering provider is responsible for providing Service Connection indicator to the laboratory via CPRS entry or,
+                                        for internal laboratory orders, on paper.  The Service Connection indicator is sent to PCE/PTF at verification.  
+
+
+69.05,2             COMBAT VETERAN           0;3 SET
+
+                                        '0' FOR NO; 
+                                        '1' FOR YES; 
+                      LAST EDITED:      JAN 23, 2004 
+                      DESCRIPTION:      Indicates if the care provided is to treat a condition related to Combat Veteran exposure.  The ordering provider is responsible for providing the Combat Veteran indicator to the laboratory via CPRS entry or, for
+                                        internal laboratory orders, on paper.  The Combat Veteran indicator is sent to PCE at verification.  
+
+
+69.05,3             AGENT ORANGE             0;4 SET
+
+                                        '0' FOR NO; 
+                                        '1' FOR YES; 
+                      LAST EDITED:      JAN 23, 2004 
+                      DESCRIPTION:      Indicates if the care provided is to treat a condition related to Agent Orange exposure.  The ordering provider is responsible for providing the Agent Orange indicator to the laboratory via CPRS entry or, for
+                                        internal laboratory orders, on paper.  The Agent Orange indicator is sent to PCE at verification.  
+
+
+69.05,4             IONIZING RADIATION       0;5 SET
+
+                                        '0' FOR NO; 
+                                        '1' FOR YES; 
+                      LAST EDITED:      JAN 23, 2004 
+                      DESCRIPTION:      Indicates if the care provided is to treat a condition related to Ionizing Radiation exposure.  The ordering provider is responsible for ible for providing the Ionizing Radiation indicator to the laboratory via
+                                        CPRS entry or, for internal laboratory orders, on paper.  The Ionizing Radiation indicator is sent to PCE at verification.  
+
+
+69.05,5             SOUTHWEST ASIA CONDITIONS 0;6 SET
+
+                                        '0' FOR NO; 
+                                        '1' FOR YES; 
+                      LAST EDITED:      JUN 07, 2006 
+                      HELP-PROMPT:      Enter '1' or 'Y(es)' if care provided is to treat a condition related to Southwest Asia Conditions (SWAC); otherwise, enter '0' or 'N(o)'. 
+                      DESCRIPTION:      Indicates if the care provided is to treat a condition related to Southwest Asia Conditions (formerly referred to as  Environmental Contaminants ) during the Persian Gulf War.  The ordering provider is responsible
+                                        for providing the indicator to the laboratory via CPRS entry or, for internal laboratory orders, on paper.  The Southwest Asia Conditions indicator is sent to PCE at verification.  
+
+
+69.05,6             MILITARY SEXUAL TRAUMA   0;7 SET
+
+                                        '0' FOR NO; 
+                                        '1' FOR YES; 
+                      LAST EDITED:      DEC 23, 2005 
+                      DESCRIPTION:      Indicates if the care provided is to treat a condition related to MST.  The ordering provider is responsible for providing the Environmental MST indicator to the laboratory via CPRS entry or, for internal
+                                        laboratory orders, on paper.  The MST indicator is sent to PCE at verification.  
+
+
+69.05,7             HEAD AND NECK CANCER     0;8 SET
+
+                                        '0' FOR NO; 
+                                        '1' FOR YES; 
+                      LAST EDITED:      DEC 23, 2005 
+                      DESCRIPTION:      Indicates if the care provided is to treat a condition related to Head and Neck Cancer. The ordering provider is responsible for providing the Head and Neck Cancer indicator to the laboratory via CPRS entry or, for 
+                                        internal laboratory orders, on paper.  The Head and Neck Cancer indicator is sent to PCE at verification.  
+
+
+69.05,8             PRIMARY DIAGNOSIS        0;9 SET
+
+                                        '1' FOR YES; 
+                                        '0' FOR NO; 
+                      LAST EDITED:      MAR 22, 2004 
+                      DESCRIPTION:
+                                        This diagnosis is the primary diagnosis.  
+
+
+69.05,9             SHIPBOARD HAZARD AND DEFENSE 0;10 SET
+
+                                        '0' FOR NO; 
+                                        '1' FOR YES; 
+                      LAST EDITED:      JUN 06, 2006 
+                      HELP-PROMPT:      Enter '1' or 'Y(es)' if care provided is to treat a condition related to Shipboard Hazard and Defense (SHAD); otherwise, enter '0' or 'N(o)'. 
+                      DESCRIPTION:      Indicates if the care provided is to treat a condition related to Shipboard Hazard And Defense (SHAD).  The ordering provider is responsible for providing the value for the SHAD indicator to the laboratory via CPRS 
+                                        entry or, for internal laboratory orders, on paper.  The indicator value is sent to PCE at verification.  
+
+
+
+
+69.03,22          DATE OF SERVICE            3;1 DATE
+
+                      INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      DEC 10, 2005 
+                      DESCRIPTION:
+                                        This is the Date of Service to be sent to the billing application for billing.  
+
+                      RECORD INDEXES:   APP (#651) (WHOLE FILE #69)
+
+69.03,22.1        PANEL PENDING              3;2 SET
+
+                                        '0' FOR NO; 
+                                        '1' FOR YES; 
+                      LAST EDITED:      DEC 10, 2005 
+                      DESCRIPTION:      This field will be set to "YES" in the case where an AMA/Billable Panel still has one or more atomic tests "pending" verified results.  
+                                          
+
+                      RECORD INDEXES:   APP (#651) (WHOLE FILE #69)
+
+69.03,99          TEST COMMENTS              1;0   WORD-PROCESSING #69.399
+
+
+69.03,99.1        CANCEL REASON              1.1;0   WORD-PROCESSING #69.3991
+
+
+
+
+69.01,7         PROVIDER                     0;6 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $D(^VA(200,""AK.PROVIDER"",$P(^(0),U)))",D="AK.PROVIDER" D IX^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      LAST EDITED:      SEP 04, 1992 
+                      DESCRIPTION:
+                                        The person signing for the order.  
+
+                      SCREEN:           S DIC("S")="I $D(^VA(200,""AK.PROVIDER"",$P(^(0),U)))"
+                      EXPLANATION:      Selection must be made from active PROVIDERS who hold the PROVIDER security key.
+
+69.01,8         REPORT ROUTING LOCATION      0;7 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+                      INPUT TRANSFORM:  K:$L(X)<2!($L(X)>30) X I $D(X) X:X="?" ^DD(69.01,8,4) Q:X="?"  S L1=X,DIC(0)="EQMZ",DIC=44 D ^DIC S:$D(Y(0)) X=$P(Y(0),U,1) X:Y<1 ^DD(69.01,8,9.2) Q:'$D(X)  S:X']"" X="UNK" S:$D(LRDFN) ^LR(+LRDFN,.1)=X
+                      OUTPUT TRANSFORM: S Y(0)=Y
+                                        9.2 = K X R !?3,"NON-STANDARD LOCATION!, OK? N//",YN:300 I $T S:YN["Y" X=L1
+                      LAST EDITED:      FEB 09, 1995 
+                      DESCRIPTION:
+                                        The service or location from which the order is originating, and where the report will be returned.  
+
+                      EXECUTABLE HELP:  S X="?",DIC(0)="Q",DIC="^SC(",D="B" K DO D DQ^DICQ K DIC S DIC=DIE D DO^DIC1
+                      NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                      CROSS-REFERENCE:  69.01^AC 
+                                        1)= S ^LRO(69,DA(1),1,"AC",$E(X,1,30),DA)=""
+                                        2)= K ^LRO(69,DA(1),1,"AC",$E(X,1,30),DA)
+                                        3)= AC x-ref is set equal to 1 if the entry is on the collection list
+
+                      CROSS-REFERENCE:  69.01^AD^MUMPS 
+                                        1)= I $P(^LRO(69,DA(1),1,DA,0),U,4)="LC" S ^LRO(69,DA(1),1,"AD",$E(X,1,30),$P(^LRO(69,DA(1),1,DA,0),U,1),DA)=""
+                                        2)= K ^LRO(69,DA(1),1,"AD",$E(X,1,30),$P(^LRO(69,DA(1),1,DA,0),U,1),DA)
+
+
+69.01,9.5       ORDER #                      .1;1 FREE TEXT
+
+                      INPUT TRANSFORM:  K:X[""""!(X'?.ANP)!($A(X)=45) X I $D(X) K:$L(X)>8!($L(X)<1) X
+                      HELP-PROMPT:      ANSWER MUST BE 1-8 CHARACTERS IN LENGTH 
+                      DESCRIPTION:
+                                        The unique assigned order number for an ordering session for one "patient".  
+
+                      CROSS-REFERENCE:  69^C^MUMPS 
+                                        1)= D C^LRXREF1
+                                        2)= K ^LRO(69,"C",+X,DA(1),DA)
+
+
+69.01,10        DATE/TIME OF COLLECTION      1;1 DATE (Required)
+
+                      INPUT TRANSFORM:  S %DT(0)="-N",%DT="EPTX" D ^%DT K %DT(0) S X=Y K:Y<1 X
+                      LAST EDITED:      MAR 18, 1994 
+                      HELP-PROMPT:      DATE/TIME CAN'T BE IN THE FUTURE 
+                      DESCRIPTION:
+                                        When the specimen was collected from the "patient".  
+
+                      NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+69.01,11        DATE/TIME OBTAINED INEXACT   1;2 SET
+
+                                        '1' FOR YES; 
+                                        '0' FOR NO; 
+                      LAST EDITED:      JUL 14, 1987 
+                      DESCRIPTION:
+                                        If the time the specimen is obtained is not even approximate, this field is set to yes.  
+
+
+69.01,12        COLLECTOR                    1;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                      LAST EDITED:      MAR 31, 1992 
+                      DESCRIPTION:
+                                        The phlebotomist who is accessioning the collected order.  
+
+
+69.01,13        COLLECTION STATUS            1;4 SET
+
+                                        'C' FOR COLLECTED; 
+                                        'U' FOR UNCOLLECTED; 
+                                        'M' FOR MERGE; 
+                      LAST EDITED:      MAR 29, 1989 
+                      DESCRIPTION:
+                                        This indicates whether the order is collected or uncollected.  
+
+                      CROSS-REFERENCE:  69^AA^MUMPS 
+                                        1)= S:'$P(^LRO(69,DA(1),1,DA,0),U,10) ^LRO(69,"AA",DA(1)_"|"_DA)=""
+                                        2)= K ^LRO(69,"AA",DA(1)_"|"_DA)
+                                         This cross reference is used to tally WKLD work load. It is deleted after the tally has been made.  
+
+
+
+69.01,14        *VOLUME                      1;5 FREE TEXT
+
+                      INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                      HELP-PROMPT:      ANSWER MUST BE 1-10 CHARACTERS IN LENGTH 
+                      DESCRIPTION:
+                                        No longer used.  
+
+
+69.01,15        COMMENT                      1;6 FREE TEXT
+
+                      INPUT TRANSFORM:  K:$L(X)>80!($L(X)<2) X
+                      HELP-PROMPT:      ANSWER MUST BE 2-80 CHARACTERS IN LENGTH 
+                      DESCRIPTION:
+                                        Single line comment about the order.  
+
+
+69.01,16        WARD COMMENTS ON SPECIMEN    6;0   WORD-PROCESSING #69.04
+
+                      DESCRIPTION:
+                                        Comments about the order.  
+
+
+69.01,20        LAB ARRIVAL TIME             3;1 DATE
+
+                      INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      AUG 29, 2000 
+                      DESCRIPTION:
+                                        Self explanatory.  
+
+
+69.01,21        DATE/TIME RESULTS AVAILABLE  3;2 DATE
+
+                      INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:X<1 X
+                      LAST EDITED:      SEP 06, 2011 
+                      HELP-PROMPT:      Enter the date/time the tests results were made available/released. 
+                      DESCRIPTION:
+                                        This is the date/time ALL results for this specimen are complete.  The field is set by the software when the results are released and reported outside the laboratory system.  
+
+                      CROSS-REFERENCE:  69.01^AR^MUMPS 
+                                        1)= D AR2^LRXREF
+                                        2)= D AR3^LRXREF
+                                        Sets "AR" cross reference used to identify new lab results by date results available/location/patient ^LRO(69,'DATE RESULTS AVAILABLE',1,"AR",'LOCATION','PT. NAME',LRDFN) 
+
+
+                      CROSS-REFERENCE:  69.01^AP^MUMPS 
+                                        1)= D AP1^LRXREF
+                                        2)= D AP2^LRXREF
+                                        Sets "AP" cross-reference used to identify new lab results by date results available/provider/patient ^LRO(69,'DRAW DATE',1,"AP",'DOC NAME',PNM,LRDFN) = "" 
+
+
+                      CROSS-REFERENCE:  69.01^AL^MUMPS 
+                                        1)= D AL1^LRXREF
+                                        2)= D AL2^LRXREF
+                                        Sets "AL" cross-reference used to identify new lab results by date specimen collected/location/patient.  ^LRO(69,'DRAW DATE',1,"AL",'LOCATION',PNM,LRDFN) = "" 
+
+
+                      CROSS-REFERENCE:  69^AN^MUMPS 
+                                        1)= D AN1^LRXREF
+                                        2)= D AN2^LRXREF
+                                        Sets "AN" cross-reference used to identify new lab results by location, patient and date.  LRO(69,"AN",'LOCATION',LRDFN,LRIDT) = "" 
+
+
+                      CROSS-REFERENCE:  69.01^AN2^MUMPS 
+                                        1)= S ^LRO(69,DA(1),1,"AN",$E($P(^LRO(69,DA(1),1,DA,0),U,7),1,20),$P(^(0),U,1),9999999-$P(^LRO(69,DA(1),1,DA,1),U,1))=""
+                                        2)= K ^LRO(69,DA(1),1,"AN",$E($P(^LRO(69,DA(1),1,DA,0),U,7),1,20),$P(^(0),U,1),9999999-$P(^LRO(69,DA(1),1,DA,1),U,1))
+                                        Sets "AN" cross reference within an order date for location, patient and specimen date/time.  LRO(69,DT,1,"AN",'LOCATION',LRDFN,LRIDT) = "" 
+
+
+
+69.01,22        MERGE ORDER #                1;7 FREE TEXT
+
+                      INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                      LAST EDITED:      MAR 29, 1989 
+                      HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                      DESCRIPTION:
+                                         If this order was merged with another order, the order number for that order is entered here. Automatically stuffed by the system.  
+
+
+69.01,23        ORDERING LOCATION            0;9 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+                      LAST EDITED:      DEC 12, 1989 
+                      HELP-PROMPT:      This is the location that is ordering the test. 
+                      DESCRIPTION:
+                                         This field contains the location ordering the test and to whom completed results will be sent.  
+
+
+69.01,24        COUNTED FOR WORKLOAD         0;10 SET
+
+                                        '1' FOR YES; 
+                      LAST EDITED:      MAR 21, 1991 
+                      DESCRIPTION:
+                                         If this accession has been tallied to wkld totals, a yes will be stuffed into this field by the software which runs in the background.  
+
+
+69.01,25        INSTITUTION                  1;8 POINTER TO INSTITUTION FILE (#4)
+
+                      LAST EDITED:      APR 10, 1991 
+                      DESCRIPTION:
+                                         This field contains the institution entering the request for this particular test. This field becomes very important when dealing with multi-divisional sites.  
+
+
+69.01,30        PCE ENC #                    PCE;1 FREE TEXT
+
+                      INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                      LAST EDITED:      MAR 18, 1997 
+                      HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                      DESCRIPTION:       This field contains a list of PCE Encounters generated for this specimen.  If ther are multiple laboratory accession areas required for this order, encounter numbers will be stored separated by semi-colons.  
+                                         
+                                        This field is also used to control the building of the ^LRO(69,"AE") should LAB ORDER ENTRY (#69) file were to be re-indexed. If the field is defined then the Cancel By field DD(69.03,10,0) will not recreate the 
+                                        X-Reference. The ^LRO(69,"AE") cross reference is used to pass deleted test information to PCE so that the billing record can be updated.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ACCESSION (#68)                   TEST:ACCESSION AREA (#3)
+
+COLLECTION SAMPLE (#62)           SPECIMEN #:COLLECTION SAMPLE (#3)
+
+HOSPITAL LOCATION (#44)           SPECIMEN #:REPORT ROUTING LOCATION (#8)
+                                  ORDERING LOCATION (#23)
+
+ICD DIAGNOSIS (#80)               ICD-9 CODES:ICD-9 CODES (#.01)
+
+INSTITUTION (#4)                  SPECIMEN #:INSTITUTION (#25)
+                                  TEST:ORDERING SITE (#14)
+                                  COLLECTING SITE (#15)
+
+LAB DATA (#63)                    SPECIMEN #:LRDFN (#.01)
+
+LABORATORY TEST (#60)             TEST:TEST/PROCEDURE (#.01)
+
+NEW PERSON (#200)                 SPECIMEN #:ENTERING PERSON (#1)
+                                  PROVIDER (#7)
+                                  COLLECTOR (#12)
+                                  TEST:CANCELED BY (#10)
+
+ORDER (#100)                      TEST:OERR INTERNAL FILE # (#6)
+
+TOPOGRAPHY FIELD (#61)            SPECIMEN:SPECIMEN (#.01)
+
+URGENCY (#62.05)                  TEST:URGENCY (#1)
+
+
+Subfile #69.03
+
+  Record Indexes:
+
+  APP (#651)    RECORD    MUMPS    IR    ACTION    WHOLE FILE (#69)
+      Short Descr:  Index is used to send AMA/Billable panels to PCE.
+      Description:  The "APP" index is used by routine LRBEBA5 to send Lab data to PCE.  EN^LRBEBA5 is called from routine LRNIGHT, the nightly cleanup task.  If the current date is the same as the date stored in PANEL PROCESS DATE field (#620) of the
+                    LABORATORY SITE file (#69.9), then routine LRBEBA5 uses index "APP" to locate data for AMA/Billable panels that have not been sent to PCE due to pending results for atomic tests on the panel.  Panel tests from the previous calendar
+                    month will be "unbundled" and the CPT Codes for the verified atomic tests are sent to PCE.  
+        Set Logic:  S ^LRO(69,"APP",+X2(2),DA(2),DA(1),DA)=""
+         Set Cond:  I X2(1),X2(2)
+       Kill Logic:  K ^LRO(69,"APP",+X1(2),DA(2),DA(1),DA)
+        Kill Cond:  I X1(1),X1(2),'X2(1)
+             X(1):  PANEL PENDING  (69.03,22.1)  (forwards)
+             X(2):  DATE OF SERVICE  (69.03,22)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

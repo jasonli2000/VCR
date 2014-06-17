@@ -1,0 +1,791 @@
+STANDARD DATA DICTIONARY #664 -- PROSTHETICS 1358 FILE                                                                                                                                                                            MAY 20,2014@15:40:17  PAGE 1
+STORED IN ^RMPR(664,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This is a bridge file used to temporarily store purchasing information that links with the 1358 Daily Record File (424) prior to close out.  Upon close out, transactions may be purged by using the Purge menu option.  Normally, purging this file may be
+done for transactions over 180 days old.  The purge retaining time is set in the site parameter file.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: PATIENT (#1)[R]
+
+POINTED TO BY: PURCHASE FORM field (#11) of the MATERIALS USED sub-field (#664.22) of the PROSTHETIC WORK ORDER File (#664.2) 
+               
+
+CROSS
+REFERENCED BY: OBLIGATION NUMBER(AC), DATE(B), PATIENT(C), QTY(D), REFERENCE(E), REFERENCE(E1), BANK AUTHORIZATION NUMBER(F), PURCHASE CARD REFERENCE(G)
+
+664,.01       DATE                   0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 13, 1996 
+              HELP-PROMPT:      Enter the Patient's name or the 1358 date 
+              DESCRIPTION:
+                                This is the date that the 1358 transaction took place.  
+
+              CROSS-REFERENCE:  664^B 
+                                1)= S ^RMPR(664,"B",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(664,"B",$E(X,1,30),DA)
+
+
+664,.5        OBLIGATION NUMBER      0;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>10!($L(X)<3) X
+              LAST EDITED:      JUN 05, 1990 
+              HELP-PROMPT:      Answer must be 3-10 characters in length. 
+              DESCRIPTION:
+                                This is the IFCAP obligation number.  
+
+              CROSS-REFERENCE:  664^AC 
+                                1)= S ^RMPR(664,"AC",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(664,"AC",$E(X,1,30),DA)
+                                Allows quick lookups on file 664 by Obligation Number.  
+
+
+
+664,1         PATIENT                0;2 POINTER TO PROSTHETICS PATIENT FILE (#665) (Required)
+
+              LAST EDITED:      APR 19, 1991 
+              HELP-PROMPT:      Enter the name of the Patient you wish to purchase for. 
+              DESCRIPTION:
+                                The prosthetics patient.  
+
+              CROSS-REFERENCE:  664^C 
+                                1)= S ^RMPR(664,"C",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(664,"C",$E(X,1,30),DA)
+                                This will allow lookup by Patient Name.  
+
+
+
+664,2         BILLING ITEM           1;0 POINTER Multiple #664.02 (Add New Entry without Asking)
+
+              LAST EDITED:      OCT 29, 2004 
+              DESCRIPTION:
+                                This is the item that will be posted to the RECORD OF APPLIANCE/REPAIR file.  
+
+
+664.02,.01      BILLING ITEM           0;1 POINTER TO PROS ITEM MASTER FILE (#661) (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  D EN1^RMPRCT
+                OUTPUT TRANSFORM: ITEM:NAME:SHORT DESCRIPTION
+                LAST EDITED:      OCT 29, 2004 
+                HELP-PROMPT:      Please Enter the Item. 
+                DESCRIPTION:
+                                  Pointer to the Prosthetics ITEM file #661 
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  664.02^B 
+                                  1)= S ^RMPR(664,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^RMPR(664,DA(1),1,"B",$E(X,1,30),DA)
+
+
+664.02,1        BRIEF DESCRIPTION      0;2 FREE TEXT (Required)
+
+                BRIEF DESCRIPTION OF ITEM (for Vendor)                                                                         
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                LAST EDITED:      AUG 12, 1997 
+                HELP-PROMPT:      Answer must be 3-60 characters in length. 
+                DESCRIPTION:
+                                  This is the short description of the item purchased.  
+
+
+664.02,2        UNIT COST              0;3 NUMBER (Required)
+
+                INPUT TRANSFORM:  D ^RMPRCT
+                LAST EDITED:      OCT 05, 1990 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999999.99, 2 Decimal Digits. 
+                DESCRIPTION:
+                                  This is the unit cost of the item to be purchased.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+664.02,3        QTY                    0;4 NUMBER (Required)
+
+                INPUT TRANSFORM:  D ITM^RMPRCT
+                LAST EDITED:      DEC 09, 1991 
+                HELP-PROMPT:      Enter the quantity for this item.  Maximum 300 items. 
+                DESCRIPTION:
+                                  Total amount of units issued for this item.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  664^D 
+                                  1)= S ^RMPR(664,"D",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RMPR(664,"D",$E(X,1,30),DA(1),DA)
+                                  Allows sorting and lookups of items by quantity for a Prosthetics Purchase.  
+
+
+
+664.02,4        UNIT OF ISSUE          0;5 POINTER TO UNIT OF ISSUE FILE (#420.5) (Required)
+
+                LAST EDITED:      OCT 05, 1990 
+                HELP-PROMPT:      Enter the Unit of Issue for the item. 
+                DESCRIPTION:
+                                  This is the Unit of Issue for the item issued.  
+
+
+664.02,5        AMIS FLAG              0;6 SET
+
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      AUG 23, 1990 
+                HELP-PROMPT:      Enter `NO` if AMIS is not to be counter for this item. 
+                DESCRIPTION:
+                                  When this field is set to NO, AMIS will not be counted for this item.  
+
+
+664.02,6        ACT UNIT COST          0;7 NUMBER
+
+                INPUT TRANSFORM:  D ACT^RMPRCT
+                LAST EDITED:      FEB 13, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 10000, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Contains the Acutal Cost of the Item.  This amount is entered upon close-out of the Purchase.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+664.02,7        REMARKS                0;8 FREE TEXT
+
+                REMARKS (2319 and 1358)                                                                                        
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUL 07, 1995 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This field stores Remarks entered for the item.  Remarks will then print on the patient 10-2319 record.  
+
+
+664.02,8        TYPE OF TRANSACTION    0;9 SET (Required)
+
+                                  'I' FOR INITIAL ISSUE; 
+                                  'R' FOR REPLACE; 
+                                  'S' FOR SPARE; 
+                                  'X' FOR REPAIR; 
+                                  '5' FOR RENTAL; 
+                LAST EDITED:      MAY 03, 2005 
+                HELP-PROMPT:      Enter the Type of Transaction for this issue. 
+                DESCRIPTION:
+                                  This field is the Type of Transaction for the item issued.  
+
+
+664.02,9        PATIENT CATEGORY       0;10 SET (Required)
+
+                                  '1' FOR SC/OP; 
+                                  '2' FOR SC/IP; 
+                                  '3' FOR NSC/IP; 
+                                  '4' FOR NSC/OP; 
+                LAST EDITED:      OCT 05, 1990 
+                HELP-PROMPT:      Enter the Patient Category for this issue. 
+                DESCRIPTION:
+                                  This field stores the Patient Category for this item issued.  
+
+
+664.02,10       SPECIAL CATEGORY       0;11 SET
+
+                                  '1' FOR SPECIAL LEGISLATION; 
+                                  '2' FOR A&A; 
+                                  '3' FOR PHC; 
+                                  '4' FOR ELIGIBILITY REFORM; 
+                LAST EDITED:      NOV 06, 1996 
+                HELP-PROMPT:      Enter the patient's Special Category if applicable. 
+                DESCRIPTION:
+                                  This field stores the patient's Special Category for the item issued.  Not a mandatory field.  
+
+
+664.02,11       SOURCE                 0;12 SET (Required)
+
+                                  'V' FOR VA; 
+                                  'C' FOR COMMERCIAL; 
+                LAST EDITED:      OCT 05, 1990 
+                HELP-PROMPT:      Enter `V` for VA (PDC) issues or `C` for Commercial issues. 
+                DESCRIPTION:
+                                  This field stores the Source of the item issued.  
+
+
+664.02,12       APPLIANCE/REPAIR       0;13 POINTER TO RECORD OF PROS APPLIANCE/REPAIR FILE (#660)
+
+                LAST EDITED:      AUG 27, 1990 
+                HELP-PROMPT:      Must be a number between 1 and 99999999. 
+                DESCRIPTION:
+                                  This field is a pointer to file 660.  
+
+
+664.02,13       CONTRACT #             0;14 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUN 28, 1991 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This field stores the Contract Number from the IFCAP Vendor file.  
+
+
+664.02,14       EXTENDED DESCRIPTION   1;0   WORD-PROCESSING #664.214
+
+                DESCRIPTION:
+                                  This is a word processing field used to enter additional information describing the item issued.  
+
+
+664.02,15       SERIAL NUMBER          0;15 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+                LAST EDITED:      JAN 11, 1993 
+                HELP-PROMPT:      Answer must be 3-15 characters in length. 
+                DESCRIPTION:
+                                  This field stores the serial number of the item.  
+
+
+664.02,15.2     MANUFACTURER           2;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      DEC 21, 2004 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This is the name of the Manufacturer that supplied the item.  
+
+
+664.02,15.4     MODEL                  2;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 04, 2004 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  The Model name or number of the item.  
+
+
+664.02,15.6     LOT #                  2;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 04, 2004 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  The lot # of the item.  
+
+
+664.02,16       PSAS HCPCS             0;16 POINTER TO PROSTHETIC HCPCS FILE (#661.1) (Required)
+
+                INPUT TRANSFORM:  K:$P(^RMPR(661.1,X,0),U,5)'=1 X I $D(X) D ^RMPRCPT8
+                LAST EDITED:      MAY 11, 2000 
+                HELP-PROMPT:      Enter the appropriate HCPCS (Health Care Financing Administration Common Procedure Coding System) code, try E1399 if unknown. 
+                DESCRIPTION:      Health Care Financing Administration Common Procedure Coding System, (HCPCS). This field should have the HCPCS code for the Item you are selecting. HCPCS is a uniform method to report professional services, procedures
+                                  and supplies for healthcare providers and medical suppliers.  
+
+                TECHNICAL DESCR:
+                                   
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+664.02,16.1     CPT MODIFIER           4;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>36!($L(X)<1) X
+                LAST EDITED:      MAY 11, 2000 
+                HELP-PROMPT:      Answer must be 1-36 characters in length. 
+                DESCRIPTION:
+                                  CPT Modifiers in a comma delimited format, consistent with the HCFA published manuals.  
+
+
+664.02,17       VENDOR TRACKING NUMBER 4;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      MAR 02, 1996 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:      This field is the Vendor's internal unique tracking number.  Some of the small vendors are not automated with VISA, and this tracking number is used to reference this transaction.  This tracking number is based on the 
+                                  item, and can be as simple as the vendors item number, or elaborate as the vendors transaction number.  This data will be used in the reconciliation process.  
+
+
+664.02,18       EXCLUDE/WAIVER         2;4 SET
+
+                                  'E' FOR EXCLUDE; 
+                                  'W' FOR WAIVER; 
+                LAST EDITED:      JUN 22, 2005 
+                DESCRIPTION:
+                                  Set of codes field E for Exclude W for Waiver pertaining to contracts.  
+
+
+664.02,19       NUMBER OF BIDS         0;17 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 13, 2005 
+                HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  The number of bids if any for an item. Some items the number of bids is mandatory.  
+
+
+
+
+664,3         CANCELLATION DATE      0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 11, 1990 
+              HELP-PROMPT:      Must be a date. 
+              DESCRIPTION:
+                                The date the purchasing transaction was cancelled.  
+
+
+664,3.1       CANCELLATION REMARKS   2;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+              LAST EDITED:      APR 03, 1992 
+              HELP-PROMPT:      Answer must be 3-60 characters in length. 
+              DESCRIPTION:
+                                Any remarks the Purchasing Agent, or Prosthetic Clerk would like to say in the mail message.  
+
+              CROSS-REFERENCE:  ^^BULLETIN MESSAGE 
+                                1)= S Y(0)=X,D0=DA X ^DD(664,3.1,1,1,1.1) X ^DD(664,3.1,1,1,1.2) X ^DD(664,3.1,1,1,1.3) X ^DD(664,3.1,1,1,1.4) K XMY S XMB="RMPR CANCEL TRANSACTION" D ^XMB:$D(^XMB(3.6,"B",XMB)) K Y,XMB
+                                1.1)= S X=Y(0) S Y(1)=$S($D(^RMPR(664,D0,0)):^(0),1:"") S X=$P(Y(1),U,7) S XMB(1)=X
+                                1.2)= S X=Y(0) S Y(1)=$S($D(^RMPR(664,D0,0)):^(0),1:"") S X=$S('$D(^VA(200,+$P(Y(1),U,9),0)):"",1:$P(^(0),U,1)) S XMB(2)=X
+                                1.3)= S X=Y(0) S Y(1)=$S($D(^RMPR(664,D0,0)):^(0),1:"") S X=$P(Y(1),U,5) S Y=X X ^DD("DD") S X=Y S XMB(3)=X
+                                1.4)= S X=Y(0) S Y(1)=$S($D(^RMPR(664,D0,2)):^(2),1:"") S X=$P(Y(1),U,1) S XMB(4)=X
+                                2)= Q
+                                CREATE PARAMETER #1)= REFERENCE
+                                CREATE PARAMETER #2)= INITIATOR
+                                CREATE PARAMETER #3)= CANCELLATION DATE
+                                CREATE PARAMETER #4)= CANCELLATION REMARKS
+                                CREATE VALUE)= RMPR CANCEL TRANSACTION
+                                DELETE VALUE)= NO EFFECT
+                                This is a bulletin message regarding the transaction has been canceled.  
+
+
+
+664,3.2       CANCELLED BY           2;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      OCT 11, 1990 
+              HELP-PROMPT:      Enter the person who cancelled the transaction. 
+              DESCRIPTION:
+                                This is pointer to the New Person file.  
+
+
+664,4         VENDOR                 0;4 POINTER TO VENDOR FILE (#440) (Required)
+
+              LAST EDITED:      MAR 12, 1993 
+              HELP-PROMPT:      Enter the Vendor the item is being purchased from. 
+              DESCRIPTION:
+                                The name of the vendor that the item is being purchased from.  
+
+
+664,6         C.P.                   0;6 POINTER TO CONTROL POINT ACTIVITY FILE (#410) (Required)
+
+              LAST EDITED:      AUG 27, 1990 
+              HELP-PROMPT:      Please Enter the Control Point Activity Number. 
+              DESCRIPTION:
+                                This is the IFCAP Control Point number for VAF 4-1358.  
+
+                                UNEDITABLE
+
+664,7         REFERENCE              0;7 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      FEB 10, 1992 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is the individual reference number that this transaction has been assigned.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  664^E 
+                                1)= S ^RMPR(664,"E",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(664,"E",$E(X,1,30),DA)
+                                This cross reference is used for looking up Prosthetic 1358 entries by the transaction number created by IFCAP.  
+
+
+              CROSS-REFERENCE:  664^E1^MUMPS 
+                                1)= S ^RMPR(664,"E1",$P(X,"-",3),DA)=""
+                                2)= K ^RMPR(664,"E1",$P(X,"-",3),DA)
+                                This cross reference is used for lookups on Prosthetic 1358 entries by the last four numbers of the transaction number created by IFCAP.  
+
+
+
+664,7.1       IFCAP ORDER            4;6 POINTER TO PROCUREMENT & ACCOUNTING TRANSACTIONS FILE (#442)
+
+              LAST EDITED:      DEC 16, 1996 
+              DESCRIPTION:
+                                This is usedd to pass the ien back to IFCAP for cancellations.  
+
+
+664,7.5       PURCHASE CARD REFERENCE 4;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<3) X
+              LAST EDITED:      MAR 13, 1996 
+              HELP-PROMPT:      Answer must be 3-10 characters in length. 
+              DESCRIPTION:
+                                This is the unique Purchase Card Transaction Number.  Do not edit this field from Fileman.  
+
+              CROSS-REFERENCE:  664^G 
+                                1)= S ^RMPR(664,"G",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(664,"G",$E(X,1,30),DA)
+                                This is used for the Purchase Card Module.  Allow selection by transaction number.  
+
+
+
+664,8         CLOSE OUT DATE         0;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 28, 1995 
+              HELP-PROMPT:      Answer must be a date. 
+              DESCRIPTION:
+                                This is the date the transaction was closed-out, and posted as complete in IFCAP and the electronic 10-2319.  This is the date AMIS will be based on.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^664^8.5 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(664,D0,2)):^(2),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(664,8,1,1,1.4)
+                                1.4)= S DIH=$S($D(^RMPR(664,DIV(0),2)):^(2),1:""),DIV=X S $P(^(2),U,7)=DIV,DIH=664,DIG=8.5 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(664,D0,2)):^(2),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X="" S DIH=$S($D(^RMPR(664,DIV(0),2)):^(2),1:""),DIV=X S $P(^(2),U,7)=DIV,DIH=664,DIG=8.5 D ^DICR:$O(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                CREATE VALUE)= S X=DUZ
+                                DELETE VALUE)= @
+                                FIELD)= CLOSED BY
+                                This is a trigger on Close-Out Date.  When the purchasing transaction is closed the Closed By field will contain the user who closed this transaction.  This will be used for auditing.  
+
+
+
+664,8.1       CLOSE-OUT REMARKS      2;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      AUG 28, 1995 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                Any remarks at the time the transaction is being marked as complete.  
+
+
+664,8.5       CLOSED BY              2;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 21, 1995 
+              DESCRIPTION:
+                                This is a pointer to the DUZ of the person who canceled the transaction.  
+
+              NOTES:            TRIGGERED by the CLOSE OUT DATE field of the PROSTHETICS 1358 File 
+
+
+664,8.6       LAST IFCAP AMEND BY    2;8 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 24, 1997 
+
+664,8.7       LAST AMEND TOTAL       2;9 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      JUN 25, 1997 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the last total amount that was amended through IFCAP on this transaction.  
+
+
+664,8.8       LAST AMEND REPRINT OK  2;10 SET
+
+                                '1' FOR Y; 
+              LAST EDITED:      AUG 14, 1997 
+              DESCRIPTION:
+                                This is a flag used to determine if the order should be reprinted or not.  If this is set to 1, or yes, then the order may be reprinted.  This means no pending IFCAP amendments are outstanding.  
+
+
+664,10        INITIATOR              0;9 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      SEP 18, 1990 
+              DESCRIPTION:
+                                This is the person who created the transaction.  
+
+
+664,11        EST. SHIPPING CHARGE   0;10 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      OCT 16, 1990 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999, 2 Decimal Digits 
+              DESCRIPTION:
+                                The estimated shipping charge when the transaction is created.  This field only holds the estimate, and not the actual charge.  
+
+
+664,12        ACT. SHIPPING CHARGE   0;11 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      APR 24, 1991 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field will be set when closing out the transaction if shipping charges were changed or deleted.  
+
+
+664,13        SHIPPING ENTRY         0;12 POINTER TO RECORD OF PROS APPLIANCE/REPAIR FILE (#660)
+
+              LAST EDITED:      NOV 09, 1990 
+              DESCRIPTION:
+                                All shipping entries are posted as entries on the electronic 10-2319.  
+
+
+664,14        PICKUP/DELIVERY REMARKS 0;13 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+              LAST EDITED:      MAR 27, 1991 
+              HELP-PROMPT:      Answer must be 3-60 characters in length. 
+              DESCRIPTION:
+                                Pickup and delivery remarks go here.  
+
+
+664,15        FORM TYPE              2;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAR 13, 1996 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field will contain the Form type of the 2319 and should not be edited thru Fileman.  
+
+                                UNEDITABLE
+
+664,16        PSC CATEGORY           2;5 SET
+
+                                'W' FOR WHEELCHAIR; 
+                                'O' FOR BRACE; 
+                                'B' FOR BLIND AIDS; 
+                                'A' FOR ART. LIMBS; 
+              LAST EDITED:      JAN 31, 1992 
+              HELP-PROMPT:      Please enter a 'W', 'O', 'B', or an 'A' 
+              DESCRIPTION:
+                                Contains the PSC CATEGORY for the type of 10-55 or 2520 purchase.  
+
+
+664,17        PERCENT DISCOUNT       2;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."2N.N) X
+              LAST EDITED:      FEB 09, 1992 
+              HELP-PROMPT:      Type a Number between 1 and 99, 1 Decimal Digit 
+              DESCRIPTION:
+                                Contains the % Discount for the Purchase.  Estimated Cost and Actual Cost are calculated with the % Discount.  
+
+
+664,18        STATION NAME           0;14 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      AUG 11, 1992 
+              HELP-PROMPT:      Enter the Station Name or Station Prefix. 
+              DESCRIPTION:
+                                This field is a pointer to the Institution File.  If a site is Multi  Divisional this field is used to screen out entries by site number.  
+
+
+664,19        DELIVER TO             3;1 FREE TEXT
+
+              LOCATION                                                                                                         
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      OCT 01, 1992 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                Contains the destination for delivery of the purchased item.  
+
+
+664,20        DATE REQUIRED          3;2 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1!(Y<DT) X
+              LAST EDITED:      FEB 02, 1996 
+              HELP-PROMPT:      Enter the date the vendor must deliver by 
+              DESCRIPTION:
+                                This field stores the date the vendor is required to provide the Item/Service by.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^664^21 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(664,D0,3)):^(3),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(664,20,1,1,1.1) X ^DD(664,20,1,1,1.4)
+                                1.1)= S X=DIV S Y(1)=$S($D(^RMPR(664,D0,0)):^(0),1:"") S X=DIV,X1=X,X2=$P(Y(1),U,1),X="" D:X2 ^%DTC:X1
+                                1.4)= S DIH=$S($D(^RMPR(664,DIV(0),3)):^(3),1:""),DIV=X S $P(^(3),U,3)=DIV,DIH=664,DIG=21 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(664,D0,3)):^(3),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(664,20,1,1,2.1) X ^DD(664,20,1,1,2.4)
+                                2.1)= S X=DIV S Y(2)=$S($D(^RMPR(664,D0,0)):^(0),1:""),Y(1)=$S($D(^(3)):^(3),1:"") S X=$P(Y(1),U,2),X1=X,X2=$P(Y(2),U,1),X="" D:X2 ^%DTC:X1
+                                2.4)= S DIH=$S($D(^RMPR(664,DIV(0),3)):^(3),1:""),DIV=X S $P(^(3),U,3)=DIV,DIH=664,DIG=21 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                3)= Do not delete
+                                CREATE VALUE)= DATE REQUIRED-DATE
+                                DELETE VALUE)= DATE REQUIRED-DATE
+                                FIELD)= DELIVERY TIME
+                                This trigger is uesed to update the delivery time field.  
+
+
+
+664,21        DELIVERY TIME          3;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 04, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field stores the number of days the vendor has to delivery the Item/Service.  
+
+              NOTES:            TRIGGERED by the DATE REQUIRED field of the PROSTHETICS 1358 File 
+
+
+664,21.1      DELIVER TO ATTENTION   3;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>45!($L(X)<1) X
+              LAST EDITED:      APR 27, 2004 
+              HELP-PROMPT:      Answer must be 1-45 characters in length. 
+              DESCRIPTION:
+                                Attention to:  line for delivery 
+
+
+664,22        WORK ORDER NUMBER      0;15 POINTER TO PROSTHETIC WORK ORDER FILE (#664.2)
+
+              LAST EDITED:      JUN 18, 1994 
+              DESCRIPTION:
+                                Lab Work Order Number is a pointer to the Prosthetic Work Order file.  It is  the associated Lab work order number.  
+
+
+664,23        LAB TECHNICIAN         0;16 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 22, 1995 
+              DESCRIPTION:
+                                This is the lab technician that entered the 2421.  
+
+
+664,24        2529-3                 0;17 POINTER TO PROSTHETIC 2529-3 FILE (#664.1)
+
+              LAST EDITED:      JUN 18, 1994 
+
+664,25        PURCHASE CARD NUMBER   4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>16!($L(X)<16) X
+              LAST EDITED:      MAR 05, 1996 
+              HELP-PROMPT:      Answer must be 16 characters in length. 
+              DESCRIPTION:
+                                This is the Purchase Card Number used in a credit card transaction.  
+
+
+664,26        BANK AUTHORIZATION NUMBER 4;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<6)!'(X?.N) X
+              LAST EDITED:      MAR 11, 1996 
+              HELP-PROMPT:      Answer must be 6 numbers in length. 
+              DESCRIPTION:
+                                This six digit number is the authorization number VISA gives to the vendor for guaranteed payment.  This number is used in the reconciliation process.  
+
+              CROSS-REFERENCE:  664^F 
+                                1)= S ^RMPR(664,"F",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(664,"F",$E(X,1,30),DA)
+                                This is the six digit Bank Authorization Number.  This is used for Close-Out a Purchase Card Order, and Cancel a Purchase Card Order.  
+
+
+
+664,27        EST AMOUNT             4;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAR 12, 1996 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the estimated amount of the transaction.  This field is only used for Purchase Card Transactions.  
+
+
+664,28        CLOSE-OUT AMOUNT       4;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAR 12, 1996 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the final amount authorized on the Purchase Card Transaction.  
+
+
+664,29        NEW PURCHASE CARD NUMBER 4;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>16!($L(X)<1) X
+              LAST EDITED:      OCT 26, 2001 
+              HELP-PROMPT:      Answer must be 1-16 characters in length. 
+              DESCRIPTION:      This field was created with the release of Prosthetics patch RMPR*3.0*67.  This patch was released to allow users to modify the credit card number contained in the Oracle reconciliation document received from Austin and 
+                                stored in the IFCAP PURCHASE CARD RECONCILE file (#440.6).  
+                                 
+                                Due to CitiBank canceling and re-issuing a number of credit cards, it may be necessary to modify the credit card number in the file #440.6 Oracle document to match the credit card number that is in the original purchase
+                                order.  
+                                 
+                                This field stores the new purchase card number that was sent from CitiBank in the Oracle transaction from Austin.  This number was originally stored in file 440.6, the IFCAP PURCHASE CARD ORDER RECONCILE file, and has been
+                                replaced in file 440.6 by the original purchase card number on the prosthetics transaction.  
+                                 
+                                This is necessary so that the prosthetics order can be reconciled and closed.  This field is needed to maintain the audit trail for changing the purchase card number in 440.6 from the new purchase card number back to the
+                                original purchase card number.  
+
+
+664,30        AUDIT REPAIR           4;8 POINTER TO PURCHASE CARD ORDER RECONCILE FILE (#440.6)
+
+              LAST EDITED:      OCT 26, 2001 
+              DESCRIPTION:      This field was created with the release of Prosthetics patch RMPR*3.0*67.  This patch was released to allow users to modify the credit card number contained in the Oracle reconciliation document received from Austin and 
+                                stored in the IFCAP PURCHASE CARD RECONCILE file (#440.6).  
+                                 
+                                Due to CitiBank canceling and re-issuing a number of credit cards, it may be necessary to modify the credit card number in the file #440.6 Oracle document to match the credit card number that is in the original purchase
+                                order.  
+                                 
+                                This is necessary so that the prosthetics order can be reconciled and closed.  This field is needed to maintain the audit trail for changing the purchase card number in 440.6 from the new purchase card number back to the
+                                original purchase card number.  
+                                 
+
+
+664,31        AUDIT DATE             4;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 26, 2001 
+              DESCRIPTION:      This field was created with the release of Prosthetics patch RMPR*3.0*67.  This patch was released to allow users to modify the credit card number contained in the Oracle reconciliation document received from Austin and 
+                                stored in the IFCAP PURCHASE CARD RECONCILE file (#440.6).  
+                                 
+                                Due to CitiBank canceling and re-issuing a number of credit cards, it may be necessary to modify the credit card number in the file #440.6 Oracle document to match the credit card number that is in the original purchase
+                                order.  
+                                 
+                                This is the date that the credit card number in file 440.6 was modified.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CONTROL POINT ACTIVITY (#410)     C.P. (#6)
+
+INSTITUTION (#4)                  STATION NAME (#18)
+
+NEW PERSON (#200)                 CANCELLED BY (#3.2)
+                                  CLOSED BY (#8.5)
+                                  LAST IFCAP AMEND BY (#8.6)
+                                  INITIATOR (#10)
+                                  LAB TECHNICIAN (#23)
+
+PROCUREMENT & ACCOUNTING TRANS 
+                   (#442)         IFCAP ORDER (#7.1)
+
+PROS ITEM MASTER (#661)           BILLING ITEM:BILLING ITEM (#.01)
+
+PROSTHETIC 2529-3 (#664.1)        2529-3 (#24)
+
+PROSTHETIC HCPCS (#661.1)         BILLING ITEM:PSAS HCPCS (#16)
+
+PROSTHETIC WORK ORDER (#664.2)    WORK ORDER NUMBER (#22)
+
+PROSTHETICS PATIENT (#665)        PATIENT (#1)
+
+PURCHASE CARD ORDER RECONCILE 
+                   (#440.6)       AUDIT REPAIR (#30)
+
+RECORD OF PROS APPLIANCE/REPAI 
+                   (#660)         SHIPPING ENTRY (#13)
+                                  BILLING ITEM:APPLIANCE/REPAIR (#12)
+
+UNIT OF ISSUE (#420.5)            BILLING ITEM:UNIT OF ISSUE (#4)
+
+VENDOR (#440)                     VENDOR (#4)
+
+
+
+INPUT TEMPLATE(S):
+RMPR 2520                     MAY 24, 2000@11:27  USER #0    
+RMPR4 PC                      MAR 12, 1996@16:36  USER #0    
+RMPR55                        MAY 24, 2000@10:05  USER #0    
+     Posts information to 10-55.
+RMPREYE                       MAY 24, 2000@08:09  USER #0    
+     Input eye exam data.
+
+PRINT TEMPLATE(S):
+RMPR 2421 LETTER INFO         JAN 31, 1994@11:55  USER #0                                                                                                                                                                                PROSTHETICS 1358 LIST
+     Prints a 1358 list.
+RMPR APPROVE                  SEP 16, 1994@09:56  USER #0                                                                                                                                                                                                    @
+RMPR ITEM                     FEB 15, 1994@10:25  USER #0                                                                                                                                                                                                    @
+     Prints item.
+RMPR NEED APP BY FORM TYPE    SEP 30, 1994@10:30  USER #0                                                                                                                                                                                                     
+RMPR OPEN TRANS               AUG 14, 1995@11:48  USER #0                                                                                                                                                                                PROSTHETICS 1358 LIST
+RMPR WH DISPLAY               NOV 28, 2005@13:08  USER #0                                                                                                                                                                                  Prosthetics Display
+
+SORT TEMPLATE(S):
+RMPR NEED APP BY FORM TYPE    SEP 30, 1994@11:06  USER #0    
+SORT BY: @READY FOR APPROVAL?//
+  WITHIN READY FOR APPROVAL?, SORT BY: @FORM TYPE//     From '2914'  To '2914^2914'
+
+RMPR OPEN TRANS               AUG 14, 1995@11:50  USER #0    
+SORT BY: CLOSE OUT DATE// (CLOSE OUT DATE is null)
+  WITHIN CLOSE OUT DATE, SORT BY: STATION NAME//    (User is asked range)
+    WITHIN STATION NAME, SORT BY: INITIATOR// (INITIATOR not null)
+
+
+FORM(S)/BLOCK(S):

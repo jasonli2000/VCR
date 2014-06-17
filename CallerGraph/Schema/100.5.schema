@@ -1,0 +1,362 @@
+STANDARD DATA DICTIONARY #100.5 -- OE/RR RELEASE EVENTS FILE                                                                                                                                                                      MAY 20,2014@15:39:03  PAGE 1
+STORED IN ^ORD(100.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the locally-defined events that can release delayed orders within each division.  
+ 
+It is strongly recommended that this file not be edited with File Manager.  Please use the edit options provided within CPRS.  
+
+
+IDENTIFIED BY: TYPE OF EVENT (#2)[R], DIVISION (#3)[R]
+
+POINTED TO BY: EVENT field (#2) of the OE/RR PATIENT EVENT File (#100.2) 
+               PARENT field (#14) of the OE/RR RELEASE EVENTS File (#100.5) 
+               
+
+CROSS
+REFERENCED BY: TYPE OF EVENT(ADT), NAME(B), PARENT(DAD)
+
+INDEXED BY:    DISPLAY TEXT & INACTIVATED (C)
+
+
+100.5,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      MAR 29, 2002 
+              HELP-PROMPT:      Answer must be 3-50 characters in length. 
+              DESCRIPTION:
+                                This is the name of the event, used to uniquely identify it in the file; it is visible in the Event Editor only.  
+
+              DELETE TEST:      .01,0)= I $$CANDEL^OREV1(100.5)
+
+              CROSS-REFERENCE:  100.5^B 
+                                1)= S ^ORD(100.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^ORD(100.5,"B",$E(X,1,30),DA)
+
+
+100.5,.1      SHORT NAME             0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      DEC 17, 2001 
+              HELP-PROMPT:      Answer must be 1-15 characters in length. 
+              DESCRIPTION:
+                                This field contains a shorter version of the Display Text, to be used for displaying and grouping delayed orders on the Orders tab where space is limited.  
+
+
+100.5,1       INACTIVATED            1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 10, 2002 
+              HELP-PROMPT:      Enter the date and time this event was (or will be) inactivated. 
+              DESCRIPTION:      This field contains the date and time that this event became inactive; once this date/time has passed, this event may no longer be selected for delaying orders, however any orders already delayed for this event will still
+                                be released when the event occurs.  If this date/time is in the future, this event may continue to be selected for delaying orders until this time passes.  
+
+              RECORD INDEXES:   C (#19)
+
+100.5,1.5     ACTIVATION HISTORY     2;0 DATE Multiple #100.52 (Add New Entry without Asking)
+
+
+              INDEXED BY:       ACTIVATION DATE/TIME & INACTIVATION DATE/TIME (ACT)
+
+100.52,.01      ACTIVATION DATE/TIME   0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 09, 2002 
+                CROSS-REFERENCE:  100.52^B 
+                                  1)= S ^ORD(100.5,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ORD(100.5,DA(1),2,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  100.52^ACT^MUMPS 
+                                  1)= S ^ORD(100.5,DA(1),2,"ACT",DA)=""
+                                  2)= Q
+
+                FIELD INDEX:      ACT (#24)    MUMPS    IR    SORTING ONLY
+                    Short Descr:  Describes current multiple for activation of rule/event
+                    Description:  This cross reference provides a quick way to identify which multiple is the active entry for the date the rule/event was activated.  
+                      Set Logic:  S:X(1) ^ORD(100.5,DA(1),2,"ACT",DA)="" K:X(2) ^ORD(100.5,DA(1),2,"ACT")
+                     Kill Logic:  Q
+                           X(1):  ACTIVATION DATE/TIME  (100.52,.01)  (forwards)
+                           X(2):  INACTIVATION DATE/TIME  (100.52,1)  (forwards)
+
+
+100.52,1        INACTIVATION DATE/TIME 0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 09, 2002 
+                CROSS-REFERENCE:  100.52^ACT^MUMPS 
+                                  1)= K ^ORD(100.5,DA(1),2,"ACT")
+                                  2)= Q
+
+                FIELD INDEX:      ACT (#24)    MUMPS    IR    SORTING ONLY
+                    Short Descr:  Describes current multiple for activation of rule/event
+                    Description:  This cross reference provides a quick way to identify which multiple is the active entry for the date the rule/event was activated.  
+                      Set Logic:  S:X(1) ^ORD(100.5,DA(1),2,"ACT",DA)="" K:X(2) ^ORD(100.5,DA(1),2,"ACT")
+                     Kill Logic:  Q
+                           X(1):  ACTIVATION DATE/TIME  (100.52,.01)  (forwards)
+                           X(2):  INACTIVATION DATE/TIME  (100.52,1)  (forwards)
+
+
+
+
+100.5,2       TYPE OF EVENT          0;2 SET (Required)
+
+                                'A' FOR ADMISSION; 
+                                'T' FOR TRANSFER; 
+                                'D' FOR DISCHARGE; 
+                                'O' FOR O.R.; 
+                                'M' FOR MANUAL RELEASE; 
+              LAST EDITED:      MAR 11, 2009 
+              HELP-PROMPT:      Enter the type of event that should cause delayed orders to be released. 
+              DESCRIPTION:      This is the event that should cause delayed orders to be released to the service(s) for action; for OR (Surgery) events, the orders will be released when TIME PAT IN OR (#130,.205) is entered in the Surgery package.  
+                                 
+                                Orders delayed for Manual Release will not be automatically released by CPRS at all and can only be released via the "Release to Service" action by a user who is authorized to do so.  Authorization is controlled by the
+                                parameter OREVNT MANUAL RELEASE CONTROL, which lets sites choose whether release is controlled by keys or by the parameter OREVNT MANUAL RELEASE or both.  
+
+              CROSS-REFERENCE:  100.5^ADT 
+                                1)= S ^ORD(100.5,"ADT",$E(X,1,30),DA)=""
+                                2)= K ^ORD(100.5,"ADT",$E(X,1,30),DA)
+
+
+100.5,3       DIVISION               0;3 POINTER TO INSTITUTION FILE (#4) (Required)
+
+              LAST EDITED:      FEB 13, 2002 
+              HELP-PROMPT:      Enter the division this event will be used for. 
+              DESCRIPTION:
+                                This is the division that this event will apply to; for transfers across divisions, this should be the new division that the patient is going to.  
+
+
+100.5,4       EVENT ORDER DIALOG     0;4 POINTER TO ORDER DIALOG FILE (#101.41)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,4)=""D""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 14, 2002 
+              HELP-PROMPT:      Enter the dialog to be used to create an order for this event. 
+              DESCRIPTION:      This should be the dialog for a generic order requesting this event; if such an order is not necessary for this event, leave this empty.  Unlike other delayed orders, the order created by this dialog will become active
+                                right away when signed and be visible on the Active Orders view as well as with the delayed orders on the Orders tab.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,4)=""D"""
+              EXPLANATION:      Only DIALOG type entries may be selected.
+
+100.5,5       ORDER SET/MENU         0;5 POINTER TO ORDER DIALOG FILE (#101.41)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,4)'=""P""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 14, 2002 
+              HELP-PROMPT:      Enter the order set/menu to present to the user when delaying orders for this event. 
+              DESCRIPTION:      This is a menu or order set containing items that are either necessary or commonly ordered when this event occurs.  It will be invoked right away when first placing delayed orders for this event; if an EVENT ORDER DIALOG
+                                was defined for this event, this order set will be presented to the user immediately following that dialog.  You may enter any type of order dialog except prompt types.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,4)'=""P"""
+              EXPLANATION:      Select any ORDER DIALOG entry EXCEPT prompt types.
+
+100.5,6       LAPSE IN #DAYS         0;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 05, 2001 
+              HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+              DESCRIPTION:      This is the number of days to allow orders for this event to remain delayed for a patient.  Patient Events are evaluated whenever delayed orders are acted upon or viewed, and if this number of days has passed since delayed
+                                orders were entered for this event for the patient then the status of all orders delayed for this event will be changed to "lapsed" and the Patient Event itself will be terminated.  The orders can no longer be released to
+                                the service then.  
+
+
+100.5,7       MAS MOVEMENT TYPE      0;7 POINTER TO MAS MOVEMENT TYPE FILE (#405.2)
+
+              INPUT TRANSFORM:  D SCR^OREV1 D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 10, 2002 
+              HELP-PROMPT:      For ADT events, enter an MAS Movement Type to further define the event if necessary. 
+              DESCRIPTION:      This is an MAS Movement Type that can further define this event; it is optional, but if defined then it must match the patient's movement data to satisfy the event and cause any delayed orders to be released.  For example,
+                                to have delayed orders released when a patient returns from pass enter the movement type of AUTH ABSENCE 96 HOURS OR LESS, or leave this field empty to have the transfer event defined by other criteria such as treating
+                                specialty or ward location.  
+
+              SCREEN:           D SCR^OREV1
+              EXPLANATION:      You may only select MAS MOVEMENT TYPES that are associated with the TYPE field selected above.
+
+100.5,8       DISPLAY TEXT           0;8 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+              LAST EDITED:      SEP 10, 2002 
+              HELP-PROMPT:      Answer must be 3-60 characters in length. 
+              DESCRIPTION:
+                                This field is the name of the event as it will appear to the user in CPRS.  
+
+              RECORD INDEXES:   C (#19)
+
+100.5,9       ORDERING PARAMETERS LOCATION 0;9 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      MAR 05, 2002 
+              HELP-PROMPT:      The location specified in this field is the location the release event will use to retrieve its ordering parameters. 
+              DESCRIPTION:      Many order dialogs use parameters that depend on location; this field will be used as the default location for retrieving those parameter values when delaying orders to this event.  The patient's actual location will be
+                                saved with the order at the time of its release.  
+
+
+100.5,10      INCLUDED TREATING SPECIALTIES TS;0 POINTER Multiple #100.51
+
+              DESCRIPTION:
+                                These are treating specialties that can satisfy this event; if the patient's new specialty matches one in this list then orders delayed for this event may be released.  
+
+
+100.51,.01      INCLUDED TREATING SPECIALTIES 0;1 POINTER TO FACILITY TREATING SPECIALTY FILE (#45.7) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $G(^ORD(100.5,$G(DA(1),DA),1))!('$G(^ORD(100.5,$G(DA(1),DA),1))&'$$INUSE^OREV1(""TS""))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 14, 2003 
+                HELP-PROMPT:      Enter a treating specialty that will satisfy this event, when the patient is transferred to it.  If locations are also defined then both must be true for orders to be released. 
+                DESCRIPTION:      This is a treating specialty that can satisfy this event; if defined, then the patient's new specialty must match one in this list for any delayed orders to be released.  A specialty may only be included in one active
+                                  delay event at a time.  
+                                   
+                                  If locations are also defined for this event then both the treating specialty and the location must match for orders to be released.  
+
+                SCREEN:           S DIC("S")="I $G(^ORD(100.5,$G(DA(1),DA),1))!('$G(^ORD(100.5,$G(DA(1),DA),1))&'$$INUSE^OREV1(""TS""))"
+                EXPLANATION:      If entry is active only treating specialties that are not in use may be selected.
+                CROSS-REFERENCE:  100.51^B 
+                                  1)= S ^ORD(100.5,DA(1),"TS","B",$E(X,1,30),DA)=""
+                                  2)= K ^ORD(100.5,DA(1),"TS","B",$E(X,1,30),DA)
+
+
+100.51,1        DEFAULT                0;2 SET
+
+                                  '1' FOR YES; 
+                LAST EDITED:      SEP 11, 2002 
+                HELP-PROMPT:      If you set a default treating specialty then this value will be stuffed in at the treating specialty prompt when using the OR GXMOVE EVENT dialog. 
+                SCREEN:           S DIC("S")="I '$D(^ORD(100.5,DA(1),""TS"",""DEF""))"
+                EXPLANATION:      Only one default treating specialty may be defined for each release event.
+                EXECUTABLE HELP:  D DEFHELP^OREV3
+                CROSS-REFERENCE:  100.51^DEF 
+                                  1)= S ^ORD(100.5,DA(1),"TS","DEF",$E(X,1,30),DA)=""
+                                  2)= K ^ORD(100.5,DA(1),"TS","DEF",$E(X,1,30),DA)
+                                  This field identifies which treating specialty should be the "default" 
+
+
+
+
+
+100.5,11      INCLUDED LOCATIONS     LOC;0 POINTER Multiple #100.511
+
+              DESCRIPTION:
+                                These are ward locations that can satisfy this event; if the patient's new location matches one in this list then orders delayed for this event may be released.  
+
+
+100.511,.01     INCLUDED LOCATIONS     0;1 POINTER TO WARD LOCATION FILE (#42) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $G(^ORD(100.5,$G(DA(1),DA),1))!('$G(^ORD(100.5,$G(DA(1),DA),1))&'$$INUSE^OREV1(""LOC""))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 14, 2003 
+                HELP-PROMPT:      Enter a location that will satisfy this event, when the patient is transferred to it.  If treating specialties are also defined then both must be true for orders to release. 
+                DESCRIPTION:      This is a ward location that can satisfy this event; if defined, then the patient's new location must match one in this list for any delayed orders to be released.  A location may only be included in one active delay
+                                  event at a time.  
+                                   
+                                  If this event also has treating specialties defined then both the location and the treating specialty must match for orders to be released.  
+
+                SCREEN:           S DIC("S")="I $G(^ORD(100.5,$G(DA(1),DA),1))!('$G(^ORD(100.5,$G(DA(1),DA),1))&'$$INUSE^OREV1(""LOC""))"
+                EXPLANATION:      If this entry is active you may only pick locations that aren't currently in use.
+                CROSS-REFERENCE:  100.511^B 
+                                  1)= S ^ORD(100.5,DA(1),"LOC","B",$E(X,1,30),DA)=""
+                                  2)= K ^ORD(100.5,DA(1),"LOC","B",$E(X,1,30),DA)
+
+
+
+
+100.5,12      EDIT HISTORY           9;0 DATE Multiple #100.512 (Add New Entry without Asking)
+
+
+100.512,.01     EDIT HISTORY           0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 23, 2002 
+                DESCRIPTION:
+                                  This field will track when an event was added.  It also tracks when the edit option was used on this event.  
+
+                CROSS-REFERENCE:  100.512^B 
+                                  1)= S ^ORD(100.5,DA(1),9,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ORD(100.5,DA(1),9,"B",$E(X,1,30),DA)
+
+
+100.512,1       WHO ENTERED/EDITED     0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      APR 23, 2002 
+                DESCRIPTION:
+                                  This field identifies the person who entered or edited the event 
+
+
+100.512,2       ACTION                 0;3 SET
+
+                                  'N' FOR NEW; 
+                                  'E' FOR EDIT; 
+                LAST EDITED:      APR 23, 2002 
+                DESCRIPTION:
+                                  This field describes whether the event was newly entered or if it was edited.  
+
+
+
+
+100.5,13      COPY ACTIVE ORDERS     0;11 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAY 13, 2002 
+              HELP-PROMPT:      Enter YES if the user should be prompted to copy active orders when writing new delayed orders for this event. 
+              DESCRIPTION:      This field determines whether or not the user will be presented with the patient's active orders, which may then be copied to the delayed event being created.  
+                                 
+                                If this field is set to no then the user will not see the patient's active orders and will not be allowed to copy any current orders.  
+                                 
+                                If this field is set to yes then the user will be shown the patient's active orders and the user may select orders to be copied to the delayed event.  The list of active orders will be presented to the user after the ORDER
+                                DIALOG for the release event is processed (if it exists) and before the ORDER SET/MENU for the release event is processed (if it exists).  
+
+
+100.5,14      PARENT                 0;12 POINTER TO OE/RR RELEASE EVENTS FILE (#100.5)
+
+              LAST EDITED:      AUG 28, 2002 
+              HELP-PROMPT:      Enter release event that will be the "parent" event for this event 
+              DESCRIPTION:      For release events that have a common trigger event (e.g. same treating specialty or same locations) but require different names or display text a parent-child relationship can be set up.  The parent contains the base
+                                trigger event logic while the child contains the information unique to this event.  In a sense, the child events are "synonyms" to the parent event as all childen are related to the parent.  When the trigger event occurs
+                                that would release orders for the parent all the child orders related to that parent are also released.  
+
+              CROSS-REFERENCE:  100.5^DAD 
+                                1)= S ^ORD(100.5,"DAD",$E(X,1,30),DA)=""
+                                2)= K ^ORD(100.5,"DAD",$E(X,1,30),DA)
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FACILITY TREATING SPECIALTY 
+                   (#45.7)        INCLUDED TREATING SPECIALTIES:INCLUDED TREATING SPECIALTIES (#.01)
+
+HOSPITAL LOCATION (#44)           ORDERING PARAMETERS LOCATION (#9)
+
+INSTITUTION (#4)                  DIVISION (#3)
+
+MAS MOVEMENT TYPE (#405.2)        MAS MOVEMENT TYPE (#7)
+
+NEW PERSON (#200)                 EDIT HISTORY:WHO ENTERED/EDITED (#1)
+
+OE/RR RELEASE EVENTS (#100.5)     PARENT (#14)
+
+ORDER DIALOG (#101.41)            EVENT ORDER DIALOG (#4)
+                                  ORDER SET/MENU (#5)
+
+WARD LOCATION (#42)               INCLUDED LOCATIONS:INCLUDED LOCATIONS (#.01)
+
+
+File #100.5
+
+  Record Indexes:
+
+  C (#19)    RECORD    MUMPS    IR    LOOKUP & SORTING
+      Short Descr:  Active events
+        Set Logic:  S ^ORD(100.5,"C",$$UP^XLFSTR($E(X(1),1,60)),DA)=""
+         Set Cond:  S X=$S(X(2):0,1:1)
+       Kill Logic:  K ^ORD(100.5,"C",$$UP^XLFSTR($E(X(1),1,60)),DA)
+        Kill Cond:  S X=$S(X(2):0,1:1)
+       Whole Kill:  K ^ORD(100.5,"C")
+             X(1):  DISPLAY TEXT  (100.5,8)  (Subscr 1)  (Len 60)  (forwards)
+             X(2):  INACTIVATED  (100.5,1)  (forwards)
+
+
+INPUT TEMPLATE(S):
+OREV CHILD EVENT              AUG 28, 2002@14:58  USER #0    
+OREV EVENT                    JAN 14, 2003@12:16  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

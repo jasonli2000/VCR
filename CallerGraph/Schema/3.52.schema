@@ -1,0 +1,225 @@
+STANDARD DATA DICTIONARY #3.52 -- PRINT QUEUE JOB FILE                                                                                                                                                                            MAY 20,2014@15:36:29  PAGE 1
+STORED IN ^%ZIS(3.52,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 8.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to record print jobs passed to a print server.  Under Linux a CUPS is used to provide print services and to manage print queues.  
+ 
+Print jobs are passed to the print server via a host file.  Each time a host file is created a new entry will be created in this file.  The file will be purged of old entries on a regular basis.  
+ 
+The principle use of this file is to insure that the name of the host file is unique.  A secondary use is to track the host files, for example, so that old files can be purged regularly, or to aid in troubleshooting of problems involving print queues. 
+ 
+
+
+IDENTIFIED BY: 
+      "WRITE": D ID^ZISPQ
+
+CROSS
+REFERENCED BY: DEVICE(B), DT/TM HOST FILE CREATED(H)
+
+INDEXED BY:    OWNER (C), HOST FILE (D), HFS DIRECTORY & DEVICE & STATUS & DT/TM HOST FILE CREATED (E), OS PRINT QUEUE (F), OS JOB ID (G)
+
+
+3.52,.01      DEVICE                 0;1 POINTER TO DEVICE FILE (#3.5) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^%ZIS(1,Y,""TYPE""),""^"")=""PQ""" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      NOV 07, 2011 
+              HELP-PROMPT:      Select the device which controls the print queue. 
+              DESCRIPTION:      Identifies the device that the user selected when the print request was made. 
+                                 
+                                 
+                                 
+
+              SCREEN:           S DIC("S")="I $P(^%ZIS(1,Y,""TYPE""),""^"")=""PQ"""
+              EXPLANATION:      Allows only PRINT QUEUE type devices to be selected.
+                                UNEDITABLE
+              CROSS-REFERENCE:  3.52^B 
+                                1)= S ^%ZIS(3.52,"B",$E(X,1,30),DA)=""
+                                2)= K ^%ZIS(3.52,"B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   E (#314)
+
+3.52,.02      DT/TM HOST FILE CREATED 0;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      NOV 23, 2011 
+              HELP-PROMPT:      Enter the date and time that the host file was created. 
+              DESCRIPTION:      This is the date/time that the host file was created.  
+                                 
+                                 
+                                 
+
+              CROSS-REFERENCE:  3.52^H 
+                                1)= S ^%ZIS(3.52,"H",$E(X,1,30),DA)=""
+                                2)= K ^%ZIS(3.52,"H",$E(X,1,30),DA)
+                                This cross-referene is used to find print jobs by the date/time that the host file was created.  
+                                 
+
+
+              RECORD INDEXES:   E (#314)
+
+3.52,.03      DT/TM PASSED TO PRINT SERVER 0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      NOV 07, 2011 
+              HELP-PROMPT:      Enter the date and time that the host file was passed to the print server. 
+              DESCRIPTION:      This is the date and time that the host file was passed to the print server.  No value indicates that the file was not yet passed to the print server.  
+                                 
+                                 
+
+              TECHNICAL DESCR:
+                                 
+
+                                UNEDITABLE
+
+3.52,.04      OWNER                  0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      NOV 02, 2011 
+              HELP-PROMPT:      Select the user who initiated the print job. 
+              DESCRIPTION:      This field indicates the user that made the print request.  
+                                 
+                                 
+                                 
+
+              TECHNICAL DESCR:
+                                 
+
+                                UNEDITABLE
+              FIELD INDEX:      C (#180)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  Used to find the print jobs belonging to a specific individual.
+                  Description:  This index is on the owner of the print job, i.e., the person who requested to print the document.  
+                                 
+                                
+                    Set Logic:  S ^%ZIS(3.52,"C",X,DA)=""
+                   Kill Logic:  K ^%ZIS(3.52,"C",X,DA)
+                   Whole Kill:  K ^%ZIS(3.52,"C")
+                         X(1):  OWNER  (3.52,.04)  (Subscr 1)  (forwards)
+
+
+3.52,.05      OS PRINT QUEUE         0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>31!($L(X)<1) X
+              LAST EDITED:      OCT 25, 2011 
+              HELP-PROMPT:      Answer must be 1-31 characters in length. 
+              DESCRIPTION:      This is the name of the print queue that the print job should be submitted to.  The print queue is created within the host operating system. 
+                                 
+
+              FIELD INDEX:      F (#315)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  Used to find jobs for a specific print queue.
+                  Description:  This index cross-references the print job to the queue that it was placed on.  
+                                 
+                                
+                    Set Logic:  S ^%ZIS(3.52,"F",$E(X,1,31),DA)=""
+                   Kill Logic:  K ^%ZIS(3.52,"F",$E(X,1,31),DA)
+                   Whole Kill:  K ^%ZIS(3.52,"F")
+                         X(1):  OS PRINT QUEUE  (3.52,.05)  (Subscr 1)  (Len 31)  (forwards)
+
+
+3.52,.06      HOST FILE              0;6 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      NOV 02, 2011 
+              HELP-PROMPT:      Enter a unique name (3-20 characters) for the host file. 
+              DESCRIPTION:      The unique name of the host file. The name will have the following format: 
+                                 
+                                PQ$JOB_<record IEN>.TXT 
+                                 
+                                 
+
+              FIELD INDEX:      D (#313)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  Used to do a lookup based on the name of the host file.
+                  Description:  This index cross-references the name of the host file to the print job that it was created for.  
+                                 
+                                
+                    Set Logic:  S ^%ZIS(3.52,"D",$E(X,1,30),DA)=""
+                   Kill Logic:  K ^%ZIS(3.52,"D",$E(X,1,30),DA)
+                   Whole Kill:  K ^%ZIS(3.52,"D")
+                         X(1):  HOST FILE  (3.52,.06)  (Subscr 1)  (Len 30)  (forwards)
+
+
+3.52,.07      STATUS                 0;7 SET (Required)
+
+                                'O' FOR FILE OPENED; 
+                                'OE' FOR ERROR OPENING FILE; 
+                                'AE' FOR APPLICATION ERROR BEFORE CLOSING FILE; 
+                                'Q' FOR PRINT JOB QUEUED; 
+                                'QE' FOR ERROR SUBMITTING JOB TO QUEUE; 
+                                'P' FOR FILE PRINTED, DELETED; 
+                                'D' FOR FILE DELETED, NOT PRINTED; 
+              LAST EDITED:      NOV 02, 2011 
+              HELP-PROMPT:      Enter the status of the host file. 
+              DESCRIPTION:      The current status of the host file. 
+                                 
+                                 
+
+              RECORD INDEXES:   E (#314)
+
+3.52,.08      OS JOB ID              0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      NOV 02, 2011 
+              HELP-PROMPT:      Enter the job identifier (3-30 characters) that was assigned when the host file was submitted for printing. 
+              DESCRIPTION:      This is the identifier assigned by the OS to the print job.  The format is system dependent.  
+                                 
+                                 
+
+              FIELD INDEX:      G (#316)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  Used to find the entry matching the job id returned by the os.
+                  Description:  This index cross-references the job identifier provided by the operating system when the job was submitted to the job record in the Kernel PRINT QUEUE JOBS file.  
+                                 
+                                
+                    Set Logic:  S ^%ZIS(3.52,"G",$E(X,1,30),DA)=""
+                   Kill Logic:  K ^%ZIS(3.52,"G",$E(X,1,30),DA)
+                   Whole Kill:  K ^%ZIS(3.52,"G")
+                         X(1):  OS JOB ID  (3.52,.08)  (Subscr 1)  (Len 30)  (forwards)
+
+
+3.52,.09      HFS DIRECTORY          0;9 SET
+
+                                '1' FOR PRIMARY; 
+                                '2' FOR SECONDARY; 
+              LAST EDITED:      NOV 02, 2011 
+              HELP-PROMPT:      Is the print queue on the primary system or the secondary system? 
+              DESCRIPTION:      This describes the system on which the print queue is located.  This field is important in mixed OS environments.  The print queues and host files are accessible only on the system that they were created on.  
+                                 
+                                 
+
+              RECORD INDEXES:   E (#314)
+
+
+      FILES POINTED TO                      FIELDS
+
+DEVICE (#3.5)                     DEVICE (#.01)
+
+NEW PERSON (#200)                 OWNER (#.04)
+
+
+File #3.52
+
+  Record Indexes:
+
+  E (#314)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Used to manage print jobs. For example,purging.
+      Description:  The format of this index is as follows: 
+                     
+                    ^%ZIS(3.52,"E", <HFS DIRECTORY field (#.09)>, <DEVICE field (#.01)>, <STATUS field (#.07)>, <DT/TM HOST FILE CREATED field (#.02), <IEN of record>)="" 
+                     
+                     
+                    
+        Set Logic:  S ^%ZIS(3.52,"E",$E(X(1),1,1),$E(X(2),1,5),$E(X(3),1,2),$E(X(4),1,12),DA)=""
+       Kill Logic:  K ^%ZIS(3.52,"E",$E(X(1),1,1),$E(X(2),1,5),$E(X(3),1,2),$E(X(4),1,12),DA)
+       Whole Kill:  K ^%ZIS(3.52,"E")
+             X(1):  HFS DIRECTORY  (3.52,.09)  (Subscr 1)  (Len 1)  (forwards)
+             X(2):  DEVICE  (3.52,.01)  (Subscr 2)  (Len 5)  (forwards)
+             X(3):  STATUS  (3.52,.07)  (Subscr 3)  (Len 2)  (forwards)
+             X(4):  DT/TM HOST FILE CREATED  (3.52,.02)  (Subscr 4)  (Len 12)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,1692 @@
+STANDARD DATA DICTIONARY #660 -- RECORD OF PROS APPLIANCE/REPAIR FILE                                                                                                                                                             MAY 20,2014@15:40:11  PAGE 1
+STORED IN ^RMPR(660,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This is the main file for prosthetic purchasing transactions. AMIS is calculated from this file based on item issued and disability served.  This file is also the permanent record for the patient VAF 10-2319 of items issued to the veteran.  
+
+
+              DD ACCESS: @
+             DEL ACCESS: @
+IDENTIFIED BY: PATIENT NAME (#.02)[R]
+
+POINTED TO BY: PROSTHETIC ITEM field (#.09) of the CLAIMS TRACKING File (#356) 
+               RECORD field (#.04) of the IB BILL/CLAIMS PROSTHETICS File (#362.5) 
+               APPLIANCE REPAIR field (#11.5) of the PROS RETURNED/CONDEMNED File (#660.1) 
+               APPLIANCE REPAIR field (#11.5) of the PROSTHETICS RE-ISSUE ITEM File (#660.2) 
+               PATIENT TRANSACTION field (#2) of the PROSTHETIC TRANSACTION PATIENT ISSUE File (#661.63) 
+               SHIPPING ENTRY field (#13) of the PROSTHETICS 1358 File (#664) 
+               APPLIANCE/REPAIR field (#12) of the BILLING ITEM sub-field (#664.02) of the PROSTHETICS 1358 File (#664) 
+               APPLIANCE/REPAIR field (#5) of the ITEM sub-field (#664.16) of the PROSTHETIC 2529-3 File (#664.1) 
+               APPLIANCE/REPAIR field (#1) of the PROSTHETIC WORK ORDER File (#664.2) 
+               APPLIANCE/REPAIR field (#12) of the MATERIALS USED sub-field (#664.22) of the PROSTHETIC WORK ORDER File (#664.2) 
+               APPLIANCE/REPAIR field (#1) of the PROSTHETIC LAB HOURS DATE File (#664.3) 
+               PROSTHETICS APPLIANCE REPAIR field (#15) of the ITEM sub-field (#665.723191) of the PATIENT sub-field (#665.72319) of the VENDOR sub-field (#665.7231) of the BILLING MONTH sub-field (#665.723) etc... 
+               PATIENT 2319 field (#.01) of the PATIENT 2319 sub-field (#668.81) of the PROSTHETIC SUSPENSE File (#668) 
+               PROSTHETICS ORDER field (#11.04) of the STATION ORDER File (#791810) 
+               
+
+CROSS
+REFERENCED BY: REQUEST DATE(AC), ITEM(AD), AMIS DATE(AE), DATE OF SERVICE(AF), AMIS GROUPER(AG), BACKLOG DATE(ALOG), PFSS CHARGE FLAG(APD), PFSS ACCOUNT FLAG(APH), ENTRY DATE(APTASK01), PSAS HCPCS(APTASK45), ENTRY DATE(B), PATIENT NAME(C), 
+               COMPLETION DATE(CD), DELIVERY DATE(CT), DALC REFERENCE NUMBER(DDC), PATIENT NOTIFICATION FLAG(DVN), TRANSACTION(E), ENTRY DATE(F), HCPCS(G), PSAS HCPCS(H), DATE SENT TO PCE(I)
+
+660,.01       ENTRY DATE             0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 01, 2005 
+              HELP-PROMPT:      Please enter a valid date. 
+              DESCRIPTION:
+                                This is the date that the transaction was entered into the system.  It may or may not be the same as the request date.  
+
+              DELETE TEST:      .01,0)= I 1 W "  CANNOT DELETE ENTRY THIS WAY."
+
+              CROSS-REFERENCE:  660^B 
+                                1)= S ^RMPR(660,"B",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  660^F^MUMPS 
+                                1)= I +$P(^RMPR(660,DA,0),U,2) S ^RMPR(660,"F",$E(X,1,30),+$P(^RMPR(660,DA,0),U,2),DA)=""
+                                2)= I +$P(^RMPR(660,DA,0),U,2) K ^RMPR(660,"F",$E(X,1,30),+$P(^RMPR(660,DA,0),U,2),DA)
+                                This x-ref allows lookups on the "F" x-ref by Appliance and Repair date and Patient IEN.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^660^106 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,"PFSS")):^("PFSS"),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X=$S(+$$SWSTAT^IBBAPI():1,1:"") X ^DD(660,.01,1,3,1.4)
+                                1.4)= S DIH=$G(^RMPR(660,DIV(0),"PFSS")),DIV=X S $P(^("PFSS"),U,7)=DIV,DIH=660,DIG=106 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=$S(+$$SWSTAT^IBBAPI():1,1:"")
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PFSS ACCOUNT FLAG
+
+              CROSS-REFERENCE:  660^APTASK01^MUMPS 
+                                1)= Q
+                                2)= D CHRGTASK^RMPRPF3
+
+
+660,.02       PATIENT NAME           0;2 POINTER TO PROSTHETICS PATIENT FILE (#665) (Required)
+
+              LAST EDITED:      APR 19, 1991 
+              HELP-PROMPT:      Please enter the Patient's name. 
+              DESCRIPTION:
+                                This is the name of the patient that this transaction is for.  The name is a pointer to the PROSTHETIC PATIENT file which has the same internal entry number as the main patient database.  
+
+              CROSS-REFERENCE:  660^C 
+                                1)= S ^RMPR(660,"C",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"C",$E(X,1,30),DA)
+                                This will allow lookup by Patient Name.  
+
+
+
+660,1         REQUEST DATE           0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 23, 1986 
+              HELP-PROMPT:      Please enter the date of the patient's request. 
+              DESCRIPTION:
+                                This field is the date the appliance issue or repair was requested by the patient.  It may or may not be the same as the entry date or the delivery date.  This depends on how quickly the transactions take place.  
+
+              CROSS-REFERENCE:  660^AC^MUMPS 
+                                1)= S Y=9999999-X,^RMPR(660,"AC",+$P(^RMPR(660,DA,0),U,2),Y,DA)="" K Y
+                                2)= S Y=9999999-X K ^RMPR(660,"AC",+$P(^RMPR(660,DA,0),U,2),Y,DA),Y
+                                Allow lookups on Patient Transactions by an Inverse Date and the Patient IEN for displays on the 2319 screen #4.  
+
+
+
+660,2         TYPE OF TRANSACTION    0;4 SET (Required)
+
+              LABEL                                                                                                            
+                                'I' FOR INITIAL ISSUE; 
+                                'R' FOR REPLACE; 
+                                'S' FOR SPARE; 
+                                'X' FOR REPAIR; 
+                                '5' FOR RENTAL; 
+              LAST EDITED:      MAY 03, 2005 
+              HELP-PROMPT:      Please enter the appropriate code indicating the type of transaction. 
+              DESCRIPTION:      This set of codes will tell what kind of transaction this request is.  The possibilities all fall under the VAF 10-7306a listings 
+                                 except for the repair.  
+
+
+660,4         ITEM                   0;6 POINTER TO PROS ITEM MASTER FILE (#661) (Required)
+
+              OUTPUT TRANSFORM: ITEM:.01:SHORT DESCRIPTION
+              LAST EDITED:      SEP 22, 2004 
+              HELP-PROMPT:      Please enter the Item from the PROS ITEM MASTER file. 
+              DESCRIPTION:
+                                This field is a pointer to the master item list of possible appliances.  The master list is set up so that appliances fall into groups which are the types of appliances.  
+
+              CROSS-REFERENCE:  660^AD 
+                                1)= S ^RMPR(660,"AD",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"AD",$E(X,1,30),DA)
+                                Allows lookups for an item by Ifcap Item Master number.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^660^89 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,"HST")):^("HST"),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X=DIV D EN^RMPRU99 S DIH=$G(^RMPR(660,DIV(0),"HST")),DIV=X S $P(^("HST"),U,1)=DIV,DIH=660,DIG=89 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,"HST")):^("HST"),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X=DIV D DEL^RMPRU99 S DIH=$G(^RMPR(660,DIV(0),"HST")),DIV=X S $P(^("HST"),U,1)=DIV,DIH=660,DIG=89 D ^DIC
+                                R
+
+                                CREATE VALUE)= D EN^RMPRU99
+                                DELETE VALUE)= D DEL^RMPRU99
+                                FIELD)= HISTORICAL ITEM
+                                This trigger will save the IFCAP Item Master Short Description to allow the NIF project to implement IFCAP patch 75 to overwrite the Short Descripton with the new NIF Item Description.  
+
+
+
+660,4.1       HCPCS                  0;22 POINTER TO CPT FILE (#81) (Required)
+
+              LAST EDITED:      JAN 23, 1998 
+              HELP-PROMPT:      Enter the appropriate HCPCS (Health Care Financing Administration Common Procedure Coding System) code for the Item you are selecting. 
+              DESCRIPTION:      Health Care Financing Administration Common Procedure Coding System (HCPCS).  
+                                 
+                                This field should have the HCPCS code for the Item you are selecting.  HCPCS is a uniform method for healthcare providers and medical suppliers to report professional services, procedures and supplies.  
+
+              NOTES:            TRIGGERED by the PSAS HCPCS field of the RECORD OF PROS APPLIANCE/REPAIR File 
+
+              CROSS-REFERENCE:  660^G 
+                                1)= S ^RMPR(660,"G",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"G",$E(X,1,30),DA)
+
+
+660,4.2       VENDOR TRACKING NUMBER 4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      MAR 13, 1996 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:      This field is the Vendor's internal unique tracking number.  Some of the small vendors are not automated with VISA, and this tracking number is used to reference this transaction.  This tracking number is based on the 
+                                item, and can be as simple as the vendors item number, or elaborate as the vendors transaction number.  This data will be used in the reconciliation process.  
+
+
+660,4.3       BANK AUTHORIZATION NUMBER 4;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<6)!'(X?.N) X
+              LAST EDITED:      MAR 11, 1996 
+              HELP-PROMPT:      Answer must be 6 numbers in length. 
+              DESCRIPTION:
+                                This six digit number is the authorization number VISA gives to the vendor for guaranteed payment.  This number is used in the reconciliation process.  
+
+
+660,4.5       PSAS HCPCS             1;4 POINTER TO PROSTHETIC HCPCS FILE (#661.1)
+
+              INPUT TRANSFORM:  K:$P(^RMPR(661.1,X,0),U,5)'=1 X
+              LAST EDITED:      NOV 01, 2005 
+              HELP-PROMPT:      Enter standardized Prosthetics HCPCS 
+              DESCRIPTION:
+                                Standardized Prosthetics HCPCS that points to file 661.1.  
+
+              DELETE AUTHORITY: @
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^660^4.1 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,0)):^(0),1:"") S X=$P(Y(1),U,22),X=X S DIU=X K Y X ^DD(660,4.5,1,1,1.1) X ^DD(660,4.5,1,1,1.4)
+                                1.1)= S X=DIV S RMXX=$P(^RMPR(661.1,DIV,0),U,4),$P(^RMPR(660,DA,0),U,22)=RMXX
+                                1.4)= S DIH=$S($D(^RMPR(660,DIV(0),0)):^(0),1:""),DIV=RMXX S $P(^(0),U,22)=DIV,DIH=660,DIG=4.1 K RMXX D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,0)):^(0),1:"") S X=$P(Y(1),U,22),X=X S DIU=X K Y S X="" X ^DD(660,4.5,1,1,2.4)
+                                2.4)= S DIH=$S($D(^RMPR(660,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,22)=DIV,DIH=660,DIG=4.1 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= S RMXX=$P(^RMPR(661.1,DIV,0),U,4),$P(^RMPR(660,DA,0),U,22)=RMXX K RMXX
+                                DELETE VALUE)= @
+                                FIELD)= HCPCS
+
+              CROSS-REFERENCE:  660^H 
+                                1)= S ^RMPR(660,"H",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"H",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^660^106 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,"PFSS")):^("PFSS"),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X=$S(+$$SWSTAT^IBBAPI():1,1:"") X ^DD(660,4.5,1,3,1.4)
+                                1.4)= S DIH=$G(^RMPR(660,DIV(0),"PFSS")),DIV=X S $P(^("PFSS"),U,7)=DIV,DIH=660,DIG=106 D ^DICR
+                                2)= Q
+                                3)= This cross-reference will be never deleted by the user.
+                                CREATE VALUE)= S X=$S(+$$SWSTAT^IBBAPI():1,1:"")
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PFSS ACCOUNT FLAG
+
+              CROSS-REFERENCE:  ^^TRIGGER^660^107 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,"PFSS")):^("PFSS"),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X=DIV S X=$S(+$$SWSTAT^IBBAPI():1,1:"") X ^DD(660,4.5,1,4,1.4)
+                                1.4)= S DIH=$G(^RMPR(660,DIV(0),"PFSS")),DIV=X S $P(^("PFSS"),U,8)=DIV,DIH=660,DIG=107 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=$S(+$$SWSTAT^IBBAPI():1,1:"")
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PFSS CHARGE FLAG
+
+              CROSS-REFERENCE:  660^APTASK45^MUMPS 
+                                1)= Q
+                                2)= D CHRGTASK^RMPRPF3
+
+
+660,4.6       STOCK ISSUE            1;5 POINTER TO PROSTHETIC INVENTORY TRANSACTION FILE (#661.6)
+
+              LAST EDITED:      JUN 20, 2001 
+              DESCRIPTION:
+                                This is a pointer to file #661.6.  
+
+
+660,4.7       CPT MODIFIER           1;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>36!($L(X)<1) X
+              LAST EDITED:      NOV 10, 1999 
+              HELP-PROMPT:      Answer must be 1-36 characters in length. 
+              DESCRIPTION:
+                                CPT Modifiers in a comma delimited format, consistent with the HCFA published manuals.  
+
+
+660,4.8       DATE CPT MODIFIER EXTRACTED 1;7 DATE
+
+              INPUT TRANSFORM:  S %DT="ETR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 10, 2000 
+              DESCRIPTION:
+                                This is the date the patient record extracted for billing.  This date is also being used to trigger a mail message to billing if the PSAS HCPCS is edited and changed after the extraction has been ran.  
+
+
+660,4.9       HCPCS-ICD9 CODING FLAG 1;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 14, 2004 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:      This field is used to determine the current code set versioning of a transaction.  
+                                        No errors, number 1.  
+                                        PSAS HCPCS, Not Billiable Item, number 14.  
+                                        ICD9 error, number 12.  
+                                        HCPCS error, number 13.  
+                                        Both ICD9 and HCPCS error, number 132.  
+                                        Both ICD9 error and Not Billiable Item, number 142.  
+
+
+660,4.91      CODING FLAG DATE       1;12 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 16, 2004 
+              DESCRIPTION:
+                                This is the date associated with field number 4.9.  The date the coding flag was set.  
+
+
+660,4.92      HIGH TECH ITEM         1;13 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 31, 2006 
+              DESCRIPTION:
+                                This is the determination by the Prosthetics Laboratory Technician.  1=YES 0=NO 
+
+
+660,5         QTY                    0;7 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>1000)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 28, 2005 
+              HELP-PROMPT:      Type a Number between 1 and 1000, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of units that was issued or repaired for this transaction.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^660^107 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,"PFSS")):^("PFSS"),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X=DIV S X=$S(+$$SWSTAT^IBBAPI():1,1:"") X ^DD(660,5,1,1,1.4)
+                                1.4)= S DIH=$G(^RMPR(660,DIV(0),"PFSS")),DIV=X S $P(^("PFSS"),U,8)=DIV,DIH=660,DIG=107 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=$S(+$$SWSTAT^IBBAPI():1,1:"")
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PFSS CHARGE FLAG
+
+
+660,6         SHIP/DEL               0;17 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      FEB 25, 1992 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the charge associated with shipping.  
+
+
+660,6.5       PICKUP/DEL             0;26 SET
+
+                                'P' FOR PICKUP; 
+                                'D' FOR DELIVERY; 
+              LAST EDITED:      JAN 14, 1991 
+              HELP-PROMPT:      Please enter `P` if these are pickup charges or `D` if delivery charges on VAF 10-2319. 
+              DESCRIPTION:
+                                This field is a set of codes to identify pickup/delivery charges on VAF 10-2319.  
+
+
+660,7         VENDOR                 0;9 POINTER TO VENDOR FILE (#440) (Required)
+
+              LAST EDITED:      AUG 13, 1991 
+              HELP-PROMPT:      Please enter the name of a vendor on file at this station. 
+              DESCRIPTION:      The vendor is a pointer to IFCAP's VENDOR file and is the name of the company from which this appliance was or is to be purchased.  The vendor may or may not be the same as the manufacturer.  Therefore, manufacturers 
+                                should also be listed in this file as vendors if you are going to be purchasing directly from the manufacturer.  
+
+
+660,8         STATION                0;10 POINTER TO INSTITUTION FILE (#4) (Required)
+
+              LAST EDITED:      AUG 13, 1991 
+              HELP-PROMPT:      Enter the Station Name or Station Number. 
+              DESCRIPTION:      The station is the Veterans Affairs site where this transaction is to come to completion.  It is the station that is ultimately responsible for the issue and payment for the prosthetic device. This is the station reporting
+                                the workload.  
+
+
+660,8.1       SUSPENSE DATE          10;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 23, 2001 
+              DESCRIPTION:
+                                This is suspense date (.01 field) of file (#668).  
+
+
+660,8.11      SUSPENSE STATION       10;11 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      MAY 30, 2001 
+              DESCRIPTION:
+                                This refers to the consulting station.  
+
+
+660,8.12      PCE                    10;12 POINTER TO VISIT FILE (#9000010)
+
+              LAST EDITED:      JUL 09, 2001 
+              DESCRIPTION:
+                                This field is pointer to (Patient Encounter), Visit file (#9000010).  When an entry is created in PCE a pointer is being set.  
+
+
+660,8.13      DATE SENT TO PCE       10;13 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 16, 2001 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date last sent or edited in PCE.  If PCE is deleted this field should be deleted.  
+
+              CROSS-REFERENCE:  660^I 
+                                1)= S ^RMPR(660,"I",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"I",$E(X,1,30),DA)
+
+
+660,8.14      SUSPENSE STATUS        10;14 SET
+
+                                '0' FOR INCOMPLETE; 
+                                '1' FOR COMPLETE; 
+              LAST EDITED:      AUG 14, 2001 
+              DESCRIPTION:
+                                This is the suspense status of the patient 2319 record. If the status is complete, a suspense link was established.  If the status is incomplete, there is no suspense link to the patient 2319 record.  
+
+
+660,8.2       DATE RX WRITTEN        10;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 12, 2001 
+              DESCRIPTION:
+                                This is the date the prescription was written as it appears in file #668.  
+
+
+660,8.3       INITIAL ACTION DATE    10;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 12, 2001 
+              DESCRIPTION:
+                                This field is the date when an initial action was entered in suspense.  
+
+
+660,8.4       COMPLETION DATE        10;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 12, 2001 
+              DESCRIPTION:
+                                This is the date the susepnse was completed as it appears in file #668.  
+
+
+660,8.5       TYPE OF REQUEST        10;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>16!($L(X)<3) X
+              LAST EDITED:      MAY 30, 2001 
+              HELP-PROMPT:      Answer must be 3-16 characters in length. 
+              DESCRIPTION:
+                                This field could either be ROUTINE PROSTHETICS, EYEGLASS, CONTACT LENS, OXYGEN, MANUAL  NON CPRS or CLOTHING ALLOWANCE.  
+
+
+660,8.6       SUSPENSE REQUESTOR     10;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      OCT 28, 2005 
+              DESCRIPTION:
+                                This is a pointer to file #200, the person requesting the suspense as it appears in file #668.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^660^107 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,"PFSS")):^("PFSS"),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X=DIV S X=$S(+$$SWSTAT^IBBAPI():1,1:"") X ^DD(660,8.6,1,1,1.4)
+                                1.4)= S DIH=$G(^RMPR(660,DIV(0),"PFSS")),DIV=X S $P(^("PFSS"),U,8)=DIV,DIH=660,DIG=107 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=$S(+$$SWSTAT^IBBAPI():1,1:"")
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PFSS CHARGE FLAG
+
+
+660,8.61      CONSULT REQUEST SERVICE 4;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<2) X
+              LAST EDITED:      MAY 06, 2003 
+              HELP-PROMPT:      Answer must be 2-35 characters in length. 
+              DESCRIPTION:
+                                A service/section of a suspense requestor that initiated a consult for Prosthetics item.  This free text entry is a service/section name of SERVICE/SECTION file (#49).  
+
+
+660,8.7       PROVISIONAL DIAGNOSIS  10;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>16!($L(X)<3) X
+              LAST EDITED:      MAY 30, 2001 
+              HELP-PROMPT:      Answer must be 3-16 characters in length. 
+              DESCRIPTION:
+                                This is a free text diagnosis as it appears in suspense file.  
+
+
+660,8.8       SUSPENSE ICD9          10;8 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAY 30, 2001 
+              DESCRIPTION:
+                                This field is a pointer to ICD9 file, #80.  This is the code at the time suspense was created.  
+
+
+660,8.9       CONSULT                10;9 POINTER TO REQUEST/CONSULTATION FILE (#123)
+
+              LAST EDITED:      MAY 30, 2001 
+              DESCRIPTION:
+                                This is a pointer to Consult file #123.  
+
+
+660,9         SERIAL NBR             0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>20!($L(X)<1)!(X["^") X
+              LAST EDITED:      APR 20, 1993 
+              HELP-PROMPT:      Answer must be 1-20 characters in length and cannot contain an "^". 
+              DESCRIPTION:
+                                This is the serial number of the issued or repaired appliance.  If the serial number is longer than 20 characters, use the FIRST 20 characters.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+660,9.1       PRODUCT DESCRIPTION    9;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>55!($L(X)<1) X
+              LAST EDITED:      MAR 02, 2004 
+              HELP-PROMPT:      Answer must be 1-55 characters in length. 
+              DESCRIPTION:
+                                The manufacture product description to be used for recalls.  
+
+
+660,9.2       PRODUCT MODEL          9;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>55!($L(X)<1) X
+              LAST EDITED:      MAR 02, 2004 
+              HELP-PROMPT:      Answer must be 1-55 characters in length. 
+              DESCRIPTION:
+                                The manufacture product model number to be used for recalls.  
+
+
+660,10        DELIVERY DATE          0;12 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 15, 1993 
+              HELP-PROMPT:      Please enter date of delivery to (and acceptance by) the patient. 
+              DESCRIPTION:      This is the date that the appliance was delivered and accepted by the patient.  This date, under certain circumstances, may be a date that the appliance was mailed to the patient.  It may or may not be the same as the 
+                                transaction date and/or the request date.  
+
+              CROSS-REFERENCE:  660^CT 
+                                1)= S ^RMPR(660,"CT",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"CT",$E(X,1,30),DA)
+                                Allows lookups of Appliance Repair entries that have been delivered.  This x-ref is used to calculate end-of-quarter AMIS for closed-out items.  
+
+
+
+660,11        FORM REQUESTED ON      0;13 SET
+
+                                '1' FOR PSC; 
+                                '2' FOR 2421; 
+                                '3' FOR 2237; 
+                                '4' FOR 2529-3; 
+                                '5' FOR 2529-7; 
+                                '6' FOR 2474; 
+                                '7' FOR 2431; 
+                                '8' FOR 2914; 
+                                '9' FOR OTHER; 
+                                '10' FOR 2520; 
+                                '11' FOR STOCK ISSUE; 
+                                '12' FOR INVENTORY ISSUE; 
+                                '13' FOR HISTORICAL DATA; 
+                                '14' FOR VISA; 
+                                '15' FOR LAB ISSUE-3; 
+                                '16' FOR DALC; 
+              LAST EDITED:      MAY 23, 2007 
+              HELP-PROMPT:      Please select appropriate form to enter this request. 
+              DESCRIPTION:
+                                The FORM REQUESTED ON is based on current VA regulations.  The system makes no checks to be sure that the form entered from the set of codes is within these regulations.  
+
+
+660,12        SOURCE                 0;14 SET (Required)
+
+                                'V' FOR VA; 
+                                'C' FOR COMMERCIAL; 
+              LAST EDITED:      AUG 13, 1991 
+              HELP-PROMPT:      Please indicate acquisition source of appliance. 
+              DESCRIPTION:
+                                This set of codes denotes which two possible sources were used for the acquisition of the appliance.  The sources are grouped into either VA sources or commercial sources.  
+
+
+660,13        ACTION                 0;5 SET
+
+              QTY                                                                                                              
+                                '1' FOR LOAN; 
+                                '2' FOR CONDEMNED; 
+                                '3' FOR RETURNED; 
+                                '4' FOR INACTIVE; 
+                                '5' FOR LOST; 
+              LAST EDITED:      JAN 24, 1996 
+              HELP-PROMPT:      Please enter indicator for the action taken on this transaction. 
+              DESCRIPTION:
+                                The action taken on this transaction is noted here.  The set of codes is self explanatory; however, the inactive action is used to indicate that the appliance is no longer being followed by VA.  
+
+
+660,14        TOTAL COST             0;16 NUMBER (Required)
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+              LAST EDITED:      OCT 28, 2005 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the total cost of the transaction.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^660^107 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(660,D0,"PFSS")):^("PFSS"),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X=DIV S X=$S(+$$SWSTAT^IBBAPI():1,1:"") X ^DD(660,14,1,1,1.4)
+                                1.4)= S DIH=$G(^RMPR(660,DIV(0),"PFSS")),DIV=X S $P(^("PFSS"),U,8)=DIV,DIH=660,DIG=107 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=$S(+$$SWSTAT^IBBAPI():1,1:"")
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PFSS CHARGE FLAG
+
+
+660,15        HISTORICAL DATA        0;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+              LAST EDITED:      MAR 22, 1994 
+              HELP-PROMPT:      Answer must be 1-3 characters in length. 
+              DESCRIPTION:
+                                If this field contains an asterisk (*), then this transaction has been counted by the AMIS option, or is considered to be a historical transaction.  
+
+
+660,16        REMARKS                0;18 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>61!($L(X)<1) X
+              LAST EDITED:      AUG 28, 1995 
+              HELP-PROMPT:      Answer must be 1-61 characters in length. 
+              DESCRIPTION:      A free-text field used to indicate any additional information that is needed for this entry.  For Purchasing Transactions this field will contain the remarks for the individual item, and the close-out remarks added
+                                together.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+660,17        RETURNED STATUS        0;19 SET
+
+                                '1' FOR RETURNED; 
+                                '2' FOR CONDEMNED; 
+                                '3' FOR CANCELLED; 
+                                '4' FOR TURNED-IN; 
+                                '5' FOR LOST; 
+                                '6' FOR BROKEN; 
+              LAST EDITED:      AUG 29, 1994 
+              HELP-PROMPT:      Please enter the status. 
+              DESCRIPTION:
+                                The status of the appliance upon return to the veteran.  This notes what action was taken by the repair depot or station upon the completion of repairs.  
+
+
+660,17.5      RETURN STATUS DATE     0;20 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 17, 1986 
+              HELP-PROMPT:      Enter the date the return status was determined and carried out if the item was returned to the veteran. 
+              DESCRIPTION:
+                                This is the date upon which the return status was determined and carried out if the item was returned to the veteran.  
+
+
+660,18        *STATUS FLAG           0;21 SET
+
+                                'D' FOR DECEASED; 
+                                'T' FOR TRANSFERRED; 
+                                'I' FOR INACTIVE; 
+              LAST EDITED:      AUG 29, 1994 
+              HELP-PROMPT:      Please enter indicator of current patient status. 
+              DESCRIPTION:
+                                The status of the patient is entered here so the service can determine if the patient is being followed, dropped, transferred, or canceled by this station.  
+
+
+660,19        PATIENT NOTIFICATION FLAG 3;3 SET
+
+                                '1' FOR RE-SEND; 
+              LAST EDITED:      MAR 26, 2009 
+              HELP-PROMPT:      Enter a 1 if this record should be re-transmitted. 
+              DESCRIPTION:
+                                This field if set to 1 will be used to gather the patient records that need to be re-sent for the daily pull of the Mandatory Patient Notification process.  
+
+              CROSS-REFERENCE:  660^DVN 
+                                1)= S ^RMPR(660,"DVN",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"DVN",$E(X,1,30),DA)
+                                This X-Ref will be used to gather the patient records that need to be re-sent for the Mandatory Patient Notification process.  
+
+
+
+660,20        DELIVERY VERIFICATION DATE 6;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 26, 2009 
+              HELP-PROMPT:      Enter the date from the Verification Card that the Veteran indicates he received the item. 
+              DESCRIPTION:
+                                This is the date the Veteran indicates on the Notification card that he received the item.  
+
+
+660,20.1      DELIVERY VERIFICATION STATUS 6;2 SET
+
+                                '1' FOR RECEIVED; 
+                                '2' FOR NOT RECEIVED; 
+                                '3' FOR DAMAGED or INCOMPLETE; 
+                                '4' FOR RECEIVED not as ORDERED; 
+                                '5' FOR RECEIVED in ERROR; 
+              LAST EDITED:      MAY 07, 2008 
+              HELP-PROMPT:      Enter the Status of receipt Indicated on the Returned Card 
+              DESCRIPTION:
+                                This is the statement of receipt that the Veteran indicates on the returned Delivery Notification Card.  
+
+
+660,21        LOT NUMBER             0;24 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1)!(X["^") X
+              LAST EDITED:      NOV 17, 1991 
+              HELP-PROMPT:      Enter the manufacturer's lot number, if known.  Answer must be 1-20 characters in length and cannot contain "^". 
+              DESCRIPTION:
+                                This field stores the lot number of the item being furnished to the patient. Enter the manufacturer's lot number, if known.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+660,22        *PRODUCT LINE          0;25 SET
+
+                                '1' FOR HEARING AIDS; 
+                                '2' FOR BATTERIES; 
+                                '3' FOR OTHER; 
+              LAST EDITED:      AUG 29, 1994 
+              HELP-PROMPT:      Please enter code pertaining to hearing aid transactions. 
+              DESCRIPTION:
+                                Set of codes that contains information for Hearing Aid transactions.  
+
+
+660,23        TRANSACTION            1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      SEP 14, 1994 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is the IFCAP transaction number from VAF 4-1358 or VAF 2237.  A temporary Transaction number for a VAF 10-2529-3 may also be entered.  
+
+              CROSS-REFERENCE:  660^E 
+                                1)= S ^RMPR(660,"E",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"E",$E(X,1,30),DA)
+                                To be used for quicker lookups by Transaction Number.  
+
+
+
+660,24        DESCRIPTION            1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+              LAST EDITED:      MAR 21, 1991 
+              HELP-PROMPT:      Answer must be 3-60 characters in length. 
+              DESCRIPTION:
+                                This is a detailed description of the item/service supplied.  
+
+
+660,25        DELIVER TO             3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      OCT 01, 1992 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                Delivery location that will print on VAF 10-2421 to show the vendor where the item will be delivered.  
+
+
+660,26        DATE REQUIRED          3;2 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 12, 2008 
+              HELP-PROMPT:      Enter the date the vendor must deliver by 
+              DESCRIPTION:
+                                This field stores the date the vendor is required to provide the Item/Service by.  
+
+
+660,27        INITIATOR              0;27 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 08, 1992 
+              HELP-PROMPT:      Please enter the name of the person who entered in this transaction. 
+              DESCRIPTION:
+                                This is the person who created the transaction.  
+
+                                UNEDITABLE
+
+660,28        EXTENDED DESCRIPTION   DES;0   WORD-PROCESSING #660.028
+
+              DESCRIPTION:
+                                This is the extended information from purchasing and also from posting of VAF 2237s.  
+
+
+660,29        INVENTORY POINT        1;3 POINTER TO GENERIC INVENTORY FILE (#445)
+
+              LAST EDITED:      FEB 04, 1992 
+              HELP-PROMPT:      Enter the inventory point for this transaction. 
+              DESCRIPTION:
+                                This is the inventory point for this transaction and is a pointer to the GENERIC INVENTORY file (#445).  
+
+
+660,30        PRIMARY ICD DIAGNOSIS CODE BA1;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter pointer to ICD DIAGNOSIS FILE (#80) 
+              DESCRIPTION:
+                                Pointer to Primary Diagnosis code for order.  
+
+
+660,30.1      PRIMARY AGENT ORANGE EXPOSURE BA1;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Agent Orange exposure. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Agent Orange exposure.  
+
+
+660,30.2      PRIMARY IONIZED RADIATION BA1;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Ionized Radiation exposure. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Ionized Radiation exposure.  
+
+
+660,30.3      PRIMARY SERVICE-CONNECTED BA1;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to a Service-Connected condition. 
+              DESCRIPTION:
+                                Primary diagnosis is related to a Service-Connected condition.  
+
+
+660,30.4      PRIMARY ENVIRONMENTAL CONT. BA1;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Environmental Contaminants exposure. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Environmental Contaminants exposure.  
+
+
+660,30.5      PRIMARY MST            BA1;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Military Sexual Trauma. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Military Sexual Trauma.  
+
+
+660,30.6      PRIMARY HEAD/NECK CANCER BA1;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Head/Neck Cancer. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Head/Neck Cancer.  
+
+
+660,30.7      PRIMARY COMBAT VET     BA1;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Combat. 
+              DESCRIPTION:
+                                Primary diagnosis related to Combat.  
+
+
+660,31        SECONDARY ICD DIAGNOSIS CODE 1 BA2;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter the pointer to the ICD Diagnosis file (#80) for the Secondary ICD Diagnosis code 1. 
+              DESCRIPTION:
+                                Pointer to ICD Diagnosis file (#80) for Secondary ICD Diagnosis code 1.  
+
+
+660,31.1      SECONDARY AGENT ORANGE 1 BA2;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Agent Orange exposure.  
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Agent Orange exposure.  
+
+
+660,31.2      SECONDARY IONIZED RADIATION 1 BA2;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Ionized Radiation exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Ionized Radiation exposure.  
+
+
+660,31.3      SECONDARY SERVICE-CONNECTED 1 BA2;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to a Service-Connected condition. 
+              DESCRIPTION:
+                                Secondary Diagnosis 1 is related to a Service-Connected condition.  
+
+
+660,31.4      SECONDARY ENVIRONMENTAL CONT 1 BA2;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Environmental Contaminants exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Environmental Contaminants exposure.  
+
+
+660,31.5      SECONDARY MST 1        BA2;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Military Sexual Trauma. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Military Sexual Trauma.  
+
+
+660,31.6      SECONDARY HEAD/NECK CANCER 1 BA2;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Head/Neck cancer. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Head/Neck cancer.  
+
+
+660,31.7      SECONDARY COMBAT VET 1 BA2;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Combat. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Combat.  
+
+
+660,32        SECONDARY ICD DIAGNOSIS 2 BA3;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter pointer to ICD Diagnosis file (#80) for Secondary diagnosis code 2. 
+              DESCRIPTION:
+                                Pointer to ICD Diagnosis file (#80) for Secondary ICD diagnosis code 2.  
+
+
+660,32.1      SECONDARY AGENT ORANGE 2 BA3;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Agent Orange exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Agent Orange exposure.  
+
+
+660,32.2      SECONDARY IONIZED RADIATION 2 BA3;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Ionized Radiation exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Ionized Radiation exposure.  
+
+
+660,32.3      SECONDARY SERVICE-CONNECTED 2 BA3;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to a Service-Connected condition. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to a Service-Connected condition.  
+
+
+660,32.4      SECONDARY ENVIR. CONT. 2 BA3;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Environmental Contaminants exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Environmental Contaminants exposure.  
+
+
+660,32.5      SECONDARY MST 2        BA3;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Military Sexual Trauma. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Military Sexual Trauma.  
+
+
+660,32.6      SECONDARY HEAD/NECK CANCER 2 BA3;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Head/Neck cancer. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Head/Neck cancer.  
+
+
+660,32.7      SECONDARY COMBAT VET 2 BA3;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Combat. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Combat.  
+
+
+660,33        SECONDARY ICD DIAGNOSIS 3 BA4;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter pointer to ICD Diagnosis file (#80) for Secondary ICD diagnosis code 3. 
+              DESCRIPTION:
+                                Pointer to ICD Diagnosis file (#80) for Secondary ICD diagnosis code 3.  
+
+
+660,33.1      SECONDARY AGENT ORANGE 3 BA4;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to Agent Orange exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Agent Orange exposure.  
+
+
+660,33.2      SECONDARY IONIZED RADIATION 3 BA4;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to Ionized Radiation exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Ionized Radiation exposure.  
+
+
+660,33.3      SECONDARY SERVICE-CONNECTED 3 BA4;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to a Service-Connected condition. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to a Service-Connected condition.  
+
+
+660,33.4      SECONDARY ENVIRON. CONT. 3 BA4;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to Environmental Contaminants exposure.  
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Environmental Contaminants exposure.  
+
+
+660,33.5      SECONDARY MST 3        BA4;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to Military Sexual Trauma. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Military Sexual Trauma.  
+
+
+660,33.6      SECONDARY HEAD/NECK CANCER 3 BA4;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to Head/Neck cancer. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Head/Neck cancer.  
+
+
+660,33.7      SECONDARY COMBAT VET 3 BA4;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to Combat. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Combat.  
+
+
+660,34        OIF/OEF                5;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      APR 30, 2007 
+              DESCRIPTION:
+                                Veteran determined to be OEF/OIF 1 Yes 0 NO.  
+
+
+660,35        USER WHO EDIT          1;9 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      OCT 19, 2000 
+              DESCRIPTION:
+                                User who edited the 2319 record using option ED2.  This field will only be populated when the Total Cost field has been changed.  
+
+
+660,36        DATE EDITED            1;10 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 19, 2000 
+              DESCRIPTION:
+                                This is the date the Total Cost field has been changed using option ED2.  
+
+
+660,37        HCPCS/ITEM             2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<8) X
+              LAST EDITED:      DEC 01, 2000 
+              HELP-PROMPT:      Answer must be 8-20 characters in length. 
+              DESCRIPTION:
+                                Enternal entry of an HCPCS concatenated to an enternal entry of an item in file #661.1.  Entry for this field is derived from the entry in file 661.2, field #9.  
+
+
+660,38        HCPCS/ITEM DESCRIPTION 2;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+              LAST EDITED:      DEC 01, 2000 
+              HELP-PROMPT:      Answer must be 3-50 characters in length. 
+              DESCRIPTION:
+                                This is the description of an Item or Appliance kept by local site in file #661.1, field #20. This field is updated during the STOCK ISSUE options.  
+
+
+660,38.1      EXCLUDE/WAIVER         2;3 SET
+
+                                'E' FOR EXCLUDED; 
+                                'W' FOR WAIVER; 
+              LAST EDITED:      FEB 23, 2005 
+              DESCRIPTION:
+                                This field determines if the item is EXCLUDED or Waver off of a National Contract 
+
+
+660,38.7      CONTRACT #             2;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      DEC 28, 2004 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field stores the Contract Number.  
+
+
+660,38.8      NUMBER OF BIDS         2;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 20, 2005 
+              HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The number of bids recieved for a particular item.  
+
+
+660,39        DATE OF SERVICE        1;8 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 02, 2004 
+              DESCRIPTION:
+                                This is the date when an item is issued to the patient.  
+
+              CROSS-REFERENCE:  660^AF 
+                                1)= S ^RMPR(660,"AF",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"AF",$E(X,1,30),DA)
+                                Cross-reference for Shipment date to be used for Billing.  
+
+
+
+660,40        REQUESTING STATION     LB;1 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      AUG 04, 1986 
+              HELP-PROMPT:      Enter the Station Name or Station Number for the Station requesting services or appliances. 
+              DESCRIPTION:
+                                This is the station requesting services or appliances.  
+
+
+660,45        TOTAL LABOR HOURS      LB;6 NUMBER
+
+              INPUT TRANSFORM:  K:(X?.E1"."3N.N) X
+              LAST EDITED:      FEB 05, 1996 
+              HELP-PROMPT:      Type the Lab Hours. 
+              DESCRIPTION:
+                                This is the number of hours spent on the job.  This field is only populated via routines.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+660,46        TOTAL LABOR COST       LB;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      APR 17, 1995 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                The total cost of the labor to perform this job.  
+
+
+660,47        TOTAL MATERIAL COST    LB;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      APR 17, 1995 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                The total cost of all the materials to perform the job.  
+
+
+660,48        TOTAL LAB COST         LB;9 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      MAR 11, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                The Prosthetic Laboratory Total Cost calculated by AMIS.  
+
+
+660,50        COMPLETION DATE        LB;11 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 12, 1993 
+              HELP-PROMPT:      Enter the date the job was completed. 
+              DESCRIPTION:
+                                The date the job was completed.  
+
+              CROSS-REFERENCE:  660^CD 
+                                1)= S ^RMPR(660,"CD",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"CD",$E(X,1,30),DA)
+                                This cross reference is used in the AMIS calculations.  
+
+
+
+660,51        LAB REMARKS            LB;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      AUG 07, 1986 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                A free-text field used to indicate any additional Laboratory information that is needed for this entry.  Since the field is only 40 characters in length, use meaningful abbreviations where possible.  
+
+
+660,52        AMIS NEW CODE          AM;9 POINTER TO PROS AMIS CODES FILE (#663)
+
+              LAST EDITED:      JAN 23, 1991 
+              DESCRIPTION:
+                                This field is set when AMIS is generated. It is the New Worksheet AMIS code.  
+
+
+660,60        AMIS DATE              AM;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 20, 1986 
+              DESCRIPTION:
+                                This field is set when AMIS is generated.  This is the date AMIS was run and the item was picked up and counted.  
+
+              CROSS-REFERENCE:  660^AE 
+                                1)= S ^RMPR(660,"AE",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"AE",$E(X,1,30),DA)
+                                Allows lookups of Appliance/Repairs by the date the Amis report was run.  
+
+
+
+660,62        PATIENT CATEGORY       AM;3 SET (Required)
+
+                                '1' FOR SC/OP; 
+                                '2' FOR SC/IP; 
+                                '3' FOR NSC/IP; 
+                                '4' FOR NSC/OP; 
+              LAST EDITED:      AUG 13, 1991 
+              HELP-PROMPT:      Enter the appropriate Prosthetic Patient Category. 
+              DESCRIPTION:
+                                This is the Prosthetic Patient Category used for counting AMIS.  
+
+
+660,63        SPECIAL CATEGORY       AM;4 SET
+
+                                '1' FOR SPECIAL LEGISLATION; 
+                                '2' FOR A&A; 
+                                '3' FOR PHC; 
+                                '4' FOR ELIGIBILITY REFORM; 
+              LAST EDITED:      NOV 06, 1996 
+              HELP-PROMPT:      Enter the appropriate SPECIAL CATEGORY of the patient needing items/services. 
+              DESCRIPTION:
+                                If the patient is NSC/OP, then this field must also be set.  SPECIAL CATEGORY is also used in counting AMIS.  
+
+
+660,64        ADMIN REPAIR AMIS CODE AM;5 POINTER TO PROS AMIS CODES FILE (#663)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,4)[""AR""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 25, 1992 
+              DESCRIPTION:
+                                This field will be set when AMIS is generated for the Repair Worksheets.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,4)[""AR"""
+              EXPLANATION:      Code is limited to Administrative Repair
+
+660,68        AMIS GROUPER           AMS;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 05, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is used in AMIS calculations.  This field should never be changed through FileMan! 
+
+              TECHNICAL DESCR:
+                                A number pulled from the Pros. Site Parameter file, used in AMIS calculations.  
+
+              CROSS-REFERENCE:  660^AG 
+                                1)= S ^RMPR(660,"AG",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"AG",$E(X,1,30),DA)
+                                Allows lookups of Appliance/Repairs that have been combined by the Grouper Number.  Items that share the same Grouper Number serve one disability.  
+
+
+
+660,69        SOURCE OF PROCUREMENT  LB;3 SET
+
+                                'O' FOR ORTHOTIC LAB; 
+                                'R' FOR RESTORATION LAB; 
+                                'S' FOR SHOE LAST CLINIC; 
+                                'W' FOR WHEELCHAIR REPAIR SHOP; 
+                                'N' FOR NATIONAL FOOT CENTER; 
+                                'D' FOR DENVER DISTRIBUTION CENTER; 
+              LAST EDITED:      APR 13, 1995 
+              HELP-PROMPT:      Enter the correct Code for the Source of Procurement. 
+              DESCRIPTION:
+                                The source from which the Purchasing Agent is ordering the needed equipment.  The sources one may choose from are limited.  
+
+
+660,70        RECEIVING STATION      LB;4 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      NOV 10, 1993 
+              HELP-PROMPT:      Enter the name of the institution receiving the VAF 10-2529-3. 
+              DESCRIPTION:
+                                This field contains the institution that will receive the VAF 10-2529-3 request for processing.  
+
+
+660,71        WORK ORDER NUMBER      LB;5 POINTER TO PROSTHETIC WORK ORDER FILE (#664.2)
+
+              LAST EDITED:      APR 19, 1994 
+              HELP-PROMPT:      Enter the Work Order Number (STA-FY-QTR-TYPE OF LAB-NUMBER) 
+              DESCRIPTION:
+                                Work Order Number (STA-FY-QTR-TYPE OF LAB-NUMBER) for items processed in the Prosthetic Laboratory.  
+
+
+660,72        2529-3                 LB;10 POINTER TO PROSTHETIC 2529-3 FILE (#664.1)
+
+              LAST EDITED:      NOV 12, 1993 
+              HELP-PROMPT:      Enter the VAF 10-2529-3 Entry. 
+              DESCRIPTION:
+                                VAF 10-2529-3 information will be displayed if the VAF 10-2319 item is associated with a Denver Distribution Center, National Foot Center, or Prosthetics Lab request.  
+
+
+660,72.5      FREE TEXT WO #         LB;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<14) X
+              LAST EDITED:      APR 20, 2006 
+              HELP-PROMPT:      Answer must be 14-20 characters in length. 
+              DESCRIPTION:
+                                This is the actual human readable Work Order Number for NPPD identification purposes.  
+
+
+660,73        LAB AMIS DATE          LBA;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 28, 1993 
+              HELP-PROMPT:      Enter the date the Lab AMIS was run. 
+              DESCRIPTION:
+                                Last date the Lab AMIS was run.  
+
+
+660,74        ORTHOTICS LAB CODE     LBA;2 POINTER TO PROS AMIS CODES FILE (#663)
+
+              LAST EDITED:      NOV 28, 1993 
+              HELP-PROMPT:      Enter the correct Orthotic Lab New Code. 
+              DESCRIPTION:
+                                Contains the Orthotic Lab New Code.  
+
+
+660,75        ORTHOTICS LAB REPAIR CODE LBA;3 POINTER TO PROS AMIS CODES FILE (#663)
+
+              LAST EDITED:      APR 18, 1995 
+              HELP-PROMPT:      Enter the correct Orthotic Lab Repair Code. 
+              DESCRIPTION:
+                                Contains the Orthotic Lab Repair Code.  
+
+
+660,76        RESTORATION LAB CODE   LBA;4 POINTER TO PROS AMIS CODES FILE (#663)
+
+              LAST EDITED:      NOV 28, 1993 
+              HELP-PROMPT:      Enter the proper Restoration Lab Code. 
+              DESCRIPTION:
+                                Contains the Restoration Lab New Code.  
+
+
+660,77        RESTORATIONS LAB REPAIR CODE LBA;5 POINTER TO PROS AMIS CODES FILE (#663)
+
+              LAST EDITED:      NOV 28, 1993 
+              HELP-PROMPT:      Enter the Restoration Lab Repair Code. 
+              DESCRIPTION:
+                                Contains the Restoration Lab Repair Code.  
+
+
+660,78        UNIT OF ISSUE          0;8 POINTER TO UNIT OF ISSUE FILE (#420.5)
+
+              LAST EDITED:      DEC 15, 1993 
+              HELP-PROMPT:      Enter the appropriate unit of issue for this item. 
+              DESCRIPTION:
+                                This is the unit by which items/services are issued (e.g., each, pair, box, case, etc.).  
+
+
+660,79        AMIS FLAG              AM;6 SET
+
+                                '1' FOR NO ADMIN COUNT; 
+              LAST EDITED:      DEC 19, 1993 
+              HELP-PROMPT:      Ent.er '1' for No Admin Count 
+              DESCRIPTION:
+                                Contains the status if the Item will not count on the Administrative AMIS.  
+
+
+660,80        WORK FOR OTHER STATION LB;13 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 19, 1994 
+              HELP-PROMPT:      Enter 'Yes' if work for other station 
+              DESCRIPTION:
+                                Contains the Status if the Job Performed will display as work performed for another station.  
+
+
+660,81        NO ADMIN COUNT         AM;2 SET
+
+                                '1' FOR NO COUNT; 
+              LAST EDITED:      MAY 12, 1994 
+              HELP-PROMPT:      Enter '1' for No Count 
+              DESCRIPTION:
+                                This field will be set if the Item will not count on the Administrative AMIS or the Orthotic Laboratory AMIS.  
+
+
+660,82        NO LAB COUNT           LB;14 SET
+
+                                '1' FOR NO COUNT; 
+              LAST EDITED:      MAY 12, 1994 
+              HELP-PROMPT:      Enter '1' for No Lab AMIS Count 
+              DESCRIPTION:
+                                Field will be set if there is no AMIS Count for AMIS.  
+
+
+660,83        BACKLOG DATE           LBA;6 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 19, 1994 
+              HELP-PROMPT:      This field will contain the date the request was created. 
+              DESCRIPTION:
+                                This field will contain the date that the entry was created.  This entry will be a backlog entry until it has been completed.  All backlog data must show up on the Laboratory or Restoration AMIS Count.  
+
+              CROSS-REFERENCE:  660^ALOG 
+                                1)= S ^RMPR(660,"ALOG",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"ALOG",$E(X,1,30),DA)
+                                This x-ref will be used set if the item is processed locally at the station and must be posted to the Orthotic or Restorations Amis.  
+
+
+
+660,89        HISTORICAL ITEM        HST;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+              LAST EDITED:      MAY 30, 1995 
+              HELP-PROMPT:      Answer must be 3-60 characters in length. 
+              DESCRIPTION:
+                                This field is used for the consolidation sites, will contain the data that has been merged from a legacy system.  This field is populated by the RMPRJ routine that is not exported.  
+
+              NOTES:            TRIGGERED by the ITEM field of the RECORD OF PROS APPLIANCE/REPAIR File 
+
+
+660,89.1      DALC REFERENCE NUMBER  HSTV1;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      MAY 23, 2007 
+              HELP-PROMPT:      Answer must be 1-25 characters in length. 
+              DESCRIPTION:
+                                This is the line level reference number from a DALC purchase order or delivery of item or service.  
+
+              CROSS-REFERENCE:  660^DDC 
+                                1)= S ^RMPR(660,"DDC",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"DDC",$E(X,1,30),DA)
+                                This is the DALC internal reference.  
+
+
+
+660,89.2      DALC BILL DATE         HSTV1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 23, 2007 
+              DESCRIPTION:
+                                This is the Billing Date from the Denver  Acquisition and Logistics Center (DALC).  
+
+
+660,89.3      DALC ORDERING STATION  HSTV1;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAY 23, 2007 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is the Ordering station from to the Denver  Acquisition and Logistics Center (DALC).  
+
+
+660,90        HISTORICAL STATION     HST;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAY 30, 1995 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field is used for the consolidation sites, will contain the data that has been merged from a legacy system.  This field is populated by the RMPRJ routine that is not exported.  
+
+
+660,91        HISTORICAL VENDOR      HST;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>36!($L(X)<1) X
+              LAST EDITED:      MAY 30, 1995 
+              HELP-PROMPT:      Answer must be 1-36 characters in length. 
+              DESCRIPTION:
+                                This field is used for the consolidation sites, will contain the data that has been merged from a legacy system.  This field is populated by the RMPRJ routine that is not exported.  
+
+
+660,92        HISTORICAL VENDOR PHONE HSTV;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>188!($L(X)<3) X
+              LAST EDITED:      MAY 30, 1995 
+              HELP-PROMPT:      Answer must be 3-188 characters in length. 
+              DESCRIPTION:
+                                This field is used for the consolidation sites, will contain the data that has been merged from a legacy system.  This field is populated by the RMPRJ routine that is not exported.  
+
+
+660,93        HISTORICAL STREET ADD  HSTV;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>33!($L(X)<1) X
+              LAST EDITED:      MAY 30, 1995 
+              HELP-PROMPT:      Answer must be 1-33 characters in length. 
+              DESCRIPTION:
+                                This field is used for the consolidation sites, will contain the data that has been merged from a legacy system.  This field is populated by the RMPRJ routine that is not exported.  
+
+
+660,94        HISTORICAL CITY        HSTV;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      MAY 30, 1995 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                This field is used for the consolidation sites, will contain the data that has been merged from a legacy system.  This field is populated by the RMPRJ routine that is not exported.  
+
+
+660,95        HISTORICAL STATE       HSTV1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAY 30, 1995 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field is used for the consolidation sites, will contain the data that has been merged from a legacy system.  This field is populated by the RMPRJ routine that is not exported.  
+
+
+660,96        HISTORICAL ZIP         HSTV1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5) X
+              LAST EDITED:      MAY 30, 1995 
+              HELP-PROMPT:      Answer must be 5-10 characters in length. 
+              DESCRIPTION:
+                                This field is used for the consolidation sites, will contain the data that has been merged from a legacy system.  This field is populated by the RMPRJ routine that is not exported.  
+
+
+660,97        HISTORICAL RECORD      HST;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 16, 1995 
+              HELP-PROMPT:      Type a Number between 1 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field is used for the consolidation sites, will contain the data that has been merged from a legacy system.  This field is populated by the RMPRJ routine that is not exported.  
+
+
+660,100       PFSS ACCOUNT REFERENCE PFSS;1 POINTER TO PFSS ACCOUNT FILE (#375)
+
+              LAST EDITED:      JUN 30, 2005 
+              DESCRIPTION:
+                                This refers to the reference number passed back to Prosthetics application from the PFSS IBB get account process. This field points to PFSS ACCOUNT file (#375).  
+
+
+660,101       PFSS CHARGE ID         PFSS;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 30, 2005 
+              HELP-PROMPT:      Type a Number between 1 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                A unique charge identifier for each charge entity. Prosthetics calls $$GETCHGID^IBBAPI() to obtain a Unique Charge Identifier.  
+
+
+660,102       LATEST PSAS HCPCS      PFSS;3 POINTER TO PROSTHETIC HCPCS FILE (#661.1)
+
+              LAST EDITED:      JUN 30, 2005 
+              DESCRIPTION:
+                                This is the latest PSAS HCPCS code that is held and stored for comparison during the account updates for the PFSS project.  
+
+
+660,103       LATEST QTY             PFSS;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>1000)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 30, 2005 
+              HELP-PROMPT:      Type a Number between 1 and 1000, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the latest QTY that is held and stored for comparison during the account updates for the PFSS project.  
+
+
+660,104       LATEST TOTAL COST      PFSS;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+              LAST EDITED:      JUN 30, 2005 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the latest Total Cost that is held and stored for comparison during the account updates for the PFSS project.  
+
+
+660,105       LATEST ORDERING PROVIDER PFSS;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 30, 2005 
+              DESCRIPTION:
+                                This is the latest attending physician (ordering provider) that is held and stored for comparison during the account updates for the PFSS project.  
+
+
+660,106       PFSS ACCOUNT FLAG      PFSS;7 SET
+
+                                '1' FOR READY TO PROCESS; 
+              LAST EDITED:      OCT 27, 2005 
+              DESCRIPTION:
+                                Flag for ready to process PFSS Account Creation/Pre-Certification. 1 = Ready to process 
+
+              NOTES:            TRIGGERED by the PSAS HCPCS field of the RECORD OF PROS APPLIANCE/REPAIR File 
+                                TRIGGERED by the ENTRY DATE field of the RECORD OF PROS APPLIANCE/REPAIR File 
+
+              CROSS-REFERENCE:  660^APH 
+                                1)= S ^RMPR(660,"APH",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"APH",$E(X,1,30),DA)
+
+
+660,107       PFSS CHARGE FLAG       PFSS;8 SET
+
+                                '1' FOR READY TO PROCESS; 
+              LAST EDITED:      JUL 13, 2005 
+              DESCRIPTION:
+                                Flag for ready to process PFSS Charge message. 1 = Ready to process 
+
+              NOTES:            TRIGGERED by the PSAS HCPCS field of the RECORD OF PROS APPLIANCE/REPAIR File 
+                                TRIGGERED by the QTY field of the RECORD OF PROS APPLIANCE/REPAIR File 
+                                TRIGGERED by the TOTAL COST field of the RECORD OF PROS APPLIANCE/REPAIR File 
+                                TRIGGERED by the SUSPENSE REQUESTOR field of the RECORD OF PROS APPLIANCE/REPAIR File 
+                                TRIGGERED by the DELIVERY DATE field of the RECORD OF PROS APPLIANCE/REPAIR File 
+
+              CROSS-REFERENCE:  660^APD 
+                                1)= S ^RMPR(660,"APD",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(660,"APD",$E(X,1,30),DA)
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CPT (#81)                         HCPCS (#4.1)
+
+GENERIC INVENTORY (#445)          INVENTORY POINT (#29)
+
+ICD DIAGNOSIS (#80)               SUSPENSE ICD9 (#8.8)
+                                  PRIMARY ICD DIAGNOSIS CODE (#30)
+                                  SECONDARY ICD DIAGNOSIS CODE 1 (#31)
+                                  SECONDARY ICD DIAGNOSIS 2 (#32)
+                                  SECONDARY ICD DIAGNOSIS 3 (#33)
+
+INSTITUTION (#4)                  STATION (#8)
+                                  SUSPENSE STATION (#8.11)
+                                  REQUESTING STATION (#40)
+                                  RECEIVING STATION (#70)
+
+NEW PERSON (#200)                 SUSPENSE REQUESTOR (#8.6)
+                                  INITIATOR (#27)
+                                  USER WHO EDIT (#35)
+                                  LATEST ORDERING PROVIDER (#105)
+
+PFSS ACCOUNT (#375)               PFSS ACCOUNT REFERENCE (#100)
+
+PROS AMIS CODES (#663)            AMIS NEW CODE (#52)
+                                  ADMIN REPAIR AMIS CODE (#64)
+                                  ORTHOTICS LAB CODE (#74)
+                                  ORTHOTICS LAB REPAIR CODE (#75)
+                                  RESTORATION LAB CODE (#76)
+                                  RESTORATIONS LAB REPAIR CODE (#77)
+
+PROS ITEM MASTER (#661)           ITEM (#4)
+
+PROSTHETIC 2529-3 (#664.1)        2529-3 (#72)
+
+PROSTHETIC HCPCS (#661.1)         PSAS HCPCS (#4.5)
+                                  LATEST PSAS HCPCS (#102)
+
+PROSTHETIC INVENTORY TRANSACTI 
+                   (#661.6)       STOCK ISSUE (#4.6)
+
+PROSTHETIC WORK ORDER (#664.2)    WORK ORDER NUMBER (#71)
+
+PROSTHETICS PATIENT (#665)        PATIENT NAME (#.02)
+
+REQUEST/CONSULTATION (#123)       CONSULT (#8.9)
+
+UNIT OF ISSUE (#420.5)            UNIT OF ISSUE (#78)
+
+VENDOR (#440)                     VENDOR (#7)
+
+VISIT (#9000010)                  PCE (#8.12)
+
+
+
+INPUT TEMPLATE(S):
+RMPR DELIVER VERIFICATION EDITMAY 07, 2008@10:08  USER #0    
+RMPR ENTER CONTRACT           FEB 03, 2005@15:29  USER #0    
+RMPR ENTER RECALL DATA        MAY 11, 2004@08:59  USER #0    
+RMPR ENTER WAVIER EXCLUDE     JAN 10, 2005@14:06  USER #0    
+RMPRE2319                     JAN 15, 1998@12:39  USER #0    
+     Enter data for VAF 10-2319.
+RMPRE2319X                    SEP 01, 1999@07:22  USER #0    
+
+PRINT TEMPLATE(S):
+RMPR 2529 NT                  NOV 28, 1993@06:28  USER #0                                                                                                                                                                                                    @
+RMPR OIF/OEF PSAS VETS        APR 26, 2007@10:44  USER #0                                                                                                                                                                                    OIF/OEF PSAS VETS
+
+SORT TEMPLATE(S):
+RMPR OIF/OEF PSAS VETS        APR 26, 2007@10:40  USER #0    
+SORT BY: ENTRY DATE//    (User is asked range)
+  WITHIN ENTRY DATE, SORT BY: PATIENT NAME:;L1//
+  SERVICE [OEF OR OIF] SUB-FIELD: .01'=""//
+  PROSTHETICS PATIENT FIELD: SERVICE [OEF OR OIF]// (.01'="""")
+
+
+FORM(S)/BLOCK(S):

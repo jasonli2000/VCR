@@ -1,0 +1,161 @@
+STANDARD DATA DICTIONARY #363.2 -- CHARGE ITEM FILE                                                                                                                                                                               MAY 20,2014@15:35:58  PAGE 1
+STORED IN ^IBA(363.2,  (471552 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                      (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Individual billable items and their charges.  Each item that may be billed should have an entry.  For the item to be automatically charged it must be an item defined on a bill.  
+ 
+The items are grouped into Charge Sets which correspond to rates.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: NAME(AIVDTS), CHARGE SET(AIVDTS1), EFFECTIVE DATE(AIVDTS2), NAME(B)
+
+363.2,.01     NAME                   0;1          VARIABLE POINTER (Required)
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+             399.1    1    BED          n   BEDSECTION 
+                 81   2    CPT          n   CPT PROCEDURES 
+            363.21    3    NDC          n   NDC #s 
+                 80.2 4    DRG          n   DRG 
+            363.21    5    MISC         n   MISCELLANEOUS 
+              SCREEN ON FILE 399.1: S DIC("S")="I $P(^(0),U,5)=1"
+              SCREEN ON FILE 81: S DIC("S")="I '$P(^(0),U,4)"
+              SCREEN ON FILE 363.21: S DIC("S")="I $P(^(0),U,2)=1"
+              SCREEN ON FILE 363.21: S DIC("S")="I $P(^(0),U,2)=9"
+                                         
+              LAST EDITED:      JUL 02, 1996 
+              HELP-PROMPT:      Enter the Item that is billable. 
+              DESCRIPTION:
+                                The billable Item that may be charged on a bill.  
+
+              CROSS-REFERENCE:  363.2^B 
+                                1)= S ^IBA(363.2,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(363.2,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  363.2^AIVDTS^MUMPS 
+                                1)= I +$P($G(^IBA(363.2,DA,0)),U,2),+$P(^(0),U,3) S ^IBA(363.2,"AIVDTS"_+$P(^(0),U,2),+X,-$P(^(0),U,3),DA)=""
+                                2)= I +$P($G(^IBA(363.2,DA,0)),U,2),+$P(^(0),U,3) K ^IBA(363.2,"AIVDTS"_+$P(^(0),U,2),+X,-$P(^(0),U,3),DA)
+                                Cross reference by Set, Item, and Effective Date for lookup.  
+
+
+
+363.2,.02     CHARGE SET             0;2 POINTER TO CHARGE SET FILE (#363.1) (Required)
+
+              LAST EDITED:      JUL 02, 1996 
+              HELP-PROMPT:      Enter the Charge Set this item/charge applies to. 
+              DESCRIPTION:
+                                This is the Charge Set that defines this item and the rate the charge is apart of.  
+
+              CROSS-REFERENCE:  363.2^AIVDTS1^MUMPS 
+                                1)= I +X,+$G(^IBA(363.2,DA,0)),+$P(^(0),U,3) S ^IBA(363.2,"AIVDTS"_+X,+$P(^(0),U,1),-$P(^(0),U,3),DA)=""
+                                2)= I +X,+$G(^IBA(363.2,DA,0)),+$P(^(0),U,3) K ^IBA(363.2,"AIVDTS"_+X,+$P(^(0),U,1),-$P(^(0),U,3),DA)
+                                Cross reference by Set, Item, and Effective Date for quick lookup.  
+
+
+
+363.2,.03     EFFECTIVE DATE         0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 02, 1996 
+              HELP-PROMPT:      The first date this charge amount should be billed to a payer for the item. 
+              DESCRIPTION:      The first date this charge amount should be applied to this item for this Charge Set.  
+                                 
+                                This item charge will override any other Charge Item with a previous effective date.  
+                                 
+                                The Charge Item with the most recent effective date will be used as the charge for the item and will be used as the implied inactive date for any previous charges for the item.  
+
+              CROSS-REFERENCE:  363.2^AIVDTS2^MUMPS 
+                                1)= I +X,+$G(^IBA(363.2,DA,0)),+$P(^(0),U,2) S ^IBA(363.2,"AIVDTS"_+$P(^(0),U,2),+^(0),-X,DA)=""
+                                2)= I +X,+$G(^IBA(363.2,DA,0)),+$P(^(0),U,2) K ^IBA(363.2,"AIVDTS"_+$P(^(0),U,2),+^(0),-X,DA)
+                                Cross reference by Set, Item, and Effective Date for quick lookup.  
+
+
+
+363.2,.04     INACTIVE DATE          0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 01, 1996 
+              HELP-PROMPT:      Enter the last date this item is billable. 
+              DESCRIPTION:      This is the last date this item is billable for this Charge Set.  If the item is still billable but for a different amount add a new Charge Item entry for the item with the correct amount and effective date, it is not
+                                necessary to inactivate the old amount.  
+                                 
+                                The Charge Item with the most recent effective date will be used as the charge for the item and will be used as the implied inactive date for any previous charges for the item.  
+
+
+363.2,.05     UNIT CHARGE            0;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      JUL 01, 1996 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999, 2 Decimal Digits.  Enter the charge per unit for this item. 
+              DESCRIPTION:
+                                The dollar amount to be added to a bill for each of this item on the bill.  
+
+
+363.2,.06     REVENUE CODE           0;6 POINTER TO REVENUE CODE FILE (#399.2)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 01, 1996 
+              HELP-PROMPT:      Enter the revenue code to be added to the bills for this charge. 
+              DESCRIPTION:
+                                This is the revenue code that will be added to a bill for the charge of this item.  If no revenue code is entered the Charge Set's Default Revenue Code will be used.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,3)=1"
+              EXPLANATION:      Active Revenue Codes Only!
+
+363.2,.07     CPT MODIFIER           0;7 POINTER TO CPT MODIFIER FILE (#81.3)
+
+              INPUT TRANSFORM:  S DIC("S")="N IBXZ S IBXZ=$G(^IBA(363.2,+$G(DA),0)) I $$MODP^ICPTMOD(+IBXZ,+Y,""I"",+$P(IBXZ,U,3))>0" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 14, 1999 
+              HELP-PROMPT:      Enter the modifier for this CPT that fully defines the charge. 
+              DESCRIPTION:      A CPT charge may be broken into multiple charges by using the modifier.  
+                                 
+                                If a modifier is added this charge will only be added to bills that have both the CPT and modifier combination on the bill.  
+                                 
+                                If no modifier is added then the charge will only be added to bills that have the CPT but no modifier.  
+
+              SCREEN:           S DIC("S")="N IBXZ S IBXZ=$G(^IBA(363.2,+$G(DA),0)) I $$MODP^ICPTMOD(+IBXZ,+Y,""I"",+$P(IBXZ,U,3))>0"
+              EXPLANATION:      Certain modifiers may only be used with certain CPT codes.  Only a modifier assignable to this CPT may be used.
+
+363.2,.08     BASE CHARGE            0;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      DEC 03, 2003 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999, 2 Decimal Digits 
+              DESCRIPTION:      Enter the Base Charge associated with the item.  This amount will be added once for the item on the bill, instead of once for each unit of the item.  Base Charge is appropriate for only specific types of charges where the
+                                total charge for the item is an incremental Unit charge plus a single Base charge, such as Minutes and Hours.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILLING ITEMS (#363.21)           NAME (#.01)
+
+CHARGE SET (#363.1)               CHARGE SET (#.02)
+
+CPT (#81)                         NAME (#.01)
+
+CPT MODIFIER (#81.3)              CPT MODIFIER (#.07)
+
+DRG (#80.2)                       NAME (#.01)
+
+MCCR UTILITY (#399.1)             NAME (#.01)
+
+REVENUE CODE (#399.2)             REVENUE CODE (#.06)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

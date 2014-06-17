@@ -1,0 +1,171 @@
+STANDARD DATA DICTIONARY #8994.5 -- REMOTE APPLICATION FILE                                                                                                                                                                       MAY 20,2014@15:36:38  PAGE 1
+STORED IN ^XWB(8994.5,  (24 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                         (VERSION 8.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The REMOTE APPLICATION file was introduced as part of the Broker Security Enhancement to secure access via the remote user or visitor approach by GUI applications (formerly known as the CAPRI approach for the first application to use this access style). 
+The remote visitor access permits applications where users need to access a large number of sites to do so without requiring a separate access code and verify code at each site.  
+ 
+Following the Broker Security Enhancement, applications will be able to use the remote visitor access only if they have an entry in this file with a one-way hash of a secure phrase.  Identification of an entry in the file is based on the application
+passing in the original phrase which is then hashed and used for a cross-reference lookup. The application must have at least one entry in the CALLBACKTYPE sub-file indicating a connection type, a valid address for the authenticating server, and a
+connection port number.  This information is necessary for the remote server to directly connect the authenticating server to obtain the demographic information necessary to create or match the visitor entry in the NEW PERSON file (#200).  The
+application will also specify the desired context option for the user and this will be given to the remote visitor instead of the application having to figure out how to set this value.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: REMOTE APP field (#18) of the SIGN-ON LOG File (#3.081) 
+               
+
+CROSS
+REFERENCED BY: APPLICATIONCODE(ACODE), NAME(B)
+
+8994.5,.01    NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(X?.N)!($L(X)<3)!'(X'?1P.E) X
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              DESCRIPTION:
+                                This is the NAME of the REMOTE GUI APPLICATION for which the data in this entry pertains.  
+
+              CROSS-REFERENCE:  8994.5^B 
+                                1)= S ^XWB(8994.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^XWB(8994.5,"B",$E(X,1,30),DA)
+
+
+8994.5,.02    CONTEXTOPTION          0;2 POINTER TO OPTION FILE (#19) (Required)
+
+              LAST EDITED:      APR 03, 2006 
+              HELP-PROMPT:      This is the option which should be given to the signed in visitor as the Context Option for this application. 
+              DESCRIPTION:      The name of the context (Client/Server or B-type) option that the application users will need that will be added as a secondary menu item.  
+                                 
+                                The user is signed on as a visitor and given the Context Option specified in this field as a secondary menu option.  The application still needs to set the Context Option using the CreateContext method, but the visitor has 
+                                it as a valid option so that it can be used.  
+
+
+8994.5,.03    APPLICATIONCODE        0;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+              LAST EDITED:      FEB 10, 2006 
+              HELP-PROMPT:      This value is the HASHED value of the application's code phrase. 
+              DESCRIPTION:      This is the hashed value for a security phrase for the application and is described below.  
+                                 
+                                Security Phrase 
+                                 
+                                The security phrase is an application's entry into the REMOTE APPLICATION file (#8994.5) for accessing the information necessary to permit the application to enroll a remote user.   Create a security phrase, case 
+                                sensitive, and at programmer mode use the command (assuming the security phrase is "My Special Phrase") 
+                                 
+                                   W $$EN^XUSHSH("My Special Phrase") 
+                                 
+                                The resulting value: 
+                                   "I&f).c`u:7@01#tL((x" 
+                                 
+                                This is the one-way hash value for the security phrase.  It is this hashed value that will be entered into the ApplicationCode field (#.03) in the REMOTE APPLICATION file (#8994.5) for the application.  
+                                 
+                                To make a remote connection, the application will have the user sign onto the application's authenticating server (the one entered as CallbackServer) and then obtain a Token for the user (similar to "XWBHDL977-124367_0")
+                                using the "XUS SET VISITOR" RPC.  The application will then disconnect from the authenticating server and set the new SecurityPhrase property for the TRPCBroker component to the unhashed security phrase concatenated with a
+                                caret ("^") and the token for the user (e.g.,  "My Special Phrase^XWBHDL977-124367_0") 
+                                 
+                                This property will be encoded and passed to the remote server for authentication; it will hash the security phrase and use the resulting value to identify the application's entry in the REMOTE APPLICATION file (#8994.5). 
+                                The mechanism(s) for contacting the authenticating server will be identified and the authentication server will be requested to provide the demographic information necessary to identify the user and create or match an
+                                entry in the NEW PERSON file (#200) based on the token provided.  With this information the user will be set up as a visitor entry and provided the context option specified.  The application will then be notified that the
+                                user is connected.  If there is no entry for the application, no match for the token, or the authenticating server can not be connected, the user will be prompted with a regular sign on screen (i.e., required to enter
+                                their Access and Verify codes).  
+                                 
+                                Since the security phrase is the application's identifier, we recommend that the security phrase in RPCBroker Delphi-based programs be identified as a const value in an include file.  And that a substitute include file 
+                                containing a phrase similar to that used above be included with release of the source code.  It must be realized that the security phrase identifies any application that uses it as your application, and it would, of
+                                course, be desirable that rogue applications not appear to be your application.  
+
+              CROSS-REFERENCE:  8994.5^ACODE 
+                                1)= S ^XWB(8994.5,"ACODE",$E(X,1,30),DA)=""
+                                2)= K ^XWB(8994.5,"ACODE",$E(X,1,30),DA)
+                                3)= THIS CROSS-REFERENCE IS USED AS ENTRY BY THE APPLICATION CODE FOR THE APPLICATION.
+
+
+8994.5,1      CALLBACKTYPE           1;0 SET Multiple #8994.51
+
+              LAST EDITED:      APR 03, 2006 
+              DESCRIPTION:      This is a multiple field.  It may contain multiple values describing mechanisms by which the remote site can contact the application's authenticating site to obtain the demographic information. 
+                                 
+                                It consists of the following subfields: 
+                                 
+                                   .01 CALLBACKTYPE 
+                                   .02 CALLBACKPORT 
+                                   .03 CALLBACKSERVER 
+                                   .04 URLSTRING 
+
+
+8994.51,.01     CALLBACKTYPE           0;1 SET (Required) (Multiply asked)
+
+                                  'R' FOR RPC-BROKER; 
+                                  'M' FOR M2M-BROKER; 
+                                  'H' FOR HTTP; 
+                                  'S' FOR STATION-NUMBER; 
+                LAST EDITED:      APR 09, 2009 
+                HELP-PROMPT:      Select one of the indicators for a Call back type for this Remote GUI Application 
+                DESCRIPTION:
+                                  This field indicates the mechanism(s) by which the server should contact the authenticating server to obtain information necessary to sign the current user on to the current server.  
+
+                CROSS-REFERENCE:  8994.51^B 
+                                  1)= S ^XWB(8994.5,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^XWB(8994.5,DA(1),1,"B",$E(X,1,30),DA)
+
+
+8994.51,.02     CALLBACKPORT           0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>5!($L(X)<2) X
+                LAST EDITED:      APR 07, 2006 
+                HELP-PROMPT:      Answer must be 2-5 characters in length. 
+                DESCRIPTION:
+                                  This is the port to be used for the callback to the authenticating server for the CALLBACKTYPE specified.  
+
+
+8994.51,.03     CALLBACKSERVER         0;3 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                LAST EDITED:      JAN 23, 2006 
+                HELP-PROMPT:      This should be the server name to be used to contact the authenticating server for accessing the data to authenticate the user for this Remote GUI Application. 
+                DESCRIPTION:
+                                  This is the server designation to be used for the callback to the authenticating server for the CALLBACKTYPE specified.  
+
+
+8994.51,.04     URLSTRING              0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      APR 07, 2006 
+                HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                DESCRIPTION:      This field holds the text that should follow the server address (field #.03) for HTTP connections to obtain the information for the user token passed in for a REMOTE APPLICATION connection.  
+                                   
+                                  If the complete URL to be used for the callback is 
+                                     http://myserver.med.va.gov/some/kind/of/location/somePage.aspx 
+                                   
+                                  The CALLBACKSERVER (#.03) field could be 
+                                     myserver.med.va.gov 
+                                   
+                                  and the URLSTRING would be 
+                                     some/kind/of/location/somePage.aspx 
+                                   
+                                  This field is only used if the CALLBACKTYPE (#.01) value is H for HTTP 
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+OPTION (#19)                      CONTEXTOPTION (#.02)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

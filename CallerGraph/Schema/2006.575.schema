@@ -1,0 +1,668 @@
+STANDARD DATA DICTIONARY #2006.575 -- DICOM FAILED IMAGES FILE                                                                                                                                                                    MAY 20,2014@15:34:54  PAGE 1
+STORED IN ^MAGD(2006.575,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                        
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ +---------------------------------------------------------------+ 
+ |                                                               |
+ | Property of the US Government.                                | 
+ | No permission to copy or redistribute this software is given. | 
+ | Use of unreleased versions of this software requires the user | 
+ | to execute a written test agreement with the VistA Imaging    | 
+ | Development Office of the Department of Veterans Affairs,     | 
+ | telephone (301) 734-0100.                                     | 
+ |                                                               |
+ | The Food and Drug Administration classifies this software as  | 
+ | a medical device.  As such, it may not be changed in any way. | 
+ | Modifications to this software may result in an adulterated   | 
+ | medical device under 21CFR820, the use of which is considered | 
+ | to be a violation of US Federal Statutes.                     | 
+ |                                                               |
+ +---------------------------------------------------------------+
+ 
+The entries in this table describe image files that were received by the DICOM Image Gateway, and could not be matched with a patient and an ordered study.  
+ 
+The MAGD FIX DICOM FILE and MAGD FIX MEDICINE DICOM FILE menu options are used to update the entries in this file.  The DICOM Image Gateway will poll this file for corrected entries. The cross reference used to poll this information is
+^MAGD(2006.575,"AFX".  
+ 
+The routine L^MAGDLB1 is used by the above menu options and will loop thru the following cross reference ^MAGD(2006.575,"F".  This cross reference is set by the DICOM Study Instance UID; this is a unique number assigned by modalities (imaging equipment)
+and is unique by case study.  So it is possible to have over 20 entries in the file and only one unique "F" cross reference. 
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: IMAGE field (#.01) of the DICOM FIXED QUEUE File (#2006.5712) 
+               STUDY field (#2) of the DICOM FIXED QUEUE File (#2006.5712) 
+               RELATED IMAGES field (#.01) of the RELATED IMAGES sub-field (#2006.57526) of the DICOM FAILED IMAGES File (#2006.575) 
+               
+
+CROSS
+REFERENCED BY: FILEPATH(B), STUDY UID(F)
+
+INDEXED BY:    DATE ENTERED & FIXED & SERVICE TYPE (AD), GATEWAY LOCATION & MACHINE ID & STUDY UID (AFX), PID & SERVICE TYPE & FIXED (D)
+
+
+2006.575,.01  FILEPATH               0;1 FREE TEXT (Required)
+
+              File Path                                                                                                        
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the name of the image file (including directory path). 
+              DESCRIPTION:
+                                The value of this field is a string that represents the name of the image file that failed the matching process on the local DICOM Image gateway processing the image.  
+
+              CROSS-REFERENCE:  2006.575^B 
+                                1)= S ^MAGD(2006.575,"B",X,DA)=""
+                                2)= K ^MAGD(2006.575,"B",X,DA)
+
+
+2006.575,1    FAILED REASON          0;2 SET
+
+              Reason for Failure                                                                                               
+                                'NO CASE #' FOR No case number; 
+                                'PID ERROR' FOR Could not match patient; 
+                                'UNKNOWN' FOR Any other reason; 
+                                'BAD CASE #' FOR Format error in case number; 
+                                'CANCELLED' FOR Case cancelled; 
+              LAST EDITED:      APR 21, 2003 
+              HELP-PROMPT:      Enter 'No Case #', 'Bad Case #', 'PID Error' or 'Unknown' or 'Cancelled'. 
+              DESCRIPTION:      The value of this field is a code that indicates the reason why the image file that is described in the current entry could not be matched with a patient and study.  
+                                 
+                                The possible values for this field are NOCASE#, PATIENT, UNKNOWN or CANCELLED.  
+                                 
+                                When the entry is processed the match for the Radiology entry is by case number and then by patient ID. If these entries are not provided correctly then entries are made into this file.  
+
+
+2006.575,2    PID                    0;3 FREE TEXT
+
+              Patient ID                                                                                                       
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<3) X
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Enter the patient's SSN. 
+              DESCRIPTION:      The value of this field is the value that is transmitted by the modality for DICOM element 0010,0020.  Typically, the value of this field is equal to the Social Security Number of the patient for whom the study is
+                                scheduled.  (Without the dashes between the number-groups.) 
+                                 
+                                This value is copied from the VistA Database, so that worklist queries can also be performed when the network connection (DDP) with the main Hospital Information System is not available.  
+
+              FIELD INDEX:      D (#392)    MUMPS    IR    LOOKUP & SORTING
+                  Short Descr:  Patient ID
+                  Description:  This cross-reference keeps track of which Patient ID belongs to which study.  
+                                 
+                                This cross-reference is only created for entries that are not yet "fixed".  This cross-reference is only created for entries that result from Consults.  
+                    Set Logic:  S ^MAGD(2006.575,"D",X(1),DA)=""
+                     Set Cond:  I 'X(3),X(2)="CON"
+                   Kill Logic:  K ^MAGD(2006.575,"D",X(1),DA)
+                   Whole Kill:  K ^MAGD(2006.575,"D")
+                         X(1):  PID  (2006.575,2)  (Subscr 1)  (forwards)
+                         X(2):  SERVICE TYPE  (2006.575,32)  (forwards)
+                         X(3):  FIXED  (2006.575,16)  (forwards)
+
+
+2006.575,3    PATIENT                0;4 FREE TEXT
+
+              Patient Name (VA)                                                                                                
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<3) X
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Enter the name of the patient. 
+              DESCRIPTION:      The value of this field is a string that represents the name of the patient.  
+                                 
+                                This value is reformatted as LAST NAME,FIRST NAME MID. The actual name sent by the Radiology modality is in field PNAMEDCM. This field will be used as one of the possible lookups for correction to this entry.  
+
+
+2006.575,4    PNAMEDCM               0;5 FREE TEXT
+
+              Patient Name (DICOM)                                                                                             
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<3) X
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Enter the name of the patient. 
+              DESCRIPTION:      The value of this field is a string that represents the name of the patient.  
+                                 
+                                This value is copied from the information that was transmitted by the Radiology modality.  
+
+
+2006.575,5    CASENUMB               1;1 FREE TEXT
+
+              Case Number (Modality)                                                                                           
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the case number. 
+              DESCRIPTION:      The value of this field is a string that represents the case number for the study.  
+                                 
+                                This value is copied from the information that was transmitted by the Radiology X-Ray equipment.  
+
+
+2006.575,6    CASE NO.               1;2 FREE TEXT
+
+              Case Number (Technician)                                                                                         
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the case number. 
+              DESCRIPTION:      The value of this field is a string that represents the case number for the study.  
+                                 
+                                This value is copied from the information that was entered by the technician during the image capture at the Radiology X-Ray modality. This field will usually be empty since the file will contain only entries that failed
+                                during the copying of images to the Imaging file.  
+
+
+2006.575,7    DATE ENTERED           1;3 DATE
+
+              Date Entered                                                                                                     
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Enter today's date. 
+              DESCRIPTION:      The value of this field is a date value.  
+                                 
+                                This value must be an exact date and represents the date on which the entry was made into this file.  
+
+              FIELD INDEX:      AD (#227)    MUMPS    IR    SORTING ONLY
+                  Short Descr:  Date Entered
+                  Description:  This cross-reference keeps track of when the various entries were created.  
+                                 
+                                This cross-reference is only created for entries that are not yet "fixed".  This cross-reference is only created for entries that result from Consults.  
+                    Set Logic:  S ^MAGD(2006.575,"AD",X(1),DA)=""
+                     Set Cond:  I 'X(2),X(3)="CON"
+                   Kill Logic:  K ^MAGD(2006.575,"AD",X(1),DA)
+                   Whole Kill:  K ^MAGD(2006.575,"AD")
+                         X(1):  DATE ENTERED  (2006.575,7)  (Subscr 1)  (forwards)
+                         X(2):  FIXED  (2006.575,16)  (forwards)
+                         X(3):  SERVICE TYPE  (2006.575,32)  (forwards)
+
+
+2006.575,8    IMAGE UID              AIUID;1 FREE TEXT
+
+              Image UID                                                                                                        
+              INPUT TRANSFORM:  K:$L(X)>70!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the Image UID code. 
+              DESCRIPTION:      The value of this field is a string that represents the Image UID.  
+                                 
+                                This value is copied from the information that is transmitted by the modality. The Image UID is a unique ID number assigned to the image by the Radiology X-Ray modality.  
+
+
+2006.575,9    STUDY UID              ASUID;1 FREE TEXT
+
+              Study UID                                                                                                        
+              INPUT TRANSFORM:  K:$L(X)>70!($L(X)<1) X
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Enter the Study UID code. 
+              DESCRIPTION:      The value of this field is a string that represents the Study UID.  
+                                 
+                                This value is copied from the information that is transmitted by the modality. The Image UID is a unique ID number assigned to the image by the Radiology X-Ray modality.  A case study will consist of several images, each
+                                of which has its own unique Image UID code.  
+
+              CROSS-REFERENCE:  2006.575^F^MUMPS 
+                                1)= D XREF^MAGDLB6
+                                2)= D XREFK^MAGDLB6
+                                This cross-reference indexes failed images by location and study instance UID.  
+
+
+              FIELD INDEX:      AFX (#391)    MUMPS    IR    SORTING ONLY
+                  Short Descr:  Location and Machine ID
+                  Description:  This cross-reference keeps track of which computers (Machine ID) belong to which location.  
+                    Set Logic:  S ^MAGD(2006.575,"AFX",X(1),X(2),DA)=""
+                     Set Cond:  I $D(^MAGD(2006.575,"F",X(1),X(3),DA))
+                   Kill Logic:  K ^MAGD(2006.575,"AFX",X(1),X(2),DA)
+                   Whole Kill:  K ^MAGD(2006.575,"AFX")
+                         X(1):  GATEWAY LOCATION  (2006.575,36)  (Subscr 1)  (forwards)
+                         X(2):  MACHINE ID  (2006.575,28)  (Subscr 2)  (forwards)
+                         X(3):  STUDY UID  (2006.575,9)  (forwards)
+
+
+2006.575,10   INSTRUMENT NAME        AMFG;1 FREE TEXT
+
+              Instrument Name                                                                                                  
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Enter the name of the instrument. 
+              DESCRIPTION:      The value of this field is a string that represents the name of the instrument that produced the image file.  
+                                 
+                                Typical values for this field are texts like CT1, CT2, CR3, and so forth.  
+
+
+2006.575,11   ROWS                   AMFG;2 FREE TEXT
+
+              Rows                                                                                                             
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the number of pixel rows in the image. 
+              DESCRIPTION:      The value of this field is an integer number that represents the number of pixel rows in the image.  
+                                 
+                                This value is copied from the information that is transmitted by the Radiology modality.  
+
+
+2006.575,12   COLUMNS                AMFG;3 FREE TEXT
+
+              Columns                                                                                                          
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the number of pixel columns in the image. 
+              DESCRIPTION:      The value of this field is an integer number that represents the number of pixel columns in the image.  
+                                 
+                                This value is copied from the information that is transmitted by the Radiology modality.  
+
+
+2006.575,13   OFFSET                 AMFG;4 FREE TEXT
+
+              Offset                                                                                                           
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the byte address where the image data begins. 
+              DESCRIPTION:      The value of this field is an integer number that represents the byte address in the image file where the image data begins.  
+                                 
+                                This value is copied from the information that is transmitted by the Radiology modality.  
+
+
+2006.575,14   MODIEN                 AMFG;5 FREE TEXT
+
+              Modien                                                                                                           
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Identify the modality. 
+              DESCRIPTION:      The value of this field is a pointer to the Modality file (# 2006.582, stored in ^MAGDICOM(2006.582,...).  
+                                 
+                                This value identifies the modality (type of instrument) that transmitted the image file.  
+
+
+2006.575,16   FIXED                  FIXD;1 SET
+
+              Fixed                                                                                                            
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Identify whether or not this entry has been corrected. 
+              DESCRIPTION:      The value of this field is a code that identifies whether or not the problem that is reported in the current entry has been corrected.  
+                                 
+                                Entries are corrected in this file using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+                                 
+                                When the entry is manually matched with a patient and procedure the correction routine will update this field.  
+
+              TECHNICAL DESCR:
+                                This field creates a cross reference used by the DICOM Image server to know which entries are ready for re-processing. 
+
+              FIELD INDEX:      AD (#227)    MUMPS    IR    SORTING ONLY
+                  Short Descr:  Date Entered
+                  Description:  This cross-reference keeps track of when the various entries were created.  
+                                 
+                                This cross-reference is only created for entries that are not yet "fixed".  This cross-reference is only created for entries that result from Consults.  
+                    Set Logic:  S ^MAGD(2006.575,"AD",X(1),DA)=""
+                     Set Cond:  I 'X(2),X(3)="CON"
+                   Kill Logic:  K ^MAGD(2006.575,"AD",X(1),DA)
+                   Whole Kill:  K ^MAGD(2006.575,"AD")
+                         X(1):  DATE ENTERED  (2006.575,7)  (Subscr 1)  (forwards)
+                         X(2):  FIXED  (2006.575,16)  (forwards)
+                         X(3):  SERVICE TYPE  (2006.575,32)  (forwards)
+
+              FIELD INDEX:      D (#392)    MUMPS    IR    LOOKUP & SORTING
+                  Short Descr:  Patient ID
+                  Description:  This cross-reference keeps track of which Patient ID belongs to which study.  
+                                 
+                                This cross-reference is only created for entries that are not yet "fixed".  This cross-reference is only created for entries that result from Consults.  
+                    Set Logic:  S ^MAGD(2006.575,"D",X(1),DA)=""
+                     Set Cond:  I 'X(3),X(2)="CON"
+                   Kill Logic:  K ^MAGD(2006.575,"D",X(1),DA)
+                   Whole Kill:  K ^MAGD(2006.575,"D")
+                         X(1):  PID  (2006.575,2)  (Subscr 1)  (forwards)
+                         X(2):  SERVICE TYPE  (2006.575,32)  (forwards)
+                         X(3):  FIXED  (2006.575,16)  (forwards)
+
+
+2006.575,17   NEWDFN                 FIXD;2 FREE TEXT
+
+              New DFN                                                                                                          
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Identify the patient. 
+              DESCRIPTION:      The value of this field is a pointer to the Patient file (# 2, stored in ^DPT(...).  
+                                 
+                                This value identifies the (new) patient, and is defined using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+
+
+2006.575,18   NEWNME                 FIXD;3 FREE TEXT
+
+              New Name                                                                                                         
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the name of the patient. 
+              DESCRIPTION:      The value of this field is a string that represents the name of a patient.  
+                                 
+                                This value identifies the (new) patient, and is defined using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+
+
+2006.575,19   NEWSSN                 FIXD;4 FREE TEXT
+
+              Newssn                                                                                                           
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the patient's SSN. 
+              DESCRIPTION:      The value of this field is a string that represents the Social Security Number of a patient.  
+                                 
+                                This value identifies the (new) patient, and is defined using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+
+
+2006.575,20   NEWCASE NO             FIXD;5 FREE TEXT
+
+              New Case Number                                                                                                  
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the case number. 
+              DESCRIPTION:      The value of this field is a string that represents the accession number for a study.  
+                                 
+                                This value identifies the (new) study, and is defined using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+
+
+2006.575,21   NEW RADTI              FIXD;6 FREE TEXT
+
+              New Reverse Date                                                                                                 
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Identify the date/time of the study. 
+              DESCRIPTION:      The value of this field is a string that represents the date and time when the study was executed.  
+                                 
+                                This value is a 'reverse' date time, as defined by the Radiology software. It is used as the second subscript (RADTI) in references like ^RARPT(RADPT,"DT",RADTI,"P",RACNI 
+                                 
+                                This value timestamps the (new) study, and is defined using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+
+
+2006.575,22   NEW RACNI              FIXD;7 FREE TEXT
+
+              New Case Number                                                                                                  
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the case number. 
+              DESCRIPTION:      The value of this field is a string that represents the case number for the study.  
+                                 
+                                This value is used as the third subscript (RADCNI) in references like ^RARPT(RADPT,"DT",RADTI,"P",RACNI 
+                                 
+                                This value identifies the (new) study, and is defined using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+
+
+2006.575,23   DATE/TIME              FIXD;8 FREE TEXT
+
+              Date/Time                                                                                                        
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter this moment's date and time. 
+              DESCRIPTION:      The value of this field is a string that represents a date/time value.  
+                                 
+                                This value is copied from the information that was transmitted by the Radiology modality. It is a timestamp for the moment when the image file was processed.  
+
+
+2006.575,24   NEW PROC IEN           FIXPR;1 FREE TEXT
+
+              New Procedure IEN                                                                                                
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Identify the procedure. 
+              DESCRIPTION:      The value of this field is a pointer to the Rad/Nuc procedure file (#71, stored in ^RAMIS(71,...).  
+                                 
+                                This value is an internal entry number, and is defined using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+
+
+2006.575,25   NEW PROCEDURE          FIXPR;2 FREE TEXT
+
+              New Procedure                                                                                                    
+              INPUT TRANSFORM:  K:$L(X)>70!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1997 
+              HELP-PROMPT:      Enter the name of the procedure. 
+              DESCRIPTION:      This is the new procedure name defined using the MAGD FIX DICOM or MAGD FIX MEDICINE menu option.  The value of this field is a string that represents the name of a procedure found in the Rad/Nuc procedure file (#71,
+                                stored in ^RAMIS(71,...).  
+                                 
+                                This value is the name of a procedure, and is defined using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+
+
+2006.575,26   RELATED IMAGES         RLATE;0 POINTER Multiple #2006.57526 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is the multiple sub-file that repoints to this file.  This sub-file will point to all the related images having the same study instance UID.  
+
+              TECHNICAL DESCR:  This field creates a cross reference that is used by the DICOM Image gateway to process all images pertaining to one unique study instance UID.  
+                                 This field also allow the manual correction routines to only prompt/display a single entry needing corrections and will apply the corrections made to all entries in this sub-file.  
+
+
+2006.57526,.01  RELATED IMAGES         0;1 POINTER TO DICOM FAILED IMAGES FILE (#2006.575)
+
+                Related Image                                                                                                  
+                LAST EDITED:      FEB 26, 1997 
+                DESCRIPTION:      The value of this field is a pointer to the Image file (#2005, stored in ^MAG(2005,...).  
+                                   
+                                  The entries in this subfile constitute the list of all images which have the same unique study UID.  The first entry made into this subfile will be the parent entry. The next images with the same Study UID will be
+                                  entered as additional entries in this subfile.  
+
+                CROSS-REFERENCE:  2006.57526^B 
+                                  1)= S ^MAGD(2006.575,DA(1),"RLATE","B",$E(X,1,30),DA)=""
+                                  2)= K ^MAGD(2006.575,DA(1),"RLATE","B",$E(X,1,30),DA)
+
+
+
+
+2006.575,27   MODALITY               AMFG;6 FREE TEXT
+
+              Modality                                                                                                         
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAR 05, 1997 
+              HELP-PROMPT:      Enter the name of the modality (instrument type). 
+              DESCRIPTION:      The value of this field is a string that represents the name of a modality.  
+                                 
+                                This value represents the name of the modality (i.e., the type of of instrument) for the images requiring manual correction.  
+
+
+2006.575,28   MACHINE ID             1;4 FREE TEXT
+
+              Machine ID                                                                                                       
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Identify the Image Gateway that received the image file. 
+              DESCRIPTION:      The value of this field is a code that identifies the VistA DICOM Image Gateway computer that received the image file.  
+                                 
+                                Such a code is a single alphabetic letter.  
+
+              FIELD INDEX:      AFX (#391)    MUMPS    IR    SORTING ONLY
+                  Short Descr:  Location and Machine ID
+                  Description:  This cross-reference keeps track of which computers (Machine ID) belong to which location.  
+                    Set Logic:  S ^MAGD(2006.575,"AFX",X(1),X(2),DA)=""
+                     Set Cond:  I $D(^MAGD(2006.575,"F",X(1),X(3),DA))
+                   Kill Logic:  K ^MAGD(2006.575,"AFX",X(1),X(2),DA)
+                   Whole Kill:  K ^MAGD(2006.575,"AFX")
+                         X(1):  GATEWAY LOCATION  (2006.575,36)  (Subscr 1)  (forwards)
+                         X(2):  MACHINE ID  (2006.575,28)  (Subscr 2)  (forwards)
+                         X(3):  STUDY UID  (2006.575,9)  (forwards)
+
+
+2006.575,29   COMMENT                ACSTXT;1 FREE TEXT
+
+              Comment                                                                                                          
+              INPUT TRANSFORM:  K:$L(X)>250!($L(X)<2) X
+              LAST EDITED:      MAY 21, 1997 
+              HELP-PROMPT:      Enter a comment. 
+              DESCRIPTION:      The value of this field is a string that represents a comment.  
+                                 
+                                This value is copied from the information that was transmitted by the Radiology equipment.  
+                                 
+                                Typically, this value contains the accession number.  
+
+
+2006.575,30   IMAGE POINTER          FIXPR;3 NUMBER
+
+              Image Pointer                                                                                                    
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 01, 1998 
+              HELP-PROMPT:      Identify the image. 
+              DESCRIPTION:      The value of this field is a pointer to the Image file (#2005, stored in ^MAG(2005,...).  
+                                 
+                                This value identifies the image that is the 'parent' of the group to which the image that is described in this entry belongs.  
+
+
+2006.575,31   PARENT FILE            FIXPR;4 NUMBER
+
+              Parent File                                                                                                      
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 01, 1998 
+              HELP-PROMPT:      Identity the parent file. 
+              DESCRIPTION:      The value of this field is a pointer to the File of Files (#1, stored in ^DIC(...).  
+                                 
+                                This value identifies the Imaging Parent file that contains the clinical information of which the image file that is described in this entry is a part.  
+                                 
+                                Possible parent files are: 
+                                    3.9    MAIL MESSAGE 
+                                   63      AUTOPSY (MICROSCOPIC) 
+                                   63.02   ELECTRON MICROSCOPY 
+                                   63.08   SURGICAL PATHOLOGY 
+                                   63.09   CYTOLOGY 
+                                   63.2    AUTOPSY (GROSS) 
+                                   74      RADIOLOGY 
+                                  130      SURGERY 
+                                  691      ECHOCARDIOGRAM 
+                                  691.1    CARDIAC CATHETERIZATION 
+                                  691.5    ELECTROCARDIOGRAPHY 
+                                  694      HEMATOLOGY 
+                                  699      ENDOSCOPY 
+                                  699.5    GENERIC MEDICINE 
+                                 8925      TIU 
+
+
+2006.575,32   SERVICE TYPE           TYPE;1 FREE TEXT
+
+              Service Type                                                                                                     
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Enter the name of the imaging service. 
+              DESCRIPTION:      The value of this field is a string that identifies the 'imaging service' that is performed by the instrument that is described in this entry.  
+                                 
+                                The imaging services are itemized in file 2006.589 (stored in ^MAGDICOM(2006.589,...) 
+                                 
+                                Currently, the only entries in this file are RAD and MED-ENDO.  
+
+              FIELD INDEX:      AD (#227)    MUMPS    IR    SORTING ONLY
+                  Short Descr:  Date Entered
+                  Description:  This cross-reference keeps track of when the various entries were created.  
+                                 
+                                This cross-reference is only created for entries that are not yet "fixed".  This cross-reference is only created for entries that result from Consults.  
+                    Set Logic:  S ^MAGD(2006.575,"AD",X(1),DA)=""
+                     Set Cond:  I 'X(2),X(3)="CON"
+                   Kill Logic:  K ^MAGD(2006.575,"AD",X(1),DA)
+                   Whole Kill:  K ^MAGD(2006.575,"AD")
+                         X(1):  DATE ENTERED  (2006.575,7)  (Subscr 1)  (forwards)
+                         X(2):  FIXED  (2006.575,16)  (forwards)
+                         X(3):  SERVICE TYPE  (2006.575,32)  (forwards)
+
+              FIELD INDEX:      D (#392)    MUMPS    IR    LOOKUP & SORTING
+                  Short Descr:  Patient ID
+                  Description:  This cross-reference keeps track of which Patient ID belongs to which study.  
+                                 
+                                This cross-reference is only created for entries that are not yet "fixed".  This cross-reference is only created for entries that result from Consults.  
+                    Set Logic:  S ^MAGD(2006.575,"D",X(1),DA)=""
+                     Set Cond:  I 'X(3),X(2)="CON"
+                   Kill Logic:  K ^MAGD(2006.575,"D",X(1),DA)
+                   Whole Kill:  K ^MAGD(2006.575,"D")
+                         X(1):  PID  (2006.575,2)  (Subscr 1)  (forwards)
+                         X(2):  SERVICE TYPE  (2006.575,32)  (forwards)
+                         X(3):  FIXED  (2006.575,16)  (forwards)
+
+
+2006.575,33   DELETE FLAG            0;6 SET
+
+              Delete Flag                                                                                                      
+                                '1' FOR FILE IS DELETED; 
+              LAST EDITED:      FEB 16, 2000 
+              HELP-PROMPT:      Indicate whether or not this file is to be deleted. 
+              DESCRIPTION:      The value of this field is a code that indicates whether of not the image file that is described in this entry is to be deleted.  
+                                 
+                                Corrections are made using either of the menu options 
+                                 MAGD FIX DICOM or 
+                                 MAGD FIX MEDICINE 
+                                 
+                                If the images files are for a test patient, then setting this field will not process the images but delete the files from the DICOM Image gateway. 
+
+              TECHNICAL DESCR:
+                                If this field is present, the software on the DICOM Image gateway will not process this image file but will delete it from the IMAGE_IN directory.  
+
+
+2006.575,34   MANUFACTURER           AMFG;7 FREE TEXT
+
+              Manufacturer                                                                                                     
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      DEC 10, 1999 
+              HELP-PROMPT:      Enter the name of the manufacturer of the modality 
+              DESCRIPTION:
+                                The value of this field is a string that identifies the manufacturer of the instrument that transmitted the images that require manual correction.  
+
+
+2006.575,35   MODEL                  AMFG;8 FREE TEXT
+
+              Model                                                                                                            
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      DEC 10, 1999 
+              HELP-PROMPT:      Enter the name of the model of the modality. 
+              DESCRIPTION:
+                                The value of this field is a string that identifies the model of the instrument that transmitted the images that require manual correction.  
+
+
+2006.575,36   GATEWAY LOCATION       1;5 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      DEC 16, 2004 
+              HELP-PROMPT:      Identify the institution where the gateway is located. 
+              DESCRIPTION:
+                                This field will contain the institution where the gateway is located.  
+
+              FIELD INDEX:      AFX (#391)    MUMPS    IR    SORTING ONLY
+                  Short Descr:  Location and Machine ID
+                  Description:  This cross-reference keeps track of which computers (Machine ID) belong to which location.  
+                    Set Logic:  S ^MAGD(2006.575,"AFX",X(1),X(2),DA)=""
+                     Set Cond:  I $D(^MAGD(2006.575,"F",X(1),X(3),DA))
+                   Kill Logic:  K ^MAGD(2006.575,"AFX",X(1),X(2),DA)
+                   Whole Kill:  K ^MAGD(2006.575,"AFX")
+                         X(1):  GATEWAY LOCATION  (2006.575,36)  (Subscr 1)  (forwards)
+                         X(2):  MACHINE ID  (2006.575,28)  (Subscr 2)  (forwards)
+                         X(3):  STUDY UID  (2006.575,9)  (forwards)
+
+
+2006.575,37   Instrument Site        AMFG;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAR 19, 2001 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field will contain the institution where the instrument is located.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DICOM FAILED IMAGES (#2006.575)   RELATED IMAGES:RELATED IMAGES (#.01)
+
+INSTITUTION (#4)                  GATEWAY LOCATION (#36)
+
+
+
+INPUT TEMPLATE(S):
+MAGD-ENTRY                    MAR 11, 1997@11:57  USER #0    
+MAGD-UPDT                     MAR 11, 1997@11:51  USER #0    
+
+PRINT TEMPLATE(S):
+MAG FAILED IMAGES             OCT 24, 2000@08:31  USER #0                                                                                                                                                                             DICOM Failed Images LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

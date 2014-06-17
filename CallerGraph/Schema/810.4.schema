@@ -1,0 +1,500 @@
+STANDARD DATA DICTIONARY #810.4 -- REMINDER LIST RULE FILE                                                                                                                                                                        MAY 20,2014@15:31:38  PAGE 1
+STORED IN ^PXRM(810.4,  (23 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                         (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to define what extract criteria should be used to build reminder patient lists. Extract criteria is defined as "list rules" in this file. The file is used by the Reminder Patient List option and Reminder Extract Management option to
+create patient lists. 
+ 
+There are four types of rule criteria in the List Rule file: 
+ 
+  Patient List - defines an existing patient list 
+  Finding Rule  - defines reminder terms that specify findings 
+                  and the date ranges to use 
+  Reminder Rule - defines a reminder definition that builds a patient list 
+                  based on the patient cohort logic using the ending date as 
+                  the evaluation date. 
+  Rule Set      - defines a multiple of sequentially defined list rules 
+                  (a rule set can not be included in the multiple). 
+ 
+The rule criteria are combined into a Rule Set that defines how to use the criteria to create or modify a patient list. Rule Sets allow lists of patients to be manipulated when a patient meets specified criteria by the following operations: 
+ 
+  ADD     to a new or existing patient list 
+  REMOVE   from an existing list 
+  SELECT   retain a patient in an existing list if the patient meets the 
+           criteria, and remove the patient if the patient does not meet 
+           the criteria. 
+  
+A rule set can contain multiple operations. One operation can be defined for each sequence in the rule set.  
+ 
+Nationally distributed list rules are prefixed with 'VA-' and cannot be modified by sites.  
+ 
+FINDING RULES and Date Ranges: 
+------------------------------------------------------------
+A Date Range is used by FINDING RULES to search for findings.  List build processing determines which Beginning Date/time and Ending Date/time to use when evaluating each finding based on where the date/times are defined.  Beginning Date/Time (BDT) and
+Ending Date/Time (EDT) fields can be defined at multiple levels: 
+ 
+1  List Build action BDT and EDT: default when not defined at lower level 
+  2  Rule Set Sequence BDT and EDT: overrides previous level 
+    3  List Rule BDT and EDT: overrides previous levels 
+      4  Term Finding BDT and EDT: overrides previous levels 
+ 
+This override relationship can be defined with the following equation, where "<" should be interpreted as "is overridden by": 
+ 
+List Build < rule set sequence < list rule < term's finding 
+ 
+List Build and date range evaluation: 
+------------------------------------
+ 
+The List Build BDT and EDT are specified by the user selecting the List Build action. The List Build BDT and EDT is the default date range when the BDT and EDT are not defined for the rule set sequence, list rule, or term finding. The default date range
+is used to find a match on each finding in the criteria. 
+ 
+If no date range limits should be used to find a match on finding, either the rule set sequence or list rule needs to be defined with a zero in the BDT or EDT fields, or both. A zero in the BDT field means start with the patient's oldest data. A zero in
+the EDT field represents the end of the day on the day the list is built. Note: This is in contrast to Reminder Definitions, where the BDT and EDT for a finding are left blank to specify no limits. In the REMINDER LIST RULE file, if zero is defined in
+the BDT, and the EDT is left blank, the list build tools will assume both BDT and EDT should not have date range limits, and vice versa if EDT has the 0 and the BDT is blank. 
+ 
+The use of "T" in the BDT or EDT fields always represents the List Build ending date/time specified for the list build action or the extract reporting period, depending on whether a reminder patient list or extract option is being used to build the list.  
+ 
+"BDT" may also be used in the BDT or EDT fields and represents the starting date/time specified for the list build process or the extract reporting period.  BDT-5Y creates a date five years prior to the beginning date/time. 
+ 
+If the ending date/time is earlier than the beginning date/time, then no finding matches will be found.  
+ 
+REMINDER RULES and Date Ranges: 
+------------------------------------------------------------
+Reminder Rules do not use the Beginning Date/time from the List Build, List Rule Sequence or Reminder Rule Beginning Date/time fields. Reminder evaluation using date ranges is based on existing reminder definitions. However, a Reminder Rule will use the
+Ending Date/time (EDT) from the Reminder Rule, List Rule Sequence, or List Build EDT. The same EDT overrides that are used for Finding Rule EDT are also used for Reminder Rule. The EDT used for reminder evaluation can be defined at multiple levels: 1 
+List Build action EDT: default when not defined at lower level 
+  2  Rule Set Sequence EDT: overrides previous level 
+    3  List Rule EDT: overrides previous levels 
+      4  Reminder evaluation is not impacted by terms in the reminder 
+         definition.  
+ 
+
+
+              DD ACCESS: @
+              RD ACCESS:  
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: TYPE (#.03)[R]
+
+PRIMARY KEY:        A (#22)
+  Uniqueness Index: B (#741)
+       File, Field: 1) NAME (810.4,.01)
+
+POINTED TO BY: LIST RULE SET field (#.02) of the EXTRACT RULES sub-field (#810.21) of the REMINDER EXTRACT DEFINITION File (#810.2) 
+               LIST RULE field (#.02) of the SEQUENCE sub-field (#810.41) of the REMINDER LIST RULE File (#810.4) 
+               LIST RULE field (#.06) of the REMINDER PATIENT LIST File (#810.5) 
+               
+
+CROSS
+REFERENCED BY: LIST RULE(AD)
+
+INDEXED BY:    NAME (B)
+
+
+810.4,.01     NAME                   0;1 FREE TEXT (Required) (Key field)
+
+              INPUT TRANSFORM:  K:$L(X)>96!($L(X)<3)!'(X'?1P.E)!('$$VNAME^PXRMINTR(.X)) X
+              LAST EDITED:      JUN 03, 2009 
+              HELP-PROMPT:      Answer must be 3-96 characters in length 
+              DESCRIPTION:      This is the name of the list rule.  
+                                 
+                                National list rules are prefixed VA- and class national. 
+
+              DELETE TEST:      1,0)= I +$G(PXRMEXCH)=0,$D(^PXRMD(810.4,"AD",DA)) D EN^DDIOL($C(7)_"IN USE - CANNOT BE DELETED")
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              FIELD INDEX:      B (#741)    REGULAR    IR    LOOKUP & SORTING
+                   Unique for:  Key A (#22), File #810.4
+                  Short Descr:  B Index
+                    Set Logic:  S ^PXRM(810.4,"B",$E(X,1,96),DA)=""
+                   Kill Logic:  K ^PXRM(810.4,"B",$E(X,1,96),DA)
+                   Whole Kill:  K ^PXRM(810.4,"B")
+                         X(1):  NAME  (810.4,.01)  (Subscr 1)  (Len 96)  (forwards)
+
+
+810.4,.02     SHORT DESCRIPTION      0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>64!($L(X)<3) X
+              LAST EDITED:      OCT 10, 2002 
+              HELP-PROMPT:      Answer must be 3-64 characters in length. 
+              DESCRIPTION:
+                                This is a short description of the list rule.  
+
+
+810.4,.03     TYPE                   0;3 SET (Required)
+
+                                '1' FOR FINDING RULE; 
+                                '3' FOR RULE SET; 
+                                '5' FOR PATIENT LIST; 
+                                '2' FOR REMINDER RULE; 
+              LAST EDITED:      NOV 29, 2004 
+              DESCRIPTION:
+                                There are three types of rules in the file. Patient List Rules define an existing patient list. Finding Rules define reminder terms. Rule Sets contain both Finding and Patient List rules.  
+
+
+810.4,1       REMINDER TERM          0;7 POINTER TO REMINDER TERM FILE (#811.5)
+
+              LAST EDITED:      OCT 10, 2002 
+              DESCRIPTION:
+                                Finding rules (type 1) use a reminder term (#811.5) to select patients via the reminder package indexes.  
+
+
+810.4,2       LIST RULE BEGINNING DATE/TIME 0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:(($L(X)<1)!($L(X)>20)!('$$DATECHK^PXRMRUL1(X))) X
+              LAST EDITED:      MAY 04, 2006 
+              HELP-PROMPT:      Enter an exact date, symbolic date, or 0 (zero) for no beginning date. Symbolic dates can use "T" to represent the build end date or "BDT" for build beginning date. 
+              DESCRIPTION:      Enter an exact date, symbolic date, or 0 (zero) for no beginning date. Symbolic dates can use "T" to represent the build end date or "BDT" for build beginning date.  
+                                 
+                                This field is the beginning date/time (BDT) to use when searching for  findings that match a List Finding Rule. In order for patient data to meet the List Finding Rule criteria, the findings must have been documented on or
+                                after the BDT.  
+                                 
+                                Reminder Rules and Patient List Rules do not use the Beginning date/time field. 
+                                 
+                                The BDT defined for a finding rule will be overridden if the term in the finding rule has a mapped finding with a BDT or Ending Date/Time (EDT).  
+                                 
+                                The rules for overriding date ranges is represented by the following equation, where "<" should be interpreted as "is overridden by": 
+                                 
+                                  Build < rule set sequence < list rule < term's finding 
+                                 
+                                If the BDT and EDT are not defined on the list rule set sequence, nor the list finding rule, nor the Reminder Term's mapped finding, then the patient list tools will use the List Build's date range to find a match on
+                                findings. The List Build date range is the date range specified by the user when the list build action is selected. The list build date range is the Extract reporting period if an extract is being run.  
+                                 
+                                If no date range limits should be used to match findings for this finding rule, the finding rule needs to be defined with a zero in the BDT or EDT fields, or both. The term referenced in the list rule should not have BDT
+                                and EDT fields defined. If zero is defined in the BDT, and the EDT is left blank, the list build tools will assume both BDT and EDT should not have date range limits, and vice versa if EDT has the 0 and the BDT is blank.  
+                                 
+                                The use of "T" in the finding rule BDT field will always represent the ending date/time specified for the list build process or the extract reporting period, depending on whether a reminder patient list or extract option
+                                is being used to build the list. For example, T-1Y is one year prior to the list build's ending date/time.  
+                                 
+                                "BDT" may also be used in the BDT or EDT fields and represents the beginning date/time specified by the user processing the list build action. For example, BDT-5Y creates a beginning date for the list rule that is five
+                                years prior to the list build's beginning date/time.  
+                                 
+                                A fixed date may be defined in the BDT (e.g. 09/11/02).  
+                                 
+                                If the beginning date/time is later than the ending date/time, then no finding matches will be found.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+810.4,3       LIST RULE ENDING DATE/TIME 0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:(($L(X)<1)!($L(X)>20)!('$$DATECHK^PXRMRUL1(X))) X
+              LAST EDITED:      MAY 26, 2006 
+              HELP-PROMPT:      Enter an exact date, symbolic date, or 0 (zero) for no ending date. Symbolic dates can use "T" to represent the build end date or "BDT" for build beginning date. 
+              DESCRIPTION:      Enter an exact date, symbolic date, or 0 (zero) for no ending date.  Symbolic dates can use "T" to represent the build end date, or "BDT" for build beginning date.  
+                                 
+                                This field is the ending date/time to use when searching for findings that match this list rule criteria. Findings must have been documented before the ending date/time. If no time is included, 11:59PM is assumed to be the
+                                time.  
+                                 
+                                The rules for overriding date ranges is represented by the following equation, where "<" should be interpreted as "is overridden by": 
+                                 
+                                  Build < rule set sequence < list rule < term's finding 
+                                 
+                                The Ending Date/Time (EDT) defined for this list rule will be overridden if the term in the list rule has a mapped finding with a Beginning Date/Time (BDT) or Ending Date/Time (EDT).  
+                                 
+                                If the BDT and EDT are not defined on the list rule, nor the rule set sequence, nor the Reminder Term's mapped finding, then the patient list tools will use the List Build date range to find a match on findings. The List
+                                Build date range is the date range specified by the user when the list build action is selected. The list build date range is the Extract reporting period if an extract is being run.  
+                                 
+                                If no date range limits should be used to match findings for this list rule, the list rule needs to be defined with a zero in the BDT or EDT fields, or both. The term referenced in the list rule should not have BDT and EDT
+                                fields defined. If zero is defined in the list rule BDT, and the EDT is left blank, the list build tools will assume both BDT and EDT should not have date range limits, and vice versa if EDT has the 0 and the BDT is blank.  
+                                 
+                                The use of "T" in the List rule EDT field will always represent the ending date/time specified for the list build process or the extract reporting period, depending on whether a reminder patient list or extract option is
+                                being used to build the list. T-1Y is one year prior to the list build's ending date/time.  
+                                 
+                                "BDT" may also be used in the BDT or EDT fields and represents the beginning date/time specified by the user processing the list build action. For example "BDT-5Y" in the list rule beginning date, and "BDT" in the list
+                                rule ending date will create a five year date range ending on the list build's beginning date/time.  
+                                 
+                                A fixed date may also be defined in the EDT (e.g. 09/11/02).  
+                                 
+                                If the ending date/time is earlier than the beginning date/time, then no finding matches will be found.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+810.4,4       USE EXISTING PT LIST   0;8 POINTER TO REMINDER PATIENT LIST FILE (#810.5)
+
+              LAST EDITED:      MAY 26, 2006 
+              HELP-PROMPT:      Select an existing reminder patient list from the Reminder Patient List file. 
+              DESCRIPTION:      This field is used by Patient List rules to identify an existing patient list in the Reminder Patient List file.  The existing patient list is used as the patient source to perform the ADD, SELECT, or REMOVE operation on
+                                the list rule.  The existing patient list is used to modify the temporary patient list built during list build processing.  
+                                 
+                                  For the  ADD operation the patients in the source list will be 
+                                  added to the temporary patient list.  
+                                 
+                                  For the SELECT operation, the patients in the source list will be 
+                                  compared to the temporary patient list.  Patient's in the 
+                                  temporary list that are not in the source list will be removed 
+                                  from the temporary patient list.  
+                                 
+                                  For the REMOVE operation, the patients in the source list, that 
+                                  match a patient in the temporary patient list will be removed 
+                                  from the temporary patient list.  
+                                 
+                                  If the USE EXISTING PT LIST and USE EXTRACT PT LIST NAMED field 
+                                  are both defined in the list rule, the USE EXTRACT PT LIST NAMED 
+                                  will be used as the patient source for extract processing, 
+                                  and the USE EXISTING PT LIST will be used when the build 
+                                  processing is started from the Reminder Patient List option.  
+
+
+810.4,7       USE EXTRACT PT LIST NAMED 1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>96!($L(X)<1) X
+              LAST EDITED:      MAY 26, 2006 
+              HELP-PROMPT:      Enter the name of the extract patient list defined in the extract definition. 
+              DESCRIPTION:      This is a free-text field that contains the name of the patient list to use when processing this list rule during an extract run. The patient list has not been created at the time the list rule is defined. In contrast, the
+                                USE EXISTING PT LIST field is used by patient list rule tools to reference a patient list already existing in the REMINDER PATIENT LIST file.  
+                                 
+                                The name specified in the USE EXTRACT PT LIST NAMED will contain 'yyyy' for year and 'pnn' for reporting period. The nn is either the month (01-12) or calendar quarter (01-04), and p is either M for monthly, Q for
+                                quarterly, or Y for yearly.  
+                                 
+                                When an extract is run for a particular reporting period, the extract tool will use the USE EXTRACT PT LIST NAMED to find the patient list matching the name and then use this patient list to create the starting temporary
+                                patient list. The starting temporary patient list will be modified by add, select, and delete operations defined in the remaining list rules defined in the rule set.  
+                                 
+                                The same extract patient list name is also named in the REMINDER EXTRACT DEFINITION file (#810.2). The extract definition is used to create the extract patient list during an extract run. The 'yyyy' and 'pnn' ensures the
+                                extract process for the reporting year and period consistently uses the appropriate extract patient list created for the reporting period.  
+                                 
+                                Example: The patient list 'VA-*IHD QUERI yyyy pnn PATIENTS WITH QUALIFYING VISIT' is created during 'VA-IHD QUERI' extract processing by a rule set defined in the extract definition. Then a subsequent rule set defined in
+                                the 'VA-IHD QUERI' extract definition references a REMINDER LIST RULE entry with the same extract patient list name in the USE EXTRACT PT LIST NAMED field.  During the extract run, the named list will be used to find the 
+                                patient list created during the extract run in process.  This list is used with the ADD operation in the rule set to create the temporary patient list to process the remaining rules in the rule set. In this example, the
+                                temorary patient list is  modified to include patients that have both a QUALIFYING VISIT and an ANCHOR visit, creating a new patient list, 'VA-*IHD QUERI yyyy nn PATIENTS WITH QUALIFYING AND ANCHOR VISIT'. The new patient
+                                list created by the rule set processing is defined in the extract definition.  
+
+
+810.4,9       REMINDER DEFINITION    0;10 POINTER TO REMINDER DEFINITION FILE (#811.9)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P($G(^(100)),U,4)[""L""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 21, 2005 
+              HELP-PROMPT:      Enter a Reminder Definition that can be used to build a patient list. 
+              DESCRIPTION:      This is a pointer to the Reminder Definition file #811.9. Reminders used to build patient lists must have an "L" in their USAGE field.  
+                                 
+                                 
+
+              SCREEN:           S DIC("S")="I $P($G(^(100)),U,4)[""L"""
+              EXPLANATION:      The Reminder Definition must have an "L" for patient list in its USAGE field.
+
+810.4,30      SEQUENCE               30;0 Multiple #810.41
+
+              LAST EDITED:      AUG 11, 2003 
+              IDENTIFIED BY:    LIST RULE(#.02)
+
+              PRIMARY KEY:      A (#23)
+              Uniqueness Index: B (#742)
+                   File, Field: 1) SEQUENCE (810.41,.01)
+
+              INDEXED BY:       SEQUENCE (B)
+
+810.41,.01      SEQUENCE               0;1 NUMBER (Required) (Multiply asked) (Key field)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 02, 2007 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:      A rule set is defined with one or more  sequences of list rules that indicate the sequence the list rules should be processed when the patient list is created. This is the sequence number associated with the list rule.  
+                                   
+                                  The patient list created while processing each sequential list rule is stored in ^TMP("PXRMRULE"_sequence,$J).  After the rule set is processed, the patient list is stored in the Reminder Patient List file.  
+
+                FIELD INDEX:      B (#742)    REGULAR    IR    LOOKUP & SORTING
+                     Unique for:  Key A (#23), File #810.41
+                    Short Descr:  Uniqueness Index for Key 'A' of Subfile #810.41
+                      Set Logic:  S ^PXRM(810.4,DA(1),30,"B",X,DA)=""
+                     Kill Logic:  K ^PXRM(810.4,DA(1),30,"B",X,DA)
+                     Whole Kill:  K ^PXRM(810.4,DA(1),30,"B")
+                           X(1):  SEQUENCE  (810.41,.01)  (Subscr 1)
+
+
+810.41,.02      LIST RULE              0;2 POINTER TO REMINDER LIST RULE FILE (#810.4)
+
+                INPUT TRANSFORM:  D SCREEN^PXRMLRED D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+                LAST EDITED:      JUL 03, 2002 
+                DESCRIPTION:
+                                  This is the finding rule to be used to select patients.  
+
+                SCREEN:           D SCREEN^PXRMLRED
+                EXPLANATION:      RULE SETS MAY NOT CONTAIN OTHER RULE SETS
+                CROSS-REFERENCE:  810.4^AD 
+                                  1)= S ^PXRM(810.4,"AD",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PXRM(810.4,"AD",$E(X,1,30),DA(1),DA)
+                                  This index is used to determine which rule sets a list rule belongs to.  
+
+
+                CROSS-REFERENCE:  810.41^D 
+                                  1)= S ^PXRM(810.4,DA(1),30,"D",$E(X,1,30),DA)=""
+                                  2)= K ^PXRM(810.4,DA(1),30,"D",$E(X,1,30),DA)
+
+
+810.41,.03      OPERATION              0;3 SET (Required)
+
+                                  'A' FOR ADD PATIENT; 
+                                  'F' FOR INSERT FINDING; 
+                                  'R' FOR REMOVE; 
+                                  'S' FOR SELECT; 
+                LAST EDITED:      MAY 21, 2004 
+                DESCRIPTION:      This is the condition used in processing the sequence/finding rule. Each processing step will have a start and end list, a finding rule and an operation 
+                                   
+                                  The possible operations are: 
+                                   
+                                  ADD    - Patients with findings in the rule are added to the start list to create the end list.  
+                                   
+                                  REMOVE - Patients with findings in the rule are removed from the start list to create the end list.  
+                                   
+                                  SELECT - Patients without findings in the rule are removed from the start list to create the end list.  
+                                   
+                                  The end list is always stored in ^TMP("PXRMRULE"_sequence,$J). The start list may be the end list from another finding rule in the rule set or, alternatively, may be a patient list (#810.5).  
+                                   
+                                  Patient lists may be merged using the ADD operation.  
+
+
+810.41,2        SEQUENCE BEGINNING DATE/TIME 1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:(($L(X)<1)!($L(X)>20)!('$$DATECHK^PXRMRUL1(X))) X
+                LAST EDITED:      MAY 04, 2006 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:      This field is the beginning date/time (BDT) to use when searching for  findings that match the rule set sequence criteria.  In order for patient data to meet the rule set sequence criteria, the findings must have been
+                                  documented on or after the beginning date/time.  
+                                   
+                                  The rules for overriding date ranges can be defined with the following equation, where "<" should be interpreted as "is overridden by": 
+                                   
+                                    List Build < rule set sequence < list rule < term's finding 
+                                   
+                                  The Beginning Date/Time (BDT) defined for a rule set sequence will be overridden if the finding list rule, or term in the finding list rule has a mapped finding with a Beginning Date/Time (BDT) or Ending Date/Time (EDT).  
+                                   
+                                  If the BDT and EDT are not defined on the rule set sequence, 
+                                                         nor the list rule, 
+                                                         nor the Reminder Term's mapped finding, then the patient list tools will use the List Build date range to find a match on findings. The List Build date range is the date range specified by the user
+                                  when the list build action is selected.  The list build date range is the extract reporting period if an extract is being run.  
+                                   
+                                  If no date range limits should be used to match findings for this rule set sequence, the rule set sequence (or its list rule) needs to be defined with a zero in the BDT and/or EDT fields. The term referenced in the list
+                                  rule should not have BDT and EDT fields defined. If zero is defined in the BDT, and the EDT is left blank, the list build tools will assume both BDT and EDT should not have date range limits, and vice versa if EDT has
+                                  the 0 and the BDT is blank. Both BDT and EDT may be set to zero.  
+                                   
+                                  The use of "T" in the rule set sequence BDT field will always represent the ending date/time specified for the list build process or the extract reporting period, depending on whether a reminder patient list or extract
+                                  option is being used to build the list.  T-1Y is one year prior to the list build's ending date/time.  
+                                   
+                                  "BDT" may also be used in the BDT or EDT fields and represents the beginning date/time specified by the user processing the list build action.  BDT-5Y creates a beginning date for the rule set sequence that is five years
+                                  prior to the list build's beginning date/time.  
+                                   
+                                  A fixed date may also be defined in the BDT (e.g. 09/11/02).  
+                                   
+                                  If the beginning date/time is later than the ending date/time, then no finding matches will be found.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+810.41,3        SEQUENCE ENDING DATE/TIME 1;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:(($L(X)<1)!($L(X)>20)!('$$DATECHK^PXRMRUL1(X))) X
+                LAST EDITED:      MAY 04, 2006 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:      This field is the ending date/time to use when searching for findings that match this rule set sequence criteria. Findings must have been documented before the ending date/time.  If no time is included, 11:59PM is
+                                  assumed to be the time.  
+                                   
+                                  The rules for overriding date ranges can be defined with the following equation, where "<" should be interpreted as "is overridden by": 
+                                   
+                                  List Build < rule set sequence < list rule < term's finding 
+                                   
+                                  The Ending Date/Time (EDT) defined for this rule set sequence will be overridden if the list rule, or term referenced in the list rule has a mapped finding with a Beginning Date/Time (BDT) or Ending Date/Time (EDT).  
+                                   
+                                  If the BDT and EDT are not defined on the rule set sequence, nor the list rule, nor the Reminder Term's mapped finding, then the patient list tools will use the List Build date range to find a match on findings. The List
+                                  Build date range is the date range specified by the user selecting the list build action.  The list build date range is the Extract reporting period if an extract is being run.  
+                                   
+                                  If no date range limits should be used to match findings for this rule set sequence, the rule set sequence needs to be defined with a zero in the BDT or EDT fields, or both fields. Alternatively, the list build
+                                  referenced by the sequence can be defined with a zero in its BDT or EFDT fields. The term referenced in the list rule should not have BDT and EDT fields defined. If zero is defined in the rule set sequence or list rule
+                                  BDT, and the EDT is left blank, the list build tools will assume both BDT and EDT should not have date range limits, and vice versa if EDT has the 0 and the BDT is blank.  
+                                   
+                                  The use of "T" in the rule set sequence EDT field will always represent the ending date/time specified for the list build process or the extract reporting period, depending on whether a reminder patient list or extract
+                                  option is being used to build the list. T-1Y is one year prior to the list build's ending date/time.  
+                                   
+                                  "BDT" may also be used in the BDT or EDT fields and represents the beginning date/time specified by the user processing the list build action.  For example BDT-5Y in the rule set sequence beginning date, and BDT in the
+                                  list rule set sequence ending date will create a five year date range ending on the list build's beginning date/time.  
+                                   
+                                  A fixed date may also be defined in the EDT (e.g. 09/11/02).  
+                                   
+                                  If the ending date/time is earlier than the beginning date/time, then no finding matches will be found.  
+                                   
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+810.4,100     CLASS                  100;1 SET (Required)
+
+                                'N' FOR NATIONAL; 
+                                'V' FOR VISN; 
+                                'L' FOR LOCAL; 
+              LAST EDITED:      JUL 02, 2002 
+              HELP-PROMPT:      Enter the class, 
+              DESCRIPTION:
+                                This is the CLASS of the rule. National rules cannot be edited.  
+
+
+810.4,110     EDIT HISTORY           110;0 DATE Multiple #810.42
+
+              DESCRIPTION:
+                                This multiple is used to record a history of changes to the rule.  
+
+
+810.42,.01      EDIT DATE              0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      JUL 02, 2002 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  This is the date and time when the editing was done. This field is set automatically and should not be changed by the user.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  810.42^B 
+                                  1)= S ^PXRM(810.4,DA(1),110,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRM(810.4,DA(1),110,"B",$E(X,1,30),DA)
+
+
+810.42,1        EDIT BY                0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUL 02, 2002 
+                DESCRIPTION:
+                                  This is the person who did the editing. This field is set automatically and should not be changed by the user.  
+
+
+810.42,2        EDIT COMMENTS          1;0   WORD-PROCESSING #810.422
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 EDIT HISTORY:EDIT BY (#1)
+
+REMINDER DEFINITION (#811.9)      REMINDER DEFINITION (#9)
+
+REMINDER LIST RULE (#810.4)       SEQUENCE:LIST RULE (#.02)
+
+REMINDER PATIENT LIST (#810.5)    USE EXISTING PT LIST (#4)
+
+REMINDER TERM (#811.5)            REMINDER TERM (#1)
+
+
+
+INPUT TEMPLATE(S):
+PXRM EDIT FINDING RULE        JUL 02, 2002@15:30  USER #0    
+PXRM EDIT PATIENT LIST RULE   MAY 16, 2006@11:42  USER #0    
+PXRM EDIT REMINDER RULE       APR 07, 2006@10:06  USER #0    
+     
+PXRM EDIT REPORT OUTPUT RULE  JUL 02, 2002@14:28  USER #0    
+PXRM EDIT RULE SET            JUL 12, 2006@10:16  USER #0    
+
+PRINT TEMPLATE(S):
+PXRM FINDING RULE             NOV 29, 2002@14:00  USER #0                                                                                                                                                                      REMINDER EXTRACT LIST RULE LIST
+PXRM PATIENT LIST RULE        MAY 16, 2006@11:46  USER #0                                                                                                                                                                              REMINDER LIST RULE LIST
+PXRM REMINDER RULE            NOV 29, 2004@14:60  USER #0                                                                                                                                                                              REMINDER LIST RULE LIST
+PXRM RULE SET                 SEP 14, 2005@09:33  USER #0                                                                                                                                                                      REMINDER EXTRACT LIST RULE LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

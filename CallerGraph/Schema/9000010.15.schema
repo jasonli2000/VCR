@@ -1,0 +1,249 @@
+STANDARD DATA DICTIONARY #9000010.15 -- V TREATMENT FILE                                                                                                                                                                          MAY 20,2014@15:39:42  PAGE 1
+STORED IN ^AUPNVTRT(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file has been designed for joint use by the Indian Health Service and the Department of Veteran Affairs.  
+ 
+This file contains a record for each treatment provided to a patient on a given patient visit.  There will be multiple treatment records for the same treatment (.01) field based on the date on which it was given.  Data must exist in the Patient/IHS file
+and visit file for the patients' visit before data can be entered in the V Treatment file.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: PATIENT NAME (#.02)[R], VISIT (#.03)[R]
+
+CROSS
+REFERENCED BY: VISIT(AA), PATIENT NAME(AATOO), VISIT(AD), VISIT(AV10), TREATMENT(B), PATIENT NAME(C)
+
+9000010.15,.01TREATMENT              0;1 POINTER TO TREATMENT FILE (#9999999.17) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,4)'=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 24, 1995 
+              HELP-PROMPT:      Enter a treatment from the Treatment file or select "OTHER". 
+              DESCRIPTION:
+                                This is a treatment or service provided which does not map to a CPT code but is clinically useful for patient care management.  
+
+              TECHNICAL DESCR:
+                                In the VA, this entry will be "OTHER" if the treatment text received from the PCE Device Interface does not have a match in the Treatment file.  The Provider Narrative field will reflect the name of the Treatment provided.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,4)'=1"
+              EXPLANATION:      Allow only active Treatment types to be selected.
+              CROSS-REFERENCE:  9000010.15^B 
+                                1)= S ^AUPNVTRT("B",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVTRT("B",$E(X,1,30),DA)
+
+
+9000010.15,.02PATIENT NAME           0;2 POINTER TO PATIENT/IHS FILE (#9000001) (Required)
+
+              LAST EDITED:      SEP 01, 1995 
+              HELP-PROMPT:      Enter the patient who received the treatment. 
+              DESCRIPTION:
+                                This is the patient who received this treatment.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.15^AATOO^MUMPS 
+                                1)= I $P(^AUPNVTRT(DA,0),U,3)]"" S ^AUPNVTRT("AA",X,(9999999-$P(+^AUPNVSIT($P(^AUPNVTRT(DA,0),U,3),0),".",1)),DA)=""
+                                2)= I $P(^AUPNVTRT(DA,0),U,3)]"" K ^AUPNVTRT("AA",X,(9999999-$P(+^AUPNVSIT($P(^AUPNVTRT(DA,0),U,3),0),".",1)),DA)
+                                This cross reference is used for searches in sequence by patient, inverted visit date, and internal entry number.  
+                                 
+                                  "AA",PATIENT,VISIT,DA 
+
+
+              CROSS-REFERENCE:  9000010.15^C 
+                                1)= S ^AUPNVTRT("C",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVTRT("C",$E(X,1,30),DA)
+                                This cross reference allows look-up on treatments by Patient.  
+
+
+
+9000010.15,.03VISIT                  0;3 POINTER TO VISIT FILE (#9000010) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVTRT(DA,0),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 11, 1986 
+              HELP-PROMPT:      Enter the visit date/time for the encounter where the treatment was done. 
+              DESCRIPTION:
+                                This is the encounter or occasion of service defined in the Visit file that represents when and where the treatment was done.  
+
+              TECHNICAL DESCR:
+                                This is a pointer to the Visit File (#9000010).  This field is stuffed by the applications. No editing is allowed.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVTRT(DA,0),U,2)"
+              EXPLANATION:      VISIT MUST BE FOR CURRENT PATIENT
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.15^AD 
+                                1)= S ^AUPNVTRT("AD",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVTRT("AD",$E(X,1,30),DA)
+                                This cross reference is used for searches by the visit pointer and internal entry number.  
+
+
+              CROSS-REFERENCE:  9000010.15^AA^MUMPS 
+                                1)= Q:$P(^AUPNVTRT(DA,0),U,2)=""  S ^AUPNVTRT("AA",$P(^AUPNVTRT(DA,0),U,2),(9999999-$P(+^AUPNVSIT(X,0),".",1)),DA)=""
+                                2)= Q:$P(^AUPNVTRT(DA,0),U,2)=""  K ^AUPNVTRT("AA",$P(^AUPNVTRT(DA,0),U,2),(9999999-$P(+^AUPNVSIT(X,0),".",1)),DA)
+                                This cross reference is used for searches in sequence by patient, inverted visit date, and the internal entry number.  
+                                 
+                                   "AA",PATIENT,VISIT,DA 
+
+
+              CROSS-REFERENCE:  9000010.15^AV10^MUMPS 
+                                1)= D ADD^AUPNVSIT
+                                2)= D SUB^AUPNVSIT
+                                This cross-reference adds and subtracts from the dependent entry count in the VISIT file.  
+
+
+
+9000010.15,.04HOW MANY               0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 24, 1995 
+              HELP-PROMPT:      Enter a number between 1 and 999 for how many times the treatment was done. 
+              DESCRIPTION:
+                                This is the number of times this treatment was given to the patient during the encounter.  
+
+
+9000010.15,.06PROVIDER NARRATIVE     0;6 POINTER TO PROVIDER NARRATIVE FILE (#9999999.27)
+
+              INPUT TRANSFORM:  S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 27, 1994 
+              HELP-PROMPT:      Enter the providers narrative documenting the treatment 
+              DESCRIPTION:
+                                This is the provider's preferred text used to represent the treatment provided.  
+
+              TECHNICAL DESCR:
+                                If the provider narrative does not have a related entry in the Treatment file the "OTHER" entry will be defined in the Treatment (.01) field.  
+
+              SCREEN:           S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO")
+              EXPLANATION:      IHS OLD LOOKUP or PCE Exact Match
+
+9000010.15,1201Event Date and Time   12;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 03, 1996 
+              HELP-PROMPT:      Enter the date and time the treatment was provided. 
+              DESCRIPTION:      This is the date and time the treatment was given by the provider.  This date and time may be different from the visit date and time.  For example, for clinic appointment visits, the visit date and time is the date and
+                                time of the appointment, not the time the provider performed the clinical event.  
+                                 
+                                The date may be an imprecise date.  
+                                 
+                                Date and time may be within 30 days before or after the visit date, with the restriction the date cannot be a future date.  
+
+              TECHNICAL DESCR:  The PCE User Interface, which allows manual entry of data, will be the prmary source of the event date and time.  The event date prompt defaults to the visit date and the time is entered to reflect the actual time the exam
+                                was given. The event date does not have to be the visit date, but it must be within 30 days before or after the visit, and not be a future date.  
+                                 
+                                If a user wants to enter an historical measurement, the user should use the Historical Encounter entry action to document the historical measurement. Historical entries will not be eligible for credit.  
+                                 
+                                PCE data sources for automatic (scanning) data capture will be blank unless the event date and time are passed to PCE for filing. 
+                                 
+
+
+9000010.15,1202ORDERING PROVIDER     12;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 13, 1996 
+              HELP-PROMPT:      Enter the provider who ordered the treatment. 
+              DESCRIPTION:
+                                This field may be used to document the provider who ordered the treatment.  
+
+
+9000010.15,1204ENCOUNTER PROVIDER    12;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 19, 1994 
+              HELP-PROMPT:      Enter the provider who gave the treatment. 
+              DESCRIPTION:
+                                This is the provider who gave the treatment.  
+
+
+9000010.15,80101EDITED FLAG          801;1 SET
+
+                                '1' FOR EDITED; 
+              LAST EDITED:      APR 27, 1994 
+              HELP-PROMPT:      Answer is automatically entered by PCE filing logic. 
+              DESCRIPTION:
+                                This field is automatically set to 1 if PCE detects that any original treatment data is being edited.  
+
+              TECHNICAL DESCR:
+                                PCE filing logic automatically compares the before and after pictures of the record to determine if the edited flag should be set to "1".  
+
+
+9000010.15,80102AUDIT TRAIL          801;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>85!($L(X)<2) X
+              LAST EDITED:      MAY 09, 1996 
+              HELP-PROMPT:      Answer is automatically entered by the PCE filing logic. 
+              DESCRIPTION:
+                                This field is populated automatically by the PCE filing logic.  The format of the field is as follows:  Pointer to PCE data source file_"-"_A for Add or E for Edit_" "_DUZ of the person who entered the data_";"...  
+
+              TECHNICAL DESCR:  The PCE filing logic requires a pointer to the PCE data source file.  If this is not passed, then PCE filing logic will not process the data.  
+                                 
+                                If the record is a new record, then an "A" is used to specify the source that added the data.  If the record existed previously, PCE filing logic compares the old and new records of information.  An "E" will automatically
+                                be used if the filing logic finds the data has been edited.  If "E" is used, then the Edited Flag field is automatically set to 1.  
+                                 
+                                The DUZ is stored in its internal format to represent the user who performed the adding or editing of data for this record.  
+                                 
+                                Iterations of editing will be concatenated to the previous data source value, up to 85 characters.  
+
+
+9000010.15,80201PROVIDER NARRATIVE CATEGORY 802;1 POINTER TO PROVIDER NARRATIVE FILE (#9999999.27)
+
+              LAST EDITED:      APR 28, 1994 
+              HELP-PROMPT:      Enter the header or category related to the treatment. 
+              DESCRIPTION:      This field is the heading or category used to represent the provider narrative on the scanner form or workstation.  It may be useful for understanding how providers are grouping data for use on the encounter form, and may
+                                help determine clinical terminology definitions in the future.  
+
+              TECHNICAL DESCR:
+                                This field was added for use in the VA.  It is only used with automated data capture sources, such as AICS.  
+
+
+9000010.15,81101COMMENTS             811;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      JUL 11, 1995 
+              HELP-PROMPT:      Enter a comment 1-245 characters in length. 
+              DESCRIPTION:
+                                This is a comment related to the patient's treatment.  The provider may enter this manually via the PCE User Interface.  
+
+
+9000010.15,81201VERIFIED             812;1 SET
+
+                                '1' FOR ELECTRONICALLY SIGNED; 
+                                '2' FOR VERIFIED BY PACKAGE; 
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+9000010.15,81202PACKAGE              812;2 POINTER TO PACKAGE FILE (#9.4)
+
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+9000010.15,81203DATA SOURCE          812;3 POINTER TO PCE DATA SOURCE FILE (#839.7)
+
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 ORDERING PROVIDER (#1202)
+                                  ENCOUNTER PROVIDER (#1204)
+
+PACKAGE (#9.4)                    PACKAGE (#81202)
+
+PATIENT/IHS (#9000001)            PATIENT NAME (#.02)
+
+PCE DATA SOURCE (#839.7)          DATA SOURCE (#81203)
+
+PROVIDER NARRATIVE (#9999999.27)  PROVIDER NARRATIVE (#.06)
+                                  PROVIDER NARRATIVE CATEGORY (#80201)
+
+TREATMENT (#9999999.17)           TREATMENT (#.01)
+
+VISIT (#9000010)                  VISIT (#.03)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

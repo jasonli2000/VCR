@@ -1,0 +1,328 @@
+STANDARD DATA DICTIONARY #364.4 -- IB EDI TRANSMISSION RULE FILE                                                                                                                                                                  MAY 20,2014@15:36:01  PAGE 1
+STORED IN ^IBE(364.4,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the rules to be applied to a bill to determine if it is eligible for transmission via national EDI.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: SHORT DESCRIPTION (#.08)
+
+CROSS
+REFERENCED BY: TYPE OF RULE(AC), RULE NUMBER(B)
+
+INDEXED BY:    TRANSMISSION TYPE & TYPE OF CARE & FORM TYPE & INSURANCE COMPANY OPTION & INACTIVE DATE & TYPE OF RULE (AD)
+
+
+364.4,.01     RULE NUMBER            0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X I $D(X),X<99 N DIR,Y,IBX S IBX=X K X D EN^DDIOL("Use a # > 99 to protect local rules from national updates") S DIR(0)="YA",DIR("A")="OK to continue? " D ^DIR K DIR,X S:Y X=IBX
+              LAST EDITED:      APR 26, 1999 
+              HELP-PROMPT:      Type a Number from 0-999999 (0-99 are reserved for national use.  Use at your own risk!!) 
+              DESCRIPTION:
+                                This is the rule # given to identify this rule.  Rules 1-99 are reserved for National EDI rules and are not editable.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  364.4^B 
+                                1)= S ^IBE(364.4,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(364.4,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^364.4^.04 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBE(364.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X=3 X ^DD(364.4,.01,1,2,1.4)
+                                1.4)= S DIH=$S($D(^IBE(364.4,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=364.4,DIG=.04 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBE(364.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(364.4,.01,1,2,2.4)
+                                2.4)= S DIH=$S($D(^IBE(364.4,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=364.4,DIG=.04 D ^DICR
+                                3)= Do not delete
+                                CREATE VALUE)= S X=3
+                                DELETE VALUE)= @
+                                FIELD)= #.04
+                                This trigger is used to force a 3 into the TYPE OF CARE field because CO thinks it does not need it, but the field thinks it might.  For now, the code will assume it is always a '3' (both inpt and outpt) and when/if they 
+                                realize they need this field, it will be ready for their use.  
+
+
+
+364.4,.02     EARLIEST ACTIVATE DATE 0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X),'$$BTDTOK^IBCEF61(DA,"",1,X) K X
+              LAST EDITED:      MAY 03, 1999 
+              HELP-PROMPT:      Enter a date here if this rule should be effective in the future.  Must be less than entered expire date. 
+              DESCRIPTION:
+                                This is a date in the future when this rule will automatically be used.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+364.4,.03     TRANSMISSION TYPE      0;3 SET (Required)
+
+                                '1' FOR EDI only; 
+                                '2' FOR MRA only; 
+                                '3' FOR Both EDI and MRA; 
+              LAST EDITED:      MAR 29, 2002 
+              HELP-PROMPT:      Select the type of transmission this rule will apply to 
+              DESCRIPTION:
+                                This is the type of transmission that the rule will be executed for.  
+
+              RECORD INDEXES:   AD (#138)
+
+364.4,.04     TYPE OF CARE           0;4 SET (Required)
+
+                                '1' FOR OUTPATIENT only; 
+                                '2' FOR INPATIENT only; 
+                                '3' FOR Both INPT and OUTPT; 
+              LAST EDITED:      MAR 29, 2002 
+              HELP-PROMPT:       Select the type of care this rule will apply to 
+              DESCRIPTION:
+                                This is the type of care that the rule will be executed for.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the RULE NUMBER field of the IB EDI TRANSMISSION RULE File 
+
+              RECORD INDEXES:   AD (#138)
+
+364.4,.05     FORM TYPE              0;5 SET (Required)
+
+                                '1' FOR INSTITUTIONAL (UB-04) only; 
+                                '2' FOR PROFESSIONAL (CMS-1500) only; 
+                                '3' FOR Both INST (UB-04) and PROF (CMS-1500); 
+              LAST EDITED:      JAN 16, 2007 
+              HELP-PROMPT:      Select the form type this rule will apply to 
+              DESCRIPTION:
+                                This is the form type that the rule will be executed for.  
+
+              RECORD INDEXES:   AD (#138)
+
+364.4,.06     INACTIVE DATE          0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X),'$$BTDTOK^IBCEF61(DA,"",2,X) K X
+              LAST EDITED:      MAR 29, 2002 
+              HELP-PROMPT:      Enter the date when this edit will no longer be used to determine if a bill is transmittable.  Must not be earlier than entered active date. 
+              DESCRIPTION:
+                                This is the date on which this edit will not longer be used to determine 'transmittable' for a bill.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              RECORD INDEXES:   AD (#138)
+
+364.4,.07     INSURANCE COMPANY OPTION 0;7 SET (Required)
+
+                                '1' FOR APPLY ONLY TO SPECIFIC COMPANIES; 
+                                '2' FOR DO NOT APPLY TO SPECIFIC COMPANIES; 
+                                '3' FOR APPLY TO ALL COMPANIES; 
+              LAST EDITED:      MAR 29, 2002 
+              HELP-PROMPT:      Select the option to determine which insurance companies to apply this rule to. 
+              DESCRIPTION:      This is the option to determine which insurance companies to apply this rule to.  If 1 or 2 are chosen, the list of insurance companies to be included or excluded should be entered in the appropriate multiple within this
+                                file.  
+
+              RECORD INDEXES:   AD (#138)
+
+364.4,.08     SHORT DESCRIPTION      0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      APR 29, 1999 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                This is a short description of the rule used for identification purposes on lookup.  
+
+
+364.4,.1      BILL TYPE RESTRICTIONS BTYP;0 Multiple #364.41 (Add New Entry without Asking)
+
+              LAST EDITED:      APR 29, 1999 
+
+364.41,.01      BILL TYPE              0;1 FREE TEXT (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>4!($L(X)<3)!'(X?1"-"2N1"X"!(X?2N1"X")!(X?1"-"1N2"X")!(X?1N2"X")!(X?1"-"3N)!(X?3N)!(X?3"X")) X
+                LAST EDITED:      JAN 16, 2007 
+                HELP-PROMPT:      Answer must be 3-4 characters in length. 
+                DESCRIPTION:      This field contains the UB-04 type of bill that should only be transmitted electronically.  It needs to be entered in a 3-digit format.  The first digit must be numeric, but the second and third digits can be an X to 
+                                  indicate any number in that position applies (11X would include 111-119).  
+
+                CROSS-REFERENCE:  364.41^B 
+                                  1)= S ^IBE(364.4,DA(1),"BTYP","B",$E(X,1,30),DA)=""
+                                  2)= K ^IBE(364.4,DA(1),"BTYP","B",$E(X,1,30),DA)
+
+
+364.41,.02      EARLIEST ACTIVATE DATE 0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X),'$$BTDTOK^IBCEF61(DA(1),DA,1,X) K X
+                LAST EDITED:      MAY 03, 1999 
+                HELP-PROMPT:      Enter the future date this bill type should begin to be excluded from transmission checks. 
+                DESCRIPTION:
+                                  This is the date in the future that this bill type should start to be excluded from transmission.  This date is specific for this bill type.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+364.41,.03      INACTIVE DATE          0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X),'$$BTDTOK^IBCEF61(DA(1),DA,2,X) K X
+                LAST EDITED:      MAY 03, 1999 
+                HELP-PROMPT:      Enter the future date this bill type should begin to be excluded from transmission checks. 
+                DESCRIPTION:
+                                  This is the first date on which this edit will no longer be used to determine 'transmittable' for a bill of this bill type.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+364.4,.11     TYPE OF RULE           0;11 SET (Required)
+
+                                '0' FOR LIMIT TO FORM TYPE; 
+                                '1' FOR LIMIT TO SOME BILL TYPES; 
+                                '2' FOR MRA REQUEST RESTRICTIONS; 
+                                '9' FOR LOCALLY DEFINED; 
+              LAST EDITED:      JAN 16, 2007 
+              HELP-PROMPT:      Select the 'type' of rule this is. 
+              DESCRIPTION:      This flag puts the rule into a 'type' category for conflict checking.  It is also a flag that can indicate this rule needs to be executed to determine if an MRA request is valid for the MEDIGAP insurance that is next in
+                                line for COB or if the claim should be directly shuttled to the MEDIGAP carrier.  
+                                 
+                                TYPE OF RULE = 0 (LIMIT TO FORM TYPES) is used to further limit the transmission of PROFESSIONAL (CMS-1500) or INSTITUTIONAL (UB-04) form types. If you pick one form type, no bills of the other form type will be 
+                                transmitted for: a) the insurance companies you selected to include   OR b) the insurance companies not entered on the excluded list  OR c) any insurance co if all insurance companies are selected.  
+                                 
+                                TYPE OF RULE = 1 (LIMIT TO SOME BILL TYPES) is used to further limit the transmission of the UB-04 equivalent of bill type (111,131,etc).  These rules can be used to restrict transmissions to specific bill types or to 
+                                allow all bill types except those specified (these are entered preceeded by a dash).  A 'wild card' character of X can be used to indicate that a character in that position is included (ie 11X will allow 111,112,113,etc) 
+                                The rule will not allow transmission of bills matching the EDI/MRA and PROF/INST parameters and insurance co restrictions (see rule 0 above) unless they match the allowed bill types and do not match any of the excluded
+                                bill types.  
+                                 
+                                TYPE OF RULE = 9 (LOCAL EDITS) are local edits.  If this type of rule is used, the code entered for the edit must return a truth value of 1 if the bill should be transmitted or 0 if the bill should not be transmitted.  The
+                                variable IBIFN is the internal entry # of the bill (file 399), the IB(x) array contains the value of fields #.03,.04,.05,.07,.11 for the rule where 'x' is the field #. IBDA is the ien of the rule (file 364.4).  
+
+              CROSS-REFERENCE:  364.4^AC 
+                                1)= S ^IBE(364.4,"AC",$E(X,1,30),DA)=""
+                                2)= K ^IBE(364.4,"AC",$E(X,1,30),DA)
+                                3)= Please don't delete
+                                This xref allows a check on all rules of the same type for conflict checking purposes.  
+
+
+              RECORD INDEXES:   AD (#138)
+
+364.4,1       RULE CODE              1;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      APR 19, 1999 
+              HELP-PROMPT:      This is Standard MUMPS code that will be executed to enforce this rule. 
+              DESCRIPTION:      This is the MUMPS call that will execute the edit's logic and will set $T to 1 for edit passed or to 0 for edit failed.  You can assume the following variables are available: 
+                                  IBIFN = ien of the bill in file 399 
+                                  IB(.03) = Current value of the bill's transmission type 
+                                  IB(.05) = Current value of the bill's form type 
+                                  IB(.07) = Current value of the bill's insurance option 
+
+              WRITE AUTHORITY:  @
+
+364.4,2       EXCLUDED INSURANCE COMPANY 2;0 POINTER Multiple #364.42 (Add New Entry without Asking)
+
+
+364.42,.01      EXCLUDED INSURANCE COMPANY 0;1 POINTER TO INSURANCE COMPANY FILE (#36) (Multiply asked)
+
+                LAST EDITED:      APR 16, 1999 
+                HELP-PROMPT:      Enter the insurance companies that this edit should NOT be executed for. 
+                DESCRIPTION:
+                                  This is the set of insurance companies for which this edit will not be executed.  
+
+                CROSS-REFERENCE:  364.42^B 
+                                  1)= S ^IBE(364.4,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBE(364.4,DA(1),2,"B",$E(X,1,30),DA)
+
+
+
+
+364.4,3       INCLUDED INSURANCE COMPANY 3;0 POINTER Multiple #364.43 (Add New Entry without Asking)
+
+
+364.43,.01      INCLUDED INSURANCE COMPANY 0;1 POINTER TO INSURANCE COMPANY FILE (#36) (Multiply asked)
+
+                LAST EDITED:      APR 16, 1999 
+                HELP-PROMPT:      Enter the insurance companies that this edit should only be executed for. 
+                DESCRIPTION:
+                                  This is the set of insurance companies for which this edit should only be executed.  
+
+                CROSS-REFERENCE:  364.43^B 
+                                  1)= S ^IBE(364.4,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBE(364.4,DA(1),3,"B",$E(X,1,30),DA)
+
+
+
+
+364.4,4       RULE DESCRIPTION       4;0   WORD-PROCESSING #364.44
+
+
+364.4,10.01   RULE ADDED BY          10;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 27, 1999 
+              HELP-PROMPT:      Enter the name of the person who entered this rule 
+              DESCRIPTION:
+                                This is the person responsible for adding this rule to this file.  
+
+
+364.4,10.02   RULE ADDED DATE        10;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 27, 1999 
+              HELP-PROMPT:      Enter the date this rule was first added to the file. 
+              DESCRIPTION:
+                                This is the date this rule entry was first added to this file.  
+
+
+364.4,10.03   RULE LAST EDITED BY    10;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 27, 1999 
+              HELP-PROMPT:      Enter the name of the person who last edited this rule entry. 
+              DESCRIPTION:
+                                This is the name of the person who last edited this rule entry.  
+
+
+364.4,10.04   RULE LAST EDITED DATE  10;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 27, 1999 
+              HELP-PROMPT:      Enter the date this rule was last edited. 
+              DESCRIPTION:
+                                This is the last date this rule was edited.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSURANCE COMPANY (#36)           EXCLUDED INSURANCE COMPANY:EXCLUDED INSURANCE COMPANY (#.01)
+                                  INCLUDED INSURANCE COMPANY:INCLUDED INSURANCE COMPANY (#.01)
+
+NEW PERSON (#200)                 RULE ADDED BY (#10.01)
+                                  RULE LAST EDITED BY (#10.03)
+
+
+File #364.4
+
+  Record Indexes:
+
+  AD (#138)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  Sets the first level of xref to determine which edits are most general.
+        Set Logic:  S ^IBE(364.4,"AD",X2(1),X2(2),$S(X2(3)=3:X2(3),X2(6)=0:X2(3)#2+1,1:X2(3)),X2(4),DA)=+X2(5)
+         Set Cond:  I X2(1)=""!(X2(2)="")!(X2(3)="")!(X2(4)="") S X=0
+       Kill Logic:  K ^IBE(364.4,"AD",X1(1),X1(2),$S(X1(3)=3:X1(3),X1(6)=0:X1(3)#2+1,1:X1(3)),X1(4),DA)
+        Kill Cond:  I X1(1)=""!(X1(2)="")!(X1(3)="")!(X1(4)="") S X=0
+       Whole Kill:  K ^IBE(364.4,"AD")
+             X(1):  TRANSMISSION TYPE  (364.4,.03)  (Subscr 1)  (forwards)
+             X(2):  TYPE OF CARE  (364.4,.04)  (Subscr 2)  (forwards)
+             X(3):  FORM TYPE  (364.4,.05)  (Subscr 3)  (forwards)
+             X(4):  INSURANCE COMPANY OPTION  (364.4,.07)  (Subscr 4)  (forwards)
+             X(5):  INACTIVE DATE  (364.4,.06)  (forwards)
+             X(6):  TYPE OF RULE  (364.4,.11)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+IBCE RULE DISPLAY             APR 29, 1999@17:38  USER #0                                                                                                                                                                           [IBCE RULE DISPLAY HEADER]
+IBCE RULE DISPLAY HEADER      APR 29, 1999@08:33  USER #0                                                                                                                                                                        IB EDI TRANSMISSION RULE LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

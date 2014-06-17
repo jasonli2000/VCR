@@ -1,0 +1,947 @@
+STANDARD DATA DICTIONARY #52.41 -- PENDING OUTPATIENT ORDERS FILE                                                                                                                                                                 MAY 20,2014@15:39:18  PAGE 1
+STORED IN ^PS(52.41,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 7.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds pending orders transmitted from the OE/RR package.  All orders in this file must be processed by pharmacy service, they should be finished or rejected.  
+ 
+ 
+ 
+
+
+IDENTIFIED BY: PATIENT (#1)[R]
+
+CROSS
+REFERENCED BY: PICKUP ROUTING(AC), LOGIN DATE(AD), RELATED INSTITUTION(AE), PATIENT LOCATION(AF), LOGIN DATE(AG), ORDER TYPE(AOR), RELATED INSTITUTION(AOR1), PRIORITY(AP), PATIENT(APSOD), PREVIOUS ORDER #(AQ), Rx REFILL REQUEST(ARF), PLACER NUMBER(B), 
+               PATIENT LOCATION(HL), PATIENT LOCATION(HLP), PATIENT(P), PATIENT(PN)
+
+INDEXED BY:    LOGIN DATE & RELATED INSTITUTION (APKI), EXTERNAL PLACER ORDER NUMBER & EXTERNAL APPLICATION (C)
+
+
+52.41,.01     PLACER NUMBER          0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      JUL 16, 2002 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:      This field contains the internal number of the order from the ORDER file (#100), representing the corresponding Computerized Patient Record System (CPRS) order to this pending Outpatient Pharmacy order. This field also 
+                                acts as a temporary holding place for any external system order number, for orders received from any external system. An external system order number will only be stored here temporarily, until the CPRS order number is
+                                received to replace the external system order number.  
+
+              TECHNICAL DESCR:  This field holds either the Computerized Patient Record System (CPRS) order number, or an external system order number. If this field is populated with an external system order number, it will only be populated with that
+                                number temporarily, because as soon as that order is received, the order is then sent to CPRS, and CPRS will return to Pharmacy a CPRS order number, and that number will then replace the external system order number.  
+
+              GROUP:            PSO
+              CROSS-REFERENCE:  52.41^B 
+                                1)= S ^PS(52.41,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.41,"B",$E(X,1,30),DA)
+
+
+52.41,1       PATIENT                0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      MAY 15, 2002 
+              DESCRIPTION:
+                                This is the pointer to the Patient file.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  52.41^P 
+                                1)= S ^PS(52.41,"P",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.41,"P",$E(X,1,30),DA)
+                                3)= Do not delete.
+
+              CROSS-REFERENCE:  52.41^PN^MUMPS 
+                                1)= S ^PS(52.41,"PN",$P(^DPT($P(^PS(52.41,DA,0),"^",2),0),"^"),DA)=""
+                                2)= K ^PS(52.41,"PN",$P(^DPT($P(^PS(52.41,DA,0),"^",2),0),"^"),DA)
+                                3)= Do Not delete.
+                                This xref is used to index file by patient's name.  It sets the global ^PS(52.41,"PN",Patient Name,DA)="".  
+
+
+              CROSS-REFERENCE:  52.41^APSOD^MUMPS 
+                                1)= S:$G(PSODEATH) ^PS(52.41,"APSOD",X,DA)=""
+                                2)= K:$G(PSODEATH) ^PS(52.41,"APSOD",X,DA)
+                                3)= Do not delete.
+                                This xref will be set only when a date of death is entered. This xref will allow pending orders to be reinstated if a date of death is entered in error. ^PS(52.41,"APSOD",patient pointer,da) 
+
+
+
+52.41,1.1     PATIENT LOCATION       0;13 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      NOV 06, 1998 
+              DESCRIPTION:
+                                This is the pointer to the Hospital Location file.  
+
+              CROSS-REFERENCE:  52.41^HL 
+                                1)= S ^PS(52.41,"HL",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.41,"HL",$E(X,1,30),DA)
+                                3)= Do not Delete.
+
+              CROSS-REFERENCE:  52.41^HLP^MUMPS 
+                                1)= S ^PS(52.41,"HLP",X,$P(^PS(52.41,DA,0),"^",2),DA)=""
+                                2)= K ^PS(52.41,"HLP",X,$P(^PS(52.41,DA,0),"^",2),DA)
+                                3)= Do not delete
+                                This cross reference is used to sort Pending orders by Clinic/Patient.  It sets the global ^PS(52.41,"HLP",Patient Location,Patient Pointer,DA)="".  
+
+
+              CROSS-REFERENCE:  52.41^AF^MUMPS 
+                                1)= I $P(^PS(52.41,DA,0),"^",3)="NW"!($P(^(0),"^",3)="RNW")!($P(^(0),"^",3)="RF"),$P(^(0),"^",12) S ^PS(52.41,"ACL",X,$P(^PS(52.41,DA,0),"^",12),DA)=""
+                                2)= I $P(^PS(52.41,DA,0),"^",12) K ^PS(52.41,"ACL",X,$P(^PS(52.41,DA,0),"^",12),DA)
+                                This cross reference is used to index Pending Orders by Patient Location and by Login date/time, to allow orders to be finished in a first in/first out order by Clinic. This cross reference sets the global 
+                                ^PS(52.41,"ACL",PATIENT LOCATION,LOGIN DATE,DA)="".  
+
+
+
+52.41,2       ORDER TYPE             0;3 SET (Required)
+
+                                'NW' FOR NEW ORDER; 
+                                'HD' FOR HOLD; 
+                                'RNW' FOR RENEW; 
+                                'DE' FOR DISCONTINUED (EDIT); 
+                                'DC' FOR DISCONTINUED; 
+                                'RF' FOR REFILL REQUEST; 
+              LAST EDITED:      NOV 21, 1997 
+              DESCRIPTION:
+                                This field describes the status of the Pending order.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+              GROUP:            PSO
+              CROSS-REFERENCE:  52.41^AOR^MUMPS 
+                                1)= I X="NW"!(X="RNW")!(X="RF"),$P($G(^PS(52.41,DA,"INI")),"^") S ^PS(52.41,"AOR",$P(^PS(52.41,DA,0),"^",2),$P(^("INI"),"^"),DA)=""
+                                2)= I $P($G(^PS(52.41,DA,"INI")),"^") K ^PS(52.41,"AOR",$P(^PS(52.41,DA,0),"^",2),$P(^("INI"),"^"),DA)
+                                3)= do not delete.
+                                This xref is used to process pending orders. It sets the global ^PS(52.41,"AOR",Patient Pointer,Related Institution,DA)="".  
+
+
+
+52.41,3       QUANTITY TIMING SUB-FILE 1;0 Multiple #52.413 (Add New Entry without Asking)
+
+              LAST EDITED:      OCT 21, 1997 
+              DESCRIPTION:
+                                This sub-file is used to store the quantity timing field from the ORC segment from CPRS. The components are used to build a Possible Sig for the finish process in Pharmacy.  
+
+              TECHNICAL DESCR:
+                                sub-file or multiple.  
+
+              GROUP:            PSO
+
+52.413,.01      QUANTITY/FORM          0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                LAST EDITED:      APR 18, 1996 
+                HELP-PROMPT:      Answer must be 1-200 characters in length. 
+                DESCRIPTION:
+                                  This fields usually contains the amount to be given as entered through CPRS.  It can also possibly contain the Dose Form of the medication.  
+
+                GROUP:            PSO
+
+52.413,1        SCHEDULE               1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      FEB 05, 2001 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This is the schedule for the medication, as entered through CPRS.  
+
+
+52.413,2        DURATION               1;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      FEB 21, 1995 
+                HELP-PROMPT:      Answer must be 1-40 characters in length. 
+                DESCRIPTION:
+                                  This is the duration that the medication is to be given for, as entered through CPRS.  
+
+
+52.413,3        START DATE/TIME        1;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 21, 1995 
+                DESCRIPTION:
+                                  This is the start date/time of the medication.  
+
+
+52.413,4        END DATE/TIME          1;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 21, 1995 
+                DESCRIPTION:
+                                  This is the end date/time of the medication.  
+
+
+52.413,6        CONJUNCTION            1;6 SET
+
+                                  'S' FOR THEN; 
+                                  'A' FOR AND; 
+                                  'X' FOR EXCEPT; 
+                LAST EDITED:      JUL 02, 2001 
+                DESCRIPTION:
+                                  This is a code passed to Pharmacy from CPRS to help build a Possible Sig for a complex medication dose. This code usually expands to an "and", a "then", or an "except".  
+
+                TECHNICAL DESCR:
+                                  set of codes.  
+
+
+52.413,7        SEQUENCING             1;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      FEB 21, 1995 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This field contains any special sequencing instructions for the medication.  
+
+
+52.413,8        DOSAGE ORDERED         2;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>122!($L(X)<1) X
+                LAST EDITED:      APR 12, 2001 
+                HELP-PROMPT:      Enter the amount of medication the patient will receive for this prescription order. Answer must be 1-122 characters in length. 
+                DESCRIPTION:
+                                  This is a single dose of medication the patient will receive for this prescription order.  
+
+
+52.413,9        DISPENSE UNITS PER DOSE 2;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      NOV 20, 2000 
+                HELP-PROMPT:      Type a Number between 0 and 99999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This field represents the number of dispense units the patient will receive for a single dose of the medication.  
+
+                TECHNICAL DESCR:
+                                  number 
+
+
+52.413,10       MED ROUTE              1;8 POINTER TO MEDICATION ROUTES FILE (#51.2)
+
+                LAST EDITED:      JUN 06, 2000 
+                HELP-PROMPT:      Enter the Med Route that the medication is to be administered by. 
+                DESCRIPTION:
+                                  This is the Med Route that the medication is to be administered by.  
+
+
+52.413,11       UNITS                  1;9 POINTER TO DRUG UNITS FILE (#50.607)
+
+                LAST EDITED:      JUN 06, 2000 
+                HELP-PROMPT:      Enter the unit associated with the Dosage ordered. 
+                DESCRIPTION:
+                                  This is the unit of measure associated with the Dosage ordered. It is a pointer to the DRUG UNITS File (#50.607).  
+
+
+52.413,12       NOUN                   1;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUL 10, 2000 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This is the noun that is associated with this dosing sequence for this pending order. It will be used to build the Possible SIG for orders that are entered through CPRS.  
+
+
+52.413,13       VERB                   1;10 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      AUG 16, 2000 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This verb will be used to describe how the medication is taken/used.  
+
+
+
+
+52.41,4       ENTERED BY             0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      JAN 09, 1995 
+              DESCRIPTION:
+                                This is the person who entered the order in CPRS, pointer to the New Person file.  
+
+
+52.41,5       PROVIDER               0;5 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      FEB 08, 1995 
+              DESCRIPTION:
+                                This is the provider for the order, pointer to the New Person file.  
+
+
+52.41,6       EFFECTIVE DATE         0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 09, 1995 
+              DESCRIPTION:
+                                This is the date the order goes into effect.  
+
+
+52.41,7       NATURE OF ORDER        0;7 SET
+
+                                'W' FOR WRITTEN; 
+                                'P' FOR TELEPHONE; 
+                                'V' FOR VERBAL; 
+                                'E' FOR PROVIDER ENTERED; 
+              LAST EDITED:      FEB 22, 1995 
+              DESCRIPTION:
+                                This is the Nature of the order, as it is entered through CPRS.  
+
+
+52.41,8       PHARMACY ORDERABLE ITEM 0;8 POINTER TO PHARMACY ORDERABLE ITEM FILE (#50.7)
+
+              LAST EDITED:      JAN 12, 1995 
+              DESCRIPTION:
+                                This is the Pharmacy Orderable Item for the order, as entered through CPRS. 
+
+
+52.41,9       PROVIDER COMMENTS      2;0   WORD-PROCESSING #52.419
+
+              DESCRIPTION:
+                                This field contains any Provider comments that may have been entered through CPRS.  
+
+
+52.41,10      PHARMACY INSTRUCTIONS  3;0   WORD-PROCESSING #52.42
+
+              DESCRIPTION:
+                                This field contains any special instructions for the Pharmacist, as entered through CPRS.  
+
+
+52.41,11      DRUG                   0;9 POINTER TO DRUG FILE (#50)
+
+              LAST EDITED:      JAN 09, 1995 
+              DESCRIPTION:
+                                This is the pointer to the Drug file entry that is associated with the Pharmacy Orderable Item. Not all orders will have a Drug when received from CPRS, but upon finishing the order, a Drug must be entered.  
+
+
+52.41,12      QTY                    0;10 NUMBER
+
+              INPUT TRANSFORM:  K:(+X'>0)!(+X>99999999)!(X'?.8N.1".".2N." ".A)!($L(X)>12) X D:$D(X) QTY^PSOHELP
+              LAST EDITED:      NOV 13, 1995 
+              HELP-PROMPT:      Type a Number between 1 and 99999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This shows the amount of the medication to be dispensed.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.41,13      # OF REFILLS           0;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>11)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 09, 1995 
+              HELP-PROMPT:      Type a Number between 1 and 11, 0 Decimal Digits 
+              DESCRIPTION:
+                                The number of refills allowed for this order.  
+
+
+52.41,15      LOGIN DATE             0;12 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 30, 2003 
+              DESCRIPTION:
+                                This is the date that the order was received from CPRS.  
+
+              CROSS-REFERENCE:  52.41^AD^MUMPS 
+                                1)= I $P(^PS(52.41,DA,0),"^",3)="NW"!($P(^(0),"^",3)="RNW")!($P(^(0),"^",3)="RF") S ^PS(52.41,"AD",X,$P(^PS(52.41,DA,"INI"),"^"),DA)=""
+                                2)= K ^PS(52.41,"AD",X,$P(^PS(52.41,DA,"INI"),"^"),DA)
+                                3)= Do not delete!
+                                This MUMPS cross reference is used to index entries by the login date.  This xref sets: ^PS(52.41,"AD",LOGIN DATE,RELATED INSTITUTION,DA)="" 
+
+
+              CROSS-REFERENCE:  52.41^AG^MUMPS 
+                                1)= I $P(^PS(52.41,DA,0),"^",3)="NW"!($P(^(0),"^",3)="RNW")!($P(^(0),"^",3)="RF"),$P(^(0),"^",13) S ^PS(52.41,"ACL",$P(^PS(52.41,DA,0),"^",13),X,DA)=""
+                                2)= I $P(^PS(52.41,DA,0),"^",13) K ^PS(52.41,"ACL",$P(^PS(52.41,DA,0),"^",13),X,DA)
+                                This cross reference is used to index Pending Orders by Patient Location and by Login date/time, to allow orders to be finished in a first in/first out order by Clinic. This cross reference sets the global 
+                                ^PS(52.41,"ACL",PATIENT LOCATION,LOGIN DATE,DA)="".  
+
+
+              RECORD INDEXES:   APKI (#251)
+
+52.41,16      MED ROUTE              0;15 POINTER TO MEDICATION ROUTES FILE (#51.2)
+
+              LAST EDITED:      FEB 09, 1995 
+              DESCRIPTION:
+                                This is the Med Route that the medication is to be administered by.  
+
+
+52.41,17      SERVICE CONNECTED      0;16 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JAN 12, 1995 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This indicates whether the order is for a service connected or non-service connected condition.  
+
+
+52.41,18      ORDERS CHECKS          OBX;0 Multiple #52.4118 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is a multiple for the order checks passed to Pharmacy from CPRS.  
+
+
+52.4118,.01     ORDER CHECK NARRATIVE  0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                LAST EDITED:      APR 18, 1996 
+                HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                DESCRIPTION:
+                                  This is the text which describes the order check.  
+
+
+52.4118,1       OVERRIDING PROVIDER    1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>45!($L(X)<1) X
+                LAST EDITED:      MAR 06, 1995 
+                HELP-PROMPT:      Answer must be 1-45 characters in length. 
+                DESCRIPTION:
+                                  This is the Provider that has seen the order check in the CPRS package.  
+
+
+52.4118,2       OVERRIDING REASON      2;0   WORD-PROCESSING #52.41182
+
+                DESCRIPTION:
+                                  This is the reason given by the Provider to override the order check.  
+
+
+
+
+52.41,19      PICKUP ROUTING         0;17 SET
+
+              Mail/Window/Administered in Clinic                                                                               
+                                'M' FOR MAIL; 
+                                'W' FOR WINDOW; 
+                                'C' FOR ADMINISTERED IN CLINIC; 
+              LAST EDITED:      MAY 21, 1997 
+              DESCRIPTION:
+                                This is how the medication is to be given to the patient.  
+
+              TECHNICAL DESCR:
+                                set of codes 
+
+              CROSS-REFERENCE:  52.41^AC^MUMPS 
+                                1)= S ^PS(52.41,"AC",$P(^PS(52.41,DA,0),"^",2),X,DA)=""
+                                2)= K ^PS(52.41,"AC",$P(^PS(52.41,DA,0),"^",2),X,DA)
+                                3)= Do Not Delete!
+                                This xref is used to index entries by patient and by routing. It sets the global ^PS(52.41,"AC",Patient Pointer,Pickup Routing,DA)="".  
+
+
+
+52.41,21      Rx REFILL REQUEST      0;19 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 21, 1997 
+              HELP-PROMPT:      Type a Number between 1 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field will be used to indicate the Rx number for refill request from CPRS.  
+
+              TECHNICAL DESCR:
+                                number 
+
+              CROSS-REFERENCE:  52.41^ARF 
+                                1)= S ^PS(52.41,"ARF",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.41,"ARF",$E(X,1,30),DA)
+                                3)= do not delete.
+                                This xref is used to index pending refill request.  
+
+
+
+52.41,22      REASON ORDER CREATED   0;20 SET
+
+                                'N' FOR NEW; 
+                                'R' FOR RENEWAL; 
+                                'E' FOR EDIT; 
+                                'F' FOR REFILL; 
+              LAST EDITED:      NOV 21, 1997 
+              DESCRIPTION:
+                                This shows why the order was created in CPRS.  
+
+              TECHNICAL DESCR:
+                                set of codes 
+
+
+52.41,22.1    PREVIOUS ORDER #       0;21 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 22, 1997 
+              HELP-PROMPT:      Type a Number between 1 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field will store the pointer value to the Rx that is being Renewed.  
+
+              TECHNICAL DESCR:
+                                numeric.  
+
+              CROSS-REFERENCE:  52.41^AQ^MUMPS 
+                                1)= S:$P(^PS(52.41,DA,0),"^",3)="RNW" ^PS(52.41,"AQ",X,DA)=""
+                                2)= K ^PS(52.41,"AQ",X,DA)
+                                3)= Do not delete!
+                                This xref is used to index renewal orders. It sets the global ^PS(52.41,"AQ",Previous Order #,DA)="".  
+
+
+
+52.41,23      COMMENTS               4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>150!($L(X)<1) X
+              LAST EDITED:      FEB 11, 1995 
+              HELP-PROMPT:      Answer must be 1-150 characters in length. 
+              DESCRIPTION:
+                                This field contains any comments associated with the order.  
+
+
+52.41,24      DISPENSING INSTRUCTIONS SIG;0 Multiple #52.4124 (Add New Entry without Asking)
+
+              LAST EDITED:      FEB 24, 1995 
+              DESCRIPTION:
+                                Dispensing instruction for the medication.  
+
+
+52.4124,.01     DISPENSING INSTRUCTIONS 0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                LAST EDITED:      APR 18, 1996 
+                HELP-PROMPT:      Answer must be 1-200 characters in length. 
+                DESCRIPTION:
+                                  This is the possible Sig that is created based upon the information from the Quantity Timing fields of this order.  
+
+
+
+
+52.41,25      PRIORITY               0;14 SET
+
+                                'S' FOR STAT; 
+                                'E' FOR EMERGENCY; 
+                                'R' FOR ROUTINE; 
+              LAST EDITED:      MAR 20, 1995 
+              DESCRIPTION:
+                                This field is used to indicate the urgency of the order.  
+
+              CROSS-REFERENCE:  52.41^AP^MUMPS 
+                                1)= S ^PS(52.41,"AP",$P(^PS(52.41,DA,0),"^",2),X,DA)=""
+                                2)= K ^PS(52.41,"AP",$P(^PS(52.41,DA,0),"^",2),X,DA)
+                                3)= Do not Delete
+                                This cross reference is used to index entries by priority. It sets the global ^PS(52.41,"AP",Patient Pointer,Priority,DA)="".  
+
+
+
+52.41,26      POSSIBLE FILLDATE      0;18 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 18, 1996 
+              DESCRIPTION:
+                                This field will be used to display the effective date of a discharge med or pass med.  
+
+
+52.41,33      DATE/TIME FLAGGED      FLG;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 26, 2008 
+              HELP-PROMPT:      Enter the date/time this order was flagged. 
+              DESCRIPTION:
+                                This is the date/time when this order was flagged.  
+
+
+52.41,34      FLAGGED BY             FLG;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 26, 2008 
+              HELP-PROMPT:      Enter the name of the person who flagged this order 
+              DESCRIPTION:
+                                This is the user who flagged this order.  
+
+
+52.41,35      REASON FOR FLAG        FLG;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      FEB 26, 2008 
+              HELP-PROMPT:      Answer must be 1-80 characters in length 
+
+52.41,36      DATE/TIME UNFLAGGED    FLG;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 26, 2008 
+              HELP-PROMPT:      Enter the date/time this order was unflagged 
+              DESCRIPTION:
+                                This is the date/time this order was unflagged.  
+
+
+52.41,37      UNFLAGGED BY           FLG;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 26, 2008 
+              HELP-PROMPT:      Enter the name of the person who unflagged this order 
+              DESCRIPTION:
+                                This is the user who unflagged this order.  
+
+
+52.41,38      REASON FOR UNFLAG      FLG;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      FEB 26, 2008 
+              HELP-PROMPT:      Answer must be 1-80 characters in length 
+              DESCRIPTION:
+                                This is the reason for unflagging this order, usually a response to the reason for flag.  
+
+
+52.41,100     RELATED INSTITUTION    INI;1 POINTER TO INSTITUTION FILE (#4) (Required)
+
+              LAST EDITED:      JUN 09, 1998 
+              DESCRIPTION:
+                                This is the Institution that the order was issued from.  
+
+              CROSS-REFERENCE:  52.41^AOR1^MUMPS 
+                                1)= S:$P(^PS(52.41,DA,0),"^",3)="NW"!($P(^(0),"^",3)="RNW")!($P(^(0),"^",3)="RF") ^PS(52.41,"AOR",$P(^PS(52.41,DA,0),"^",2),X,DA)=""
+                                2)= K ^PS(52.41,"AOR",$P(^PS(52.41,DA,0),"^",2),X,DA)
+                                3)= Do not delete.
+                                This cross is used when processing pending orders. It sets the global ^PS(52.41,"AOR",Patient Pointer,Related Institution,DA)="".  
+
+
+              CROSS-REFERENCE:  52.41^AE^MUMPS 
+                                1)= I $P(^PS(52.41,DA,0),"^",3)="NW"!($P(^(0),"^",3)="RNW")!($P(^(0),"^",3)="RF") S ^PS(52.41,"AD",$P(^PS(52.41,DA,0),"^",12),X,DA)=""
+                                2)= K ^PS(52.41,"AD",$P(^PS(52.41,DA,0),"^",12),X,DA)
+                                This MUMPS cross reference is used to index entries by the Related Institution and Login Date fields, for finishing CPRS orders.  This xref sets: ^PS(52.41,"AD",LOGIN DATE,RELATED INSTITUTION,DA)="".  
+
+
+              RECORD INDEXES:   APKI (#251)
+
+52.41,101     DAYS SUPPLY            0;22 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>90)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 06, 2000 
+              HELP-PROMPT:      Type a Number between 1 and 90, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter a whole number between 1 and 90. The maximum upper limit is 90, but may be lower based on the maximum specified for this patient status. This parameter is defined in the RX PATIENT STATUS File (#53).  
+
+
+52.41,102     FLAG                   0;23 SET
+
+                                '1' FOR Flagged; 
+              LAST EDITED:      JUN 06, 2000 
+              HELP-PROMPT:      Enter '1' to mark this order as flagged. 
+              DESCRIPTION:
+                                This field shall designate whether or not a prescription has been flagged for follow up with a provider.  
+
+
+52.41,103     PRE-POE ORDER          POE;1 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 03, 2000 
+              DESCRIPTION:
+                                This field will be used to identify pending orders entered before the installation of the Pharmacy Order Enhancement patch.  PSO*7*46.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+
+52.41,104     PATIENT INSTRUCTIONS   INS;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>240!($L(X)<1) X
+              LAST EDITED:      NOV 02, 2000 
+              HELP-PROMPT:      Enter patient instructions.  Answer must be 1-240 characters in length. 
+              DESCRIPTION:
+                                The text in this field shall be used for the Patient Instructions in the Outpatient Pharmacy package when entering orders, if the Dispense Drug selected is matched to a Pharmacy Orderable Item with patient instructions.  
+
+              TECHNICAL DESCR:
+                                free text.  
+
+
+52.41,104.1   PATIENT INSTRUCTIONS FLAG INS;2 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JAN 17, 2001 
+              HELP-PROMPT:      Enter 1 for yes, 0 for no. 
+              DESCRIPTION:
+                                This field will be used to indicate for the provider wanted the patient instructions included in the SIG.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+
+52.41,105     EXPANDED PATIENT INSTRUCTIONS INS1;0   WORD-PROCESSING #52.41105
+
+
+52.41,106     MILITARY SEXUAL TRAUMA IBQ;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 14, 2001 
+              HELP-PROMPT:      'Enter 'Yes' if this prescription is being used for treatment of Military Sexual Trauma. 
+              DESCRIPTION:      During CPRS order entry, if a veteran has been identified as having been treated for Military Sexual Trauma, the clinician will be asked to identify whether or not the outpatient medication order being prescribed is being
+                                used to treat a condition related to Military Sexual Trauma. This field will store the response that was entered for this question. This value will be used as the default value for the same prompt presented to the
+                                pharmacist when finishing the medication order that was entered through CPRS.  
+
+
+52.41,107     AGENT ORANGE EXPOSURE  IBQ;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 23, 2001 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat a condition due to Agent Orange exposure during Vietnam service. 
+              DESCRIPTION:      During CPRS order entry, if a veteran has been identified as having been exposed to Agent Orange during Vietnam service, the clinician will be asked to identify whether or not the outpatient medication order prescribed is
+                                being used to treat a condition due to this exposure. This field will store the response that was entered for this question. This value will be used as the default value for the same prompt presented to the pharmacist when
+                                finishing the medication order that was entered through CPRS.  
+
+
+52.41,108     IONIZING RADIATION EXPOSURE IBQ;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 23, 2001 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat a condition due to ionizing radiation exposure during military service. 
+              DESCRIPTION:      During CPRS order entry, if a veteran has been identified as having been exposed to ionizing radiation during military service, the clinician will be asked to identify whether or not the outpatient medication order 
+                                prescribed is being used to treat a condition due to this exposure. This field will store the response that was entered for this question. This value will be used as the default value for the same prompt presented to the
+                                pharmacist when finishing the medication order that was entered through CPRS.  
+
+
+52.41,109     SOUTHWEST ASIA CONDITIONS IBQ;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 26, 2006 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat a condition related to service in Southwest Asia. 
+              DESCRIPTION:      During CPRS order entry, if a veteran has been identified as having been exposed to Southwest Asia Conditions during the Persian Gulf War, the clinician will be asked to identify whether or not the outpatient medication
+                                order prescribed is being used to treat a condition due to this exposure. This field will store the response that was entered for this question. This value will be used as the default value for the same prompt presented to
+                                the pharmacist when finishing the medication order that was entered through CPRS.  
+
+
+52.41,110     HEAD AND/OR NECK CANCER IBQ;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 23, 2001 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat Head and/or Neck Cancer due to nose or throat radium treatments while in the military. 
+              DESCRIPTION:      During CPRS order entry, if a veteran has been identified as having been treated for Head and/or Neck Cancer due to nose or throat radium treatments while in the military, the clinician will be asked to identify whether or
+                                not the outpatient medication order prescribed is being used to treat this condition. This field will store the response that was entered for this question. This value will be used as the default value for the same prompt
+                                presented to the pharmacist when finishing the medication order that was entered through CPRS.  
+
+
+52.41,110.1   COMBAT VETERAN         IBQ;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 12, 2003 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat a condition related to Combat Services. 
+              DESCRIPTION:      During CPRS order entry, if a veteran has been identified as having been treated for a condition related to Combat Services, the clinician will be asked to identify whether or not the outpatient medication order being 
+                                prescribed is being used to treat a condition related to Combat Services.  This field will store the response that was entered for this question.  This value will be used as the default value for the same prompt presented 
+                                to the pharmacist when finishing the medication order that was entered through CPRS.  
+
+
+52.41,110.2   PROJ 112/SHAD          IBQ;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 17, 2006 
+              HELP-PROMPT:      Enter 'Yes' if this prescription is being used to treat a condition related to PROJ 112/SHAD. 
+              DESCRIPTION:      During CPRS order entry, if a veteran has been identified as having been treated for a condition related to PROJ 112/SHAD, the clinician will be asked to identify whether or not the outpatient medication order being 
+                                prescribed is being used to treat a condition related to PROJ 112/SHAD. This field will store the response that was entered for this question.  This value will be used as the default value for the same prompt presented to
+                                the pharmacist when finishing the medication order that was entered through CPRS.  
+
+
+52.41,111     DDSTATUS               DDSTA;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      MAY 16, 2002 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This field will hold the status of the pending order at the time a date of death was entered.  
+
+
+52.41,114     EXTERNAL PLACER ORDER NUMBER EXT;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      AUG 05, 2002 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field represents the external system order number of this order. This field will only be populated if this order was originally received from an external system into Vista.  
+
+                                UNEDITABLE
+              RECORD INDEXES:   C (#176)
+
+52.41,115     EXTERNAL SYSTEM ORDER REPLACED EXT;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 16, 2002 
+              DESCRIPTION:
+                                This field will be set to 1 by the software when an external system order number is successfully replaced by a Computerized Patient Record System (CPRS) order number.  
+
+              TECHNICAL DESCR:  When an order is received from an external system, it will be entered into the PENDING OUTPATIENT ORDERS File (#52.41), and then immediately sent to Computerized Patient Record System (CPRS). When a CPRS number is 
+                                successfully returned from CPRS, this field will be set to 1 by the software, and then the order can be finished by Pharmacy.  
+
+                                UNEDITABLE
+
+52.41,116     EXTERNAL APPLICATION   EXT;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 05, 2002 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This field represents the name of the external system from where the external order was received.  
+
+                                UNEDITABLE
+              RECORD INDEXES:   C (#176)
+
+52.41,117     SIGNATURE STATUS       0;24 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      AUG 21, 2002 
+              HELP-PROMPT:       Data not entered directly with file manager. 
+              DESCRIPTION:
+                                Digital Signature status indicator.  
+
+              TECHNICAL DESCR:
+                                This field will be used to indicate the digital signature status of an order. A value of 1 will indicate that the original order was digitally signed.  
+
+
+52.41,311     DIAGNOSIS              ICD;0 POINTER Multiple #52.41311 (Add New Entry without Asking)
+
+              LAST EDITED:      SEP 23, 2003 
+              DESCRIPTION:      This multiple is used to store up to eight ICD-9 codes per prescription with the first always being the primary diagnosis code and subsequent ones being secondary diagnosis codes.  Also stored in this multiple are all of 
+                                the Service Connection (SC) and Environmental Indicators (EI) that directly relate to each ICD-9 code.  These SC/EI's are passed from CPRS in this manner. This ICD-9/SC/EI relationship is necessary for 3rd Party Billing.  
+                                 
+                                Current Copay functionality deals only with SC<50% and only stores EI's when with this is true or not overridden in some way.  The new SC/EI fields allow for Outpatient Pharmacy to know if a prescription is SC 0-100%, to
+                                know all EI's that apply, and to know how they relate to the ICD-9 code without affecting Copay functionality.  
+
+
+52.41311,.01    DIAGNOSIS              0;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Multiply asked)
+
+                LAST EDITED:      JAN 27, 2004 
+                HELP-PROMPT:      Enter a valid ICD-9 code, partial ICD-9 code, or partial name. 
+                DESCRIPTION:
+                                  This multiple field will store 8 diagnosis codes.  The first code is considered the primary diagnosis and the last seven are secondary diagnosis codes.  
+
+                CROSS-REFERENCE:  52.41311^B 
+                                  1)= S ^PS(52.41,DA(1),"ICD","B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(52.41,DA(1),"ICD","B",$E(X,1,30),DA)
+
+
+52.41311,1      AGENT ORANGE           0;2 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 30, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Agent Orange for 3rd Party Billing.  
+
+
+52.41311,2      IONIZING RADIATION     0;3 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 30, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Ionizing Radiation for 3rd Party Billing.  
+
+
+52.41311,3      SERVICE CONNECTION     0;4 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 30, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Service Connection for 3rd Party Billing.  
+
+
+52.41311,4      SOUTHWEST ASIA CONDITIONS 0;5 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JUN 28, 2006 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Southwest Asia Conditions for 3rd Party Billing.  
+
+
+52.41311,5      MILITARY SEXUAL TRAUMA 0;6 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 29, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as releated to Military Sexual Trauma for 3rd Party Billing.  
+
+
+52.41311,6      HEAD AND/OR NECK CANCER 0;7 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 29, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Head and/or Neck Cancer for 3rd Party Billing.  
+
+
+52.41311,7      COMBAT VETERAN         0;8 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 29, 2004 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used to directly identify the corresponding ICD-9 code in the .01 field as related to Combat Veteran for 3rd Party Billing.  
+
+
+52.41311,8      PROJ 112/SHAD          0;9 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 17, 2006 
+                HELP-PROMPT:      ENTER YES OR NO. 
+                DESCRIPTION:
+                                  This field is used directly to identify the corresponding ICD-9 code in the .01 field as related to PROJ 112/SHAD for 3rd Party Billing.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DRUG (#50)                        DRUG (#11)
+
+DRUG UNITS (#50.607)              QUANTITY TIMING SUB-FILE:UNITS (#11)
+
+HOSPITAL LOCATION (#44)           PATIENT LOCATION (#1.1)
+
+ICD DIAGNOSIS (#80)               DIAGNOSIS:DIAGNOSIS (#.01)
+
+INSTITUTION (#4)                  RELATED INSTITUTION (#100)
+
+MEDICATION ROUTES (#51.2)         MED ROUTE (#16)
+                                  QUANTITY TIMING SUB-FILE:MED ROUTE (#10)
+
+NEW PERSON (#200)                 ENTERED BY (#4)
+                                  PROVIDER (#5)
+                                  FLAGGED BY (#34)
+                                  UNFLAGGED BY (#37)
+
+PATIENT (#2)                      PATIENT (#1)
+
+PHARMACY ORDERABLE ITEM (#50.7)   PHARMACY ORDERABLE ITEM (#8)
+
+
+File #52.41
+
+  Record Indexes:
+
+  APKI (#251)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  This indexes the login date and related institution.
+      Description:  This cross-reference is used only to index digitally signed orders by the login date and the related institution. It will be identical to that of the "AD" cross-reference in functionality, but this cross-reference will not be killed
+                    when the pending orders are discontinued. It is primarily used to list discontinued orders in the Digitally Signed Orders Report, which is made available in the Controlled Substance package, as part of the PKI project.  
+        Set Logic:  I $P(^PS(52.41,DA,0),"^",3)["NW"!($P(^(0),"^",3)="DC"),$P(^(0),"^",24)=1,$P($G(^PS(52.41,DA,"INI")),"^") S ^PS(52.41,"APKI",X,$P(^PS(52.41,DA,"INI"),"^"),DA)=""
+       Kill Logic:  K ^PS(52.41,"APKI",X,+$P($G(^PS(52.41,DA,"INI")),"^"),DA)
+       Whole Kill:  K ^PS(52.41,"APKI")
+             X(1):  LOGIN DATE  (52.41,15)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  RELATED INSTITUTION  (52.41,100)  (Subscr 2)  (forwards)
+
+  C (#176)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  This indexes the external placer order number and external application.
+      Description:  This cross reference sets the global ^PS(52.41,"C",EXTERNAL PLACER ORDER NUMBER,EXTERNAL APPLICATION,DA)="".  
+        Set Logic:  S ^PS(52.41,"C",$E(X(1),1,30),$E(X(2),1,60),DA)=""
+       Kill Logic:  K ^PS(52.41,"C",$E(X(1),1,30),$E(X(2),1,60),DA)
+       Whole Kill:  K ^PS(52.41,"C")
+             X(1):  EXTERNAL PLACER ORDER NUMBER  (52.41,114)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  EXTERNAL APPLICATION  (52.41,116)  (Subscr 2)  (Len 60)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

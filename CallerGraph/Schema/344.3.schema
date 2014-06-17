@@ -1,0 +1,216 @@
+STANDARD DATA DICTIONARY #344.3 -- EDI LOCKBOX DEPOSIT FILE                                                                                                                                                                       MAY 20,2014@15:30:04  PAGE 1
+STORED IN ^RCY(344.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 4.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to store EFT payment data received to allow the site to record the amount of the daily EDI Lockbox deposit to treasury that belongs to their site.  
+
+
+IDENTIFIED BY: DEPOSIT NUMBER (#.06), DEPOSIT DATE (#.07)
+
+POINTED TO BY: EFT TRANSACTION field (#.01) of the EDI THIRD PARTY EFT DETAIL File (#344.31) 
+               
+
+CROSS
+REFERENCED BY: DEPOSIT NUMBER(AD), NUMBER(ALOCK), AR DEPOSIT RECORD(ARDEP), DATE/TIME ADDED(ARECDT), NUMBER(B), DEPOSIT NUMBER(C)
+
+INDEXED BY:    DEPOSIT DATE & DEPOSIT NUMBER (ADEP), AMOUNT POSTED TO DEPOSIT (APOST)
+
+
+344.3,.01     NUMBER                 0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1N.N) X I $D(X) S DINUM=X
+              LAST EDITED:      JAN 20, 2004 
+              HELP-PROMPT:      Type a Number between 1 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains a sequential number generated at the time a record is stored in the file.  It only serves to create an entry in the file and has no other special meaning.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  344.3^B 
+                                1)= S ^RCY(344.3,"B",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.3,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  344.3^ALOCK^MUMPS 
+                                1)= I '$D(^RCY(344.3,"ALOCK")) S ^RCY(344.3,"ALOCK")=""
+                                2)= Q
+                                3)= Do not delete
+                                This xref is set to allow a lock to be placed on the file so only one job that tries to match EFTs to ERAs is run at a time.  This xref is set the first time an entry is added to the file.  
+
+
+
+344.3,.02     FILE DATE/TIME         0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 06, 2002 
+              HELP-PROMPT:      Enter the date/time this record was reported filed by the EFT transaction. 
+              DESCRIPTION:
+                                This field is used to store the file date/time for payments.  
+
+
+344.3,.03     AR DEPOSIT RECORD      0;3 POINTER TO AR DEPOSIT FILE (#344.1)
+
+              LAST EDITED:      JAN 11, 2012 
+              HELP-PROMPT:      Enter the AR Deposit ticket # that was created by this EFT. 
+              DESCRIPTION:
+                                This is the reference to the deposit ticket in AR that was created by this EFT.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  344.3^ARDEP 
+                                1)= S ^RCY(344.3,"ARDEP",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.3,"ARDEP",$E(X,1,30),DA)
+                                3)= Do not delete
+
+
+344.3,.05     MAIL MESSAGE           0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 27, 2003 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of the mail message in which this EFT was received.  
+
+
+344.3,.06     DEPOSIT NUMBER         0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      MAR 19, 2003 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is the deposit number assigned by the banking institution for this payment.  
+
+              CROSS-REFERENCE:  344.3^C 
+                                1)= S ^RCY(344.3,"C",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.3,"C",$E(X,1,30),DA)
+                                3)= Do not delete
+
+              CROSS-REFERENCE:  344.3^AD^MUMPS 
+                                1)= N Z,Z0 S Z=0 F  S Z=$O(^RCY(344.3,DA,1,Z)) Q:'Z  S Z0=$P($G(^(Z,0)),U,3) I Z0'="" S ^RCY(344.3,"AD",$E(X,1,30),$E(Z0,1,30),DA,Z)=""
+                                2)= N Z,Z0 S Z=0 F  S Z=$O(RCY(344.3,DA,1,Z)) Q:'Z  S Z0=$P($G(^(Z,0)),U,3) I Z0'="" K ^RCY(344.3,"AD",$E(X,1,30),$E(Z0,1,30),DA,Z)
+                                3)= Do not delete
+                                Xref by deposit number at the top level and payer ID at the 344.31 level 
+
+
+              RECORD INDEXES:   ADEP (#289)
+
+344.3,.07     DEPOSIT DATE           0;7 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 06, 2002 
+              DESCRIPTION:
+                                This is the deposit date assigned by the banking institution for this payment.  
+
+              RECORD INDEXES:   ADEP (#289)
+
+344.3,.08     TOTAL DEPOSIT AMOUNT   0;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999999999)!(X<0) X
+              LAST EDITED:      NOV 04, 2002 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount of the deposit into the banking institution.  
+
+
+344.3,.09     EFT CHECKSUM           0;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 27, 2003 
+              HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the value of the checksum for the detail records in this record.  It is used to ensure the records are not changed after the data has been stored and before it has been recorded in AR.  
+
+
+344.3,.1      CHECKSUM ERROR         0;10 SET
+
+                                '0' FOR NO ERROR; 
+                                '1' FOR CHECKSUM ERROR EXISTS; 
+              LAST EDITED:      JAN 27, 2003 
+              HELP-PROMPT:      Enter a 1 if a checksum error exists. 
+              DESCRIPTION:
+                                This is the indicator that says the checksum stored does not match the calculated checksum for this record.  
+
+
+344.3,.11     DATE POSTED            0;11 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 27, 2003 
+              HELP-PROMPT:      Enter the date the funds for this EFT were posted. 
+              DESCRIPTION:
+                                This is the date the funds for this EFT were posted.  
+
+
+344.3,.12     AMOUNT POSTED TO DEPOSIT 0;12 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999999)!(X<0) X
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount of money that was posted as a deposit as a result of this EFT.  
+
+              FIELD INDEX:      APOST (#290)    MUMPS    IR    SORTING ONLY
+                  Short Descr:  Xref on pure numeric value of amt posted 
+                    Set Logic:  S ^RCY(344.3,"APOST",+X,DA)=""
+                   Kill Logic:  K ^RCY(344.3,"APOST",+X,DA)
+                   Whole Kill:  K ^RCY(344.3,"APOST")
+                         X(1):  AMOUNT POSTED TO DEPOSIT  (344.3,.12)  (forwards)
+
+
+344.3,.13     DATE/TIME ADDED        0;13 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 29, 2003 
+              HELP-PROMPT:      Enter the date and time this record was stored in VistA 
+              DESCRIPTION:
+                                This is the date and time this record was last stored in VistA.  
+
+              CROSS-REFERENCE:  344.3^ARECDT 
+                                1)= S ^RCY(344.3,"ARECDT",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.3,"ARECDT",$E(X,1,30),DA)
+                                3)= Do not delete
+
+
+344.3,.14     TOTAL AMOUNT MATCHED   0;14 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999999)!(X<0) X
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the total amount of dollars that have been matched from the EFT detail to ERAs or paper EOBs.  
+
+              NOTES:            TRIGGERED by the MATCH STATUS field of the EDI THIRD PARTY EFT DETAIL File 
+
+
+344.3,2       ERROR MESSAGES         2;0   WORD-PROCESSING #344.32   (NOWRAP)
+
+              DESCRIPTION:
+                                This field stores any error messages that report problems with the incoming transmission.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+AR DEPOSIT (#344.1)               AR DEPOSIT RECORD (#.03)
+
+
+File #344.3
+
+  Record Indexes:
+
+  ADEP (#289)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Xref by deposit date and deposit number
+        Set Logic:  S ^RCY(344.3,"ADEP",X(1),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^RCY(344.3,"ADEP",X(1),$E(X(2),1,30),DA)
+       Whole Kill:  K ^RCY(344.3,"ADEP")
+             X(1):  DEPOSIT DATE  (344.3,.07)  (Subscr 1)  (forwards)
+             X(2):  DEPOSIT NUMBER  (344.3,.06)  (Subscr 2)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

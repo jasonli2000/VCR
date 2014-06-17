@@ -1,0 +1,581 @@
+STANDARD DATA DICTIONARY #69.6 -- LAB PENDING ORDERS ENTRY FILE                                                                                                                                                                   MAY 20,2014@15:37:01  PAGE 1
+STORED IN ^LRO(69.6,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 5.2)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Lab Orders Pending file serves as a temporary storage locations for electronic laboratory test orders. LEDI software populates and manages the contents of this file.  
+ 
+Electronic test orders from VA collecting sites are stored in this file until ordered test results have been returned. Electronic orders are matched with physically shipped specimen during accessioning process.  Specimen processing status update
+information is also stored in this file to assist in the management of workload.  
+ 
+When the results have been stored in the collecting site's patient clinical record, entries will be purged from this file.  
+ 
+NOTE: The user should not directly edit this file via FileMan. Appropriate options are provided to manage the data in this file.  
+
+
+IDENTIFIED BY: 
+         "W1": N LRX S LRX=^(0) D EN^DDIOL("Pat ID: "_$P(LRX,U,9)_"  DOB: "_$$FMTE^XLFDT($P(LRX,U,3),1)_"  Sex: "_$$EXTERNAL^DILFD(69.6,.02,"",$P(LRX,U,2)),,"!")
+         "W2": N LRX S LRX=^(0) D EN^DDIOL("Spec ID: "_$P(LRX,U,6)_"  Manifest: "_$P(LRX,U,14)_"  Site: "_$$EXTERNAL^DILFD(69.6,1,"",$P(LRX,U,4)),,"!")
+         "W3": N LRX S LRX=^(0),LRX(1)=^(1) D EN^DDIOL("Collected D/T: "_$$FMTE^XLFDT($P(LRX(1),U,2),"1M")_"  Specimen: "_$$EXTERNAL^DILFD(69.6,4,"",$P(LRX,U,7))_"  Spec. Status: "_$$EXTERNAL^DILFD(69.6,6,"",$P(LRX,U,10)),,"!")
+
+CROSS
+REFERENCED BY: COLLECTING SITE(AC), SHIPPING MANIFEST(AD), COLLECTING SITE(AE), ORDERING SITE UID(AF), NAME(B), PAT ID(C), SHIPPING MANIFEST(D), ORDERING SITE UID(E), ORDERING SITE(RST), ORDERING SITE UID(RST1)
+
+INDEXED BY:    ORDERING SITE & COLLECTING SITE (AC), SHIPPING MANIFEST & ORDERING SITE UID (AD), COLLECTING SITE (AE), ORDERING SITE & ORDERING SITE UID (RST)
+
+
+69.6,.01      NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<3)!(X?1P.E)!(X'?1U.ANP)!(X'[",") X I $D(X) S X=$$LRPNM^LRAFUNC(X) K:$L(X)>30!($L(X)>30) X
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              CROSS-REFERENCE:  69.6^B 
+                                1)= S ^LRO(69.6,"B",$E(X,1,30),DA)=""
+                                2)= K ^LRO(69.6,"B",$E(X,1,30),DA)
+
+
+69.6,.02      SEX                    0;2 SET
+
+                                'M' FOR MALE; 
+                                'F' FOR FEMALE; 
+                                'U' FOR UNKNOWN; 
+              LAST EDITED:      FEB 09, 1997 
+
+69.6,.03      DOB                    0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 13, 1996 
+
+69.6,.06      RACE                   .1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      FEB 24, 2004 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                Stores the patient's race using HL7 code and text.  
+
+
+69.6,.09      PAT ID                 0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<5) X
+              LAST EDITED:      DEC 08, 1999 
+              HELP-PROMPT:      Answer must be 5-30 characters in length. 
+              CROSS-REFERENCE:  69.6^C 
+                                1)= S ^LRO(69.6,"C",$E(X,1,30),DA)=""
+                                2)= K ^LRO(69.6,"C",$E(X,1,30),DA)
+
+
+69.6,1        ORDERING SITE          0;4 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      APR 03, 2007 
+              CROSS-REFERENCE:  69.6^RST^MUMPS 
+                                1)= S:($P(^LRO(69.6,DA,0),U,4)'="")&($P(^(0),U,6)'="") ^LRO(69.6,"RST",$P(^(0),U,4),$P(^(0),U,6),DA)=""
+                                2)= K:$P(^LRO(69.6,DA,0),U,6)'="" ^LRO(69.6,"RST",X,$P(^(0),U,6),DA)
+                                The format is as follows: ^LRO(69.6,"RST",ORDERING SITE,ORDERING SITE UID,DA)="" 
+                                 
+                                This cross reference is used to identify unique id's by ordering site. The cross reference is useful for packaging multiple results for a site into one message.  
+
+
+              RECORD INDEXES:   AC (#1062), RST (#1065)
+
+69.6,2        COLLECTING SITE        0;5 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      APR 03, 2007 
+              CROSS-REFERENCE:  69.6^AC^MUMPS 
+                                1)= S ^LRO(69.6,"AC",$P(^LRO(69.6,DA,0),U,4),$P(^(0),U,5),DA)=""
+                                2)= K ^LRO(69.6,"AC",$P(^LRO(69.6,DA,0),U,4),$P(^(0),U,5),DA)
+                                This MUMPS cross reference is used to sort pending orders for an ordering site by collecting site.  The format is shown below.  
+                                 
+                                 ^LRO(69.6,"AC",ORDERING SITE (pointer),COLLECTING SITE (pointer),IEN) = "" 
+
+
+              CROSS-REFERENCE:  69.6^AE^MUMPS 
+                                1)= S ^LRO(69.6,"AE",$P(^LRO(69.6,DA,0),U,5),DA)=""
+                                2)= K ^LRO(69.6,"AE",$P(^LRO(69.6,DA,0),U,5),DA)
+                                This MUMPS cross reference is used to sort pending orders by collecting site.  The format is shown below.  
+                                 
+                                   ^LRO(69.6,"AE",COLLECTING SITE (pointer),IEN) = "" 
+
+
+              FIELD INDEX:      AE (#1064)    REGULAR    IR    SORTING ONLY
+                  Short Descr:  Used to sort pending orders by collecting site.
+                  Description:  This MUMPS cross reference is used to sort pending orders by collecting site.  
+                                 The format is shown below.  
+                                 
+                                 ^LRO(69.6,"AE",COLLECTING SITE (pointer),IEN) = "" 
+                                 
+                                
+                    Set Logic:  S ^LRO(69.6,"AE",X,DA)=""
+                   Kill Logic:  K ^LRO(69.6,"AE",X,DA)
+                   Whole Kill:  K ^LRO(69.6,"AE")
+                         X(1):  COLLECTING SITE  (69.6,2)  (Subscr 1)  (forwards)
+
+              RECORD INDEXES:   AC (#1062)
+
+69.6,3        ORDERING SITE UID      0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      APR 03, 2007 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              CROSS-REFERENCE:  69.6^E 
+                                1)= S ^LRO(69.6,"E",$E(X,1,30),DA)=""
+                                2)= K ^LRO(69.6,"E",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  69.6^RST1^MUMPS 
+                                1)= S:($P(^LRO(69.6,DA,0),U,4)'="")&($P(^(0),U,6)'="") ^LRO(69.6,"RST",$P(^(0),U,4),$P(^(0),U,6),DA)=""
+                                2)= K:$P(^LRO(69.6,DA,0),U,4)'="" ^LRO(69.6,"RST",$P(^(0),U,4),X,DA)
+                                The format is as follows: ^LRO(69.6,"RST",ORDERING SITE,ORDERING SITE UID,DA)="" 
+                                 
+                                This cross reference is used to identify unique id's by ordering site.  The cross reference is useful for packaging multiple results for a site into one message.  
+
+
+              CROSS-REFERENCE:  69.6^AF^MUMPS 
+                                1)= S LRX=$P(^LRO(69.6,DA,0),U,14) I $L(LRX) S ^LRO(69.6,"AD",LRX,X,DA)=""
+                                2)= S LRX=$P(^LRO(69.6,DA,0),U,14) I $L(LRX) K ^LRO(69.6,"AD",LRX,X,DA)
+                                This MUMPS cross reference is used to sort pending orders for a shipping manifest by ordering site UID.  The format is shown below.  
+                                 
+                                   ^LRO(69.6,"AD",SHIPPING MANIFEST,ORDERING SITE UID,IEN) = "" 
+
+
+              RECORD INDEXES:   AD (#1063), RST (#1065)
+
+69.6,3.2      ORDERING SITE ACC #    0;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      DEC 08, 1999 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+
+69.6,4        SPECIMEN               0;7 POINTER TO TOPOGRAPHY FIELD FILE (#61)
+
+              LAST EDITED:      NOV 13, 1996 
+
+69.6,5        COLLECTION SAMPLE      0;8 POINTER TO COLLECTION SAMPLE FILE (#62)
+
+              LAST EDITED:      NOV 13, 1996 
+
+69.6,6        SPECIMEN STATUS        0;10 POINTER TO LAB ELECTRONIC CODES FILE (#64.061)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,7)=""U""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 29, 1997 
+              SCREEN:           S DIC("S")="I $P(^(0),U,7)=""U"""
+              EXPLANATION:      ALLOWS ONLY THE SELECTION OF A STATUS
+
+69.6,7        FILE REF               0;11 POINTER TO REFERRAL PATIENT FILE (#67)
+
+              LAST EDITED:      FEB 27, 1997 
+
+69.6,9        VISIT NUMBER           0;13 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 26, 1996 
+              HELP-PROMPT:      Type a Number between 1 and 99999999, 0 Decimal Digits 
+
+69.6,10       ORDERED DATE/TIME      1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 14, 1996 
+
+69.6,11       COLLECTED DATE/TIME    1;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 14, 1996 
+
+69.6,11.1     COLLECTION END DATE/TIME 1;9 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 25, 2001 
+              HELP-PROMPT:      Enter the date/time that the specimen collection ended. 
+              DESCRIPTION:
+                                Used to record the collection end date/time of specimen collection when the specimen has a timed collection, i.e. 24 hour urine, 72 hour stool, etc.  
+
+
+69.6,12       SHIPPED DATE/TIME      1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 14, 1996 
+
+69.6,13       RECD DATE/TIME         1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 14, 1996 
+
+69.6,14       TRANS DATE/TIME        1;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 14, 1996 
+
+69.6,15       DATA ACCEPT DATE/TIME  1;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 14, 1996 
+
+69.6,16       COMPLETE DATE/TIME     1;7 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 14, 1996 
+
+69.6,17       INCOMING MESS #        1;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      NOV 25, 1996 
+              HELP-PROMPT:      Answer must be 1-15 characters in length. 
+
+69.6,18       SHIPPING MANIFEST      0;14 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      APR 03, 2007 
+              HELP-PROMPT:      Enter in the 3-30 character invoice number of the shipped specimen. 
+              DESCRIPTION:
+                                This field should contain the invoice number from the collection labs SHIPPING MANIFEST file.  
+
+              CROSS-REFERENCE:  69.6^AD^MUMPS 
+                                1)= S LRX=$P(^LRO(69.6,DA,0),U,6) I $L(LRX) S ^LRO(69.6,"AD",X,LRX,DA)=""
+                                2)= S LRX=$P(^LRO(69.6,DA,0),U,6) I $L(LRX) K ^LRO(69.6,"AD",X,LRX,DA)
+                                This MUMPS cross reference is used to sort pending orders for a shipping manifest by ordering site UID.  The format is shown below.  
+                                 
+                                   ^LRO(69.6,"AD",SHIPPING MANIFEST,ORDERING SITE UID,IEN) = "" 
+
+
+              CROSS-REFERENCE:  69.6^D 
+                                1)= S ^LRO(69.6,"D",$E(X,1,30),DA)=""
+                                2)= K ^LRO(69.6,"D",$E(X,1,30),DA)
+                                 This X-Ref is used to allow FileMan lookup on shipping manifest numbers.  
+
+
+              RECORD INDEXES:   AD (#1063)
+
+69.6,20       ORDERED TESTS          2;0 Multiple #69.64 (Add New Entry without Asking)
+
+
+69.64,.01       NLT TEST               0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      MAY 23, 1997 
+                HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                CROSS-REFERENCE:  69.64^B 
+                                  1)= S ^LRO(69.6,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^LRO(69.6,DA(1),2,"B",$E(X,1,30),DA)
+
+
+69.64,1         NLT CODE               0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<5) X
+                LAST EDITED:      FEB 18, 1997 
+                HELP-PROMPT:      Answer must be 5-15 characters in length. 
+                CROSS-REFERENCE:  69.64^C 
+                                  1)= S ^LRO(69.6,DA(1),2,"C",$E(X,1,30),DA)=""
+                                  2)= K ^LRO(69.6,DA(1),2,"C",$E(X,1,30),DA)
+
+
+69.64,2         REMOTE TEST NAME       0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+                LAST EDITED:      FEB 18, 1997 
+                HELP-PROMPT:      Answer must be 2-50 characters in length. 
+
+69.64,3         REMOTE TEST #          0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      FEB 18, 1997 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+
+69.64,4         REMOTE URGENCY         0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      SEP 04, 2001 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                DESCRIPTION:
+                                  Stores the HL7 test urgency from the placer's order message.  
+
+                SOURCE OF DATA:   HL7 ORM order message
+
+69.64,5         TEST STATUS            0;6 POINTER TO LAB ELECTRONIC CODES FILE (#64.061)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,7)=""U""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      MAY 29, 1997 
+                SCREEN:           S DIC("S")="I $P(^(0),U,7)=""U"""
+                EXPLANATION:      ALLOWS ONLY THE SELECTION OF STATUS
+
+69.64,7         OUT GOING MESS #       0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      FEB 18, 1997 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+
+69.64,8         ACCESSION D/T          0;7 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 18, 1997 
+
+69.64,9         HOST UID               0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<5) X
+                LAST EDITED:      MAY 18, 1997 
+                HELP-PROMPT:      Answer must be 5-15 characters in length. 
+
+69.64,10        COMPLETE D/T           0;10 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 19, 1997 
+
+69.64,11        HOST TEST              0;11 POINTER TO LABORATORY TEST FILE (#60)
+
+                LAST EDITED:      SEP 04, 2001 
+                HELP-PROMPT:      Enter the host's laboratory test which corresponds to the remote's ordered test. 
+                DESCRIPTION:      This field stores the host's file 60 test which should be ordered when processing referral lab orders. It's built by the LEDI software when processing the HL7 ORM order message. Based on the test code from the message
+                                  and the corresponding shipping configuration associated with the placer, the appropriate host test is selected and stored in this field.  
+
+
+69.64,12        HOST URGENCY           0;12 POINTER TO URGENCY FILE (#62.05)
+
+                INPUT TRANSFORM:  S DIC("S")="I Y<50" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 04, 2001 
+                HELP-PROMPT:      Enter the urgency to order this test at the host site. 
+                DESCRIPTION:      This field stores the host's local urgency which should be used when processing referral lab orders. It's built by the LEDI software when processing the HL7 ORM order message. Based on the HL7 urgency from the message
+                                  and the corresponding shipping configuration the appropriate host urgency for the order is determined.  
+
+                SCREEN:           S DIC("S")="I Y<50"
+                EXPLANATION:      Only non-workload urgencies can be selected.
+
+69.64,13        ORDERING PROVIDER      1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      SEP 04, 2001 
+                HELP-PROMPT:      Answer must be 1-40 characters in length. 
+                DESCRIPTION:
+                                  The name of the provider ordering this test. It is derived from the HL7 ORM order message and contains the human readable name of the ordering provider.  
+
+                SOURCE OF DATA:   HL7 ORM order message
+
+69.64,700.04    HL OBR-4               700.04;E1,200 FREE TEXT
+
+                UNIVERSAL SERVICE ID                                                                                           
+                INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                LAST EDITED:      SEP 04, 2001 
+                HELP-PROMPT:      Answer must be 1-200 characters in length 
+                DESCRIPTION:
+                                  The placer's specimen identifier from the HL7 ORM order message.  
+
+                SOURCE OF DATA:   HL7 ORM order message
+
+69.64,700.18    HL OBR-18              700.18;E1,60 FREE TEXT
+
+                PLACER FIELD 1                                                                                                 
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      SEP 04, 2001 
+                HELP-PROMPT:      Answer must be 1-60 characters in length 
+                DESCRIPTION:      Stores the placer's field #1 from the OBR segment of the HL7 ORM order message. This field is returned to the placer when the HL7 ORU result message is created and transmitted to the placer. The HL7 standard requires
+                                  that the filler of an order return to the placer the value of this field.  
+
+                SOURCE OF DATA:   HL7 ORM order message
+
+69.64,700.19    HL OBR-19              700.19;E1,60 FREE TEXT
+
+                PLACER FIELD 2                                                                                                 
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      SEP 04, 2001 
+                HELP-PROMPT:      Answer must be 1-60 characters in length 
+                DESCRIPTION:      Stores the placer's field #2 from the OBR segment of the HL7 ORM order message. This field is returned to the placer when the HL7 ORU result message is created and transmitted to the placer. The HL7 standard requires
+                                  that the filler of an order return to the placer the value of this field.  
+
+                SOURCE OF DATA:   HL7 ORM order message
+
+
+
+69.6,61       AP SPECIMENS           61;0 Multiple #69.6061
+
+              DESCRIPTION:
+                                Stores the specimens information that accompany an AP order.  Information is moved to corresponding fields in LAB DATA file (#63) when order is accessioned.  
+
+
+              INDEXED BY:       AP SPECIMEN (B)
+
+69.6061,.01     AP SPECIMEN            0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>75!($L(X)<2) X
+                LAST EDITED:      APR 04, 2007 
+                HELP-PROMPT:      Answer must be 2-75 characters in length 
+                DESCRIPTION:
+                                  Stores the free-text specimen that accompany an AP order.  Information is moved to corresponding fields in LAB DATA file (#63) when order is accessioned. 
+
+                FIELD INDEX:      B (#1066)    REGULAR    IR    LOOKUP & SORTING
+                    Short Descr:  Regular "B" cross-reference
+                    Description:  Regualr "B" cross-reference modified to store entire field (1-75 characters).  
+                      Set Logic:  S ^LRO(69.6,DA(1),61,"B",$E(X,1,75),DA)=""
+                     Kill Logic:  K ^LRO(69.6,DA(1),61,"B",$E(X,1,75),DA)
+                     Whole Kill:  K ^LRO(69.6,DA(1),61,"B")
+                           X(1):  AP SPECIMEN  (69.6061,.01)  (Subscr 1)  (Len 75)  (forwards)
+
+
+69.6061,.02     AP SPECIMEN TOPOGRAPHY 0;2 POINTER TO TOPOGRAPHY FIELD FILE (#61)
+
+                LAST EDITED:      NOV 21, 2006 
+                HELP-PROMPT:      Enter the specimen's topography 
+                DESCRIPTION:
+                                  Stores the specimen's topography that accompany an AP order.  Information is moved to corresponding fields in LAB DATA file (#63) when order is accessioned. 
+
+
+69.6061,.03     AP COLLECTION SAMPLE   0;3 POINTER TO COLLECTION SAMPLE FILE (#62)
+
+                LAST EDITED:      JUL 31, 2007 
+                HELP-PROMPT:      Enter the collection sample associated with this specimen. 
+                DESCRIPTION:
+                                  Stores the collection sample that accompany an AP order.  Information is moved to corresponding fields in LAB DATA file (#63) when order is accessioned. 
+
+
+
+
+69.6,63       AP INFO                63;0 SET Multiple #69.6063
+
+              DESCRIPTION:      Stores the various textual information that accompanies AP orders 
+                                 - patient history, pre-op diagnosis, operative findings, gross 
+                                   description, frozen section , etc.  
+
+
+69.6063,.01     AP INFO                0;1 SET (Multiply asked)
+
+                                  '.013' FOR BRIEF CLINICAL HISTORY; 
+                                  '.014' FOR PREOPERATIVE DIAGNOSIS; 
+                                  '.015' FOR OPERATIVE FINDINGS; 
+                                  '.016' FOR POSTOPERATIVE DIAGNOSIS; 
+                                  '1' FOR GROSS DESCRIPTION; 
+                                  '1.1' FOR MICROSCOPIC DESCRIPTION; 
+                                  '1.2' FOR SUPPLEMENTARY REPORT; 
+                                  '1.3' FOR FROZEN SECTION; 
+                                  '1.4' FOR SURGICAL PATH DIAGNOSIS; 
+                LAST EDITED:      NOV 21, 2006 
+                DESCRIPTION:
+                                  Type of textual data that accompanied the AP order.  
+
+                CROSS-REFERENCE:  69.6063^B 
+                                  1)= S ^LRO(69.6,DA(1),63,"B",$E(X,1,30),DA)=""
+                                  2)= K ^LRO(69.6,DA(1),63,"B",$E(X,1,30),DA)
+
+
+69.6063,.02     PERFORMING LABORATORY  0;2 POINTER TO INSTITUTION FILE (#4)
+
+                LAST EDITED:      APR 29, 2008 
+                HELP-PROMPT:      Name of laboratory reporting this component of the report 
+                DESCRIPTION:
+                                  Identifies the laboratory which is the source of this information which accompanies the request.  
+
+
+69.6063,1       TEXT                   1;0   WORD-PROCESSING #69.60631   (NOWRAP)
+
+                DESCRIPTION:
+                                  Text that accompanied the AP order for the corresponding information type.  
+
+
+
+
+69.6,99       COMMENTS               99;0   WORD-PROCESSING #69.699
+
+
+69.6,700      HL ENCODING CHARACTERS 700;E1,5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<1) X
+              LAST EDITED:      SEP 04, 2001 
+              HELP-PROMPT:      Answer must be 1-5 characters in length 
+              DESCRIPTION:
+                                Stores the HL7 field separator and encoding characters from the HL7 message used to create this pending order entry. This allows the HL7 data that is saved from the message to be processed and returned to the placer.  
+
+              SOURCE OF DATA:   HL7 ORM order message
+
+69.6,700.02   HL PID-2               700.02;E1,250 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>250!($L(X)<1) X
+              LAST EDITED:      FEB 21, 2003 
+              HELP-PROMPT:      Answer must be 1-250 characters in length 
+              DESCRIPTION:
+                                Stores the placer's patient identification information from PID-2 for transmittal back to the placer when the order is completed.  
+
+              SOURCE OF DATA:   HL7 ORM order message
+
+69.6,700.04   HL PID-4               700.04;E1,250 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>250!($L(X)<1) X
+              LAST EDITED:      FEB 21, 2003 
+              HELP-PROMPT:      Answer must be 1-250 characters in length 
+              DESCRIPTION:
+                                Stores the placer's patient identification information from PID-4 for transmittal back to the placer when the order is completed. 
+
+              SOURCE OF DATA:   HL7 ORM order message
+
+
+      FILES POINTED TO                      FIELDS
+
+COLLECTION SAMPLE (#62)           COLLECTION SAMPLE (#5)
+                                  AP SPECIMENS:AP COLLECTION SAMPLE (#.03)
+
+INSTITUTION (#4)                  ORDERING SITE (#1)
+                                  COLLECTING SITE (#2)
+                                  AP INFO:PERFORMING LABORATORY (#.02)
+
+LAB ELECTRONIC CODES (#64.061)    SPECIMEN STATUS (#6)
+                                  ORDERED TESTS:TEST STATUS (#5)
+
+LABORATORY TEST (#60)             ORDERED TESTS:HOST TEST (#11)
+
+REFERRAL PATIENT (#67)            FILE REF (#7)
+
+TOPOGRAPHY FIELD (#61)            SPECIMEN (#4)
+                                  AP SPECIMENS:AP SPECIMEN TOPOGRAPHY (#.02)
+
+URGENCY (#62.05)                  ORDERED TESTS:HOST URGENCY (#12)
+
+
+File #69.6
+
+  Record Indexes:
+
+  AC (#1062)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Used to sort pending orders for an ordering site by collecting site.
+      Description:  This MUMPS cross reference is used to sort pending orders for an ordering site by collecting site.  The format is shown below.  
+                     
+                     ^LRO(69.6,"AC",ORDERING SITE (pointer),COLLECTING SITE (pointer),IEN) = "" 
+                     
+                    
+        Set Logic:  S ^LRO(69.6,"AC",X(1),X(2),DA)=""
+       Kill Logic:  K ^LRO(69.6,"AC",X(1),X(2),DA)
+       Whole Kill:  K ^LRO(69.6,"AC")
+             X(1):  ORDERING SITE  (69.6,1)  (Subscr 1)  (forwards)
+             X(2):  COLLECTING SITE  (69.6,2)  (Subscr 2)  (forwards)
+
+  AD (#1063)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Used to sort pending orders for a shipping manifest by ordering site UID.
+      Description:  This MUMPS cross reference is used to sort pending orders for a shipping manifest by ordering site UID.  The format is shown below.  
+                     
+                    ^LRO(69.6,"AD",SHIPPING MANIFEST,ORDERING SITE UID,IEN) = "" 
+                     
+                    
+        Set Logic:  S ^LRO(69.6,"AD",$E(X(1),1,30),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^LRO(69.6,"AD",$E(X(1),1,30),$E(X(2),1,30),DA)
+       Whole Kill:  K ^LRO(69.6,"AD")
+             X(1):  SHIPPING MANIFEST  (69.6,18)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  ORDERING SITE UID  (69.6,3)  (Subscr 2)  (Len 30)  (forwards)
+
+  RST (#1065)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Used to identify unique id's by ordering site.
+      Description:  This cross reference is used to identify unique id's by ordering site.  The cross reference is useful for packaging multiple results for a site into one message.  
+                     
+                    The format is as follows: ^LRO(69.6,"RST",ORDERING SITE,ORDERING SITE UID,DA)="" 
+                     
+                    
+        Set Logic:  S ^LRO(69.6,"RST",X(1),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^LRO(69.6,"RST",X(1),$E(X(2),1,30),DA)
+       Whole Kill:  K ^LRO(69.6,"RST")
+             X(1):  ORDERING SITE  (69.6,1)  (Subscr 1)  (forwards)
+             X(2):  ORDERING SITE UID  (69.6,3)  (Subscr 2)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+LA7S EXEP SORT                MAY 23, 1997@09:37  USER #0    
+SORT BY: SHIPPING MANIFEST;S1// (SHIPPING MANIFEST not null)
+  WITHIN SHIPPING MANIFEST, SORT BY: @NAME// (NAME not null)
+
+
+FORM(S)/BLOCK(S):

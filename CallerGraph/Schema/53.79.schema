@@ -1,0 +1,808 @@
+STANDARD DATA DICTIONARY #53.79 -- BCMA MEDICATION LOG FILE                                                                                                                                                                       MAY 20,2014@15:30:56  PAGE 1
+STORED IN ^PSB(53.79,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Contains all medication passes.  
+ 
+This file may *NOT* be purged.  
+ 
+Due to the size of this file Re-Indexing is also not recommended unless directed by customer support.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: ADMINISTRATION MEDICATION (#.08)[R], ORDER REFERENCE NUMBER (#.11)[R]
+
+POINTED TO BY: MED LOG PTR field (#.08) of the BCMA MEDICATION VARIANCE LOG File (#53.78) 
+               PLACE ORDER NUMBER field (#25) of the BCMA EXTRACT File (#727.833) 
+               
+
+CROSS
+REFERENCED BY: ACTION DATE/TIME(AADT), PRN EFFECTIVENESS MINUTES(ACHKPRN), ENTERED DATE/TIME(AEDT), ADMINISTRATION MEDICATION(AOIP), ACTION DATE/TIME(AOIP1), SCHEDULED ADMINISTRATION TIME(AORD2), ORDER SCHEDULE(APRN2), ACTION DATE/TIME(AU06), 
+               ACTION STATUS(AU09), INJECTION SITE(AU16), PRN REASON(AU21), PRN EFFECTIVENESS(AU22), ORDER ADMINISTRATION VARIANCE(AVARCHK), PATIENT NAME(B), ADDITIVES(E), SOLUTIONS(F)
+
+INDEXED BY:    PATIENT NAME & ACTION DATE/TIME & INJECTION SITE (AINJ), PATIENT NAME & ADMINISTRATION MEDICATION & ACTION DATE/TIME & INJECTION SITE (AINJOI), PATIENT NAME & ORDER REFERENCE NUMBER & ACTION DATE/TIME (AORDX), PATIENT NAME & ACTION
+               DATE/TIME (APATCH), PATIENT NAME & ORDER REFERENCE NUMBER & IV UNIQUE ID (AUID)
+
+
+53.79,.01     PATIENT NAME           0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      SEP 21, 2011 
+              DESCRIPTION:
+                                This field contains a pointer to the PATIENT File (#2) and is the patient that received the medication.  
+
+              CROSS-REFERENCE:  53.79^B 
+                                1)= S ^PSB(53.79,"B",$E(X,1,30),DA)=""
+                                2)= K ^PSB(53.79,"B",$E(X,1,30),DA)
+
+              FIELD INDEX:      APATCH (#146)    REGULAR    IR    SORTING ONLY
+                  Short Descr:  Updates APATCH when DFN or admin date/time changes.
+                    Set Logic:  S ^PSB(53.79,"APATCH",X(1),X(2),DA)=""
+                     Set Cond:  S X=0 N I S I=0 F  S I=$O(^PSB(53.79,DA,.5,I)) Q:'I  I ($P($G(^(I,0)),U,4)="PATCH")&($P(^PSB(53.79,DA,0),U,9)="G") S X=1 Q
+                   Kill Logic:  K ^PSB(53.79,"APATCH",X(1),X(2),DA)
+                    Kill Cond:  S X=0 N I S I=0 F  S I=$O(^PSB(53.79,DA,.5,I)) Q:'I  I $P($G(^(I,0)),U,4)="PATCH" S X=1 Q
+                   Whole Kill:  K ^PSB(53.79,"APATCH")
+                         X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (forwards)
+                         X(2):  ACTION DATE/TIME  (53.79,.06)  (Subscr 2)  (forwards)
+
+              RECORD INDEXES:   AINJ (#1045), AINJOI (#1046), AORDX (#47), AUID (#147)
+
+53.79,.02     PATIENT LOCATION       0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      MAR 19, 1999 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                Free text room-bed and ward location of the patient at the time of the med pass.  
+
+
+53.79,.03     PATIENT DIVISION       0;3 POINTER TO INSTITUTION FILE (#4) (Required)
+
+              LAST EDITED:      MAR 13, 1999 
+              DESCRIPTION:
+                                Division of the ward that this patient was on during the med pass.  
+
+
+53.79,.04     ENTERED DATE/TIME      0;4 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 14, 1999 
+              DESCRIPTION:
+                                Date and time the med pass was filed.  Defaults to NOW on record creation.  
+
+              CROSS-REFERENCE:  53.79^AEDT^MUMPS 
+                                1)= S ^PSB(53.79,"AEDT",$P(^PSB(53.79,DA,0),U),X,DA)=""
+                                2)= K ^PSB(53.79,"AEDT",$P(^PSB(53.79,DA,0),U),X,DA)
+                                Creates an entry by patient for date/time entries in the log were created.  
+                                 
+                                  ^PSB(53.79,"AEDT",dfn,Entered Date/Time,DA)="" 
+
+
+
+53.79,.05     ENTERED BY             0;5 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      APR 26, 2002 
+              DESCRIPTION:
+                                Pointer to the NEW PERSON file (#200).  Contains the user passing meds.  
+
+
+53.79,.06     ACTION DATE/TIME       0;6 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 21, 2011 
+              DESCRIPTION:
+                                Fileman Date/Time containing the actual time the med was administered.  
+
+              CROSS-REFERENCE:  53.79^AADT^MUMPS 
+                                1)= S ^PSB(53.79,"AADT",$P(^PSB(53.79,DA,0),U),X,DA)=""
+                                2)= Q
+                                Creates a cross reference by patient for administration times 
+                                 
+                                  ^PSB(53.79,"AADT",dfn,administration d/t,DA)="" 
+
+
+              CROSS-REFERENCE:  53.79^AOIP1^MUMPS^^^^^^G 
+                                1)= I $P(^PSB(53.79,DA,0),U,8) S ^PSB(53.79,"AOIP",$P(^PSB(53.79,DA,0),U),$P(^PSB(53.79,DA,0),U,8),X,DA)=""
+                                2)= I $P(^PSB(53.79,DA,0),U,8) K ^PSB(53.79,"AOIP",$P(^PSB(53.79,DA,0),U),$P(^PSB(53.79,DA,0),U,8),X,DA)
+                                Creates a cross reference by patient for orderable items and administration date/time 
+                                 
+                                  ^PSB(53.79,"AOIP",dfn,orderable item,administration d/t,DA)="" 
+                                 
+                                Same as field ADMINISTRATION MEDICATION (#.08) 
+
+
+              CROSS-REFERENCE:  53.79^AU06^MUMPS 
+                                1)= D AUDIT^PSBUTL(DA,53.79,.06,X,"S")
+                                2)= D AUDIT^PSBUTL(DA,53.79,.06,X,"K")
+                                Creates an entry in this items audit log whenever changed or deleted.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^53.79^.14 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I $P($G(^PSB(53.79,DA,.1)),U,2)="C"&($P($G(^(.1)),U,3)]"") I X S X=DIV S Y(1)=$S($D(^PSB(53.79,D0,.1)):^(.1),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(53.79,.06,1,8,1.1) X ^DD(
+                                53.79,.06,1,8,1.4)
+
+                                1.1)= S X=DIV X ^DD(53.79,.06,1,8,49.2) S X1=Y(1) S Y=$E(X1_"000",9,10)-$E(X_"000",9,10)*60+$E(X1_"00000",11,12)-$E(X_"00000",11,12),X2=X,X=$P(X,".",1)'=$P(X1,".",1) D ^%DTC:X S X=X*1440+Y
+
+                                1.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.1)):^(.1),1:""),DIV=X S $P(^(.1),U,4)=DIV,DIH=53.79,DIG=.14 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I $P($G(^PSB(53.79,DA,.1)),U,2)="C"&($P($G(^(.1)),U,3)]"") I X S X=DIV S Y(1)=$S($D(^PSB(53.79,D0,.1)):^(.1),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(53.79,.06,1,8,2.4)
+
+                                2.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.1)):^(.1),1:""),DIV=X S $P(^(.1),U,4)=DIV,DIH=53.79,DIG=.14 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                49.2)= S Y(2)=$S($D(^PSB(53.79,D0,.1)):^(.1),1:"") S X=DIV,Y(1)=X S X=$P(Y(2),U,3)
+
+                                CREATE CONDITION)= I $P($G(^PSB(53.79,DA,.1)),U,2)="C"&($P($G(^(.1)),U,3)]"")
+                                CREATE VALUE)= MINUTES(#.06,#.13)
+                                DELETE CONDITION)= I $P($G(^PSB(53.79,DA,.1)),U,2)="C"&($P($G(^(.1)),U,3)]"")
+                                DELETE VALUE)= @
+                                FIELD)= #.14
+
+              FIELD INDEX:      APATCH (#146)    REGULAR    IR    SORTING ONLY
+                  Short Descr:  Updates APATCH when DFN or admin date/time changes.
+                    Set Logic:  S ^PSB(53.79,"APATCH",X(1),X(2),DA)=""
+                     Set Cond:  S X=0 N I S I=0 F  S I=$O(^PSB(53.79,DA,.5,I)) Q:'I  I ($P($G(^(I,0)),U,4)="PATCH")&($P(^PSB(53.79,DA,0),U,9)="G") S X=1 Q
+                   Kill Logic:  K ^PSB(53.79,"APATCH",X(1),X(2),DA)
+                    Kill Cond:  S X=0 N I S I=0 F  S I=$O(^PSB(53.79,DA,.5,I)) Q:'I  I $P($G(^(I,0)),U,4)="PATCH" S X=1 Q
+                   Whole Kill:  K ^PSB(53.79,"APATCH")
+                         X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (forwards)
+                         X(2):  ACTION DATE/TIME  (53.79,.06)  (Subscr 2)  (forwards)
+
+              RECORD INDEXES:   AINJ (#1045), AINJOI (#1046), AORDX (#47)
+
+53.79,.07     ACTION BY              0;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 11, 2001 
+              DESCRIPTION:
+                                Pointer to the NEW PERSON file (#200).  Contains the user passing meds.  
+
+
+53.79,.08     ADMINISTRATION MEDICATION 0;8 POINTER TO PHARMACY ORDERABLE ITEM FILE (#50.7) (Required)
+
+              LAST EDITED:      SEP 21, 2011 
+              DESCRIPTION:
+                                Pointer to ORDERABLE ITEM (#50.7) containing the medication entered for the order.  
+
+              CROSS-REFERENCE:  53.79^AOIP^MUMPS 
+                                1)= I $P(^PSB(53.79,DA,0),U,6) S ^PSB(53.79,"AOIP",$P(^PSB(53.79,DA,0),U),X,+$P(^PSB(53.79,DA,0),U,6),DA)=""
+                                2)= I $P(^PSB(53.79,DA,0),U,6) K ^PSB(53.79,"AOIP",$P(^PSB(53.79,DA,0),U),X,+$P(^PSB(53.79,DA,0),U,6),DA)
+                                Creates a cross reference by patient for orderable items and administration date/time 
+                                 
+                                  ^PSB(53.79,"AOIP",dfn,orderable item,administration d/t,DA)="" 
+                                 
+                                Same as Field ADMINISTRATION DATE/TIME (#.06) 
+
+
+              RECORD INDEXES:   AINJOI (#1046)
+
+53.79,.09     ACTION STATUS          0;9 SET (Required)
+
+                                'G' FOR GIVEN; 
+                                'H' FOR HELD; 
+                                'R' FOR REFUSED; 
+                                'N' FOR NOT GIVEN; 
+                                'RM' FOR REMOVED; 
+                                'I' FOR INFUSING; 
+                                'S' FOR STOPPED; 
+                                'C' FOR COMPLETED; 
+                                'M' FOR MISSING DOSE; 
+              LAST EDITED:      FEB 26, 2002 
+              DESCRIPTION:
+                                Status of administration (H:Held,R:Refused,G:Given,N:NOT GIVEN) 
+
+              CROSS-REFERENCE:  53.79^AU09^MUMPS 
+                                1)= D AUDIT^PSBUTL(DA,53.79,.09,X,"S")
+                                2)= D AUDIT^PSBUTL(DA,53.79,.09,X,"K")
+                                Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
+53.79,.11     ORDER REFERENCE NUMBER .1;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1)!'(X?.N1"U"!(X?.N1"V")!(X?.N1"P")) X
+              LAST EDITED:      MAY 09, 2001 
+              HELP-PROMPT:      Answer must be 1-15 characters in length. 
+              DESCRIPTION:
+                                Contains the IEN to the actual order in PHARMACY PATIENT (#55) followed by a U for Unit Dose or V for IV 
+
+              RECORD INDEXES:   AORDX (#47), AUID (#147)
+
+53.79,.12     ORDER SCHEDULE         .1;2 SET
+
+                                'C' FOR CONTINUOUS; 
+                                'P' FOR PRN; 
+                                'O' FOR ONE-TIME; 
+                                'OC' FOR ON-CALL; 
+              LAST EDITED:      APR 27, 1999 
+              DESCRIPTION:
+                                Contains the schedule type of the order.  
+
+              CROSS-REFERENCE:  53.79^APRN2^MUMPS 
+                                1)= S:X="P"&($P(^PSB(53.79,DA,0),U,4)) ^PSB(53.79,"APRN",$P(^PSB(53.79,DA,0),U,1),$P(^PSB(53.79,DA,0),U,4),DA)=""
+                                2)= K:X="P"&($P(^PSB(53.79,DA,0),U,4)) ^PSB(53.79,"APRN",$P(^PSB(53.79,DA,0),U,1),$P(^PSB(53.79,DA,0),U,4),DA)
+                                Creates an index for all PRN administered medications for recall with the PRN effectiveness options.  
+                                 
+                                  ^PSB(53.79,"APRN",dfn,entered date/time,DA)="" 
+                                 
+                                  NOTE: This is entered date/time (#.04), not administered date/time.  
+
+
+
+53.79,.13     SCHEDULED ADMINISTRATION TIME .1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 11, 2001 
+              DESCRIPTION:
+                                If a continuous order this field will contain the actual administration date and time the medication was ordered for.  
+
+              CROSS-REFERENCE:  53.79^AORD2^MUMPS 
+                                1)= I $P($G(^PSB(53.79,DA,.1)),U,1)]"" S ^PSB(53.79,"AORD",$P(^PSB(53.79,DA,0),U),$P(^PSB(53.79,DA,.1),U),X,DA)=""
+                                2)= I $P($G(^PSB(53.79,DA,.1)),U,1)]"" K ^PSB(53.79,"AORD",$P(^PSB(53.79,DA,0),U),$P(^PSB(53.79,DA,.1),U),X,DA)
+                                Creates an index by patient for Order reference number and administration time.  
+                                 
+                                  ^PSB(53.79,"AORD",dfn,order reference,administration date/time,DA)="" 
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^53.79^.14 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I $P(^PSB(53.79,DA,0),U,6)&($P($G(^(.1)),U,2)="C") I X S X=DIV S Y(1)=$S($D(^PSB(53.79,D0,.1)):^(.1),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(53.79,.13,1,8,1.1) X ^DD(53.79,.1
+                                3,1,8,1.4)
+
+                                1.1)= S X=DIV X ^DD(53.79,.13,1,8,49.2) S X1=Y(2) S Y=$E(X1_"000",9,10)-$E(X_"000",9,10)*60+$E(X1_"00000",11,12)-$E(X_"00000",11,12),X2=X,X=$P(X,".",1)'=$P(X1,".",1) D ^%DTC:X S X=X*1440+Y
+
+                                1.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.1)):^(.1),1:""),DIV=X S $P(^(.1),U,4)=DIV,DIH=53.79,DIG=.14 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I $P(^PSB(53.79,DA,0),U,6)&($P($G(^(.1)),U,2)="C") I X S X=DIV S Y(1)=$S($D(^PSB(53.79,D0,.1)):^(.1),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(53.79,.13,1,8,2.4)
+
+                                2.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.1)):^(.1),1:""),DIV=X S $P(^(.1),U,4)=DIV,DIH=53.79,DIG=.14 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                49.2)= S Y(1)=$S($D(^PSB(53.79,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),Y(2)=X S X=DIV
+
+                                CREATE CONDITION)= I $P(^PSB(53.79,DA,0),U,6)&($P($G(^(.1)),U,2)="C")
+                                CREATE VALUE)= MINUTES(#.06,#.13)
+                                DELETE CONDITION)= I $P(^PSB(53.79,DA,0),U,6)&($P($G(^(.1)),U,2)="C")
+                                DELETE VALUE)= @
+                                FIELD)= #.14
+
+
+53.79,.14     ORDER ADMINISTRATION VARIANCE .1;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<-99999)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 14, 1999 
+              HELP-PROMPT:      Type a Number between -99999 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                If a continuous order this field contains the minutes early (<1) or Late (>1) that the medication was given.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the ACTION DATE/TIME field of the BCMA MEDICATION LOG File 
+                                TRIGGERED by the SCHEDULED ADMINISTRATION TIME field of the BCMA MEDICATION LOG File 
+
+              CROSS-REFERENCE:  53.79^AVARCHK^MUMPS 
+                                1)= D CHECK^PSBVAR(+$G(^PSB(53.79,DA,0)),X,DA)
+                                2)= Q
+                                This field is triggered by the administration date/time.  If this field is greater than or less than the allowable administration window times for this division a variance will be filed.  
+
+
+
+53.79,.15     ORDER DOSAGE           .1;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      APR 09, 1999 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                Free text field containing the dosage from the original order.  
+
+
+53.79,.16     INJECTION SITE         .1;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      SEP 21, 2011 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                Free text field containing the injection site of medication that are injected.  
+
+              CROSS-REFERENCE:  53.79^AU16^MUMPS 
+                                1)= D AUDIT^PSBUTL(DA,53.79,.16,X,"S")
+                                2)= D AUDIT^PSBUTL(DA,53.79,.16,X,"K")
+                                Creates an entry in this items audit log whenever changed or deleted.  
+
+
+              RECORD INDEXES:   AINJ (#1045), AINJOI (#1046)
+
+53.79,.21     PRN REASON             .2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      APR 22, 1999 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                Free text field containing the PRN reason for a PRN med being given.  
+
+              CROSS-REFERENCE:  53.79^AU21^MUMPS 
+                                1)= D AUDIT^PSBUTL(DA,53.79,.21,X,"S")
+                                2)= D AUDIT^PSBUTL(DA,53.79,.21,X,"K")
+                                Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
+53.79,.22     PRN EFFECTIVENESS      .2;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>150!($L(X)<1) X
+              LAST EDITED:      APR 22, 1999 
+              HELP-PROMPT:      Answer must be 1-150 characters in length. 
+              DESCRIPTION:
+                                Free text field containing the effectiveness of a PRN medication.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^53.79^.24 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PSB(53.79,D0,.2)):^(.2),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(53.79,.22,1,1,1.1) X ^DD(53.79,.22,1,1,1.4)
+                                1.1)= S X=DIV N %I,%H,% D NOW^%DTC S X=%
+                                1.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.2)):^(.2),1:""),DIV=X S $P(^(.2),U,4)=DIV,DIH=53.79,DIG=.24 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PSB(53.79,D0,.2)):^(.2),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(53.79,.22,1,1,2.4)
+                                2.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.2)):^(.2),1:""),DIV=X S $P(^(.2),U,4)=DIV,DIH=53.79,DIG=.24 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= NOW
+                                DELETE VALUE)= @
+                                FIELD)= PRN EFFECTIVENESS ENTERED AT
+
+              CROSS-REFERENCE:  ^^TRIGGER^53.79^.23 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PSB(53.79,D0,.2)):^(.2),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(53.79,.22,1,2,1.4)
+                                1.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.2)):^(.2),1:""),DIV=X S $P(^(.2),U,3)=DIV,DIH=53.79,DIG=.23 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PSB(53.79,D0,.2)):^(.2),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(53.79,.22,1,2,2.4)
+                                2.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.2)):^(.2),1:""),DIV=X S $P(^(.2),U,3)=DIV,DIH=53.79,DIG=.23 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= S X=DUZ
+                                DELETE VALUE)= @
+                                FIELD)= PRN EFFECTIVENESS ENTERED BY
+
+              CROSS-REFERENCE:  53.79^AU22^MUMPS 
+                                1)= D AUDIT^PSBUTL(DA,53.79,.22,X,"S")
+                                2)= D AUDIT^PSBUTL(DA,53.79,.22,X,"K")
+                                Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
+53.79,.23     PRN EFFECTIVENESS ENTERED BY .2;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 13, 1999 
+              DESCRIPTION:
+                                Pointer to file NEW PERSON (#200) with the IEN of the user logging the PRN effectiveness.  
+
+              NOTES:            TRIGGERED by the PRN EFFECTIVENESS field of the BCMA MEDICATION LOG File 
+
+
+53.79,.24     PRN EFFECTIVENESS ENTERED AT .2;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 24, 1999 
+              DESCRIPTION:
+                                Date/time the PRN effectiveness was charted.  
+
+              NOTES:            TRIGGERED by the PRN EFFECTIVENESS field of the BCMA MEDICATION LOG File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^53.79^.25 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PSB(53.79,D0,.2)):^(.2),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y X ^DD(53.79,.24,1,1,1.1) X ^DD(53.79,.24,1,1,1.4)
+                                1.1)= S X=DIV X ^DD(53.79,.24,1,1,49.2) S X1=Y(1) S Y=$E(X1_"000",9,10)-$E(X_"000",9,10)*60+$E(X1_"00000",11,12)-$E(X_"00000",11,12),X2=X,X=$P(X,".",1)'=$P(X1,".",1) D ^%DTC:X S X=X*1440+Y
+                                1.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.2)):^(.2),1:""),DIV=X S $P(^(.2),U,5)=DIV,DIH=53.79,DIG=.25 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PSB(53.79,D0,.2)):^(.2),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X="" X ^DD(53.79,.24,1,1,2.4)
+                                2.4)= S DIH=$S($D(^PSB(53.79,DIV(0),.2)):^(.2),1:""),DIV=X S $P(^(.2),U,5)=DIV,DIH=53.79,DIG=.25 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                49.2)= S Y(2)=$S($D(^PSB(53.79,D0,0)):^(0),1:"") S X=DIV,Y(1)=X S X=$P(Y(2),U,6)
+                                CREATE VALUE)= MINUTES(#.24,#.06)
+                                DELETE VALUE)= @
+                                FIELD)= PRN EFFECTIVENESS MINUTES
+
+
+53.79,.25     PRN EFFECTIVENESS MINUTES .2;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<-99999)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 28, 1999 
+              HELP-PROMPT:      Type a Number between -99999 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Number of minutes from administration to the charting of PRN effectiveness.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the PRN EFFECTIVENESS ENTERED AT field of the BCMA MEDICATION LOG File 
+
+              CROSS-REFERENCE:  53.79^ACHKPRN^MUMPS 
+                                1)= D CHKPRN^PSBVAR(+$G(^PSB(53.79,DA,0)),X,DA)
+                                2)= Q
+                                This field is triggered by the PRN EFFECTIVENESS DATE/TIME field. If this field is greater than the allowable PRN EFFECTIVENESS window times for this division a variance will be filed.  
+
+
+
+53.79,.26     IV UNIQUE ID           0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      SEP 19, 2001 
+              HELP-PROMPT:      Answer must be 3-30 characters in length 
+              DESCRIPTION:
+                                This is the unique ID number of an IV bag, which is generated from Inpatient Medications.  
+
+              RECORD INDEXES:   AUID (#147)
+
+53.79,.27     PRN REASON FLAG        0;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>1)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      NOV 04, 2003 
+              HELP-PROMPT:      Type a number between 0 and 1, 0 Decimal Digits 
+              DESCRIPTION:
+                                The PRN REASON FLAG field is to indicate whether the BCMA Med Log file entry is PRN activity and has an associated PRN REASON which has been set to require BCMA user attention or action.  
+
+
+53.79,.3      COMMENT                .3;0 Multiple #53.793
+
+              DESCRIPTION:
+                                Multiple containing the comments entered for each med pass.  
+
+
+53.793,.01      COMMENT                0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>150!($L(X)<1) X
+                LAST EDITED:      MAR 23, 1999 
+                HELP-PROMPT:      Answer must be 1-150 characters in length. 
+                DESCRIPTION:
+                                  Text of comment entered by the user.  
+
+
+53.793,.02      ENTERED BY             0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAR 19, 1999 
+                DESCRIPTION:
+                                  Pointer to the NEW PERSON file (#200) of the user making the comment.  
+
+
+53.793,.03      ENTERED DATE/TIME      0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAR 19, 1999 
+                DESCRIPTION:
+                                  Date/Time the comment was filed against this entry.  
+
+
+
+
+53.79,.35     INFUSION RATE          0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>47!($L(X)<1) X
+              LAST EDITED:      FEB 25, 2003 
+              HELP-PROMPT:      Answer must be 1-47 characters in length. 
+              DESCRIPTION:
+                                This is the infusion rate for an IV bag, which is passed by Inpatient Medications.  
+
+
+53.79,.5      DISPENSE DRUG          .5;0 POINTER Multiple #53.795
+
+
+              INDEXED BY:       UNIT OF ADMINISTRATION (APATCH)
+
+53.795,.01      DISPENSE DRUG          0;1 POINTER TO DRUG FILE (#50) (Multiply asked)
+
+                LAST EDITED:      MAR 13, 1999 
+                DESCRIPTION:
+                                  Pointer to the drug file.  Contains the actual medication scanned for this entry.  
+
+                CROSS-REFERENCE:  53.795^B 
+                                  1)= S ^PSB(53.79,DA(1),.5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSB(53.79,DA(1),.5,"B",$E(X,1,30),DA)
+
+
+53.795,.02      DOSES ORDERED          0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>50)!(X<0)!(X?.E1"."5N.N) X
+                LAST EDITED:      JUN 05, 2002 
+                HELP-PROMPT:      Type a Number between 0 and 50, 4 Decimal Digits 
+                DESCRIPTION:
+                                  Number of units from the PHARMACY PATIENT file (#55) 
+
+
+53.795,.03      DOSES GIVEN            0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>50)!(X<0)!(X?.E1"."5N.N) X
+                LAST EDITED:      JUN 05, 2002 
+                HELP-PROMPT:      Type a Number between 0 and 50, 4 Decimal Digits 
+                DESCRIPTION:
+                                  Actual number of units given.  
+
+                CROSS-REFERENCE:  53.795^AU303^MUMPS 
+                                  1)= D AUDIT^PSBUTL(DA(1),53.795,.03,X,"S")
+                                  2)= D AUDIT^PSBUTL(DA(1),53.795,.03,X,"K")
+                                  Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
+53.795,.04      UNIT OF ADMINISTRATION 0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      MAR 13, 2003 
+                HELP-PROMPT:      Answer must be 1-40 characters in length. 
+                DESCRIPTION:
+                                  Unit of administration (i.e. TABLET, ML, VIAL) 
+
+                CROSS-REFERENCE:  53.795^AU304^MUMPS 
+                                  1)= D AUDIT^PSBUTL(DA(1),53.795,.04,X,"S")
+                                  2)= D AUDIT^PSBUTL(DA(1),53.795,.04,X,"K")
+                                  Creates an entry in this items audit log whenever changed or deleted.  
+
+
+                FIELD INDEX:      APATCH (#148)    MUMPS    IR    ACTION
+                    Short Descr:  Sets the APATCH cross-reference when unit of administration is PATCH
+                      Set Logic:  N I S I=0 X "F  S I=$O(^PSB(53.79,DA(1),.5,I)) Q:'I  Q:$P($G(^(I,0)),U,4)=""PATCH""  Q:$P(^PSB(53.79,DA(1),0),U,9)'=""G""" S:I ^PSB(53.79,"APATCH",X(1),X(2),DA(1))="" K:'I ^PSB(53.79,"APATCH",X(1),X(2),DA(1))
+                       Set Cond:  S X=X1(3)="PATCH"!(X2(3)="PATCH")&(X2(3)]"")
+                     Kill Logic:  N I S I=0 X "F  S I=$O(^PSB(53.79,DA(1),.5,I)) Q:'I  Q:$P($G(^(I,0)),U,4)=""PATCH""&(I'=DA)" S:I ^PSB(53.79,"APATCH",X(1),X(2),DA(1))="" K:'I ^PSB(53.79,"APATCH",X(1),X(2),DA(1))
+                      Kill Cond:  S X=X1(3)="PATCH"&(X2(3)="")
+                           X(1):  Computed Code: S X=$P(^PSB(53.79,DA(1),0),U)
+                                    (Subscr 1)
+                           X(2):  Computed Code: S X=$P(^PSB(53.79,DA(1),0),U,6)
+                                    (Subscr 2)
+                           X(3):  UNIT OF ADMINISTRATION  (53.795,.04)  (Subscr 3)  (forwards)
+
+
+
+
+53.79,.6      ADDITIVES              .6;0 POINTER Multiple #53.796
+
+
+53.796,.01      ADDITIVES              0;1 POINTER TO IV ADDITIVES FILE (#52.6) (Multiply asked)
+
+                LAST EDITED:      MAY 20, 2003 
+                DESCRIPTION:
+                                  Pointer to the additives file.  Filled in automatically with the ordered additives when marked as given.  
+
+                CROSS-REFERENCE:  53.796^B 
+                                  1)= S ^PSB(53.79,DA(1),.6,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSB(53.79,DA(1),.6,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  53.79^E^MUMPS 
+                                  1)= I $P(^PSB(53.79,DA,0),U,6) S ^PSB(53.79,"AOIP3",$P(^PSB(53.79,DA(1),0),U),DA(1),X)=""
+                                  2)= I $P(^PSB(53.79,DA,0),U,6) K ^PSB(53.79,"AOIP3",$P(^PSB(53.79,DA(1),0),U),DA(1),X)
+                                  CROSS REFERENCE for multiple ADDITIVES.  PSB(53.79,"AOIP3",DFN,ORDERABLE IEN,ADDITIVE,) 
+
+
+
+53.796,.02      DOSE ORDERED           0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      APR 09, 1999 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  Dosage from the actual IV order.  
+
+
+53.796,.03      DOSE GIVEN             0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      APR 09, 1999 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  Actual dosing performed by administration clinician.  
+
+                CROSS-REFERENCE:  53.796^AU603^MUMPS 
+                                  1)= D AUDIT^PSBUTL(DA(1),53.796,.03,X,"S")
+                                  2)= D AUDIT^PSBUTL(DA(1),53.796,.03,X,"K")
+                                  Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
+53.796,.04      UNIT OF ADMINISTRATION 0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      APR 09, 1999 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  Unit of administration (i.e. ML) 
+
+                CROSS-REFERENCE:  53.796^AU604^MUMPS 
+                                  1)= D AUDIT^PSBUTL(DA(1),53.796,.04,X,"S")
+                                  2)= D AUDIT^PSBUTL(DA(1),53.796,.04,X,"K")
+                                  Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
+
+
+53.79,.7      SOLUTIONS              .7;0 POINTER Multiple #53.797
+
+
+53.797,.01      SOLUTIONS              0;1 POINTER TO IV SOLUTIONS FILE (#52.7) (Multiply asked)
+
+                LAST EDITED:      MAY 16, 2003 
+                DESCRIPTION:
+                                  Pointer to the SOLUTIONS file.  
+
+                CROSS-REFERENCE:  53.797^B 
+                                  1)= S ^PSB(53.79,DA(1),.7,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSB(53.79,DA(1),.7,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  53.79^F^MUMPS 
+                                  1)= I $P(^PSB(53.79,DA,0),U,6) S ^PSB(53.79,"AOIP4",$P(^PSB(53.79,DA(1),0),U),DA(1),X)=""
+                                  2)= I $P(^PSB(53.79,DA,0),U,6) K ^PSB(53.79,"AOIP4",$P(^PSB(53.79,DA(1),0),U),DA(1),X)
+                                  CROSS REFERENCE for multiple SOLUTIONS.  PSB(53.79,"AOIP4",DFN,ORDERABLE IEN,SOLUTION) 
+
+
+
+53.797,.02      DOSE ORDERED           0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      APR 09, 1999 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  Dosage ordered from the IV Order.  
+
+
+53.797,.03      DOSES GIVEN            0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      APR 09, 1999 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  Actual amount of medication given.  
+
+                CROSS-REFERENCE:  53.797^AU703^MUMPS 
+                                  1)= D AUDIT^PSBUTL(DA(1),53.797,.03,X,"S")
+                                  2)= D AUDIT^PSBUTL(DA(1),53.797,.03,X,"K")
+                                  Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
+53.797,.04      UNIT OF ADMINISTRATION 0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      APR 09, 1999 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  Unit of administration (i.e. ML) 
+
+                CROSS-REFERENCE:  53.797^AU704^MUMPS 
+                                  1)= D AUDIT^PSBUTL(DA(1),53.797,.04,X,"S")
+                                  2)= D AUDIT^PSBUTL(DA(1),53.797,.04,X,"K")
+                                  Creates an entry in this items audit log whenever changed or deleted.  
+
+
+
+
+
+53.79,.9      AUDIT LOG              .9;0 DATE Multiple #53.799
+
+
+53.799,.01      AUDIT LOG              0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAR 20, 1999 
+                DESCRIPTION:
+                                  Date/time of audit being filed.  
+
+                CROSS-REFERENCE:  53.799^B 
+                                  1)= S ^PSB(53.79,DA(1),.9,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSB(53.79,DA(1),.9,"B",$E(X,1,30),DA)
+
+
+53.799,.02      USER                   0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAR 20, 1999 
+                DESCRIPTION:
+                                  Pointer to the user making the change.  
+
+
+53.799,.03      TEXT                   0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>150!($L(X)<1) X
+                LAST EDITED:      MAR 20, 1999 
+                HELP-PROMPT:      Answer must be 1-150 characters in length. 
+                DESCRIPTION:
+                                  Description of the change made.  
+
+
+53.799,.04      ACTION STATUS LOG      0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      JUN 24, 2008 
+                HELP-PROMPT:      Please enter the ACTION STATUS that is being set in 1-15 characters. 
+                DESCRIPTION:
+                                  Action Status that this log entry is tracking.  
+
+
+53.799,.05      ACTION BY LOG          0;5 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUN 24, 2008 
+                HELP-PROMPT:      Please select the user that made the previous change to the ACTION STATUS. 
+                DESCRIPTION:
+                                  Pointer to the user who was listed as performing the previous action.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DRUG (#50)                        DISPENSE DRUG:DISPENSE DRUG (#.01)
+
+INSTITUTION (#4)                  PATIENT DIVISION (#.03)
+
+IV ADDITIVES (#52.6)              ADDITIVES:ADDITIVES (#.01)
+
+IV SOLUTIONS (#52.7)              SOLUTIONS:SOLUTIONS (#.01)
+
+NEW PERSON (#200)                 ENTERED BY (#.05)
+                                  ACTION BY (#.07)
+                                  PRN EFFECTIVENESS ENTERED BY (#.23)
+                                  COMMENT:ENTERED BY (#.02)
+                                  AUDIT LOG:USER (#.02)
+                                  ACTION BY LOG (#.05)
+
+PATIENT (#2)                      PATIENT NAME (#.01)
+
+PHARMACY ORDERABLE ITEM (#50.7)   ADMINISTRATION MEDICATION (#.08)
+
+
+File #53.79
+
+  Record Indexes:
+
+  AINJ (#1045)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  By patient, action date/time, & inject site
+        Set Logic:  S ^PSB(53.79,"AINJ",X(1),X(2),$E(X(3),1,30),DA)=""
+       Kill Logic:  K ^PSB(53.79,"AINJ",X(1),X(2),$E(X(3),1,30),DA)
+       Whole Kill:  K ^PSB(53.79,"AINJ")
+             X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (forwards)
+             X(2):  ACTION DATE/TIME  (53.79,.06)  (Subscr 2)  (forwards)
+             X(3):  INJECTION SITE  (53.79,.16)  (Subscr 3)  (Len 30)  (forwards)
+
+  AINJOI (#1046)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  By patient, orderable item, action date/time, & inject site
+        Set Logic:  S ^PSB(53.79,"AINJOI",X(1),X(2),X(3),$E(X(4),1,30),DA)=""
+       Kill Logic:  K ^PSB(53.79,"AINJOI",X(1),X(2),X(3),$E(X(4),1,30),DA)
+       Whole Kill:  K ^PSB(53.79,"AINJOI")
+             X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (forwards)
+             X(2):  ADMINISTRATION MEDICATION  (53.79,.08)  (Subscr 2)  (forwards)
+             X(3):  ACTION DATE/TIME  (53.79,.06)  (Subscr 3)  (forwards)
+             X(4):  INJECTION SITE  (53.79,.16)  (Subscr 4)  (Len 30)  (forwards)
+
+  AORDX (#47)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  DFN,ORDER NUMBER,ADMIN DATE/TIME
+      Description:  Cross reference by; .01 PATIENT NAME; .11 ORDER REFERENCE NUMBER; and .06 ADMINISTRATION DATE/TIME.  
+        Set Logic:  S ^PSB(53.79,"AORDX",$E(X(1),1,30),$E(X(2),1,15),$E(X(3),1,15),DA)=""
+       Kill Logic:  K ^PSB(53.79,"AORDX",$E(X(1),1,30),$E(X(2),1,15),$E(X(3),1,15),DA)
+       Whole Kill:  K ^PSB(53.79,"AORDX")
+             X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  ORDER REFERENCE NUMBER  (53.79,.11)  (Subscr 2)  (Len 15)  (forwards)
+             X(3):  ACTION DATE/TIME  (53.79,.06)  (Subscr 3)  (Len 15)  (forwards)
+
+  AUID (#147)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  cross reference of dfn, order number, and unique id
+        Set Logic:  S ^PSB(53.79,"AUID",X(1),$E(X(2),1,30),$E(X(3),1,30),DA)=""
+       Kill Logic:  K ^PSB(53.79,"AUID",X(1),$E(X(2),1,30),$E(X(3),1,30),DA)
+       Whole Kill:  K ^PSB(53.79,"AUID")
+             X(1):  PATIENT NAME  (53.79,.01)  (Subscr 1)  (forwards)
+             X(2):  ORDER REFERENCE NUMBER  (53.79,.11)  (Subscr 2)  (Len 30)  (forwards)
+             X(3):  IV UNIQUE ID  (53.79,.26)  (Subscr 3)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+PSB MED LOG EDIT              MAR 23, 1999@12:52  USER #0
+  PSB MED LOG EDIT              DD #53.79
+  PSB MED LOG EDIT DD HDR       DD #53.79
+  PSB MED LOG EDIT DD           DD #53.795
+
+PSB MED LOG EDIT IV           MAR 23, 1999@12:52  USER #0
+  PSB MED LOG EDIT IV           DD #53.79
+  PSB MED LOG EDIT IV HDR       DD #53.79
+  PSB MED LOG EDIT DD IV        DD #53.795
+
+PSB NEW IV ENTRY              MAR 23, 1999@12:52  USER #0
+  PSB NEW IV ENTRY              DD #53.79
+  PSB NEW IV ENTRY ADD HDR      DD #53.79
+  PSB NEW IV ENTRY ADD          DD #53.796
+
+PSB NEW UD ENTRY              MAR 23, 1999@12:52  USER #0
+  PSB NEW UD ENTRY              DD #53.79
+  PSB NEW UD ENTRY DD HDR       DD #53.79
+  PSB NEW UD ENTRY DD           DD #53.795
+
+PSB PRN EFFECTIVENESS         MAR 22, 1999@14:30  USER #0
+  PSB PRN EFFECTIVENESS         DD #53.79
+

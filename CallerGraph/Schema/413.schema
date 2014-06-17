@@ -1,0 +1,1168 @@
+STANDARD DATA DICTIONARY #413 -- EQUIPMENT REQUEST FILE                                                                                                                                                                           MAY 20,2014@15:32:58  PAGE 1
+STORED IN ^PRCN(413,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file will contain the non-expendable equipment requests for all stages of the request process.  
+
+
+COMPILED CROSS-REFERENCE ROUTINE: PRCNX
+              DD ACCESS: @
+              RD ACCESS: [
+              WR ACCESS: ]
+             DEL ACCESS: %
+           LAYGO ACCESS: $
+           AUDIT ACCESS: @
+IDENTIFIED BY: REQUEST STATUS (#6)
+
+POINTED TO BY: EQUIP REQUEST field (#8) of the TURN-IN REQUEST File (#413.1) 
+               
+
+CROSS
+REFERENCED BY: REQUEST STATUS(AC), CMR RESPONSIBLE OFFICIAL(AD), REQUESTING SERVICE(AE), TRANSACTION NUMBER(B), EQUIPMENT COMMITTEE RANKING(E), CMR PRIORITY(P)
+
+413,.001      NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 23, 1992 
+              HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Internal number for each equipment request.  
+
+
+413,.01       TRANSACTION NUMBER     0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>17!($L(X)<15)!'(X'?1P.E) X
+              LAST EDITED:      AUG 27, 1992 
+              HELP-PROMPT:      Format is Station#-CMR#-FY-#####. 
+              DESCRIPTION:
+                                This is the temporary transaction number that is calculated based on the facility number, the CMR Official, the fiscal year and a sequential number.  
+
+              CROSS-REFERENCE:  413^B 
+                                1)= S ^PRCN(413,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRCN(413,"B",$E(X,1,30),DA)
+                                This cross-reference is by the generated transaction number.  
+
+
+
+413,1         REQUESTOR              0;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 27, 1992 
+              DESCRIPTION:
+                                This is the person who initiates the request.  It defaults from the DUZ number.  
+
+
+413,2         REQUESTING SERVICE     0;3 POINTER TO SERVICE/SECTION FILE (#49)
+
+              LAST EDITED:      AUG 27, 1992 
+              DESCRIPTION:
+                                This is the requestor's service that is calculated from their entry in the New Person file.  
+
+              CROSS-REFERENCE:  413^AE 
+                                1)= S ^PRCN(413,"AE",$E(X,1,30),DA)=""
+                                2)= K ^PRCN(413,"AE",$E(X,1,30),DA)
+                                This cross-reference is by the requesting service for report usage.  
+
+
+
+413,3         REQUEST DATE/TIME      0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 27, 1992 
+              DESCRIPTION:
+                                This is the actual date and time that the request was initialized.  This automatically defaults from the current date and time when the request is being entered.  
+
+
+413,4         STATION NUMBER         0;5 POINTER TO ADMIN. ACTIVITY SITE PARAMETER FILE (#411)
+
+              LAST EDITED:      AUG 27, 1992 
+              DESCRIPTION:
+                                This is the station number that will automatically default if there is only one station numer otherwise, the requestor will be prompted for it.  
+
+
+413,4.5       CMR                    0;16 POINTER TO CMR FILE (#6914.1)
+
+              LAST EDITED:      AUG 05, 1995 
+              HELP-PROMPT:      Please select the CMR who will have responsibility for this equipment. 
+              DESCRIPTION:
+                                This is the CMR number who will ultimately be responsible for the equipment when ordered and received.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^413^5 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCN(413,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X=DIV S X=$P(^ENG(6914.1,X,0),U,2) X ^DD(413,4.5,1,1,1.4)
+                                1.4)= S DIH=$S($D(^PRCN(413,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,6)=DIV,DIH=413,DIG=5 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= S X=$P(^ENG(6914.1,X,0),U,2)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #5
+                                This triggers the CMR Official when selecting a particular CMR.  
+
+
+
+413,5         CMR RESPONSIBLE OFFICIAL 0;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      NOV 04, 1992 
+              DESCRIPTION:
+                                This is the person who is associated with a particular CMR.  This is defaulted when a CMR is selected and all messages will be directed to this person.  
+
+              NOTES:            TRIGGERED by the CMR field of the EQUIPMENT REQUEST File 
+
+              CROSS-REFERENCE:  413^AD 
+                                1)= S ^PRCN(413,"AD",$E(X,1,30),DA)=""
+                                2)= K ^PRCN(413,"AD",$E(X,1,30),DA)
+                                This is a cross-reference by the CMR responsible official.  
+
+
+
+413,6         REQUEST STATUS         0;7 POINTER TO NX STATUS FILE (#413.5)
+
+              LAST EDITED:      OCT 20, 1992 
+              DESCRIPTION:
+                                This is the status of the request.  It is set at the completion of each step of the process.  
+
+              CROSS-REFERENCE:  413^AC 
+                                1)= S ^PRCN(413,"AC",$E(X,1,30),DA)=""
+                                2)= K ^PRCN(413,"AC",$E(X,1,30),DA)
+                                This is a cross-reference by request status.  
+
+
+
+413,7         STATUS DATE            0;8 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 10, 1992 
+              DESCRIPTION:
+                                This date is automatically set whenever the status on a request changes.  It is the date that status was applied to the request.  
+
+
+413,8         REQUEST TYPE           0;9 SET (Required)
+
+                                'A' FOR ADDITIONAL; 
+                                'R' FOR REPLACEMENT; 
+                                'I' FOR INITIAL; 
+              LAST EDITED:      OCT 01, 1992 
+              HELP-PROMPT:      Select appropriate type for this request. Additional for new equipment, Initial for project equipment, and Replacement for equipment to be replaced. 
+              DESCRIPTION:
+                                There are three type of requests.  Each request type may ask some different front-end questions.  Replacement type will also create an accompanying turn-in request.  
+
+
+413,9         PROJECT NUMBER         0;10 FREE TEXT
+
+              INPUT TRANSFORM:  D INP^PRCNPROJ Q
+              LAST EDITED:      NOV 10, 1993 
+              HELP-PROMPT:      ENTER THE OFFICIALLY ASSIGNED PROJECT NUMBER (must begin with 3 numerics and use dashes as delimiters) 
+              DESCRIPTION:       The principal identifier of entries in the CONSTRUCTION PROJECT file.  Format should be either 'SSS-NNN' or 'SSS-YY-NNN'; where SSS is the facility number and NNN is a sequential project number.  
+                                 YY is usually the fiscal year in which an NRM request is submitted, but may also be used for a two-character alphabetic project category designation.  
+
+              EXECUTABLE HELP:  D LKUP^PRCNPROJ
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+413,9.1       PROJECT MANAGER        0;17 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      NOV 09, 1993 
+              HELP-PROMPT:      Please enter the Project Manager 
+              DESCRIPTION:
+                                The person in charge of a particular project if a project number was entered.  
+
+
+413,10        TURN-IN REQUEST        0;11 POINTER TO TURN-IN REQUEST FILE (#413.1)
+
+              LAST EDITED:      SEP 10, 1992 
+              DESCRIPTION:
+                                This points to the accompanying turn-in request from the turn-in request file (413.1).  The request and the turn-in are tied to each other.  
+
+
+413,11        REQUESTOR PHONE        0;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<4) X
+              LAST EDITED:      SEP 17, 1992 
+              HELP-PROMPT:      Enter the phone number of the requestor 
+              DESCRIPTION:
+                                This is the phone number of the requestor and should default from new person file.  
+
+
+413,12        DATE REQUIRED BY       0;13 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EF" D ^%DT S X=Y K:Y<1!(Y<DT) X
+              LAST EDITED:      NOV 09, 1993 
+              HELP-PROMPT:      Enter the date this requested equipment is needed by. 
+              DESCRIPTION:
+                                This date is required for a 2237.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+413,13        SORT                   0;14 POINTER TO SORT GROUP FILE (#410.7)
+
+              LAST EDITED:      SEP 17, 1992 
+              DESCRIPTION:
+                                This Sort Group field may be used to group together all transactions (requests) that relate to a specific project, work order, investigator, food group, doctor, etc.  This is the previous 'Project Number' field.  
+
+
+413,14        CLASSIFICATION         0;15 POINTER TO CLASSIFICATION OF REQUEST FILE (#410.2)
+
+              LAST EDITED:      SEP 17, 1992 
+              DESCRIPTION:
+                                This Classification of Request field allows you to classify and/or categorize all transactions (requests) for supplies, services, etc.  
+
+
+413,15        LINE ITEM NUMBER       1;0 Multiple #413.015 (Add New Entry without Asking)
+
+              LAST EDITED:      AUG 23, 1996 
+              DESCRIPTION:
+                                This is a item that is being entered for the request.  
+
+
+413.015,.01     LINE ITEM NUMBER       0;1 NUMBER (Required) (Multiply asked)
+
+                LINE ITEM NUMBER                                                                                               
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 23, 1996 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of the item being requested.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  413.015^B 
+                                  1)= S ^PRCN(413,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCN(413,DA(1),1,"B",$E(X,1,30),DA)
+                                  This cross-reference is by the Line Item Number.  
+
+
+
+413.015,1       DESCRIPTION            1;0   WORD-PROCESSING #413.151
+
+                DESCRIPTION:
+                                  This is a full description of the line item that is being requested.  
+
+
+413.015,2       POTENTIAL VENDOR PTR   0;2 POINTER TO VENDOR FILE (#440)
+
+                LAST EDITED:      APR 19, 1996 
+                HELP-PROMPT:      Enter the name of a vendor this equipment could be purchased from. 
+                DESCRIPTION:
+                                  This is the possible vendor that the requested line item could be purchased from.  
+
+
+413.015,3       VENDOR PRODUCT #       0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      OCT 02, 1992 
+                HELP-PROMPT:      Enter the Vendor's specific product number for this item 
+                DESCRIPTION:
+                                  This is the vendor's identification of a particular item.  
+
+
+413.015,4       UNIT COST              0;4 NUMBER (Required)
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+                LAST EDITED:      OCT 22, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the cost for each quanitity of the line item.  
+
+
+413.015,5       QUANTITY REQUIRED      0;5 NUMBER (Required)
+
+                INPUT TRANSFORM:  D ^PRCNREQQ
+                LAST EDITED:      MAR 30, 1994 
+                HELP-PROMPT:      Enter the quantity desired for this line item 
+                DESCRIPTION:
+                                  This is the quantity of the requested line item.  For replacement items, there must be a correspondance between the quantity being requested and the number of items being replaced.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+413.015,6       TOTAL COST              ;  COMPUTED
+
+                MUMPS CODE:       S Y(413.015,6,1)=$S($D(^PRCN(413,D0,1,D1,0)):^(0),1:"") S X=$P(Y(413.015,6,1),U,4)*$P(Y(413.015,6,1),U,5) S X=$J(X,0,2)
+                ALGORITHM:        #4*#5  (ALWAYS 2 DECIMAL DIGITS)
+                DESCRIPTION:
+                                  This is the UNIT COST times the QUANTITY REQUIRED to give an estimated total cost for the requested line item.  
+
+
+413.015,7       CONTRACT #             0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>19!($L(X)<7) X D:$D(X) B^PRCNHLP
+                LAST EDITED:      OCT 02, 1992 
+                HELP-PROMPT:      Answer must be 7-19 characters in length. 
+                DESCRIPTION:
+                                  This field can be used if there is a special contract already in place for purchase of certain items.  
+
+                EXECUTABLE HELP:  D A^PRCNHLP
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+413.015,8       PARENT SYSTEM / COMPONENT 0;12 SET (Required)
+
+                                  'P' FOR PARENT SYSTEM; 
+                                  'C' FOR COMPONENT; 
+                LAST EDITED:      DEC 18, 1992 
+                DESCRIPTION:
+                                  Some items when being requested need to be listed separately but are not costed out separately.  These would be considered components of a parent system.  
+
+
+413.015,9       FINAL QUANTITY         0;7 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 22, 1992 
+                HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the number of items that were approved.  It may not be the same as the quantity required.  
+
+
+413.015,10      ITEM STATUS            0;8 SET (Required)
+
+                                  'DD' FOR DISAPPROVED; 
+                                  'DF' FOR DEFERRED; 
+                                  'AP' FOR APPROVED-PENDING FUNDS; 
+                                  'AF' FOR APPROVED-FUNDED; 
+                LAST EDITED:      OCT 22, 1992 
+                DESCRIPTION:
+                                  This field is used to identify the status of a particular line item after the review process.  Not all line items in a request may be approved.  
+
+
+413.015,11      ITEM STATUS EXPLANATION 3;0   WORD-PROCESSING #413.1511
+
+                DESCRIPTION:
+                                  If a line item was not approved, a reason is required as to why.  
+
+
+413.015,12      ITEM STATUS DATE       0;9 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 02, 1992 
+                DESCRIPTION:
+                                  This is the date that the line item's status was determined.  
+
+
+413.015,13      CSN                    0;10 POINTER TO CATEGORY STOCK NUMBER FILE (#6917)
+
+                LAST EDITED:      OCT 27, 1992 
+                DESCRIPTION:
+                                  This is the Category Stock Number for non-expendable items.  It is required for VACO 134s.  
+
+
+413.015,14      EQUIP COM RANKING      0;11 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 10, 1992 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field is used to rank the line item when the Equipment Committee is reviewing requests.  
+
+
+413.015,15      POTENTIAL VENDOR       0;13 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUN 17, 1996 
+                HELP-PROMPT:      Enter a free text vendor name, 1-30 characters 
+                DESCRIPTION:
+                                  This field is to be used for entering a recommended vendor for a line item in a free text form if they are currently not in the Vendor file.  
+
+                EXECUTABLE HELP:  D VENHLP^PRCNUTL
+
+
+
+413,16        CHANGE IN PERSONNEL    2;1 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 16, 1992 
+              HELP-PROMPT:      Enter 'Y' if there will be any changes in number and/or grades of personnel. 
+              DESCRIPTION:
+                                If any change in personnel is needed because of the acquisition of this item, either more people needed or less.  
+
+
+413,17        JCAHO,CAP,SAFETY DEFICIENCY 2;2 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 16, 1992 
+              HELP-PROMPT:      Enter 'Y' if there are any JCAHO, CAP, or other safety deficiency for ordering this equipment. 
+              DESCRIPTION:
+                                This should be answered if there is any special safety considerations with requesting this equipment.  
+
+
+413,18        CHANGE IN RECURRING COSTS 2;3 SET (Required)
+
+                                'I' FOR INCREASE; 
+                                'D' FOR DECREASE; 
+                                'N' FOR NO CHANGE; 
+              LAST EDITED:      DEC 16, 1992 
+              HELP-PROMPT:      Enter the estimated change in recurring costs if this equipment is ordered. 
+              DESCRIPTION:
+                                This should indicate whether there are any savings by acquiring this equipment or increased costs.  If other than no change, some other questions will be asked.  
+
+
+413,19        SUFFICIENT FUNDS BUDGETED? 2;4 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 16, 1992 
+              HELP-PROMPT:      Enter 'Y' if sufficient funds have been budgeted to purchase this equipment. 
+              DESCRIPTION:
+                                If there is an increase in recurring costs, the requestor should indicate whether sufficients funds have been budgeted for this item.  
+
+
+413,20        ANNUAL RECURRING SUPPLY COST 2;5 NUMBER (Required)
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      JAN 05, 1993 
+              HELP-PROMPT:      Enter the estimated annual cost of recurring supplies for this equipment 
+              DESCRIPTION:
+                                Any supply costs that may need to be budgeted for the future if this is acquired.  
+
+
+413,21        TRAINING NEEDED?       2;6 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if any special training will be needed to operate this new piece of equipment if purchased. 
+              DESCRIPTION:
+                                By ordering this equipment, whether new training will be needed to use it.  
+
+
+413,22        EST. TRAINING COST     2;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter the estimated costs of any training needed for this equipment 
+              DESCRIPTION:
+                                A estimated cost of any training needed.  
+
+
+413,23        MAINT. CONTRACT RECOMMENDED 2;8 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if a maintenance contract comes with the item or is recommended for the item. 
+              DESCRIPTION:
+                                Do you think that a maintenance contract on the equipment that you are requesting would be desirable? 
+
+
+413,24        MAINT. CONTRACT COST   2;9 NUMBER (Required)
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      JAN 05, 1993 
+              HELP-PROMPT:      Enter the estimated cost for a recommended maintenance contract 
+              DESCRIPTION:
+                                Any estimated maintenance cost if a maintenance contract is obtained for this equipment.  
+
+
+413,25        SPACE AVAILABLE?       2;10 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if space is currently available for this equipment 
+              DESCRIPTION:
+                                Do you presently have sufficient space to accommodate the equipment that you are requesting? 
+
+
+413,26        LOCATION               2;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter the location where this item would be located if space is available. 
+              DESCRIPTION:      The exact location of the proposed equipment.  Try to format your response as ROOM-BUILDING-DIVISION (if applicable).  If the requested equipment is portable and subject to use in many different locations, please enter
+                                PORTABLE instead of a physical location.  
+
+              TECHNICAL DESCR:
+                                The location will first point to the Location file, if the potential location is not in the Location file, a free text response will be accepted.  
+
+              EXECUTABLE HELP:  D LOCHLP^PRCNUTL1
+
+413,26.5      SPACE FILE PTR.        2;19 POINTER TO ENG SPACE FILE (#6928)
+
+              LAST EDITED:      DEC 15, 1992 
+              DESCRIPTION:
+                                If a location was selected from the Space file, the internal pointer number will be filed here.  User doesn't see this.  
+
+
+413,27        INSTALLATION NEEDED?   2;12 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if the Engineering Department must install equipment 
+              DESCRIPTION:
+                                This question must be answered 'Yes' if the Engineering Department must install any of the equipment in the request when it has been ordered and received.  
+
+
+413,28        UTILITIES REQUIRED     3;0 SET Multiple #413.028 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This field is to tell Engineering what kind of work might be needed to install this equipment when received so they can allocate their resources.  
+
+
+413.028,.01     UTILITIES REQUIRED     0;1 SET (Required) (Multiply asked)
+
+                                  '0' FOR NONE; 
+                                  '1' FOR AIR; 
+                                  '2' FOR GAS; 
+                                  '3' FOR VACUUM; 
+                                  '4' FOR ADP; 
+                                  '5' FOR PLUMBING; 
+                                  '6' FOR ELECTRICITY-110V; 
+                                  '7' FOR ELECTRICITY>208V; 
+                                  '8' FOR EMERGENCY POWER; 
+                                  '9' FOR FIRE SPRINKLER; 
+                                  '10' FOR EXHAUST; 
+                                  '11' FOR A/C; 
+                                  '12' FOR STEAM; 
+                                  '13' FOR OTHER; 
+                                  '14' FOR PHONE; 
+                LAST EDITED:      AUG 23, 1996 
+                HELP-PROMPT:      Select as many utilities that are needed for installation. 
+                DESCRIPTION:
+                                  This field is to tell Engineering what kind of work might be needed to install this equipment when received so they can allocate their resources.  
+
+                CROSS-REFERENCE:  413.028^B 
+                                  1)= S ^PRCN(413,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCN(413,DA(1),3,"B",$E(X,1,30),DA)
+                                  This cross-reference is by utility.  
+
+
+
+
+
+413,29        OTHER UTILITIES        2;13 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter a free text other utility up to 50 characters 
+              DESCRIPTION:
+                                Explain what you had in mind when you selected 'Other' as a required utility.  
+
+
+413,30        SERVICE CONTACT        2;14 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 18, 1994 
+              HELP-PROMPT:      Enter the name of a service contact if other than requestor if more information is required. 
+              DESCRIPTION:
+                                This is a person other than the requestor that the CMR Official or Personal Property Manager may refer back to for further questions.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^413^31 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCN(413,D0,2)):^(2),1:"") S X=$P(Y(1),U,15),X=X S DIU=X K Y S X=DIV S X=$P($G(^VA(200,X,.13)),U,2) X ^DD(413,30,1,1,1.4)
+                                1.4)= S DIH=$S($D(^PRCN(413,DIV(0),2)):^(2),1:""),DIV=X S $P(^(2),U,15)=DIV,DIH=413,DIG=31 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCN(413,D0,2)):^(2),1:"") S X=$P(Y(1),U,15),X=X S DIU=X K Y S X="" X ^DD(413,30,1,1,2.4)
+                                2.4)= S DIH=$S($D(^PRCN(413,DIV(0),2)):^(2),1:""),DIV=X S $P(^(2),U,15)=DIV,DIH=413,DIG=31 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= S X=$P($G(^VA(200,X,.13)),U,2) I X="" K X Q
+                                DELETE VALUE)= Q
+                                FIELD)= #31
+                                The Service Contact phone field is triggered from the Office Phone field in the New Person file (.132).  
+
+
+
+413,31        SERVICE CONTACT PHONE  2;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<4) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter the phone number of the service contact. 
+              DESCRIPTION:
+                                This phone number is triggered from the OFFICE PHONE field of the NEW PERSON File (#200).  
+
+              NOTES:            TRIGGERED by the SERVICE CONTACT field of the EQUIPMENT REQUEST File 
+
+
+413,32        CMR OFFICIAL APPROVAL  2;16 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if you approve this request. 
+              DESCRIPTION:
+                                If the primary CMR Responsible Official does not approve a request, the request will be returned to the requestor.  
+
+
+413,33        CHIEF SUPPLY APPROVAL  8;4 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      APR 06, 1994 
+              HELP-PROMPT:      Enter 'Yes' if you wish to approve this request. 
+              DESCRIPTION:
+                                The Chief of Supply should indicate whether the request is approved or not.  If the request is not approved, it will be returned to the requestor.  
+
+
+413,34        CMR PRIORITY           2;18 NUMBER
+
+              INPUT TRANSFORM:  D EN^PRCNCMRP
+              LAST EDITED:      AUG 06, 1996 
+              HELP-PROMPT:      Enter the number that you consider to be the priority of this request. (1-999) 
+              DESCRIPTION:
+                                This priority lets the Personal Property Manager (PPM) have some idea of what items might be considered more critical.  It will also help the Equipment Committee during its' review process.  
+
+              EXECUTABLE HELP:  D DPRI^PRCNCMRP
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  413^P^MUMPS 
+                                1)= S SK=0 D XREF^PRCNCMRP K SK
+                                2)= S SK=1 D XREF^PRCNCMRP K SK
+                                This cross-reference sets the priority by the requestor's service so that all requests are ranked by service.  
+
+
+
+413,35        NX EQUIPMENT?          4;1 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      JUN 30, 1994 
+              HELP-PROMPT:      Enter 'Yes' if this equipment is considered to be non-expendable equipment. 
+              DESCRIPTION:
+                                The Personal Property Manager (PPM) makes the final determination on whether the equipment being requested is really considered items for CMR responsibility.  
+
+
+413,36        CONTROLLED ITEM?       4;2 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if items on this request must be approved by Central Office. 
+              DESCRIPTION:      The Personal Property Manager (PPM) has a list of criteria that determines whether equipment is considered controlled or not.  If equipment being requested is considered controlled, it must go through Central Office
+                                approval process before continuing on to the Equipment Committee.  
+
+
+413,37        SHORT DESCRIPTION      0;18 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      MAR 13, 1996 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This field is taking the first 20 characters of the line item description (which is a word-processing field) and setting that into a single field for reports.  
+
+
+413,45        CONCURRENCE NEEDED?    4;11 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if you feel other persons need to review and approve this equipment request. 
+              DESCRIPTION:      If other users in the facility may be affected by the purchase of the requested items, then answering 'Yes' to this question will provide the selected concurring officials the chance to review and decide on approval of the
+                                request.  
+
+
+413,46        CONCURRING OFFICIALS   5;0 POINTER Multiple #413.046
+
+              DESCRIPTION:
+                                This can be other persons selected to review the request.  
+
+
+413.046,.01     CONCURRING OFFICIALS   0;1 POINTER TO CONCURRING OFFICIALS FILE (#413.3) (Multiply asked)
+
+                LAST EDITED:      OCT 19, 1992 
+                HELP-PROMPT:      Select the person(s) you wish to review and approve this request. 
+                DESCRIPTION:
+                                  This can be other persons selected to review the request that may be affected by the purchase.  
+
+                CROSS-REFERENCE:  413.046^B 
+                                  1)= S ^PRCN(413,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCN(413,DA(1),5,"B",$E(X,1,30),DA)
+                                  This cross-reference is by concurring official.  
+
+
+
+413.046,1       APPROVAL               0;2 SET
+
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      OCT 19, 1992 
+                HELP-PROMPT:      Enter 'Y'es if you approve this request. 
+                DESCRIPTION:
+                                  The concurring official answers 'Yes' or 'No' on a request.  If more than 50% of the chosen concurring officials do not answer 'Yes', the request will not pass.  
+
+
+413.046,2       APPROVAL DATE          0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 19, 1992 
+                DESCRIPTION:
+                                  This is the date that the concurring official approved the request.  It is inserted automatically when the concurring official 
+
+
+413.046,4       COMMENTS               1;0   WORD-PROCESSING #413.464
+
+                LAST EDITED:      DEC 14, 1992 
+                DESCRIPTION:
+                                  Any special comments that a concurring official might wish to enter after reviewing a request.  May be required if they did not approve the request and must give an explanation of why.  
+
+
+413.046,5       DATE CONCURRENCE NEEDED BY 0;5 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 09, 1993 
+                HELP-PROMPT:      Enter the date that the Concurring Official must respond by. 
+                DESCRIPTION:
+                                  Enter the date by which the selected concurring official must respond to the request by.  
+
+
+
+
+413,47        EQUIPMENT COMMITTEE STATUS 6;1 SET
+
+                                'DD' FOR Disapproved; 
+                                'DF' FOR Deferred; 
+                                'AP' FOR Approved-Pending Funds; 
+                                'AF' FOR Approved-Funded; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter the final status of this equipment request. 
+              DESCRIPTION:
+                                This is the final status determined by the Equipment Committee for this request.  
+
+
+413,48        EQUIP. COMMITTEE STATUS DATE 6;2 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter the date that the Equipment Committee or surrogate completed the final status of this request. 
+              DESCRIPTION:
+                                This is the date that the Equipment Committee's final disposition of the request was made.  This will be set automatically when the status is filed.  
+
+
+413,49        EQUIPMENT COMMITTEE RANKING 6;3 NUMBER
+
+              INPUT TRANSFORM:  D EN^PRCNRNK
+              LAST EDITED:      JAN 25, 1996 
+              HELP-PROMPT:      Enter the Equipment Committee ranking for this request. 
+              DESCRIPTION:
+                                The ranking of request is temporary assigned so that the Equipment Committee may review requests based on the importance of the request actually being purchased.  
+
+              EXECUTABLE HELP:  D DRANK^PRCNRNK
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  413^E 
+                                1)= S ^PRCN(413,"E",$E(X,1,30),DA)=""
+                                2)= K ^PRCN(413,"E",$E(X,1,30),DA)
+                                This is the ranking by importance of requests by the Equipment Committee or their designated surrogate.  
+
+
+
+413,50        2237 NUMBER            6;4 POINTER TO CONTROL POINT ACTIVITY FILE (#410)
+
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      This is the associated 2237 entry if request was approved and funded. 
+              DESCRIPTION:
+                                This is the 2237 number that is assigned when a request has been approved by the Equipment Committee and a 2237 has been created from the request.  
+
+
+413,52        ENG. MAINTENANCE TRAINING 7;1 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if additional Engineering maintenance training is needed after proposed equipment is purchased. 
+              DESCRIPTION:
+                                Will additional maintenance training be required for Engineering personnel if the proposed equipment is acquired? 
+
+
+413,53        ENG. TRAINING TUITION  7;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter the estimated amount of any Engineering training tuition 
+              DESCRIPTION:
+                                The total cost of tuition for all required maintenance training.  If necessary to train two (2) employees at an estimated cost of $1000, please enter 2000.  
+
+
+413,54        ENG. TRAINING TRAVEL COST 7;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter the estimated amount of travel cost for Engineering training 
+              DESCRIPTION:
+                                If the required maintenance training includes travel costs, please enter that amount.  
+
+
+413,55        ENG. TRAINING VENDOR   7;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter a vendor (up to 50 characters) that may conduct Engineering training 
+              DESCRIPTION:
+                                The potential vendor who will be conducting the maintenance training.  
+
+
+413,55.5      ENG TRAIN VENDOR PTR   7;16 POINTER TO VENDOR FILE (#440)
+
+              LAST EDITED:      JUN 19, 1995 
+              DESCRIPTION:
+                                This is the training vendor pointer if the vendor exists in the IFCAP Vendor file.  
+
+              EXECUTABLE HELP:  D VENHLP^PRCNUTL1
+
+413,56        ENG. TRAINING LOCATION 7;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter where Engineering training may take place (up to 50 characters) 
+              DESCRIPTION:
+                                The location where the maintenance training will take place.  
+
+
+413,57        CONSTRUCTION/RENOVATION 7;6 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if there is any special construction needs 
+              DESCRIPTION:
+                                Please say yes if any special construction or renovation needs to be completed before the installation of any equipment in this request.  
+
+
+413,58        PROJECT NEEDED?        7;7 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter 'Yes' if a Project # is needed 
+              DESCRIPTION:
+                                Is it necessary that a project be submitted and approved in order to accomplish the necessary construction or renovation? 
+
+
+413,59        ENG. PROJECT #         7;8 FREE TEXT
+
+              INPUT TRANSFORM:  D INP^PRCNPROJ Q
+              LAST EDITED:      NOV 11, 1993 
+              HELP-PROMPT:      ENTER THE OFFICIALLY ASSIGNED PROJECT NUMBER (must begin with 3 numerics and use dashes as delimiters) 
+              DESCRIPTION:       The principal identifier of entries in the CONSTRUCTION PROJECT file.  Format should be either 'SSS-NNN' or 'SSS-YY-NNN'; where SSS is the facility number and NNN is a sequential project number.  
+                                 YY is usually the fiscal year in which an NRM request is submitted, but may also be used for a two-character alphabetic project category designation.  
+
+              EXECUTABLE HELP:  D LKUP^PRCNPROJ
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+413,60        CONSTRUCTION/RENOVATION COST 7;9 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      NOV 11, 1993 
+              HELP-PROMPT:      Enter the estimated cost of new construction or renovation for this request. 
+              DESCRIPTION:
+                                Estimated cost of necessary construction or renovation work.  Be careful to include costs (if any) that are accounted for in your estimate of SPECIAL INSTALLATION COST.  
+
+
+413,61        CONSTRUCTION/RENOVATION TIME 7;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      DEC 01, 1993 
+              HELP-PROMPT:      Enter an estimated time it would take to complete construction or renovation. 
+              DESCRIPTION:
+                                Approximate number of calendar days that would be required for completion of any necessary construction or renovation work.  
+
+
+413,62        SPECIAL INSTALLATION   7;11 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      SEP 28, 1993 
+              HELP-PROMPT:      Enter 'Yes' if Engineering needs to do any special installation forthe requested equipment. 
+              DESCRIPTION:      Will Engineering Service need to provide any special assistance in order for the requested equipment to be installed and made operational?  Some common examples of special installation requirements might include utility
+                                connections (other than connection of regular electrical power), minor alterations to casework, and temporary removal of doors or windows.  
+                                  
+                                Incoming inspections to assure that specifications are met prior to initial use are normally performed on all new equipment.  These routine inspections should not be considered as special installation requirements.  
+
+
+413,63        SPECIAL INSTALLATION COST 7;12 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999, 2 Decimal Digits 
+              DESCRIPTION:
+                                Estimated cost of performing the work actions described under SPECIAL INSTALLATION DESCRIPTION.  Be carefule not to include costs (if any) that are accounted for under CONSTRUCTION/RENOVATION COST.  
+
+
+413,64        ADDITIONAL TEST EQUIP. 7;13 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      SEP 28, 1993 
+              HELP-PROMPT:      Answer 'Y' if any additional equipment is needed to test or calibrate the new equipment. 
+              DESCRIPTION:
+                                Will Engineering Service need to purchase or lease any additional test equipment if the requested NX equipment is acquired? 
+
+
+413,65        ADDITIONAL TEST EQUIP. COST 7;14 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter a estimated cost for any additional test equipment 
+              DESCRIPTION:      The approximate cost of additional test equipment that will need to be purchased if the requested NX equipment is acquired.  In the case of test equipment that will be leased or rented, please include the rental(s) in your
+                                estimate of MAINTENANCE IMPACT COST, or MAINTENANCE CONTRACT COSTS (whichever applies).  
+
+
+413,66        MAINTENANCE IMPACT COST 7;15 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter a estimated amount that the purchase of this equipment may impact on maintenance 
+              DESCRIPTION:
+                                Estimated cost of all costs that would be required to maintain the requested equipment for a period of one year.  
+
+
+413,67        ENGINEERING CONTACT    8;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      NOV 11, 1993 
+              HELP-PROMPT:      Enter the primary Engineering contact person for this request. 
+              DESCRIPTION:
+                                The Engineering Service employee who should be contacted if additional information is required concerning this Engineering Equipment Review.  
+
+
+413,68        ENGINEERING CONTACT PHONE 8;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<4) X
+              LAST EDITED:      NOV 11, 1993 
+              HELP-PROMPT:      Enter the Engineering contact's phone number 
+              DESCRIPTION:
+                                The telephone number of the ENGINEERING CONTACT PERSON.  
+
+
+413,69        TOTAL ENGINEERING EST. COST  ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(413,69,9.2) S X=X+$P(Y(413,69,1),U,15)
+                                9.2 = S Y(413,69,1)=$S($D(^PRCN(413,D0,7)):^(7),1:"") S X=$P(Y(413,69,1),U,2)+$P(Y(413,69,1),U,3)+$P(Y(413,69,1),U,9)+$P(Y(413,69,1),U,12)+$P(Y(413,69,1),U,14)
+              ALGORITHM:        #53+#54+#60+#63+#65+#66
+              LAST EDITED:      NOV 23, 1992 
+              DESCRIPTION:      This estimated cost is computed from the following costs that the Engineering department may have entered for this request: training tuition, training travel, construction/renovation, special installation, additional test
+                                equipment, and maintenance impact.  
+
+
+413,70        ENG. MAINTENANCE CONTRACT 8;6 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      NOV 11, 1993 
+              HELP-PROMPT:      Enter 'Yes' if Engineering has made the determination of importance of having a maintenance contract. 
+              DESCRIPTION:
+                                Would Engineering Service favor a maintenance contract for the NX equipment being requested? 
+
+
+413,71        ENG. MAINT. CONTRACT TYPE 8;2 SET
+
+                                '1' FOR Full Maintenance; 
+                                '2' FOR PM; 
+                                '3' FOR Parts Only; 
+                                '4' FOR Screening Contract; 
+                                '5' FOR Other; 
+              LAST EDITED:      NOV 11, 1993 
+              HELP-PROMPT:      Select the appropriate type of maintenance contract for Engineering 
+              DESCRIPTION:      Select the kind of maintenance contract that Engineering Service regards as most appropriate.  Ask yourself if it should cover parts and labor? Scheduled or unscheduled maintenance?  Hours of coverage? Response time and/or
+                                maximum downtime? 
+
+
+413,72        ENG. MAINT. OTHER CONTRACT 8;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter (up to 20 characters) a maintenance contract type 
+              DESCRIPTION:
+                                Describe the maintenance contract that is not covered in the types of contracts.  
+
+
+413,74        SETS MAINTENANCE MANUALS 8;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<2)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 19, 1992 
+              HELP-PROMPT:      Enter the minimum of sets of maintenance manuals to keep on hand (2-10) 
+              DESCRIPTION:
+                                How many sets of maintenance manuals would be needed by the Engineering Service for maintenance of the requested equipment? Two (2) sets should be sufficient in most cases.  
+
+
+413,75        CMR OFFICIAL FINAL APPROVAL 2;17 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      FEB 27, 1996 
+              HELP-PROMPT:      Enter 'Y' if request is ready for 2237 processing, enter 'N' if to be returned to requestor. 
+              DESCRIPTION:      This field allows the CMR Official to review a request that has been in the request pipeline for a long period of time.  A request may need editing if it has been around a while.  If no editing is needed, then it can go to 
+                                become a 2237.  
+
+
+413,77        RESUBMIT STATUS        8;9 POINTER TO NX STATUS FILE (#413.5)
+
+              LAST EDITED:      NOV 16, 1993 
+              DESCRIPTION:
+                                This is the status of the request before it is resubmitted.  
+
+
+413,100       CHANGE IN PERSONNEL EXPLAIN 10;0   WORD-PROCESSING #413.01
+
+              DESCRIPTION:
+                                If the requestor enters 'Y'es to change in personnel, an explanation is needed as to what kind of changes this request causes.  
+
+
+413,101       DEFICIENCY EXPLANATION 11;0   WORD-PROCESSING #413.0101
+
+              DESCRIPTION:
+                                This field is to enter a more detailed explanation if the user answered 'Y'es to any special safety considerations with equipment being requested.  Goes with field JCAHO,CAP,SAFETY DEFICIENCY.  
+
+
+413,102       CHANGE RECUR COST EXPLAIN 12;0   WORD-PROCESSING #413.0102
+
+              DESCRIPTION:
+                                If other than 'No Change' was answered in the field CHANGE IN RECURRING COSTS, then a fuller explanation is needed.  
+
+
+413,103       TRAINING EXPLANATION   13;0   WORD-PROCESSING #413.0103
+
+              DESCRIPTION:
+                                If field TRAINING NEEDED? was answered 'Yes', then a detailed explanation is required to be entered.  
+
+
+413,104       MAINT. CONTRACT JUSTIFICATION 14;0   WORD-PROCESSING #413.0104
+
+              DESCRIPTION:
+                                Please explain why you think that a maintenance contract for this equipment would be desirable.  
+
+
+413,105       CMR APPROVAL EXPLANATION 15;0   WORD-PROCESSING #413.0105
+
+              DESCRIPTION:
+                                If the CMR did not approve a request, then it is required that they enter an explanation of why they didn't approve the request.  
+
+
+413,117       CONSTRUCT/RENOV DESCRIPTION 27;0   WORD-PROCESSING #413.0117
+
+              DESCRIPTION:
+                                Briefly describe the nature and location of any necessary construction or renovation work, whether a project is needed or not.  
+
+
+413,118       SPECIAL INSTALL DESCRIPTION 28;0   WORD-PROCESSING #413.0118
+
+              DESCRIPTION:
+                                Describe the special tasks that Engineering Service will need to perform before the requested equipment can be installed and made operational.  
+
+
+413,119       ADDITIONAL TEST EQUIP EXPLAIN 29;0   WORD-PROCESSING #413.0119
+
+              DESCRIPTION:      List and describe any additional test equipment that would be needed for calibration and/or repair of the requested NX equipment.  Do not include test equipment that is presently on hand or otherwise available without
+                                cost.  
+
+
+413,120       ENG. REMARKS           30;0   WORD-PROCESSING #413.03
+
+              DESCRIPTION:
+                                Engineering comments of a general nature that may be of some benefit to the Equipment Committee.  
+
+
+413,121       NX EQUIP EXPLANATION   31;0   WORD-PROCESSING #413.0121
+
+              LAST EDITED:      AUG 05, 1995 
+              DESCRIPTION:
+                                If the PPM does not consider this to be non-expendable, an explanation of why is required.  
+
+
+413,123       ESTIMATED SAVINGS      33;0   WORD-PROCESSING #413.0123
+
+              DESCRIPTION:
+                                  Any estimated savings that are effected by the purchase of a controlled item needs to be identified (personnel, supplies, increased production, etc.) 
+
+
+413,124       ADDITIONAL EQUIPMENT   34;0   WORD-PROCESSING #413.0124
+
+              DESCRIPTION:
+                                Requests for additional equipment will include the number and description of the same or related type of machines now being used in operation.  
+
+
+413,125       REPLACEMENT EQUIPMENT  35;0   WORD-PROCESSING #413.0125
+
+              DESCRIPTION:
+                                Requests for replacement equipment will include the complete description of the item being replaced, estimate of repairs, total amount of money expended for repairs while equipment was in use, and trade-in allowance.  
+
+
+413,126       JUSTIFICATION          36;0   WORD-PROCESSING #413.0126
+
+              DESCRIPTION:
+                                A statement of justification for why the line item is being requested is required.  
+
+
+413,127       REASON CANCELLED       37;0   WORD-PROCESSING #413.0127
+
+              DESCRIPTION:
+                                A reason why the request was cancelled is required.  
+
+
+413,128       EQUIP COMM EXPLANATION 38;0   WORD-PROCESSING #413.0128
+
+              DESCRIPTION:
+                                An explanation is required as to why the Equipment Committee did not approve a request.  
+
+              TECHNICAL DESCR:
+                                For the Equipment Committee to explain why they disapproved or deferred the request.  
+
+
+413,129       CHIEF SUPPLY EXPLANATION 39;0   WORD-PROCESSING #413.0129
+
+              LAST EDITED:      APR 06, 1994 
+              DESCRIPTION:
+                                A reason why the Chief, Supply did not approve a equipment request is required.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ADMIN. ACTIVITY SITE PARAMETER 
+                   (#411)         STATION NUMBER (#4)
+
+CATEGORY STOCK NUMBER (#6917)     LINE ITEM NUMBER:CSN (#13)
+
+CLASSIFICATION OF REQUEST 
+                   (#410.2)       CLASSIFICATION (#14)
+
+CMR (#6914.1)                     CMR (#4.5)
+
+CONCURRING OFFICIALS (#413.3)     CONCURRING OFFICIALS:CONCURRING OFFICIALS (#.01)
+
+CONTROL POINT ACTIVITY (#410)     2237 NUMBER (#50)
+
+ENG SPACE (#6928)                 SPACE FILE PTR. (#26.5)
+
+NEW PERSON (#200)                 REQUESTOR (#1)
+                                  CMR RESPONSIBLE OFFICIAL (#5)
+                                  PROJECT MANAGER (#9.1)
+                                  SERVICE CONTACT (#30)
+                                  ENGINEERING CONTACT (#67)
+
+NX STATUS (#413.5)                REQUEST STATUS (#6)
+                                  RESUBMIT STATUS (#77)
+
+SERVICE/SECTION (#49)             REQUESTING SERVICE (#2)
+
+SORT GROUP (#410.7)               SORT (#13)
+
+TURN-IN REQUEST (#413.1)          TURN-IN REQUEST (#10)
+
+VENDOR (#440)                     ENG TRAIN VENDOR PTR (#55.5)
+                                  LINE ITEM NUMBER:POTENTIAL VENDOR PTR (#2)
+
+
+
+INPUT TEMPLATE(S):
+PRCNCMR                       JUL 05, 1996@11:03  USER #0    
+PRCNEDIT                      AUG 23, 1996@16:40  USER #0    
+PRCNENG                       JUL 19, 1996@11:44  USER #0    
+PRCNPPE                       AUG 07, 1996@15:37  USER #0    
+PRCNPPM                       MAY 17, 2000@21:50  USER #0    
+PRCNPPM1                      AUG 21, 1996@11:43  USER #0    
+PRCNPPM2                      JUL 05, 1996@11:06  USER #0    
+PRCNRNK                       JUL 05, 1996@11:04  USER #0    
+
+PRINT TEMPLATE(S):
+PRCNBRIE                      OCT 30, 1995@16:18  USER #0                                                                                                                                                                         Requests by Service Priority
+PRCNCONT                      JUN 17, 1996@15:50  USER #0                                                                                                                                                                         Controlled Equipment Listing
+PRCNCOST                      NOV 11, 1992@12:32  USER #0                                                                                                                                                                         EQUIPMENT REQUEST STATISTICS
+PRCNDET                       NOV 23, 1992@12:02  USER #0                                                                                                                                                                               EQUIPMENT REQUEST LIST
+PRCNOUTS                      NOV 10, 1992@15:57  USER #0                                                                                                                                                                        Outstanding Equipment Request
+PRCNSTAN                      DEC 07, 1992@11:55  USER #0                                                                                                                                                                           Use Standard Status Report
+PRCNSTAT                      MAR 19, 1996@10:50  USER #0                                                                                                                                                                                                    @
+
+SORT TEMPLATE(S):
+PRCNSRPR                      NOV 10, 1992@13:46  USER #0    
+SORT BY: REQUESTING SERVICE;C12;""// (REQUESTING SERVICE not null)
+  WITHIN REQUESTING SERVICE, SORT BY: CMR PRIORITY// (CMR PRIORITY not null)
+
+
+FORM(S)/BLOCK(S):

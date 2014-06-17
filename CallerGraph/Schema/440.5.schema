@@ -1,0 +1,485 @@
+STANDARD DATA DICTIONARY #440.5 -- PURCHASE CARD INFORMATION FILE                                                                                                                                                                 MAY 20,2014@15:34:19  PAGE 1
+STORED IN ^PRC(440.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 5.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This is a charge card master file.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: CARD HOLDER (#7)[R], PURCHASE CARD NAME (#10)[R]
+
+POINTED TO BY: PURCHASE CARD RECORD field (#451) of the CONTROL POINT ACTIVITY File (#410) 
+               PURCHASE CARD NUMBER field (#46) of the PROCUREMENT & ACCOUNTING TRANSACTIONS File (#442) 
+               PURCHASE CARD NUMBER field (#46) of the AMENDMENTS File (#443.6) 
+               
+
+CROSS
+REFERENCED BY: INACTIVATE CARD?(AI), E REPLACED CARD NUMBER(ARPC), PURCHASE CARD NUMBER(B), SURROGATE USER(C), PURCHASE CARD NUMBER(D), APPROVING OFFICIAL(E), ALTERNATE APPROVING OFFICIAL(F), PURCHASE CARD NAME(G), CARD HOLDER(H), 
+               PURCHASE CARD NUMBER(M1), APPROVING OFFICIAL(MAA), ALTERNATE APPROVING OFFICIAL(MAA1), CARD HOLDER(MAAH), APPROVING OFFICIAL(MAAH1), ALTERNATE APPROVING OFFICIAL(MAAH2), STATUS(ST)
+
+INDEXED BY:    STATION NUMBER & APPROVING OFFICIAL (I), STATION NUMBER & ALTERNATE APPROVING OFFICIAL (J)
+
+
+440.5,.01     PURCHASE CARD NUMBER   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X'?16N!($$LUHN^PRCH0A(X)<1)&($G(PRCSYS)-1) X I $D(X) K:$O(^PRC(440.5,"B",X,0))>0 X
+              LAST EDITED:      MAR 08, 1999 
+              HELP-PROMPT:      Enter a valid purchase card number (16-digit). 
+              DESCRIPTION:
+                                Please enter the purchase card number that you want to assign to a user.  The number can not be an existing number assigned to and used by another user.  
+
+              DELETE TEST:      1,0)= I 1 D EN^DDIOL("  CARD CAN'T BE DELETED!! ","","?0")
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  440.5^B 
+                                1)= S ^PRC(440.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRC(440.5,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  440.5^D^MUMPS 
+                                1)= S ^PRC(440.5,"D",X_" ",DA)=""
+                                2)= K ^PRC(440.5,"D",X_" ",DA)
+
+              CROSS-REFERENCE:  440.5^M1^MUMPS 
+                                1)= S ^PRC(440.5,"M1",$E(X,9,999)_" ",DA)=""
+                                2)= K ^PRC(440.5,"M1",$E(X,9,999)_" ",DA)
+
+
+440.5,1       FUND CONTROL POINT     0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:'$D(PRC("SITE")) X Q:'$D(X)  D INPUT1^PRCHUSER
+              LAST EDITED:      SEP 12, 2000 
+              HELP-PROMPT:      Please input a valid control point. 
+              DESCRIPTION:
+                                Please input a Fund Control Point that you want all the purchases for this purchase card to be expensed to.  
+
+              EXECUTABLE HELP:  Q:'$D(PRC("SITE"))  S X="?",DIC="^PRC(420,"_PRC("SITE")_",1,",DIC(0)="QEM" S DIC("S")="I $D(^PRC(420,""C"",PRCHHLDR,PRC(""SITE""),+Y))" D ^DIC
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.5,2       COST CENTER            0;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  S Z0=+$P(^PRC(440.5,DA,0),U,2) K:'$D(PRC("SITE"))!'Z0 X I $D(X) K:'$D(^PRC(420,PRC("SITE"),1,Z0,2,0)) X I $D(X) D EN2^PRCHNPO5
+              LAST EDITED:      MAY 08, 1996 
+              HELP-PROMPT:      Please enter a valid cost center for the FCP. 
+              DESCRIPTION:
+                                Please input a valid Cost Center for the Fund Control POint.  
+
+              EXECUTABLE HELP:  S X="?",ZD=D,Z0=+$P(^PRC(440.5,DA,0),U,2) Q:'$D(PRC("SITE"))!'Z0  Q:'$D(^PRC(420,PRC("SITE"),1,Z0,2,0))  S DIC="^PRC(420,PRC(""SITE""),1,Z0,2,",DIC(0)="QEM" D ^DIC K Z0
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.5,3       BUDGET OBJECT CODE     0;4 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  S Z0=+$P(^PRC(440.5,DA,0),U,3) K:'Z0 X,Z0 I $D(X) K:'$D(^PRCD(420.1,Z0,0)) X,Z0 I $D(X) S DIC="^PRCD(420.1,Z0,1,",DIC(0)="QEMZ" D ^DIC K:Y<0 X K DIC,Z0 I $D(X) S X=$P(Y(0,0),"^")
+              LAST EDITED:      MAY 08, 1996 
+              HELP-PROMPT:      Please enter a valid BOC for the Cost Center. 
+              DESCRIPTION:
+                                Please input a valid Budget Object Code for the Cost Center.  
+
+              EXECUTABLE HELP:  S Z0=+$P(^PRC(440.5,DA,0),U,3) K:'Z0 X,Z0 I $D(X) S X="?",DIC="^PRCD(420.1,Z0,1,",DIC(0)="E" D ^DIC K DIC,Z0
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.5,4       PC USER SINGLE PURCHASE LIMIT 0;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999999.99)!(X<0) X
+              LAST EDITED:      JUL 15, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the maximum amount that can be charged to this Purchase Card by the purchase card user for any one purchase.  
+
+
+440.5,5       MONTHLY PURCHASE LIMIT 0;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999.99)!(X<0) X
+              LAST EDITED:      JUL 10, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the maximum amount that can be charged to this Purchase Card within any one month.  
+
+
+440.5,6       DELIVERY LOCATION      0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      MAY 08, 1996 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                This is the location that you want the ordered items to be delivered to most of the time.  
+
+
+440.5,7       CARD HOLDER            0;8 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      JUL 01, 1996 
+              HELP-PROMPT:      Please input a purchase card user to whom this card is issued to. 
+              DESCRIPTION:
+                                This is the purchase card user this card is issued to.  
+
+              CROSS-REFERENCE:  440.5^H 
+                                1)= S ^PRC(440.5,"H",$E(X,1,30),DA)=""
+                                2)= K ^PRC(440.5,"H",$E(X,1,30),DA)
+                                This is an index for card holder.  
+
+
+              CROSS-REFERENCE:  440.5^MAAH^MUMPS 
+                                1)= N A,B S A=^PRC(440.5,DA,0) F B=9,10 S:$P(A,U,B) ^PRC(440.5,"MAAH",$P(A,U,B),X,DA)=""
+                                2)= N A,B S A=^PRC(440.5,DA,0) F B=9,10 K:$P(A,U,B) ^PRC(440.5,"MAAH",$P(A,U,B),X,DA)
+                                This is an index used to approve reconciled orders.  
+
+
+
+440.5,8       APPROVING OFFICIAL     0;9 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      DEC 14, 2000 
+              HELP-PROMPT:      Please input a user who can approve purchase card charges for this purchase card. 
+              DESCRIPTION:
+                                Please input a user who can approve purchase card charges for this purchase card.  
+
+              CROSS-REFERENCE:  440.5^E 
+                                1)= S ^PRC(440.5,"E",$E(X,1,30),DA)=""
+                                2)= K ^PRC(440.5,"E",$E(X,1,30),DA)
+                                This is the cross-reference for the Approving Official.  
+
+
+              CROSS-REFERENCE:  440.5^MAA^MUMPS 
+                                1)= S ^PRC(440.5,"MAA",X,DA)=""
+                                2)= K ^PRC(440.5,"MAA",X,DA)
+                                This is an index for approval officials and alternate approval officials.  
+
+
+              CROSS-REFERENCE:  440.5^MAAH1^MUMPS 
+                                1)= N A S A=^PRC(440.5,DA,0) S:$P(A,U,8) ^PRC(440.5,"MAAH",X,$P(A,U,8),DA)=""
+                                2)= N A S A=^PRC(440.5,DA,0) K:$P(A,U,8) ^PRC(440.5,"MAAH",X,$P(A,U,8),DA)
+                                This is an index used to approve reconciled orders.  
+
+
+              RECORD INDEXES:   I (#55)
+
+440.5,9       ALTERNATE APPROVING OFFICIAL 0;10 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 14, 2000 
+              HELP-PROMPT:      Please input a user who can also approve purchase card charges for this card in case the Approving Official is not available. 
+              DESCRIPTION:
+                                This is the user who can also approve purchase card charges for this card in case the Approving Official is not available.  
+
+              CROSS-REFERENCE:  440.5^MAA1^MUMPS 
+                                1)= S ^PRC(440.5,"MAA",X,DA)=""
+                                2)= K ^PRC(440.5,"MAA",X,DA)
+                                This is an index for approval officials and alternate approval officials.  
+
+
+              CROSS-REFERENCE:  440.5^MAAH2^MUMPS 
+                                1)= N A S A=^PRC(440.5,DA,0) S:$P(A,U,8) ^PRC(440.5,"MAAH",X,$P(A,U,8),DA)=""
+                                2)= N A S A=^PRC(440.5,DA,0) K:$P(A,U,8) ^PRC(440.5,"MAAH",X,$P(A,U,8),DA)
+                                This is an index used to approve reconciled orders.  
+
+
+              CROSS-REFERENCE:  440.5^F 
+                                1)= S ^PRC(440.5,"F",$E(X,1,30),DA)=""
+                                2)= K ^PRC(440.5,"F",$E(X,1,30),DA)
+                                This is a cross-reference for ALTERNATE APPROVING OFFICIAL .  
+
+
+              RECORD INDEXES:   J (#56)
+
+440.5,10      PURCHASE CARD NAME     0;11 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      JUN 25, 1996 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is the name by which the user will be able to recognize this purchase card.  
+
+              CROSS-REFERENCE:  440.5^G 
+                                1)= S ^PRC(440.5,"G",$E(X,1,30),DA)=""
+                                2)= K ^PRC(440.5,"G",$E(X,1,30),DA)
+                                This is an index for card name.  
+
+
+
+440.5,12      SURROGATE USER         1;0 POINTER Multiple #440.512
+
+              DESCRIPTION:
+                                This is the user who can also use this purchase card to order items.  
+
+
+440.512,.01     SURROGATE USER         0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                INPUT TRANSFORM:  S DINUM=X
+                LAST EDITED:      JUN 28, 1996 
+                HELP-PROMPT:      Please enter an alternate purchase card user 
+                DESCRIPTION:
+                                  This is the user who can also use this purchase card to order items.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  440.512^B 
+                                  1)= S ^PRC(440.5,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRC(440.5,DA(1),1,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  440.5^C 
+                                  1)= S ^PRC(440.5,"C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PRC(440.5,"C",$E(X,1,30),DA(1),DA)
+
+
+
+
+440.5,13      MONTHLY PURCHASES      2;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999.99)!(X<0) X
+              LAST EDITED:      JUL 13, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a monthly purchase dollar amount.  
+
+
+440.5,14      INACTIVATE CARD?       2;2 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      AUG 04, 1998 
+              DESCRIPTION:
+                                This indicates if this purchase card is an inactive card.  
+
+              CROSS-REFERENCE:  440.5^AI 
+                                1)= S ^PRC(440.5,"AI",$E(X,1,30),DA)=""
+                                2)= K ^PRC(440.5,"AI",$E(X,1,30),DA)
+                                This index is used by the inactivate expired charge cards option.  
+
+
+
+440.5,15      STATION NUMBER         2;3 POINTER TO ADMIN. ACTIVITY SITE PARAMETER FILE (#411) (Required)
+
+              LAST EDITED:      DEC 14, 2000 
+              DESCRIPTION:
+                                This is the station number of the purchase card.  
+
+              RECORD INDEXES:   I (#55), J (#56)
+
+440.5,16      EXPIRATION DATE        2;4 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:3501231<X!(2951231>X) X I $D(X) K:$E(X,4,5)'>0 X
+              LAST EDITED:      APR 21, 1997 
+              HELP-PROMPT:      Enter a date between 12/31/1995 and 12/31/2050 as it shows on the credit card. 
+              DESCRIPTION:
+                                This date expressed either as a month-year or month-date-year value is the last date that this card is active.  The month-year syntax assumes the last day of the specified month.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.5,51      E REPLACED CARD NUMBER 50;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>18!($L(X)<1)!'(X?16N) X
+              LAST EDITED:      OCT 02, 1998 
+              HELP-PROMPT:      Answer must be 1-18 characters in length. 
+              DESCRIPTION:      This is the existing purchase card number which will be replaced by a 
+                                 new purchase card number. 
+
+              CROSS-REFERENCE:  440.5^ARPC 
+                                1)= S ^PRC(440.5,"ARPC",$E(X,1,30),DA)=""
+                                2)= K ^PRC(440.5,"ARPC",$E(X,1,30),DA)
+                                This is an index by replaced card number.  
+
+
+
+440.5,52      E CARD HOLDER NAME     50;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<1) X
+              LAST EDITED:      JUN 19, 1998 
+              HELP-PROMPT:      Answer must be 1-35 characters in length. 
+              DESCRIPTION:      This is the  purchase card holder name that is passed from the charge 
+                                 card vendor.  
+
+
+440.5,53      E STATION NUMBER       50;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUL 10, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is the station number passed from the charge card vendor.  
+
+
+440.5,54      E VALID DATE           50;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<1) X
+              LAST EDITED:      SEP 21, 1998 
+              HELP-PROMPT:      Answer must be 1-12 characters in length. 
+              DESCRIPTION:
+                                This is the date card was embossed.  
+
+
+440.5,55      E FUND CODE            50;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUL 10, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is the FMS Fund code passed from the charge card vendor.  
+
+
+440.5,56      E ACC CODE             50;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<1) X
+              LAST EDITED:      JUL 10, 1998 
+              HELP-PROMPT:      Answer must be 1-12 characters in length. 
+              DESCRIPTION:
+                                This is the FMS ACC code passed from the charge card vendor.  
+
+
+440.5,57      E COST CENTER          50;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUL 10, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is the cost center passed from the charge card vendor.  
+
+
+440.5,58      E BOC                  50;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUL 10, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is the FMS BOC passed from the charge card vendor. 
+
+
+440.5,59      E EXPIRATION DATE      50;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<1) X
+              LAST EDITED:      SEP 21, 1998 
+              HELP-PROMPT:      Answer must be 1-12 characters in length. 
+              DESCRIPTION:
+                                This is the charge card expiration date passed from the charge card vendor. 
+
+
+440.5,60      E CHARGE CARD NUMBER   50;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      SEP 21, 1998 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This is the new charge card number passed from the charge card vendor. 
+
+
+440.5,61      E SINGLE PURCHASE LIMIT 50;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      SEP 21, 1998 
+              HELP-PROMPT:      Answer must be 1-15 characters in length. 
+              DESCRIPTION:
+                                This is the charge card single purchase limit passed from the charge card vendor.  
+
+
+440.5,62      E MONTHLY PURCHASE LIMIT 50;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      SEP 21, 1998 
+              HELP-PROMPT:      Answer must be 1-15 characters in length. 
+              DESCRIPTION:
+                                This is the charge card monthly purchase limit passed from the charge card vendor.  
+
+
+440.5,63      R FUND CONTROL POINT   50;13 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      SEP 21, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a replaced fund control point.  
+
+
+440.5,70      STATUS                 70;1 SET
+
+                                'E' FOR EXCEPTION; 
+                                'P' FOR POSTED; 
+              LAST EDITED:      JUL 30, 1998 
+              DESCRIPTION:
+                                This field is the status of the entry. If the entry appears on the Charge Card Exception Report this field will contain a value of E. 
+
+              CROSS-REFERENCE:  440.5^ST 
+                                1)= S ^PRC(440.5,"ST",$E(X,1,30),DA)=""
+                                2)= K ^PRC(440.5,"ST",$E(X,1,30),DA)
+                                This is an index to drive reports.  
+
+
+
+440.5,71      STATUS DATE            70;2 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 19, 1998 
+              DESCRIPTION:
+                                This is the date the status field is set or updated.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ADMIN. ACTIVITY SITE PARAMETER 
+                   (#411)         STATION NUMBER (#15)
+
+NEW PERSON (#200)                 CARD HOLDER (#7)
+                                  APPROVING OFFICIAL (#8)
+                                  ALTERNATE APPROVING OFFICIAL (#9)
+                                  SURROGATE USER:SURROGATE USER (#.01)
+
+
+File #440.5
+
+  Record Indexes:
+
+  I (#55)    RECORD    REGULAR    I    LOOKUP & SORTING
+      Short Descr:  Combined cross-reference for fields #15 and #8.
+      Description:  This cross-reference will combine the fields #15 (STATION NUMBER) and #8 (APPROVING OFFICIAL). This cross-reference is used in the routine PRCHURP for screening purposes.  
+        Set Logic:  S ^PRC(440.5,"I",$E(X(1),1,5),$E(X(2),1,10),DA)=""
+       Kill Logic:  K ^PRC(440.5,"I",$E(X(1),1,5),$E(X(2),1,10),DA)
+       Whole Kill:  K ^PRC(440.5,"I")
+             X(1):  STATION NUMBER  (440.5,15)  (Subscr 1)  (Len 5)  (forwards)
+                      Lookup Prompt:  STATION NUMBER
+             X(2):  APPROVING OFFICIAL  (440.5,8)  (Subscr 2)  (Len 10)  (forwards)
+                      Lookup Prompt:  APPROVING OFFICIAL
+
+  J (#56)    RECORD    REGULAR    I    LOOKUP & SORTING
+      Short Descr:  Combined cross-reference for fields #15 and #9.
+      Description:  This cross-reference will combine the fields #15 (STATION NUMBER) and #9 (ALTERNATE APPROVING OFFICIAL). This cross-reference is used in the routine PRCHURP for screening purposes.  
+        Set Logic:  S ^PRC(440.5,"J",$E(X(1),1,5),$E(X(2),1,10),DA)=""
+       Kill Logic:  K ^PRC(440.5,"J",$E(X(1),1,5),$E(X(2),1,10),DA)
+       Whole Kill:  K ^PRC(440.5,"J")
+             X(1):  STATION NUMBER  (440.5,15)  (Subscr 1)  (Len 5)  (forwards)
+                      Lookup Prompt:  STATION NUMBER
+             X(2):  ALTERNATE APPROVING OFFICIAL  (440.5,9)  (Subscr 2)  (Len 10)  (forwards)
+                      Lookup Prompt:  ALTERNATE APPROVING OFFICIAL
+
+
+INPUT TEMPLATE(S):
+PRCH PURCHASE CARD            MAR 22, 1999@10:45  USER #0    
+
+PRINT TEMPLATE(S):
+PRCH CARD INFO                APR 24, 1997@09:05  USER #0                                                                                                                                                                       PURCHASE CARD INFORMATION LIST
+PRCH IMPAC                    AUG 17, 1998@15:37  USER #0                                                                                                                                                                            IMPAC ACCOUNT INFORMATION
+
+SORT TEMPLATE(S):
+PRCH CARD INFOSORT            APR 09, 2001@07:53  USER #0    
+SORT BY: @#CARD HOLDER//    (User is asked range)
+  WITHIN CARD HOLDER, SORT BY: @PURCHASE CARD NAME//    (User is asked range)
+    WITHIN PURCHASE CARD NAME, SORT BY: STATION NUMBER//    (User is asked range)
+     Sort template for every card by user and station number.
+
+PRCH IMPAC SORT               DEC 14, 2000@09:54  USER #0    
+SORT BY: #APPROVING OFFICIAL// (APPROVING OFFICIAL from A to Z)
+  WITHIN APPROVING OFFICIAL, SORT BY: PURCHASE CARD NUMBER// (PURCHASE CARD NUMBER not null)
+    WITHIN PURCHASE CARD NUMBER, SORT BY: +STATION NUMBER//    (User is asked range)
+     This sort template, on approving official and card number,
+     is used with the PRCH IMPAC INFO report.
+
+
+FORM(S)/BLOCK(S):

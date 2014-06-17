@@ -1,0 +1,193 @@
+STANDARD DATA DICTIONARY #776.1 -- HL7 MONITOR FILE                                                                                                                                                                               MAY 20,2014@15:33:39  PAGE 1
+STORED IN ^HLEV(776.1,  (7 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                          (VERSION 1.6)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: MONITOR-PTR field (#3) of the HL7 MONITOR JOB File (#776) 
+               
+
+CROSS
+REFERENCED BY: NAME(B)
+
+776.1,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(X?.N)!($L(X)<3)!'(X'?1P.E)!($D(^HLEV(776.1,"B",X))) X
+              LAST EDITED:      MAY 20, 2003 
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              DESCRIPTION:
+                                This field holds the free-text name of the monitor.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  776.1^B 
+                                1)= S ^HLEV(776.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^HLEV(776.1,"B",$E(X,1,30),DA)
+                                The name of a monitor is stored on the Name field (#.01), and the B xref is created based on the value of the Name field.  
+
+
+
+776.1,2       STATUS                 0;2 SET
+
+                                'A' FOR ACTIVE; 
+                                'I' FOR INACTIVE; 
+              LAST EDITED:      MAY 18, 2003 
+              DESCRIPTION:
+                                The values for this set of code field are ACTIVE and INACTIVE.  If set to ACTIVE the master job will queue background monitor jobs for the monitor.  If set to INACTIVE the master job will ignore the entry.  
+
+
+776.1,3       SHORT DESCRIPTION      0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+              LAST EDITED:      MAY 18, 2003 
+              HELP-PROMPT:      Answer must be 3-40 characters in length. 
+              DESCRIPTION:
+                                This field holds a short description of the monitor.  
+
+
+776.1,4       REQUEUE MIN-MONITOR    0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 21, 2003 
+              HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:      Whenever the master job runs it checks every entry in this HL7 Monitor file (#776.1).  If an entry is active, a secondary check is made whether "it is time" to start a background job for the monitor.  If the active monitor
+                                has never been run, a background job is started.  If the monitor has been run, then the next "time to run" is calculated by adding the number of minutes specified in this field to the time the monitor was last run.  If the
+                                next "time to run" is now (or earlier), a background job for the monitor is started.  
+
+
+776.1,5       REMOTE REQUESTABLE     0;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 17, 2003 
+              DESCRIPTION:
+                                This field is not currently in use.  
+
+
+776.1,6       M STARTUP              0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>17!($L(X)<3)!'(X?1.8E1"~"1.8E) X
+              LAST EDITED:      MAY 20, 2003 
+              HELP-PROMPT:      Enter the M location for event startup in the format SUBROUTINE~ROUTINE.  (E.g., START~HLEVAPI.) 
+              DESCRIPTION:
+                                Background tasks, started by the master job, are queued to the API specified in this field.  (The value of this field must be in the format of TAG~ROUTINE, which is converted to TAG^ROUTINE at run time.) 
+
+
+776.1,7       M START CHECK          0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>19!($L(X)<3)!'(X?1"$$"1.8E1"~"1.8E) X
+              LAST EDITED:      AUG 07, 2003 
+              HELP-PROMPT:      Must be an extrinsic function in the format of $$TAG^ROUTINE 
+              DESCRIPTION:      Normally, the only test made by the master job to determine whether a monitor job should be started is STATUS (it must be ACTIVE) and the requeue minutes.  However, if this field is filled in with an extrinsic function
+                                that returns a positive or null value, it can be used as an additional test.  
+                                 
+                                Let's say that the extrinsic fuction $$RUNOW^ROUTINE returns a 1 if a background job should be started, or null if not.  In this case, "$$RUNOW^ROUTINE" should be entered in this field.  
+
+
+776.1,41      TECHNICAL DESCRIPTION  41;0   WORD-PROCESSING #776.1041   (NOWRAP)
+
+              LAST EDITED:      MAY 23, 2003 
+              DESCRIPTION:
+                                This field holds any additional technical notes deemed necessary by the monitor creator.  
+
+
+776.1,50      EVENT DESCRIPTION      50;0   WORD-PROCESSING #776.101   (NOWRAP)
+
+              DESCRIPTION:      This field should be used by the application developer to describe the monitor, and how it is used.  (If desired, the application developer may add additional, more technical notes in the TECHNICAL DESCRIPTION word 
+                                processing field.) 
+
+
+776.1,51      MAIL GROUPS            60;0 POINTER Multiple #776.106
+
+              DESCRIPTION:      When a monitor runs, the M code can conditionally send a mail message to recipients.  This field, and other fields, are used to determine the recipients.  In addition, recipients can be added by M code immediately before
+                                the sending of the message.  
+                                 
+                                The fields used to determine mail message recipients are: 
+                                 
+                                * MAIL GROUPS (#60) - pointer to the Mail Group file (#3.8.) * RECIPIENTS (#61) - pointer to the New Person file (#200.) * REMOTES (#62) - free-text remote recipient addresses.  
+                                 
+                                And, remember that additional recipients can be added (by populating the XMY array) on-the-fly at the time the message is sent.  
+                                 
+                                Please refer to the documentation included with patch HL*1.6*106 for additional explanation.  
+
+
+776.106,.01     MAIL GROUPS            0;1 POINTER TO MAIL GROUP FILE (#3.8) (Multiply asked)
+
+                LAST EDITED:      JUN 01, 2003 
+                CROSS-REFERENCE:  776.106^B 
+                                  1)= S ^HLEV(776.1,DA(1),60,"B",$E(X,1,30),DA)=""
+                                  2)= K ^HLEV(776.1,DA(1),60,"B",$E(X,1,30),DA)
+
+
+
+
+776.1,52      RECIPIENTS             61;0 POINTER Multiple #776.1061
+
+              DESCRIPTION:
+                                See documentation for the MAIL GROUPS field.  
+
+
+776.1061,.01    RECIPIENTS             0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                LAST EDITED:      JUN 01, 2003 
+                CROSS-REFERENCE:  776.1061^B 
+                                  1)= S ^HLEV(776.1,DA(1),61,"B",$E(X,1,30),DA)=""
+                                  2)= K ^HLEV(776.1,DA(1),61,"B",$E(X,1,30),DA)
+
+
+
+
+776.1,53      REMOTES                62;0 Multiple #776.1062
+
+              DESCRIPTION:
+                                See documentation for the MAIL GROUPS field.  
+
+
+776.1062,.01    REMOTES                0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3)!'(X?1.E1"@"1.E) X
+                LAST EDITED:      JUN 01, 2003 
+                HELP-PROMPT:      Enter email address of remote recipient for this monitor.  (Format is 'name@address'.) 
+                CROSS-REFERENCE:  776.1062^B 
+                                  1)= S ^HLEV(776.1,DA(1),62,"B",$E(X,1,30),DA)=""
+                                  2)= K ^HLEV(776.1,DA(1),62,"B",$E(X,1,30),DA)
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MAIL GROUP (#3.8)                 MAIL GROUPS:MAIL GROUPS (#.01)
+
+NEW PERSON (#200)                 RECIPIENTS:RECIPIENTS (#.01)
+
+
+
+INPUT TEMPLATE(S):
+HLEV MONITOR ENTER/EDIT       AUG 07, 2003@10:39  USER #0    
+
+PRINT TEMPLATE(S):
+HLEV REMOTE REQUESTABLE       JUN 24, 2003@12:56  USER #0                                                                                                                                                                              Remote Requestable List
+HLEV REPORT MONITOR-ONE LINE  JUN 20, 2003@12:00  USER #0                                                                                                                                                                                       Monitor report
+
+SORT TEMPLATE(S):
+HLEV MONITOR EXPORT LIST      MAY 29, 2003@04:13  USER #0      NAME CONTAINS "M"
+
+HLEV REPORT MONITOR           JUN 20, 2003@11:57  USER #0    
+SORT BY: @NAME//    (User is asked range)
+
+HLEV REPORT MONITOR - FF      JUN 20, 2003@12:19  USER #0    
+SORT BY: @NAME;"================================================================================"//    (User is asked range)
+
+
+FORM(S)/BLOCK(S):

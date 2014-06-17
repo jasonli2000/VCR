@@ -1,0 +1,492 @@
+STANDARD DATA DICTIONARY #9000010.07 -- V POV FILE                                                                                                                                                                                MAY 20,2014@15:39:41  PAGE 1
+STORED IN ^AUPNVPOV(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file has been designed for joint use by the Indian Health Service and the Department of Veteran Affairs.  POV is an abbreviation for "Purpose of Visit" (descriptive name used by IHS) or "Problem of Visit" (descriptive name used by VA).  
+ 
+The V POV file is used to store clinical data related to the "purpose of visit" or "problem of visit", (POV). This is the provider's definition of what diagnosis to use to represent the patient care given at the visit.  The POV entry is not the patient's
+"Chief Complaint" text.  It is the diagnosis as defined by the provider which will have an ICD Diagnosis code related to it to support Clinical needs and additionally support Administrative functions too such as Billing, Workload, and DSS.  
+ 
+There should be at least one "purpose of visit" (descriptive name used by IHS) or one "problem of visit" (descriptive name used by the VA) in the V POV file for each patient visit whether it is an inpatient, outpatient or field visit, and regardless of
+the discipline of the provider (i.e.  dental, CHN, mental health, etc.). There is no limit to the number of POV's that can be entered for a patient for a given encounter.  
+  
+At IHS facilities, POV's are generated automatically for this file at time of discharge from the Admission, Discharge and Transfer (ADT) system.  POV's are entered in narrative form, and coded automatically to the appropriate ICD9 code. Physician entered
+narrative which modifies the diagnosis, such as "doubtful, suspect, resolved" are entered by the data entry person in the MODIFIER field.  Narrative qualifiers, such as "not healing well", "date of onset", "severe" etc.. are stored in the NARRATIVE 
+QUALIFIER field.  STAGE is used only as a local option.  The file contains pointers to the IHS Patient file, and visit file, and data must exist in both of these files for this visit before a POV can be entered here.  
+ 
+At VA facilities, POV is used as an abbreviation for "Problem of Visit", or the problem treated at the visit.  POV's are primarily created for clinic visits from 3 sources: 
+  1) The scheduling checkout process, in which case the information collected about the POV is limited to the ICD Diagnosis code.  The provider narrative becomes the ICD narrative from the ICD Diagnosis file.  
+  2) The Encounter Form automated data scanning (AICS package).  In this case the provider narrative is the terminology defined by the clinician to represent the diagnosis on the encounter form. The AICS package, or other automated data capture tool, is
+able to pass the narrative and the ICD Diagnosis.  If the problem treated at the visit was a pre-existing problem from the patient's "Problem List", the related problem entry is also stored in the POV record. (The Problem List orientation is not utilized
+by IHS.) 
+  3) The manual data entry process for encounter form data not collected via automated data capture.  This process is the most like the process IHS 
+
+
+              DD ACCESS: @
+IDENTIFIED BY: PATIENT NAME (#.02)[R], VISIT (#.03)[R]
+
+POINTED TO BY: PURPOSE OF VISIT field (#.03) of the TIU PROBLEM LINK File (#8925.9) 
+               
+
+CROSS
+REFERENCED BY: VISIT(AA), PATIENT NAME(AATOO), VISIT(AD), VISIT(AV10), POV(B), PATIENT NAME(C)
+
+INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
+
+
+9000010.07,.01POV                    0;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Required)
+
+              INPUT TRANSFORM:  S:$D(APCDEIN) APCDTPCC="" S DIC("S")="D ^AUPNSICD" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 31, 1995 
+              HELP-PROMPT:      Enter the ICD Diagnosis code or text for the problem treated at the encounter. 
+              DESCRIPTION:      POV is an abbreviation for "Purpose of Visit".  Since Purpose of Visit is often confused with "Chief complaint", another abbreviation might better be  "Problem of Visit".  This is the Provider's conclusion about what was 
+                                treated at the visit.  The Provider should be able to indicate a preferred narrative for what was treated and an ICD Diagnosis code.  If the problem treated is from the Problem List, then the problem list entry information 
+                                can be used for the "Problem of Visit" entry.  The provider can alternatively have this information automatically captured via scanned Encounter Forms (e.g., AICS - the VA's Encounter Form Data Capture package).  
+                                 
+                                At VA facilites, the ICD Diagnosis is screened by Inactive Code and it must be appropriate for the Patient's age and sex.  
+                                 
+                                At IHS facilities, the ICD Diagnosis is screened by Inactive Code, appropriate for the Patient's age and sex, and Not "E" codes.  
+
+              TECHNICAL DESCR:
+                                This is a pointer to the ICD Diagnosis (#80) file.  
+
+              SCREEN:           S DIC("S")="D ^AUPNSICD"
+              EXPLANATION:      POV CANNOT BE AN INACTIVE CODE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  9000010.07^B 
+                                1)= S ^AUPNVPOV("B",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVPOV("B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   ACR (#472)
+
+9000010.07,.019ICD NARRATIVE          ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(9000010.07,.019,9.2) S Y(9000010.07,.019,101)=$S($D(^ICD9(D0,0)):^(0),1:"") S X=$P(Y(9000010.07,.019,101),U,3) S D0=Y(9000010.07,.019,80)
+                                9.2 = S Y(9000010.07,.019,80)=$S($D(D0):D0,1:""),Y(9000010.07,.019,1)=$S($D(^AUPNVPOV(D0,0)):^(0),1:""),D0=$P(Y(9000010.07,.019,1),U,1) S:'$D(^ICD9(+D0,0)) D0=-1
+              ALGORITHM:        POV:DIAGNOSIS
+              DESCRIPTION:
+                                This is the computed diagnosis narrative that is defined in the ICD Diagnosis file for the ICD Diagnosis code identified in the POV (.01) field.  
+
+
+9000010.07,.02PATIENT NAME           0;2 POINTER TO PATIENT/IHS FILE (#9000001) (Required)
+
+              LAST EDITED:      AUG 31, 1995 
+              HELP-PROMPT:      Enter the name of the patient who had the POV treated. 
+              DESCRIPTION:
+                                This is the patient whose problem or diagnosis was treated.  
+
+              TECHNICAL DESCR:
+                                This is a pointer to the Patient/IHS file (#9000001), which is dinumed to the Patient file (#2).  This field is always stuffed by the application.  No editing is allowed.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.07^AATOO^MUMPS 
+                                1)= I $P(^AUPNVPOV(DA,0),U,3)]"" S ^AUPNVPOV("AA",X,(9999999-$P(+^AUPNVSIT($P(^AUPNVPOV(DA,0),U,3),0),".",1)),DA)=""
+                                2)= I $P(^AUPNVPOV(DA,0),U,3)]"" K ^AUPNVPOV("AA",X,(9999999-$P(+^AUPNVSIT($P(^AUPNVPOV(DA,0),U,3),0),".",1)),DA)
+                                This cross reference is used for searches in sequence by patient, inverted visit date, and internal entry number.  
+                                 
+                                    "AA",PATIENT,VISIT,DA 
+
+
+              CROSS-REFERENCE:  9000010.07^C 
+                                1)= S ^AUPNVPOV("C",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVPOV("C",$E(X,1,30),DA)
+                                This cross reference allows Fileman to look-up entries in the file for a particular Patient.  
+
+
+              RECORD INDEXES:   ACR (#472)
+
+9000010.07,.03VISIT                  0;3 POINTER TO VISIT FILE (#9000010) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVPOV(DA,0),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 11, 1989 
+              HELP-PROMPT:      Enter the visit date/time for the encounter where the problem was treated. 
+              DESCRIPTION:      The encounter entry in the Visit file that is associated with this problem treated.  
+                                 
+                                In IHS facilities, this is the date and time the visit actually occurred.  
+                                 
+                                In VA facilities, this is the data and time of the clinic appointment for the patient in the Scheduling package, or the date and time the encounter occurred if there was no appointment. By using the appointment date and 
+                                time, clinic activity can be captured for clinical use as well as be used for billing and workload information by the appropriate VA packages.  If the visit was for a walk-in, an appointment should be entered in Scheduling
+                                first in order to have the clinical information also be used for the administrative uses.  
+                                 
+                                Non-clinic appointment encounters can be entered, but the clinical POV information is not accepted for billing.  
+                                 
+                                The patient encounter can be the result of an inpatient encounter.  In this case, the ward would be specified as the hospital location in the Visit File.  
+
+              TECHNICAL DESCR:
+                                This is a pointer to the Visit file (#9000010).  This field is stuffed by the applications.  No editing is allowed.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVPOV(DA,0),U,2)"
+              EXPLANATION:      VISIT MUST BE FOR CURRENT PATIENT
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.07^AD 
+                                1)= S ^AUPNVPOV("AD",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVPOV("AD",$E(X,1,30),DA)
+                                This cross-reference is used for searches by the visit pointer and internal entry number.  
+                                 
+                                  "AD",VISIT pointer value, DA 
+
+
+              CROSS-REFERENCE:  9000010.07^AA^MUMPS 
+                                1)= Q:$P(^AUPNVPOV(DA,0),U,2)=""  S ^AUPNVPOV("AA",$P(^AUPNVPOV(DA,0),U,2),(9999999-$P(+^AUPNVSIT(X,0),".",1)),DA)=""
+                                2)= Q:$P(^AUPNVPOV(DA,0),U,2)=""  K ^AUPNVPOV("AA",$P(^AUPNVPOV(DA,0),U,2),(9999999-$P(+^AUPNVSIT(X,0),".",1)),DA)
+                                This cross reference is used for searches in sequence by patient, inverted visit date (from the Visit file) and the internal entry number.  
+                                 
+                                    "AA",PATIENT,inverted VISIT, DA 
+
+
+              CROSS-REFERENCE:  9000010.07^AV10^MUMPS 
+                                1)= D ADD^AUPNVSIT
+                                2)= D SUB^AUPNVSIT
+                                This cross-reference adds and subtracts from the dependent entry count in the VISIT file.  
+
+
+              RECORD INDEXES:   ACR (#472)
+
+9000010.07,.04PROVIDER NARRATIVE     0;4 POINTER TO PROVIDER NARRATIVE FILE (#9999999.27) (Required)
+
+              INPUT TRANSFORM:  S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 31, 1995 
+              HELP-PROMPT:      Enter the provider's preferred text identifying the diagnosis treated at the encounter. 
+              DESCRIPTION:      This is the providers text describing the diagnosis that was treated at the visit.  The text may contain additional information related specifically to the patient at the time of the visit (e.g, Hypertension, 
+                                uncontrolled).  The providers' narrative may be different from the ICD Diagnosis files description for a code, but should not have a significantly different meaning.  The ICD Diagnosis code in the POV (.01) field should be
+                                the code that "most closely" represents the providers narrative.  
+                                 
+                                In IHS facilities, this narrative is entered by data entry clerks.  
+                                 
+                                In VA facilities, this narrative may be entered manually or derived from: 1) the ICD Diagnosis text from the ICD Diagnosis file (Scheduling interface) 2) the text defined on Encounter Forms when defining the most common 
+                                diagnosis treated for a clinic (AICS or other automated data capture) 3) the Problem list entries' "provider narrative", captured from the Active Problem list being checked off for problems treated at the encounter on an
+                                Encounter Form (AICS or other automated data capture).  
+
+              TECHNICAL DESCR:  This is a pointer to the Provider Narrative file (#9999999.27).  Disk space is saved by storing ONE entry in the provider narrative file for each unique narrative.  The provider narrative is often repetitive, especially,
+                                if the data capture mode is automated.  
+                                 
+                                The resulting entries in the Provider Narrative file builds a file of preferred provider terminology.  
+
+              SCREEN:           S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO")
+              EXPLANATION:      IHS OLD LOOKUP or VA Exact Match
+
+9000010.07,.06MODIFIER               0;6 SET
+
+                                'C' FOR CONSIDER; 
+                                'D' FOR DOUBTFUL; 
+                                'F' FOR FOLLOW UP; 
+                                'M' FOR MAYBE, POSSIBLE, PERHAPS; 
+                                'O' FOR RULE OUT; 
+                                'P' FOR PROBABLE; 
+                                'R' FOR RESOLVED; 
+                                'S' FOR SUSPECT, SUSPICIOUS; 
+                                'T' FOR STATUS POST; 
+              LAST EDITED:      AUG 31, 1995 
+              HELP-PROMPT:      Enter the provider's modifier of the diagnosis treated. 
+              DESCRIPTION:
+                                (Optional) This is how a provider may modify the diagnosis or problem treated to reflect the status of the diagnosis as of this visit. Common examples of modifiers are Rule Out, Follow-up, or Status Post.  
+
+              TECHNICAL DESCR:
+                                The VA uses a smaller set of modifiers than the IHS does.  The file is distributed with the complete set of codes originally defined by the Indian Health Service.  
+
+              SCREEN:           S:DUZ("AG")="V" DIC("S")="I ""FOT""[Y"
+              EXPLANATION:      VA screens for Rule Out, Follow Up, and Status Post
+              SOURCE OF DATA:   061/DISPEC
+
+9000010.07,.12PRIMARY/SECONDARY      0;12 SET
+
+                                'P' FOR PRIMARY; 
+                                'S' FOR SECONDARY; 
+              LAST EDITED:      AUG 31, 1995 
+              HELP-PROMPT:      Enter the clinically pertinent ranking for this problem treated. 
+              DESCRIPTION:
+                                This field represents the clinically pertinent ranking of problems treated.  There is no limit on how many POV's may be identified as primary or secondary problems treated at the visit.  
+
+              SOURCE OF DATA:   061/DIPRIME
+              RECORD INDEXES:   ACR (#472)
+
+9000010.07,.13DATE OF INJURY         0;13 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 04, 1996 
+              HELP-PROMPT:      Enter the date of the injury 
+              DESCRIPTION:      This is the date the injury occurred for the problem being treated.  
+                                 
+                                At VA facilities, the date of injury is prompted for when the ICD Diagnosis in the POV field (.01) is for an injury with a code between 800-999.999.  
+
+
+9000010.07,.15CLINICAL TERM          0;15 POINTER TO EXPRESSIONS FILE (#757.01)
+
+              LAST EDITED:      MAY 18, 1994 
+              HELP-PROMPT:      Enter the provider narrative or clinical terminology for the diagnosis treated. 
+              DESCRIPTION:      This field is the clinical lexicon term which most closely represents the provider narrative of the problem treated.  
+                                 
+                                At VA facilities: The clinical lexicon is automatically captured via encounter form data capture (AICS package) when the of problem being treated is from the Active Problem List.  In the manual data entry process, there is
+                                currently no prompt for the clinical term.  
+
+              TECHNICAL DESCR:  This field was created by the VA to capture the clinical lexicon term, as an alternative to, or in addition to the ICD9 Diagnosis code.  This field will primarily be populated when the diagnosis being treated at a visit is
+                                based on an entry in the Active Problem List.  
+
+
+9000010.07,.16PROBLEM LIST ENTRY     0;16 POINTER TO PROBLEM FILE (#9000011)
+
+              LAST EDITED:      MAR 29, 1993 
+              HELP-PROMPT:      Enter the problem entry from the patient's problem list for the problem treated. 
+              DESCRIPTION:
+                                This field identifies what Problem List entry is related to the problem treated at the visit.  
+
+              TECHNICAL DESCR:  This field was added for use by PCE in the VA.  
+                                 
+                                Automated data capture methods, that allow the problems treated at a visit to be selected from the active problem list, will be able to provide the problem list entry which is stored in this field.  
+
+
+9000010.07,.17ORDERING/RESULTING     0;17 SET
+
+                                'O' FOR ORDERING; 
+                                'R' FOR RESULTING; 
+                                'OR' FOR BOTH O&R; 
+              LAST EDITED:      FEB 17, 2004 
+              HELP-PROMPT:      Enter O if the diagnosis is an ordering diagnosis, enter R if the diagnosis is a resulting diagnosis and enter B if the diagnosis is used for both ordering and resulting. 
+              DESCRIPTION:
+                                This field identifies a diagnosis as being Ordering, Resulting, or both Ordering and Resulting.  
+
+              TECHNICAL DESCR:
+                                Ordering diagnoses are used for facility charges in billing, resulting diagnoses are used in professional services billing.  
+
+
+9000010.07,1201EVENT DATE AND TIME   12;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 03, 1996 
+              HELP-PROMPT:      Enter the date and time this problem was treated. 
+              DESCRIPTION:      This is the actual date and time of the encounter.  This date and time may be different than the visit date and time specified in the Visit file.  However it must be within 30 days of the Visit date and Not be a future 
+                                date.  
+                                 
+                                This field is useful for capturing the actual time encounters take place, or when, during the encounter, something happened.  
+
+              TECHNICAL DESCR:  This field was added for use by PCE in the VA, to support the capture of the actual event date and time of the encounter which is not reflected in the Visit file entry.  IHS allows the Visit date and time to be the actual 
+                                date and time. But, the VA uses the Visit date and time as the Appointment date and time, rather than the "Actual" encounter event date and time.  The Appointment date and time orientation of visits allows the VA
+                                Scheduling, billing and workload functionality to understand the linkage between the clinical data being captured for a visit and the existing Outpatient Scheduled events.  
+
+
+9000010.07,1202ORDERING PROVIDER     12;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 13, 1996 
+              HELP-PROMPT:      Enter the ordering provider. 
+              DESCRIPTION:      For consistency, this field was added to each V-file.  However, for the V POV, the Ordering Provider does not apply itself well, unless a provider is ordering another provider to treat a problem. Optionally, in the future,
+                                this field may be able to represent the provider responsible for the encounter providers work.  
+
+
+9000010.07,1204ENCOUNTER PROVIDER    12;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 19, 1994 
+              HELP-PROMPT:      Enter the care giver who treated the problem. 
+              DESCRIPTION:
+                                This is the provider who treated the diagnosis at the encounter.  
+
+
+9000010.07,80001SERVICE CONNECTED    800;1 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 31, 1994 
+              HELP-PROMPT:      If this problem treated is service connected, enter "YES" here. 
+              DESCRIPTION:
+                                This field is used in the VA to indicate that this problem treated at this visit was service connected.  
+
+              TECHNICAL DESCR:  This field is used by the VA.  The data is only passed to PCE from the automated data capture of encounter form data when a Problem from the Active Problem list has been identified as the problem treated at the visit.  If
+                                the Problem List identified the Problem as Service Connected, then this Service Connected field would be automatically set to 1.  
+
+
+9000010.07,80002AGENT ORANGE EXPOSURE 800;2 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 31, 1994 
+              HELP-PROMPT:      If the problem treated is related to agent orange exposure, enter "YES" here. 
+              DESCRIPTION:
+                                This field is used in the VA to indicate that this problem treated at this visit was related to agent orange exposure.  
+
+              TECHNICAL DESCR:  This field is used by the VA.  The data is only passed to PCE from the automated data capture of encounter form data.  If a problem from the Active Problem List is identified as the problem treated at the visit, and the
+                                problem has been associated with Agent Orange Exposure in the Problem List, then the POV's Agent Orange Exposure will be set to "1".  
+
+
+9000010.07,80003IONIZING RADIATION EXPOSURE 800;3 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 31, 1994 
+              HELP-PROMPT:      If this problem treated is related to ionizing radiation exposure, enter "YES". 
+              DESCRIPTION:
+                                This field is used in the VA to indicate that this problem treated at this visit was related to ionizing radiation exposure.  
+
+              TECHNICAL DESCR:  This field is used by the VA.  The data is only passed to PCE from the automated data capture of encounter form data.  If a problem on the Active Problem List is identified as a problem treated at the visit, and the 
+                                problem is defined as related to ionizing radiation exposure, then the POV Ionizing Radiation Exposure will be set to "1".  
+
+
+9000010.07,80004SW ASIA CONDITIONS   800;4 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 27, 2006 
+              HELP-PROMPT:      If this problem treated is related to SW Asia Conditions exposure, enter "YES" here. 
+              DESCRIPTION:
+                                This field is used in the VA to indicate that this problem treated at this visit was related to Southwest Asia Conditions exposure.  
+
+              TECHNICAL DESCR:  This field is only passed to PCE from the automated data capture of encounter form data.  If a problem on the Active Problem List is identified as the problem treated at the visit, and the problem defined as being related
+                                to Southwest Asia Conditions Exposure in the Problem List, then the POV Southwest Asia Conditions Exposure will automatically be set to "1".  
+
+
+9000010.07,80005MILITARY SEXUAL TRAUMA 800;5 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 13, 2003 
+              HELP-PROMPT:      If this Diagnosis code is related to Military Sexual Trauma, enter a "YES" here 
+              DESCRIPTION:
+                                This field will be used to indicate if this Diagnosis code was related to a Military Sexual Trauma problem.  
+
+
+9000010.07,80006HEAD AND/OR NECK CANCER 800;6 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 13, 2003 
+              HELP-PROMPT:      If this Diagnosis is treating a problem related to Head/Neck Cance 
+              DESCRIPTION:
+                                This field will be used to indicate if this Diagnosis code was related to Head and/or Neck Cancer 
+
+
+9000010.07,80007COMBAT VETERAN       800;7 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      NOV 18, 2003 
+              HELP-PROMPT:      If this visit is treating a problem possibly related to combat. 
+              DESCRIPTION:
+                                This field is used to indicate that the visit represents treatment of a VA patient for a problem that is possibly related to combat.  
+
+
+9000010.07,80008PROJ 112/SHAD        800;8 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 02, 2005 
+              HELP-PROMPT:      If this Diagnosis is treating a problem related to PROJ 112/SHAD. 
+              DESCRIPTION:      Project 112/SHAD was the name of the overall program for both shipboard and land-based biological and chemical testing that was conducted by the United States (U.S.) military between 1962 and 1973. Project SHAD (Shipboard
+                                Hazard and Defense) was the shipboard portion of these tests.  
+
+
+9000010.07,80101EDITED FLAG          801;1 SET
+
+                                '1' FOR EDITED; 
+              LAST EDITED:      MAR 08, 1994 
+              DESCRIPTION:
+                                This field is automatically set to 1 if PCE detects that any measurement data is being edited from the original entry of data.  
+
+              TECHNICAL DESCR:
+                                PCE filing logic automatically compares the before and after pictures of the record to determine if the edited flag should be set to "1".  
+
+
+9000010.07,80102AUDIT TRAIL          801;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>85!($L(X)<2) X
+              LAST EDITED:      MAY 09, 1996 
+              HELP-PROMPT:      Answer must be 2-85 characters in length. 
+
+9000010.07,80201PROVIDER NARRATIVE CATEGORY 802;1 POINTER TO PROVIDER NARRATIVE FILE (#9999999.27)
+
+              INPUT TRANSFORM:  S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 21, 1994 
+              HELP-PROMPT:      Enter the category narrative related to this problem treated. 
+              DESCRIPTION:
+                                This field is the category narrative related to the problem treated.  
+
+              TECHNICAL DESCR:  This field is used by the VA when capturing encounter form information via scanning (e.g., such as AICS scanning) or workstation data capture methods.  This field is used to document how providers group the clinical 
+                                terminology being used to document encounters. Providers may group the problems which may be selected under specific headers on the encounter form definition.  This field is used to store the actual header text used by the
+                                provider.  
+
+              SCREEN:           S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO")
+              EXPLANATION:      OLD LOOKUP
+
+9000010.07,81101COMMENTS             811;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      JUL 11, 1995 
+              HELP-PROMPT:      Answer must be 1-245 characters in length. 
+
+9000010.07,81201VERIFIED             812;1 SET
+
+                                '1' FOR ELECTRONICALLY SIGNED; 
+                                '2' FOR VERIFIED BY PACKAGE; 
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+9000010.07,81202PACKAGE              812;2 POINTER TO PACKAGE FILE (#9.4)
+
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+9000010.07,81203DATA SOURCE          812;3 POINTER TO PCE DATA SOURCE FILE (#839.7)
+
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+
+      FILES POINTED TO                      FIELDS
+
+EXPRESSIONS (#757.01)             CLINICAL TERM (#.15)
+
+ICD DIAGNOSIS (#80)               POV (#.01)
+
+NEW PERSON (#200)                 ORDERING PROVIDER (#1202)
+                                  ENCOUNTER PROVIDER (#1204)
+
+PACKAGE (#9.4)                    PACKAGE (#81202)
+
+PATIENT/IHS (#9000001)            PATIENT NAME (#.02)
+
+PCE DATA SOURCE (#839.7)          DATA SOURCE (#81203)
+
+PROBLEM (#9000011)                PROBLEM LIST ENTRY (#.16)
+
+PROVIDER NARRATIVE (#9999999.27)  PROVIDER NARRATIVE (#.04)
+                                  PROVIDER NARRATIVE CATEGORY (#80201)
+
+VISIT (#9000010)                  VISIT (#.03)
+
+
+File #9000010.07
+
+  Record Indexes:
+
+  ACR (#472)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  Clinical Reminders index.
+      Description:  This cross-reference builds two indexes, one for finding all patients with a particular ICD9 code and one for finding all the ICD9 codes a patient has.  The indexes are stored in the Clinical Reminders index global as: 
+                     ^PXRMINDX(9000010.07,"IPP",ICD9 CODE,PS,DFN,VISIT DATE,DAS) and 
+                     ^PXRMINDX(9000010.07,"PPI",DFN,PS,ICD9 CODE,VISIT DATE,DAS) respectively. PS is the primary/secondary code. Possible values are P (primary), S (secondary) or U (undefined).  For all the details, see the Clinical Reminders Index
+                    Technical Guide/Programmer's Manual.  
+        Set Logic:  D SVFILEC^PXPXRM(9000010.07,.X,.DA)
+       Kill Logic:  D KVFILEC^PXPXRM(9000010.07,.X,.DA)
+       Whole Kill:  K ^PXRMINDX(9000010.07)
+             X(1):  POV  (9000010.07,.01)  (Subscr 1)  (forwards)
+             X(2):  PATIENT NAME  (9000010.07,.02)  (Subscr 2)  (forwards)
+             X(3):  VISIT  (9000010.07,.03)  (Subscr 3)  (forwards)
+             X(4):  PRIMARY/SECONDARY  (9000010.07,.12)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+ONC DISEASE INDEX             APR 08, 2010@13:52  USER #0                                                                                                                                                                                        DISEASE INDEX
+
+SORT TEMPLATE(S):
+ONC DISEASE INDEX             JUN 30, 2000@10:37  USER #0    
+SORT BY: 'VISIT//    (User is asked range)
+  WITHIN VISIT, SORT BY: 'POV//    (User is asked range)
+    WITHIN POV, SORT BY: PATIENT NAME// (PATIENT NAME not null)
+
+ONC DISEASE INDEX CASEFINDING APR 08, 2010@14:22  USER #0    
+SORT BY: 'VISIT//    (User is asked range)
+  WITHIN VISIT, SORT BY: PATIENT NAME// (PATIENT NAME not null)
+
+
+FORM(S)/BLOCK(S):

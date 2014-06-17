@@ -1,0 +1,156 @@
+STANDARD DATA DICTIONARY #8994.1 -- RPC BROKER SITE PARAMETERS FILE                                                                                                                                                               MAY 20,2014@15:40:26  PAGE 1
+STORED IN ^XWB(8994.1,  (1 ENTRY)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                            (VERSION 1.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds the site parameters for this installation of the RPC Broker.  It will have only one entry -- the domain name of the installation site.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: DOMAIN NAME(B), STATUS(C)
+
+8994.1,.01    DOMAIN NAME            0;1 POINTER TO DOMAIN FILE (#4.2) (Required)
+
+              INPUT TRANSFORM:  S DINUM=1
+              LAST EDITED:      AUG 29, 1996 
+              DESCRIPTION:
+                                This is the name of this installation of the RPC Broker, as it is known to the rest of the network. It must appear in the DOMAIN file.  This name applies to all CPUs or Volume sets which access this ^XWB global.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  8994.1^B 
+                                1)= S ^XWB(8994.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^XWB(8994.1,"B",$E(X,1,30),DA)
+
+
+8994.1,2      MAIL GROUP FOR ALERTS  0;2 POINTER TO MAIL GROUP FILE (#3.8)
+
+              LAST EDITED:      AUG 10, 2000 
+              DESCRIPTION:
+                                This field points to the Mail Group file 
+
+
+8994.1,7      LISTENER               7;0 POINTER Multiple #8994.17
+
+              DESCRIPTION:      This field contains all the information that the Broker needs to run a background process, which accepts incoming connection requests.  The listener doesn't execute the client's RPCs.  The listener starts up other
+                                processes as handlers, which run RPCs.  
+
+
+8994.17,.01     BOX-VOLUME PAIR        0;1 POINTER TO TASKMAN SITE PARAMETERS FILE (#14.7)
+
+                LAST EDITED:      NOV 16, 1999 
+                DESCRIPTION:
+                                  This field determines on what CPU and volume set the listener should run.  
+
+                SCREEN:           S DIC("S")="I $G(XWBCHK)=""I KNOW WHAT I'M DOING"""
+                EXPLANATION:      Knowing how to set XWBCHK before editing this field should reduce the likelihood of inappropriate entries.
+                DELETE TEST:      1,0)= I $G(XWBCHK)'="ALLOW"
+
+                CROSS-REFERENCE:  8994.17^B 
+                                  1)= S ^XWB(8994.1,DA(1),7,"B",$E(X,1,30),DA)=""
+                                  2)= K ^XWB(8994.1,DA(1),7,"B",$E(X,1,30),DA)
+
+
+8994.17,1       PORT                   1;0 Multiple #8994.171
+
+                DESCRIPTION:      This is the TCP/IP port that the listener should monitor for incoming connection requests.  This is the port which a client should use to connect to a server.  
+                                   
+                                  Don't use a port that is already in use on the CPU where you want to run the listener.  No two processes can share the same TCP/IP port on the same CPU.  
+                                   
+                                  Typically, port numbers bellow 5000 are reserved for various common TCP/IP services.  So you should use port numbers 9000 and above.  
+
+
+8994.171,.01      PORT                   0;1 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>32000)!(X<9000)!(X?.E1"."1N.N) X
+                  LAST EDITED:      NOV 16, 1999 
+                  HELP-PROMPT:      Type a Number between 9000 and 32000, 0 Decimal Digits 
+                  CROSS-REFERENCE:  8994.171^B 
+                                    1)= S ^XWB(8994.1,DA(2),7,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^XWB(8994.1,DA(2),7,DA(1),1,"B",$E(X,1,30),DA)
+
+                  CROSS-REFERENCE:  ^^TRIGGER^8994.171^1 
+                                    1)= K DIV S DIV=X,D0=DA(2),DIV(0)=D0,D1=DA(1),DIV(1)=D1,D2=DA,DIV(2)=D2 S Y(1)=$S($D(^XWB(8994.1,D0,7,D1,1,D2,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X="6" X ^DD(8994.171,.01,1,2,1.4)
+                                    1.4)= S DIH=$S($D(^XWB(8994.1,DIV(0),7,DIV(1),1,DIV(2),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=8994.171,DIG=1 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                    2)= Q
+                                    CREATE VALUE)= "6"
+                                    DELETE VALUE)= NO EFFECT
+                                    FIELD)= STATUS
+                                    This TRIGGER Xref initializes the STATUS field of the newly entered port to 6 (internal value of STOPPED).  
+                                     
+                                    This Xref is on the PORT (.01) field of the PORT (1) multiple.  The SET logic is "6".  No KILL logic.  
+
+
+
+8994.171,.5       TYPE OF LISTENER       0;3 SET
+
+                                    '0' FOR Original; 
+                                    '1' FOR New Style; 
+                  LAST EDITED:      MAR 31, 2003 
+                  DESCRIPTION:
+                                    This is a flag to tell a Cache/NT site what kind of RPCBroker listener to start.  It should not be needed for other types of RPCBroker listeners because they will be under the control of TCPIP service.  
+
+
+8994.171,1        STATUS                 0;2 SET
+
+                                    '1' FOR START; 
+                                    '2' FOR STARTING; 
+                                    '3' FOR RUNNING; 
+                                    '4' FOR STOP; 
+                                    '5' FOR STOPPING; 
+                                    '6' FOR STOPPED; 
+                  LAST EDITED:      SEP 30, 1996 
+                  SCREEN:           S DIC("S")="I $$STATSCRN^XWBTCP(Y)"
+                  EXPLANATION:      You can only set STATUS to START or STOP.  All other settings are controlled by the RPC Broker itself.
+                  NOTES:            TRIGGERED by the PORT field of the PORT sub-field of the LISTENER sub-field of the RPC BROKER SITE PARAMETERS File 
+
+                  CROSS-REFERENCE:  8994.1^C^MUMPS 
+                                    1)= D STATCHG^XWBTCP(.DA,X)
+                                    2)= Q
+
+
+8994.171,2        CONTROLLED BY LISTENER STARTER 0;4 SET
+
+                                    '0' FOR NO; 
+                                    '1' FOR YES; 
+                  LAST EDITED:      OCT 11, 1996 
+                  DESCRIPTION:      If you want the Broker listener to start listening on this CPU-port-UCI when the XWB LISTENER STARTER option is run, enter YES.  All of the listener entries in this file that have CONTROLLED BY LISTENER STARTER set to
+                                    YES will be started when XWB LISTENER STARTER option is run.  
+                                     
+                                    Hint: XWB LISTENER STARTER option may be used to start all of the listeners 
+                                          you need automatically when the Task Manager is started.  Use the 
+                                          Schedule/Unschedule Options option.  In the SPECIAL QUEUEING field 
+                                          enter STARTUP.  Leave all other fields empty.  
+
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DOMAIN (#4.2)                     DOMAIN NAME (#.01)
+
+MAIL GROUP (#3.8)                 MAIL GROUP FOR ALERTS (#2)
+
+TASKMAN SITE PARAMETERS (#14.7)   LISTENER:BOX-VOLUME PAIR (#.01)
+
+
+
+INPUT TEMPLATE(S):
+XWB LISTENER EDIT             JUL 01, 2003@08:52  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,217 @@
+STANDARD DATA DICTIONARY #.84 -- DIALOG FILE                                                                                                                                                                                       APR 3,2014@10:34:55  PAGE 1
+STORED IN ^DI(.84,  (2265 ENTRIES)   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                          (VERSION 22.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file stores the dialog used to 'talk' to a user (error messages, help text, and other prompts.) Entry points in the ^DIALOG routine retrieve text from this file.  Variable parameters can be passed to these calls.  The parameters are inserted into
+windows within the text as it is built.  The text is returned in an array.  This file and associated calls can be used by any package to pass information in arrays rather than writing to the current device.  Record numbers 1 through 10000 are reserved
+for VA FileMan.  
+
+
+              DD ACCESS: ^
+              WR ACCESS: ^
+             DEL ACCESS: ^
+           LAYGO ACCESS: ^
+IDENTIFIED BY: 
+      "WRITE": N DIALID S DIALID(1)=$P($G(^(0)),U,5) S:DIALID(1)="" DIALID=+$O(^(2,0)),DIALID(1)=$E($G(^(DIALID,0)),1,42) S DIALID(1,"F")="?10" D EN^DDIOL(.DIALID)
+
+POINTED TO BY: FILEMAN_ERROR field (#4) of the SQLI_ERROR_LOG File (#1.52192) 
+               
+
+CROSS
+REFERENCED BY: DIALOG NUMBER(B), PACKAGE(C), SHORT DESCRIPTION(D)
+
+.84,.01       DIALOG NUMBER          0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999.999)!(('$G(DIFROM))&(X<10000.001))!(X?.E1"."4N.N) X S:$G(X) DINUM=X
+              LAST EDITED:      JUN 23, 1994 
+              HELP-PROMPT:      Type a Number between 10000.001 and 9999999999.999, up to 3 Decimal Digits 
+              DESCRIPTION:
+                                The dialogue number is used to uniquely identify a message.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  .84^B 
+                                1)= S ^DI(.84,"B",$E(X,1,30),DA)=""
+                                2)= K ^DI(.84,"B",$E(X,1,30),DA)
+
+
+.84,1         TYPE                   0;2 SET (Required)
+
+                                '1' FOR ERROR; 
+                                '2' FOR GENERAL MESSAGE; 
+                                '3' FOR HELP; 
+              LAST EDITED:      MAY 23, 1994 
+              HELP-PROMPT:      Enter code that reflects how this dialogue is used when talking to the users. 
+              DESCRIPTION:
+                                This code is used to group the entries in the FileMan DIALOG file, according to how they are used when interacting with the user.  
+
+              TECHNICAL DESCR:
+                                This field is used to tell the DIALOG routines what array to use in returning the dialogue.  It is also used for grouping the dialogue for reporting purposes.  
+
+
+.84,1.2       PACKAGE                0;4 POINTER TO PACKAGE FILE (#9.4) (Required)
+
+              LAST EDITED:      JUN 23, 1994 
+              HELP-PROMPT:      Enter the name of the Package that owns and distributes this entry. 
+              DESCRIPTION:
+                                This is a pointer to the Package file.  Each entry in this file belongs to, and is distributed by, a certain package.  The Package field should be filled in for each entry on this file.  
+
+              CROSS-REFERENCE:  .84^C 
+                                1)= S ^DI(.84,"C",$E(X,1,30),DA)=""
+                                2)= K ^DI(.84,"C",$E(X,1,30),DA)
+                                Cross-reference on Package file.  Used for identifying DIALOG entries by the package that owns the entry, and for populating the BUILD file during package distribution.  
+
+
+
+.84,1.3       SHORT DESCRIPTION      0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>42!($L(X)<1) X
+              LAST EDITED:      APR 26, 1996 
+              HELP-PROMPT:      Description used to identify entry on lookup.  Answer must be 1-42 characters in length. 
+              DESCRIPTION:
+                                Short description is used to identify an entry on lookup.  The "WRITE" identifier will display this description if it is not null.  
+
+              CROSS-REFERENCE:  .84^D 
+                                1)= S ^DI(.84,"D",$E(X,1,30),DA)=""
+                                2)= K ^DI(.84,"D",$E(X,1,30),DA)
+
+
+.84,2         DESCRIPTION            1;0   WORD-PROCESSING #.842
+
+              DESCRIPTION:
+                                  Used for internal documentation purposes.  
+
+
+.84,3         INTERNAL PARAMETERS NEEDED 0;3 SET
+
+                                'y' FOR YES; 
+              LAST EDITED:      NOV 05, 1993 
+              DESCRIPTION:        Some dialogue is built by inserting variable text (internal parameters) into windows in the word-processing TEXT field.  The insertable text might be, for example, File or Field names.  This field should be set to YES if 
+                                any internal parameters need to be inserted into the TEXT.  If the field is not set to YES, the DIALOG routine will not go through the part of the code that stuffs the internal parameters into the text.  
+
+
+.84,4         TEXT                   2;0   WORD-PROCESSING #.844   (NOWRAP)
+
+              DESCRIPTION:      Actual text of the message.  If parameters (variable pieces of text) are to be inserted into the dialogue when the message is built, the parameter will appear as a 'window' in this TEXT field, surrounded by vertical bars.  
+                                The data within the 'window' will represent a subscript of the input parameter list that is passed to BLD^DIALOG or $$EZBLD^DIALOG when building the message. This same subscript should be used as the .01 of the PARAMETER
+                                field in this file to document the parameter.  
+
+
+.84,5         PARAMETER              3;0 Multiple #.845
+
+
+.845,.01        PARAMETER SUBSCRIPT    0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      NOV 05, 1993 
+                HELP-PROMPT:      This entry corresponds to the subscript of an entry in either the text or output parameter list to the BLD^DIALOG and $$EZBLD^DIALOG routine.  Answer must be 1-20 characters in length. 
+                DESCRIPTION:      This multiple is used for documentation purposes only.  The entry in the .01 field of this multiple will correspond to a subscript in either the text or output parameter list, that are passed to the routines that build 
+                                  dialogue messages, BLD^DIALOG and $$EZBLD^DIALOG. This routine will insert into each 'window' from the TEXT field, the corresponding entry out of the text parameter list.  For errors only, it passes any entries from the 
+                                  output parameter list back to the user as entries in its output array.  
+
+                CROSS-REFERENCE:  .845^B 
+                                  1)= S ^DI(.84,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DI(.84,DA(1),3,"B",$E(X,1,30),DA)
+
+
+.845,1          PARAMETER DESCRIPTION  0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>230!($L(X)<1) X
+                LAST EDITED:      JUN 14, 1993 
+                HELP-PROMPT:      Describe the Parameter for documentation purposes.  Answer must be 1-230 characters in length. 
+                DESCRIPTION:      This field is used for documentation purposes only.  It describes the text and/or output parameter(s) that are passed to BLD^DIALOG and $$EZBLD^DIALOG. The same parameter can be used both as a text parameter (i.e.,
+                                  inserted into the text when it is built), and as an output parameter (i.e., a parameter passed back in a list to the user) 
+
+
+
+
+.84,6         POST MESSAGE ACTION    6;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      MAY 20, 1994 
+              HELP-PROMPT:      This is Standard MUMPS code.  This code will be executed whenever this message is retrieved through a call to BLD^DIALOG or $$EZBLD^DIALOG. 
+              DESCRIPTION:      If some special action should be taken whenever this message is built, MUMPS code can be entered here.  This code will be executed by the BLD^DIALOG or $$EZBLD^DIALOG routines, immediately after the message text has been
+                                built in the output array.  For example, the code could set a special flag into a global or local variable to notify the calling routine that some extra action needed to be taken.  
+
+              TECHNICAL DESCR:  At the time of executing this code 
+                                 D0 = IEN for the entry in the DIALOG file 
+                                 DIPI(n) = (for sequential number n) parameters incorporated in the text.  
+                                 DIPE(n) = parameters output back to the user 
+                                 
+                                All other variables used in this code should use your packages namespace, and should be NEWed.  
+
+              WRITE AUTHORITY:  @
+
+.84,7         TRANSLATION            4;0 POINTER Multiple #.847
+
+
+.847,.01        LANGUAGE               0;1 POINTER TO LANGUAGE FILE (#.85) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I Y>1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X S:$G(X) DINUM=X
+                LAST EDITED:      MAY 24, 1994 
+                HELP-PROMPT:      Enter the number or name for a non-English language. 
+                DESCRIPTION:
+                                  Pointer to the LANGUAGE file. If FileMan system variable DUZ("LANG") is set to an integer greater than 1, we use that number to extract dialogue text for the specified language from this multiple.  
+
+                SCREEN:           S DIC("S")="I Y>1"
+                EXPLANATION:      English language cannot be selected.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  .847^B 
+                                  1)= S ^DI(.84,DA(1),4,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DI(.84,DA(1),4,"B",$E(X,1,30),DA)
+
+
+.847,1          FOREIGN TEXT           1;0   WORD-PROCESSING #.8471   (NOWRAP)
+
+                DESCRIPTION:
+                                  Insert here the non-English equivalent for this language to the text in the TEXT field for this entry.  This field may contain windows for variable parameters the same as the TEXT field.  
+
+
+
+
+.84,8         CALLED FROM ENTRY POINTS 5;0 Multiple #.841
+
+
+.841,.01        ROUTINE NAME           0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+                LAST EDITED:      APR 11, 1994 
+                HELP-PROMPT:      Answer must be 1-8 characters in length. 
+                DESCRIPTION:      This multiple is used for documentation only.  Entries are made to this subfile ONLY for ERROR type text.  Enter the routine name of an entry point that may generate this error message.  You only need to enter the names
+                                  of routines that directly generate the error through a call to ^DIALOG, and not when the error is generated by some other utility called from your routine.  
+
+                CROSS-REFERENCE:  .841^B 
+                                  1)= S ^DI(.84,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DI(.84,DA(1),5,"B",$E(X,1,30),DA)
+
+
+.841,.05        LINE TAG               0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      APR 11, 1994 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                DESCRIPTION:      This multiple is used for documentation only.  Entries are made to this subfile ONLY for ERROR type text.  Enter the line tag of an entry point that may generate this error message.  You only need to enter the names of 
+                                  routines that directly generate the error through a call to ^DIALOG, and not when the error is generated by some other utility called from your routine.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+LANGUAGE (#.85)                   TRANSLATION:LANGUAGE (#.01)
+
+PACKAGE (#9.4)                    PACKAGE (#1.2)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

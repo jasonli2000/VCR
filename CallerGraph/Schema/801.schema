@@ -1,0 +1,307 @@
+STANDARD DATA DICTIONARY #801 -- REMINDER ORDER CHECK ITEMS GROUP FILE                                                                                                                                                            MAY 20,2014@15:39:38  PAGE 1
+STORED IN ^PXD(801,  (2 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains a list of Orderable Items and Pharmacy Items that should have a reminder order check rule(s). The Orderable Item will only be evaluated when the user places the order in CPRS. An Order Check Items Group can contain a list of
+Orderable\Pharmacy Items and a list of Rules.  
+ 
+ 
+
+
+
+
+INDEXED BY:    PHARMACY ITEM (ADRUGR), ORDERABLE ITEM (AOI), RULE (AOIR), GROUP NAME (B), ORDERABLE ITEM (O), PHARMACY ITEM (P), RULE (R)
+
+
+801,.01       GROUP NAME             0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:($L(X)>64)!($L(X)<3)!'(X'?1P.E)!('$$VNAME^PXRMINTR(.X)) X
+              LAST EDITED:      APR 16, 2010 
+              HELP-PROMPT:      Answer must be 3-64 characters in length. 
+              DESCRIPTION:      This field is the name of the Reminder Orderable Item Group.  Nationally distributed reminder orderable items group names are prefixed with "VA-".  
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              FIELD INDEX:      B (#1034)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  B cross-reference
+                  Description:  This is the "B" cross-reference redone as a new style cross-reference.  
+                    Set Logic:  S ^PXD(801,"B",$E(X,1,64),DA)=""
+                   Kill Logic:  K ^PXD(801,"B",$E(X,1,64),DA)
+                   Whole Kill:  K ^PXD(801,"B")
+                         X(1):  GROUP NAME  (801,.01)  (Subscr 1)  (Len 64)  (forwards)
+
+
+801,10        DESCRIPTION            1;0   WORD-PROCESSING #801.01   (IGNORE "|")
+
+              DESCRIPTION:
+                                This field contains a description of the clinical reminder order checks. It is used to document its purpose and intended goals.  
+
+
+801,15        PHARMACY ITEM LIST     1.5;0        VARIABLE POINTER  Multiple #801.015
+              LAST EDITED:      OCT 20, 2011 
+              DESCRIPTION:      This multiple stores a list of VA Generic, VA Drug Class, and Drugs. If the ordered orderable item belongs to one of the items in this multiple than the rules attached to the group will be evaluated.  
+                                 
+
+
+              INDEXED BY:       PHARMACY ITEM (PID)
+
+801.015,.01     PHARMACY ITEM          0;1        VARIABLE POINTER (Multiply asked)
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   50   1    DR           n   DRUG 
+              50.605    2    DC           n   VA DRUG CLASS 
+                   50.6 3    DG           n   VA GENERIC 
+                                         
+                OUTPUT TRANSFORM: S Y=$$PIOT^PXRMOCG(.DA,Y)
+                LAST EDITED:      FEB 02, 2012 
+                CROSS-REFERENCE:  801.015^B 
+                                  1)= S ^PXD(801,DA(1),1.5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXD(801,DA(1),1.5,"B",$E(X,1,30),DA)
+                                  3)= Required for Variable Pointer
+
+                FIELD INDEX:      ADRUGR (#1031)    MUMPS    IR    ACTION    WHOLE FILE (#801)
+                    Short Descr:  Pharmacy Item Index
+                    Description:  This cross-reference is used to update the ADRUGR cross-reference whenever a  pharmacy item is added or deleted from an existing Orderable Item Group that contains entries in the  Rule List multiple.  
+                      Set Logic:  D DRUGSET^PXRMORXR(.DA,X)
+                       Set Cond:  S X=$S($D(^PXD(801,DA(1),3)):1,1:0)
+                     Kill Logic:  D DRUGKILL^PXRMORXR(.DA,X)
+                      Kill Cond:  S X=$S($D(^PXD(801,DA(1),3)):1,1:0)
+                     Whole Kill:  D DRUGKWH^PXRMORXR
+                           X(1):  PHARMACY ITEM  (801.015,.01)  (forwards)
+
+                FIELD INDEX:      P (#1036)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#801)
+                    Short Descr:  This is a cross-reference by pharmacy item.
+                      Set Logic:  S ^PXD(801,"P",X,DA(1),DA)=""
+                     Kill Logic:  K ^PXD(801,"P",X,DA(1),DA)
+                     Whole Kill:  K ^PXD(801,"P")
+                           X(1):  PHARMACY ITEM  (801.015,.01)  (Subscr 1)  (forwards)
+
+                FIELD INDEX:      PID (#1038)    MUMPS    IR    LOOKUP & SORTING
+                    Short Descr:  This index builds a formatted list of pharmacy items for display purposes. 
+                    Description:  The 'PIDO' index is used by ScreenMan to get the display order. The 'PIDN' index provides an easy way to get the display name.  
+                                   
+                                   
+                                   
+                                  
+                      Set Logic:  D SPID^PXRMOCG(.DA,X)
+                     Kill Logic:  D KPID^PXRMOCG(.DA,X)
+                     Whole Kill:  K ^PXD(801,DA(1),1.5,"PIDN"),^PXD(801,DA(1),1.5,"PIDO")
+                           X(1):  PHARMACY ITEM  (801.015,.01)  (forwards)
+
+
+
+
+801,20        ORDERABLE ITEM LIST    2;0 POINTER Multiple #801.02
+
+              LAST EDITED:      JUL 06, 2009 
+              DESCRIPTION:      This multiple contains a list of orderable items that each reminder rule should run against. As an order is placed in CPRS, the orderable item is passed to the Order Check Mechanism. This orderable item will be checked
+                                against this list; if it is found, then the reminder definition or term assigned to the rule multiple will be evaluated against the orderable item.  
+                                 
+                                When an order is placed in CPRS, the orderable item is passed to the Order Check Mechanism. If the orderable item is found in a Group's Orderable Item List then each rule in the group will be evaluated.  
+
+
+801.02,.01      ORDERABLE ITEM         0;1 POINTER TO ORDERABLE ITEMS FILE (#101.43) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $G(^ORD(101.43,Y,.1))=""""" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+                LAST EDITED:      APR 16, 2010 
+                HELP-PROMPT:      Select an orderable item to add to the group. 
+                SCREEN:           S DIC("S")="I $G(^ORD(101.43,Y,.1))="""""
+                EXPLANATION:      This screen will only allow selection of active orderable items
+                CROSS-REFERENCE:  801.02^B 
+                                  1)= S ^PXD(801,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXD(801,DA(1),2,"B",$E(X,1,30),DA)
+
+                FIELD INDEX:      AOI (#1032)    MUMPS    IR    ACTION    WHOLE FILE (#801)
+                    Short Descr:  ORDERABLE ITEM
+                    Description:  This cross-reference is used to update the AOIR cross-reference whenever an orderable item is added or deleted from an existing Orderable Item Group that contains entries in the Rule List multiple.  
+                                   
+                                  
+                      Set Logic:  D OISAOI^PXRMORXR(.DA,X)
+                       Set Cond:  S X=$S($D(^PXD(801,DA(1),3)):1,1:0)
+                     Kill Logic:  D OIKAOI^PXRMORXR(.DA,X)
+                      Kill Cond:  S X=$S($D(^PXD(801,DA(1),3)):1,1:0)
+                           X(1):  ORDERABLE ITEM  (801.02,.01)  (forwards)
+
+                FIELD INDEX:      O (#1035)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#801)
+                    Short Descr:  This is a cross reference by orderable item
+                      Set Logic:  S ^PXD(801,"O",X,DA(1),DA)=""
+                     Kill Logic:  K ^PXD(801,"O",X,DA(1),DA)
+                     Whole Kill:  K ^PXD(801,"O")
+                           X(1):  ORDERABLE ITEM  (801.02,.01)  (Subscr 1)  (forwards)
+
+
+
+
+801,30        RULE LIST              3;0 POINTER Multiple #801.04
+
+              LAST EDITED:      JUL 07, 2009 
+              DESCRIPTION:
+                                This multiple contains a list of rules that are evaluated for each orderable item in the orderable item list multiple. A rule can contain either one reminder term or one reminder definition.  
+
+
+              PRIMARY KEY:      A (#120)
+              Uniqueness Index: B (#1039)
+                   File, Field: 1) RULE (801.04,.01)
+
+              INDEXED BY:       RULE (B)
+
+801.04,.01      RULE                   0;1 POINTER TO REMINDER ORDER CHECK RULES FILE (#801.1) (Required) (Multiply asked) (Key field)
+
+                INPUT TRANSFORM:  S DIC("S")="I $$VRULESCR^PXRMOCG(Y,.DA)" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+                LAST EDITED:      NOV 22, 2011 
+                HELP-PROMPT:      Answer must be 3-64 characters in length. 
+                DESCRIPTION:
+                                  This is the IEN of the rule.  
+
+                SCREEN:           S DIC("S")="I $$VRULESCR^PXRMOCG(Y,.DA)"
+                EXPLANATION:      National rules cannot be added to national groups
+                DELETE TEST:      1,0)= I $$VRULED^PXRMOCG(.DA)
+
+                LAYGO TEST:       1,0)= I $$VRULEA^PXRMOCG(X,.DA)
+
+                FIELD INDEX:      AOIR (#1033)    MUMPS    IR    ACTION    WHOLE FILE (#801)
+                    Short Descr:  This xref add the rules to each orderable item.
+                    Description:  This cross-reference is used to to a create a lookup cross-reference by Orderable Item and Rule IEN.  
+                      Set Logic:  D RULESAOI^PXRMORXR(.DA,.X)
+                       Set Cond:  S X=0 I +X(1)>0 S X=1
+                     Kill Logic:  D RULEKAOI^PXRMORXR(.DA,.X)
+                      Kill Cond:  S X=0 I X(1)'="" S X=1
+                           X(1):  RULE  (801.04,.01)  (forwards)
+
+                FIELD INDEX:      R (#1037)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#801)
+                    Short Descr:  This is a cross reference by order check rule IEN
+                      Set Logic:  S ^PXD(801,"R",X,DA(1),DA)=""
+                     Kill Logic:  K ^PXD(801,"R",X,DA(1),DA)
+                     Whole Kill:  K ^PXD(801,"R")
+                           X(1):  RULE  (801.04,.01)  (Subscr 1)  (forwards)
+
+                FIELD INDEX:      B (#1039)    REGULAR    IR    LOOKUP & SORTING
+                     Unique for:  Key A (#120), File #801.04
+                    Short Descr:  Uniqueness Index for Key 'A' of Subfile #801.04
+                      Set Logic:  S ^PXD(801,DA(1),3,"B",X,DA)=""
+                     Kill Logic:  K ^PXD(801,DA(1),3,"B",X,DA)
+                     Whole Kill:  K ^PXD(801,DA(1),3,"B")
+                           X(1):  RULE  (801.04,.01)  (Subscr 1)
+
+
+
+
+801,100       CLASS                  100;1 SET (Required)
+
+                                'L' FOR LOCAL; 
+                                'V' FOR VISN; 
+                                'N' FOR NATIONAL; 
+              INPUT TRANSFORM:  K:'$$VCLASS^PXRMINTR(X) X
+              LAST EDITED:      NOV 01, 2011 
+              HELP-PROMPT:      Enter a class. 
+              DESCRIPTION:      This is the CLASS of the Orderable Item Group. Possible classes are "N" for national, "V" for VISN, and "L" for local.  
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+801,101       SPONSOR                100;2 POINTER TO REMINDER SPONSOR FILE (#811.6)
+
+              LAST EDITED:      JAN 25, 2010 
+              HELP-PROMPT:      Select the sponsor. 
+              DESCRIPTION:      This is the organization or group that sponsors this orderable item group.  
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+801,102       REVIEW DATE            100;3 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 25, 2010 
+              HELP-PROMPT:      Enter the date the order check group should be reviewed. 
+              DESCRIPTION:      The REVIEW DATE is used to determine when the orderable item group should be reviewed to verify that it is current with the latest standards and guidelines.  
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+801,110       EDIT HISTORY           110;0 DATE Multiple #801.03 (Add New Entry without Asking)
+
+              DESCRIPTION:      This multiple is used to record a history of changes made to the order check group.  
+                                 
+
+
+801.03,.01      EDIT DATE              0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 01, 2012 
+                HELP-PROMPT:      Enter the date the record was edited (set by the system) 
+                DESCRIPTION:      This is the date and time when the editing was done. This field is set automatically and should not be changed by the user.  
+                                   
+                                   
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  801.03^B 
+                                  1)= S ^PXD(801,DA(1),110,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXD(801,DA(1),110,"B",$E(X,1,30),DA)
+
+
+801.03,1        EDIT BY                0;2 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      FEB 01, 2012 
+                HELP-PROMPT:      Select the user who edited the record (set by the system) 
+                DESCRIPTION:      This is the person who did the editing. This field is set automatically and should not be changed by the user.  
+                                   
+
+
+801.03,2        EDIT COMMENTS          1;0   WORD-PROCESSING #801.32   (IGNORE "|")
+
+                DESCRIPTION:      This word-processing field can be used to record the changes made during the editing session.  
+                                   
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 EDIT HISTORY:EDIT BY (#1)
+
+ORDERABLE ITEMS (#101.43)         ORDERABLE ITEM LIST:ORDERABLE ITEM (#.01)
+
+REMINDER ORDER CHECK RULES 
+                   (#801.1)       RULE LIST:RULE (#.01)
+
+REMINDER SPONSOR (#811.6)         SPONSOR (#101)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PXRM ORDER CHECK ITEMS GROUP  NOV 16, 2011@16:43  USER #0                                                                                                                                                                       REMINDER ORDERABLE ITEM GROUP 
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+PXRM OCG EDIT                 OCT 31, 2011@11:49  USER #0
+  PXRM OCG MAIN BLOCK           DD #801
+  PXRM OCG PHARMACY ITEM LIST   DD #801.015
+  PXRM OCG PHARMACY ITEM CAPTIONDD #801
+  PXRM OCG ORDERABLE ITEM LIST  DD #801.02
+  PXRM OCG ORDERABLE ITEM CAP   DD #801
+  PXRM OCG RULE LIST            DD #801.04
+  PXRM OCG RULE LIST CAPTION    DD #801
+
+PXRM OCG EDIT HISTORY         NOV 10, 2011@12:59  USER #0
+  PXRM OCG EDIT HISTORY         DD #801.03
+
+PXRM OCG EDIT RESTRICTED      NOV 02, 2011@15:02  USER #0
+  PXRM OCG RESTRICTED EDIT      DD #801
+  PXRM OCG PHARMACY ITEM LIST   DD #801.015
+  PXRM OCG PHARMACY ITEM CAPTIONDD #801
+  PXRM OCG ORDERABLE ITEM LIST  DD #801.02
+  PXRM OCG ORDERABLE ITEM CAP   DD #801
+  PXRM OCG RULE LIST CAPTION    DD #801
+  PXRM OCG RULE LIST RESTRICTED DD #801.04
+

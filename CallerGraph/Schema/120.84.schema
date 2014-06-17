@@ -1,0 +1,403 @@
+STANDARD DATA DICTIONARY #120.84 -- GMR ALLERGY SITE PARAMETERS FILE                                                                                                                                                              MAY 20,2014@15:30:15  PAGE 1
+STORED IN ^GMRD(120.84,  (1 ENTRY)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                           (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Site configurable features for the Adverse Reaction Tracking package.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: NAME(B), DIVISION(SITE)
+
+120.84,.01    NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      NOV 06, 1991 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field is the name of this set of parameters.  The name of the base set that is sent out is "HOSPITAL".  The code will work more efficiently if the name of the base set of parameters is not changed from "HOSPITAL".  
+
+              LAYGO TEST:       1,0)= D:$O(^GMRD(120.84,"B",X,0)) EN^DDIOL("CANNOT ADD DUPLICATE ENTRIES.","","!!") I '$O(^GMRD(120.84,"B",X,0))
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  120.84^B 
+                                1)= S ^GMRD(120.84,"B",$E(X,1,30),DA)=""
+                                2)= K ^GMRD(120.84,"B",$E(X,1,30),DA)
+
+
+120.84,1      TOP 10 REACTIONS       1;0 POINTER Multiple #120.841
+
+              DESCRIPTION:
+                                A list of reactions for the user to choose from when selecting reactions for a patient allergy/adverse reactions.  These will be the ten most common reactions, and modifiable by the site.  
+
+              IDENTIFIED BY:    
+                    "WRITE":    S GMRAHLPX="    ("_Y_")" D EN^DDIOL(GMRAHLPX,"","?0") K GMRAHLPX
+
+120.841,.01     REACTION               0;1 POINTER TO SIGN/SYMPTOMS FILE (#120.83) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U)'=""OTHER REACTION""&($S($L($T(SCREEN^XTID)):'$$SCREEN^XTID(120.83,.01,Y_"",""),1:1))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      MAY 18, 2005 
+                DESCRIPTION:
+                                  One of the ten most commonly selected reactions.  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U)'=""OTHER REACTION""&($S($L($T(SCREEN^XTID)):'$$SCREEN^XTID(120.83,.01,Y_"",""),1:1))"
+                EXPLANATION:      Don't allow inactive sign/symptoms to be chosen
+                EXECUTABLE HELP:  D:DZ="?" EN^DDIOL("One of the ten most commonly selected reactions.","","!?5")
+                DELETE TEST:      1,0)= I 1 D EN^DDIOL("CANNOT DELETE FROM TOP TEN LIST","","!?4,$C(7)")
+
+                LAYGO TEST:       1,0)= D EN^DDIOL("CANNOT ADD ENTRIES VIA FILEMAN, SEE THE GMRA SITE FILE EDIT OPTION","","!?4,$C(7)") I 0
+
+                CROSS-REFERENCE:  120.841^B 
+                                  1)= S ^GMRD(120.84,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^GMRD(120.84,DA(1),1,"B",$E(X,1,30),DA)
+
+
+
+
+120.84,2      AUTOVERIFY FOOD/DRUG/OTHER 0;2 SET
+
+                                '0' FOR NO AUTOVERIFY; 
+                                '1' FOR AUTOVERIFY DRUG ONLY; 
+                                '2' FOR AUTOVERIFY FOOD ONLY; 
+                                '3' FOR AUTOVERIFY DRUG/FOOD; 
+                                '4' FOR AUTOVERIFY OTHER ONLY; 
+                                '5' FOR AUTOVERIFY DRUG/OTHER; 
+                                '6' FOR AUTOVERIFY FOOD/OTHER; 
+                                '7' FOR AUTOVERIFY ALL; 
+              LAST EDITED:      JUN 26, 1991 
+              DESCRIPTION:
+                                This field determines which types of allergies a site wants autoverified at the user sign off.  
+
+
+120.84,3      AUTOVERIFY OBSERVED/HISTORICAL 0;3 SET
+
+                                '0' FOR NO AUTOVERIFY; 
+                                '1' FOR AUTOVERIFY HISTORICAL ONLY; 
+                                '2' FOR AUTOVERIFY OBSERVED ONLY; 
+                                '3' FOR AUTOVERIFY BOTH; 
+              LAST EDITED:      JUN 26, 1991 
+              DESCRIPTION:
+                                This field is configurable by the site to allow autoverification of observed or historical allergies.  
+
+
+120.84,3.5    AUTOVERIFY LOGICAL OPERATOR 0;6 SET
+
+                                '!' FOR OR; 
+                                '&' FOR AND; 
+              LAST EDITED:      SEP 30, 1992 
+              DESCRIPTION:      This field will determine how the Autoverify Food/Drug/Other and Autoverify Observed/Historical parameters relate to each other.  OR means that the reaction will be autoverified if it meets the criteria of one of the two
+                                parameters, while AND means the reaction will be autoverified only if it meets the criteria of both parameters.  If this field is left null, the OR condition will be used.  
+                                 
+                                For example, if you want to verify only observed drug reactions, you would set the Autoverify Food/Drug/Other parameter to AUTOVERIFY FOOD/OTHER and the Autoverify Observed/Historical to AUTOVERIFY HISTORICAL ONLY , and
+                                the Autoverify Logical Operator to OR.  This means that a reaction that has a type of Food/Other OR is Historical will be autoverified, thus leaving observed drug reactions to be verified.  
+                                 
+                                Another example would be if you wanted to verify all observed reactions and all drug reactions whether observed or historical.  The parameters should be set accordingly:  Autoverify Food/Drug/Other to AUTOVERIFY 
+                                FOOD/OTHER, Autoverify Observed/Historical to AUTOVERIFY HISTORICAL ONLY 
+                                 and Autoverify Logical Operator to AND.  In this case to be autoverifed, a reaction has to have a type of Food/Other AND it must be Historical, all other reactions will need to be verified.  
+
+
+120.84,4      REQUIRE ORIGINATOR COMMENTS 0;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 26, 1991 
+              DESCRIPTION:
+                                This field indicates whether the originator will be required to enter comments for an OBSERVED reaction.  
+
+
+120.84,5      *LAST DFN CONVERTED    CONV;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 12, 1995 
+              HELP-PROMPT:      Type a Number between 0 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The data in this field is the entry number of the Patient file record whose data was last converted by the Patient file data conversion.  This field will be 0 before the conversion begins and after the conversion is over.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+              READ AUTHORITY:   ^
+
+120.84,5.1    *CONVERSION TASK NUMBER CONV;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 12, 1995 
+              HELP-PROMPT:      Type a Number between 0 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the TaskMan task number of the Patient file data conversion job.  The data in this field will be null before the job is queued to run, and after it has finished running.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+              READ AUTHORITY:   ^
+
+120.84,5.2    *CONVERSION FINISHED   CONV;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 12, 1995 
+              DESCRIPTION:
+                                This field indicates whether the Patient file data conversion has finished running or not.  The data in this field will be 1 if the Patient file data conversion has finished running, or did not need to run.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+              READ AUTHORITY:   ^
+
+120.84,6      DIVISION               6;0 POINTER Multiple #120.846
+
+              DESCRIPTION:
+                                The divisions associated with this set of site parameters.  
+
+
+120.846,.01     DIVISION               0;1 POINTER TO INSTITUTION FILE (#4) (Required) (Multiply asked)
+
+                LAST EDITED:      NOV 06, 1991 
+                DESCRIPTION:
+                                  One of the divisions (institutions) associated with this set of site parameters.  
+
+                CROSS-REFERENCE:  120.846^B 
+                                  1)= S ^GMRD(120.84,DA(1),6,"B",$E(X,1,30),DA)=""
+                                  2)= K ^GMRD(120.84,DA(1),6,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  120.84^SITE 
+                                  1)= S ^GMRD(120.84,"SITE",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^GMRD(120.84,"SITE",$E(X,1,30),DA(1),DA)
+
+
+
+
+120.84,7      MARK ID BAND FLAG      0;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 10, 1992 
+              DESCRIPTION:      This field is an indicator to denote whether the site wants to document if the patient ID band should be marked for a certain allergy.  The system will assume the site wants to document the marking of inpatient ID bands. 
+                                If this field is answered NO, the site does not want to document the marking of inpatient ID bands.  
+
+
+120.84,7.1    METHOD OF NOTIFICATION 0;8 SET
+
+                                '0' FOR BULLETIN; 
+                                '1' FOR OE/RR TEAMS; 
+                                '2' FOR NO NOTIFICATION; 
+              LAST EDITED:      JAN 12, 1993 
+              DESCRIPTION:      This field tells ART if or how the users should be notified for chart or ID band markings.  There are three methods. The first method is the use of BULLETINs,  which is the current way ART works.  The second method is the
+                                use of OE/RR Teams.  If this method is used, then you will need to set up different teams for each ward and also assign printers to these teams.  The third method is to turn off the function.  
+
+
+120.84,7.2    ALERT ID BAND/CHART MARK 0;9 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      APR 19, 1993 
+              HELP-PROMPT:      Will turn off/on the alert function of the ID Band/Chart Mark option. 
+              DESCRIPTION:      This field is to let the system know if you want to issue alerts if the fields have not been answered in the Enter/Edit Patient Reaction Data portion of the system.  If the field is answered yes(1) or is null then, the
+                                system will continue to issue the alerts.  If this field is no(0), then the system will not issue alerts for this record.  
+
+
+120.84,7.3    NEW ADMISSION CHART MARK 0;10 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      OCT 17, 1995 
+              DESCRIPTION:
+                                This is to indicate if the site wants to send chart mark bulletin for a new admission.  
+
+
+120.84,8      *3.0 CONVERSION LAST DFN CONV3;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>10000000000)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 12, 1995 
+              HELP-PROMPT:      Type a Number between 0 and 10000000000, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field will contain the last field that has been fully converted. The field is initially set to 0.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+
+120.84,8.1    *3.0 TASK NUMBER       CONV3;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+              LAST EDITED:      DEC 12, 1995 
+              HELP-PROMPT:      Answer must be 1-100 characters in length. 
+              DESCRIPTION:
+                                This field is the TaskMan number that was assigned.  In the event that there is a conversion failure this will enable the system to give the programmers the tools to investigate the problem.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+
+120.84,8.2    *CONVERSION FINISHED   CONV3;3 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      DEC 12, 1995 
+              DESCRIPTION:
+                                This field indicates whether the V3.0 data structure conversion has finished running.  The data in this field will be 1 if the conversion has finished running or did not need to run.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+
+120.84,9      NKA CONVERSION         NKA;0 Multiple #120.849
+
+              LAST EDITED:      DEC 08, 1992 
+              DESCRIPTION:
+                                This field contains all the entries that are to be converted in the 3.0 NKA conversion.  
+
+              WRITE AUTHORITY:  ^
+              READ AUTHORITY:   ^
+
+120.849,.01     *NKA CONVERSION        0;1 FREE TEXT (Multiply asked)
+
+                NKA CONVERSION                                                                                                 
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      DEC 08, 1992 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                DESCRIPTION:
+                                  This is the entry that represents NKA.  
+
+                DELETE AUTHORITY: ^
+                WRITE AUTHORITY:  ^
+                READ AUTHORITY:   ^
+                CROSS-REFERENCE:  120.849^B 
+                                  1)= S ^GMRD(120.84,DA(1),"NKA","B",$E(X,1,30),DA)=""
+                                  2)= K ^GMRD(120.84,DA(1),"NKA","B",$E(X,1,30),DA)
+
+
+
+
+120.84,10     FDA DATA REQUIRED      0;7 SET
+
+                                'y' FOR YES; 
+                                'n' FOR NO; 
+              LAST EDITED:      NOV 30, 1992 
+              DESCRIPTION:      This field will indicate whether the entry of FDA Data should be required during the Enter/Edit Patient Reaction Data.  If this field is answered "YES", then the user must enter the FDA Data at the time of entering a
+                                reaction.  If this field is left null or answered "NO", then the FDA Data entry will not be required during the Enter/Edit Patient Reaction Data option.  
+
+
+120.84,10.1   E/E DESCRIPTION ACTIVE 0;11 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      OCT 17, 1995 
+              DESCRIPTION:
+                                Permit users to indicate why a reaction was Entered in Error.  
+
+
+120.84,11     REPORTER NAME          RPT;1 FREE TEXT
+
+              INPUT TRANSFORM:  X ^DD(120.84,11,9.2) K:X?1P.E!(X'?.ANP)!($L(X)>30)!($L(X)<3) X
+                                9.2 = N DIC,DO,DIX,DICR S DIC=200,DIC(0)="E" D ^DIC S:$D(DTOUT) X="^",Y=-1 Q:X="^"  S:+Y>0 X=$P(Y,U,2) Q:+Y>0  X ^DD(120.84,11,9.3) Q
+                                9.3 = F  S GMRAHLPX="IS "_X_" THE NAME YOU WANT TO USE" D EN^DDIOL(GMRAHLPX,"","!?2") K GMRAHLPX S %=1 D YN^DICN S:%=1 Y=1 S:%=2 X="" Q:%  D EN^DDIOL("ANSWER YES OR NO","","!?5")
+              LAST EDITED:      DEC 01, 1992 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field would contain the default reporter name to be used on the FDA reports.  
+
+              EXECUTABLE HELP:  N DIC,D,DO S DIC="^VA(200,",DIC(0)="E",D="B",DZ="?" D DQ^DICQ Q
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+120.84,12     REPORTER ADDRESS1      RPT;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      DEC 01, 1992 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field would contain the first line of the reporter address to be used as a default for the FDA reports.  
+
+
+120.84,13     REPORTER ADDRESS2      RPT;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      DEC 01, 1992 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field would contain the second line of the reporter address to be used as the default on the FDA reports.  
+
+
+120.84,14     REPORTER ADDRESS3      RPT;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      DEC 01, 1992 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field would contain the third line of the reporter address to be used as the default on the FDA reports.  
+
+
+120.84,15     REPORTER CITY          RPT;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      DEC 01, 1992 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field contains the city to be used as the default on the FDA Reports.  
+
+
+120.84,16     REPORTER STATE         RPT;6 POINTER TO STATE FILE (#5)
+
+              LAST EDITED:      DEC 01, 1992 
+              DESCRIPTION:
+                                This field contains the default state to be used on the FDA reports.  
+
+
+120.84,17     REPORTER ZIP           RPT;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5) X
+              LAST EDITED:      DEC 01, 1992 
+              HELP-PROMPT:      Answer must be 5-10 characters in length. 
+              DESCRIPTION:
+                                This field contain the default Zip Code to be used on the FDA reports.  
+
+
+120.84,18     REPORTER PHONE         RPT;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<7) X
+              LAST EDITED:      DEC 01, 1992 
+              HELP-PROMPT:      Answer must be 7-20 characters in length. 
+              DESCRIPTION:
+                                This field contains the default phone number to be used on the FDA reports.  
+
+
+120.84,19     OCCUPATION             RPT;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      AUG 10, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field contains the reporter's occupation.  
+
+
+120.84,21     *CONVERSION OF NKA     CONNKA;1 SET
+
+                                'y' FOR YES; 
+                                'n' FOR NO; 
+              LAST EDITED:      DEC 12, 1995 
+              DESCRIPTION:      This field indicates if the NKA conversion is complete.  ATS 3.0 will not install onto a system that has ATS Version 2.2 if this field is not set.  
+                                 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  DIVISION:DIVISION (#.01)
+
+SIGN/SYMPTOMS (#120.83)           TOP 10 REACTIONS:REACTION (#.01)
+
+STATE (#5)                        REPORTER STATE (#16)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

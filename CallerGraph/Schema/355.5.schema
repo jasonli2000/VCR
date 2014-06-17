@@ -1,0 +1,336 @@
+STANDARD DATA DICTIONARY #355.5 -- INSURANCE CLAIMS YEAR TO DATE FILE                                                                                                                                                             MAY 20,2014@15:35:44  PAGE 1
+STORED IN ^IBA(355.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file will contain the claim to date information about a patient's health insurance claims to a specific carrier for a specific year.  This will allow estimate of receivables based on whether claims exceed deductibles or other maximum benefits.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+
+CROSS
+REFERENCED BY: PATIENT(APPY), POLICY(APPY1), BENEFIT YEAR BEGINNING ON(APPY2), PATIENT POLICY POINTER(APPY3), POLICY(B), PATIENT(C)
+
+355.5,.01     POLICY                 0;1 POINTER TO GROUP INSURANCE PLAN FILE (#355.3) (Required)
+
+              LAST EDITED:      AUG 31, 1993 
+              DESCRIPTION:
+                                Select the patient's health insurance policy against which claims may have been made.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  355.5^B 
+                                1)= S ^IBA(355.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.5,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  355.5^APPY1^MUMPS 
+                                1)= I +$P(^IBA(355.5,DA,0),U,2),-$P(^(0),U,3),+$P(^(0),U,17) S ^IBA(355.5,"APPY",+$P(^(0),U,2),X,-$P(^(0),U,3),+$P(^(0),U,17),DA)=""
+                                2)= K ^IBA(355.5,"APPY",+$P(^IBA(355.5,DA,0),U,2),X,-$P(^(0),U,3),+$P(^(0),U,17),DA)
+                                Cross-reference of patients by policy by year.  
+
+
+
+355.5,.02     PATIENT                0;2 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      DEC 17, 1993 
+              DESCRIPTION:
+                                Enter the name of the patient who is on this policy.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  355.5^C 
+                                1)= S ^IBA(355.5,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.5,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  355.5^APPY^MUMPS 
+                                1)= I -$P(^IBA(355.5,DA,0),U,3),+^(0),+$P(^(0),U,17) S ^IBA(355.5,"APPY",X,+^(0),-$P(^(0),U,3),+$P(^(0),U,17),DA)=""
+                                2)= K ^IBA(355.5,"APPY",X,+^IBA(355.5,DA,0),-$P(^(0),U,3),+$P(^(0),U,17),DA)
+                                Cross-references patient by policy by year.  
+
+
+
+355.5,.03     BENEFIT YEAR BEGINNING ON 0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 17, 1993 
+              DESCRIPTION:
+                                This is the first day of the year in which the health insurance policy's benefits apply.  Exact date (with month and day) is required.  
+
+              TECHNICAL DESCR:
+                                This field must match the year for an entry for this patient and policy in the annual benefits field.  It is automatically stored by the system when creating an entry.  It is not editable.  
+
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+              CROSS-REFERENCE:  355.5^APPY2^MUMPS 
+                                1)= I +$P(^IBA(355.5,DA,0),U,2),+^(0),+$P(^(0),U,17) S ^IBA(355.5,"APPY",+$P(^(0),U,2),+^(0),-X,+$P(^(0),U,17),DA)=""
+                                2)= K ^IBA(355.5,"APPY",+$P(^IBA(355.5,DA,0),U,2),+^(0),-X,+$P(^(0),U,17),DA)
+                                Cross-reference of patients by policy by year.  
+
+
+
+355.5,.04     DEDUCTIBLE MET?        0;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 13, 1993 
+              DESCRIPTION:
+                                If the dollar amount of claims against this policy is less than the the policy's annual deductible, enter "NO".  If it is equal to or greater than the annual deductible, enter "YES".  
+
+
+355.5,.05     AMOUNT OF DEDUCTIBLE MET 0;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                Enter the dollar amount of claims against this policy.  
+
+
+355.5,.06     DEDUCTIBLE (INPT) MET? 0;6 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAY 13, 1993 
+              DESCRIPTION:
+                                If the dollar amount of claims for inpatient services is less than the policy's annual deductible for inpatient services, enter "NO".  If it is equal to or greater than the annual deductible for such services, enter "YES".  
+
+
+355.5,.07     AMOUNT OF DEDUCTIBLE (INP) MET 0;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                Enter the dollar amount of claims against this policy for inpatient services.  
+
+
+355.5,.08     DEDUCTIBLE (OPT) MET?  0;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 13, 1993 
+              DESCRIPTION:      If the dollar amount of claims for outpatient services is less than the policy's annual deductible for outpatient services, enter "NO".  If it is equal to or greater than the annual deductible for such services, enter
+                                "YES".  
+
+
+355.5,.09     AMOUNT OF DEDUCTIBLE (OPT) MET 0;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the dollar amount of claims against this policy for outpatient services.  
+
+
+355.5,.1      AMT LIFETIME MAX USED (OPT) 0;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 14, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the dollar amount of claims against this policy, which can then be compared to the maximum amount available over the life of the policy.  
+
+
+355.5,.11     MH DEDUCTIBLE (INP) MET? 0;11 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 13, 1993 
+              DESCRIPTION:      If the dollar amount of claims for inpatient mental health services is less than the policy's annual deductible for these services, enter "NO".  If it is equal to or greater than the annual deductible for such services,
+                                enter "YES".  
+
+
+355.5,.12     AMOUNT OF MH (INP) DED MET 0;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the dollar amount of claims against this policy for inpatient mental health services.  
+
+
+355.5,.13     MH DEDUCTIBLE (OPT) MET? 0;13 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 13, 1993 
+              DESCRIPTION:      If the dollar amount of claims for outpatient mental health services is less than the policy's annual deductible for these services, enter "NO".  If it is equal to or greater than the annual deductible for such services,
+                                enter "YES".  
+
+
+355.5,.14     AMOUNT OF MH (OPT) DED MET 0;14 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the dollar amount of claims against this policy for outpatient mental health services.  
+
+
+355.5,.15     PRE-EXISTING CONDITIONS 0;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                Enter the patient's pre-existing conditions.  
+
+
+355.5,.16     COORDINATION OF BENEFITS DATA 0;16 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAY 13, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                If the patient is included in a policy held by a family member, e.g.  spouse, enter that information here.  
+
+
+355.5,.17     PATIENT POLICY POINTER 0;17 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 31, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 999999, 0 Decimal Digits 
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+              CROSS-REFERENCE:  355.5^APPY3^MUMPS 
+                                1)= I $P(^IBA(355.5,DA,0),U,2),+^(0),-$P(^(0),U,3) S ^IBA(355.5,"APPY",+$P(^(0),U,2),+^(0),-$P(^(0),U,3),X,DA)=""
+                                2)= K ^IBA(355.5,"APPY",+$P(^(0),U,2),+^(0),-$P(^(0),U,3),X,DA)
+                                Cross-references patients by policy by year.  
+
+
+
+355.5,.18     AMT. MH LIFET. MAX USED (INPT) 0;18 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      DEC 14, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                Enter the dollar amount of claims against this policy for mental health services.  
+
+
+355.5,.19     AMT LIFETIME MAX USED (INPT) 0;19 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      DEC 14, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the dollar amount of inpatient claims against this policy, which can then be compared to the maxium amount available over the life of the policy.  
+
+
+355.5,.2      AMT MH LIFET MAX USED (OPT) 0;20 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<0) X
+              LAST EDITED:      DEC 14, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Enter the dollar amount of MH claims against this policy, which can then be compared to the maximum amount available over the life of the policy.  
+
+
+355.5,1.01    DATE ENTERED           1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 13, 1993 
+              DESCRIPTION:
+                                This is the date that this entry was created.  It is automatically triggered by the creation of the entry.  
+
+              WRITE AUTHORITY:  ^
+
+355.5,1.02    ENTERED BY             1;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 13, 1993 
+              DESCRIPTION:
+                                This is the user who created this entry.  It is automatically triggered by the creation of this entry.  
+
+              WRITE AUTHORITY:  ^
+
+355.5,1.03    DATE LAST VERIFIED     1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 07, 1993 
+              DESCRIPTION:
+                                This is the date that the entry was verified.  It is automatically triggered by the verification process.  
+
+
+355.5,1.04    VERIFIED BY            1;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 13, 1993 
+              DESCRIPTION:
+                                This is the person who verified the entry.  It is automatically triggered by the verification process.  
+
+
+355.5,1.05    DATE LAST EDITED       1;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 07, 1993 
+              DESCRIPTION:
+                                This is the date that the entry was last edited.  It is automatically triggered whenever editing takes place.  
+
+              WRITE AUTHORITY:  ^
+
+355.5,1.06    EDITED BY              1;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 13, 1993 
+              DESCRIPTION:
+                                This is the name of the person who last edited the entry.  It is automatically triggered whenever editing takes place.  
+
+              WRITE AUTHORITY:  ^
+
+355.5,1.07    PERSON CONTACTED       1;7 FREE TEXT (Required)
+
+              WHO DID YOU TALK TO AT THE INSURANCE COMPANY?                                                                    
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      JUL 02, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                Give the name of the person at the insurance company with whom you verified insurance claims information.  
+
+
+355.5,1.08    COMMENT - CLAIMS FILED 1;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+              LAST EDITED:      JUN 11, 1993 
+              HELP-PROMPT:      Answer must be 3-80 characters in length. 
+              DESCRIPTION:
+                                Enter any pertinent information here that you did not enter above.  
+
+
+355.5,1.09    CONTACT'S PHONE NUMBER 1;9 FREE TEXT (Required)
+
+              WHAT WAS THEIR PHONE NUMBER?                                                                                     
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<7) X
+              LAST EDITED:      JUL 02, 1993 
+              HELP-PROMPT:      Answer must be 7-20 characters in length. 
+              DESCRIPTION:
+                                Give the telephone number of the person who verified insurance claims information.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+GROUP INSURANCE PLAN (#355.3)     POLICY (#.01)
+
+NEW PERSON (#200)                 ENTERED BY (#1.02)
+                                  VERIFIED BY (#1.04)
+                                  EDITED BY (#1.06)
+
+PATIENT (#2)                      PATIENT (#.02)
+
+
+
+INPUT TEMPLATE(S):
+IBCN BU ADD COM               JUN 30, 1993@15:46  USER #11985
+IBCN BU ED AL                 DEC 27, 1993@09:52  USER #0    
+IBCN BU INPT                  DEC 14, 1993@08:54  USER #0    
+IBCN BU OPT                   DEC 14, 1993@08:53  USER #0    
+IBCN BU POL                   JUL 08, 1993@12:23  USER #11985
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

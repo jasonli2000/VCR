@@ -1,0 +1,1583 @@
+STANDARD DATA DICTIONARY #444 -- REQUEST FOR QUOTATION FILE                                                                                                                                                                       MAY 20,2014@15:34:28  PAGE 1
+STORED IN ^PRC(444,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file serves as a worksheet for the Request for Quotation process.  The Purchasing agent can edit data imported from one or more 2237s.  This data is then the basis for the electronically submitted RFQ.  Correspondence via 864 Transactions (Text
+Messages) are stored in a multiple of this file.  The quotes submitted by vendors are also stored in a multiple of this file.  
+
+
+              DD ACCESS: @
+              RD ACCESS: [
+              WR ACCESS: ]
+             DEL ACCESS: %
+           LAYGO ACCESS: $
+IDENTIFIED BY: INITIALS OF ADMIN CONTACT (#3.1), STATUS (#7)[R], PRIMARY 2237 (#8)[R]
+
+POINTED TO BY: RFQ/TXT POINTER field (#8) of the EDI SENDER File (#443.75) 
+               
+
+CROSS
+REFERENCED BY: DESTINATION 2237(AE), STATUS(AF), STATUS(AH), STATUS(AI), RFQ NBR(B), ORIGINATING 2237(C), RFQ NBR(D), RFQ NBR(F), QUOTE DUE DATE/TIME(QD)
+
+444,.01       RFQ NBR                0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X'?3N1"-"2N1"-RFQ-"5N X
+              LAST EDITED:      MAY 13, 1996 
+              HELP-PROMPT:      RFQ # consists of 3 digit Station #, hyphen, FY, hyphen, 'RFQ', hyphen, Seq # 
+              DESCRIPTION:      This is the unique reference number for the Request for Quotation entry.  It is derived from the following: 
+                                    3 digits station number, i.e. 688 
+                                    hyphen 
+                                    2 digits Fiscal Year, i.e. 96 
+                                    hyphen 
+                                    string constant 'RFQ' 
+                                    hyphen 
+                                    5 digits sequence counter padded on the left with zeros.  For example 688-96-RFQ-00001.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  444^B 
+                                1)= S ^PRC(444,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRC(444,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  444^D^MUMPS 
+                                1)= S ^PRC(444,"D",(+$P(X,"-",4))_"-"_$P(X,"-",2),DA)=""
+                                2)= K ^PRC(444,"D",(+$P(X,"-",4))_"-"_$P(X,"-",2),DA)
+                                This cross reference permits lookup by Sequence Number plus Fiscal Year.  
+
+
+              CROSS-REFERENCE:  444^F^MUMPS 
+                                1)= S:$P($G(^PRC(444,DA,0)),U,8)=1 ^PRC(444,"F",$E(X,1,30),DA)=""
+                                2)= K ^PRC(444,"F",$E(X,1,30),DA)
+                                This cross reference is maintained by both the #.01 field and the #7 (Status) field, so that it only contains INCOMPLETE RFQs.  
+
+
+
+444,1         REFERENCE DATE         0;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:3941231<X!(2950101>X) X
+              LAST EDITED:      NOV 13, 1995 
+              HELP-PROMPT:      Enter effective date for RFQ between 1 Jan 1995 and 31 Dec 2094. 
+              DESCRIPTION:
+                                This is the effective date for the RFQ.  
+
+
+444,2         QUOTE DUE DATE/TIME    0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:3941231<X!(2950101>X) X I $D(X) S:$P(X,".",2)="" X=X_"."_1630
+              LAST EDITED:      APR 11, 1996 
+              HELP-PROMPT:      Enter a Date between 1 Jan 1995 and 31 Dec 2094 and time if not 4:30 PM. 
+              DESCRIPTION:
+                                This is the date by which the vendor must submit his quote in order for it to be considered.  The time should be entered if other than 4:30 PM local time of that date.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  444^QD^MUMPS 
+                                1)= S ^PRC(444,"QD",$P(X,"."),DA)=""
+                                2)= K ^PRC(444,"QD",$P(X,"."),DA)
+                                This cross reference sorts RFQs by Quote Due Date.  
+
+
+
+444,3         CONTRACTING OFFICER    0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^(400)),$P(^(400),U)>2" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 20, 1996 
+              HELP-PROMPT:      Enter the name of Purchasing Agent processing this RFQ. 
+              DESCRIPTION:
+                                This is the person who should be contacted by the vendor if there are questions concerning the requirements on this RFQ.  
+
+              SCREEN:           S DIC("S")="I $D(^(400)),$P(^(400),U)>2"
+              EXPLANATION:      Must be Purchasing Agent or Manager in Supply
+              CROSS-REFERENCE:  ^^TRIGGER^444^3.1 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRC(444,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y X ^DD(444,3,1,1,1.1) X ^DD(444,3,1,1,1.4)
+                                1.1)= S X=DIV S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^VA(200,+D0,0)) D0=-1 S Y(101)=$S($D(^VA(200,D0,0)):^(0),1:"") S X=$P(Y(101),U,2) S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^PRC(444,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=444,DIG=3.1 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRC(444,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X="" S DIH=$S($D(^PRC(444,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=444,DIG=3.1 D ^DICR:$O(^DD(DIH,DIG,1
+                                ,0))>0
+
+                                CREATE VALUE)= #3:#1
+                                DELETE VALUE)= @
+                                FIELD)= #3.1
+
+
+444,3.1       INITIALS OF ADMIN CONTACT 0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:X'?.ANP!(X<0) X I $D(X) K:$L(X)>5!($L(X)<2)!'(X'?.N) X
+              LAST EDITED:      JUN 28, 1996 
+              HELP-PROMPT:      Answer must be 2-5 characters in length. 
+              DESCRIPTION:
+                                These are the initials of the Administrative Contact/Contracting Officer/ Purchasing Agent assigned to this RFQ.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the CONTRACTING OFFICER field of the REQUEST FOR QUOTATION File 
+
+
+444,4         ADMINISTRATIVE CONTACT FAX 0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<12)!'(X?3N1"-"3N1"-"4N) X
+              LAST EDITED:      NOV 13, 1995 
+              HELP-PROMPT:      Enter the FAX number including Area Code as 3N-3N-4N. 
+              DESCRIPTION:
+                                This is the FAX number to which non-EDI vendors may submit quotes or requests for additional information.  
+
+
+444,5         PRIORITY OF REQUEST    0;6 SET
+
+                                'EM' FOR EMERGENCY; 
+                                'SP' FOR SPECIAL; 
+                                'ST' FOR STANDARD; 
+              LAST EDITED:      NOV 14, 1995 
+              DESCRIPTION:
+                                Enter URGENCY best describing this RFQ; it is probably derived from the 2237's PRIORITY.  
+
+
+444,7         STATUS                 0;8 SET (Required)
+
+                                '0' FOR CANCELLED; 
+                                '1' FOR INCOMPLETE; 
+                                '2' FOR PENDING QUOTES; 
+                                '3' FOR CLOSED; 
+                                '4' FOR EVALUATION COMPLETE; 
+                                '5' FOR AWARDED; 
+              LAST EDITED:      MAY 08, 1996 
+              HELP-PROMPT:      Enter the status reflecting the state of the RFQ 
+              DESCRIPTION:
+                                This field indicates where the RFQ is in the process from submission through award.  
+
+              CROSS-REFERENCE:  444^AF^MUMPS 
+                                1)= D STATUSDT^PRCHQ1B
+                                2)= Q
+                                This cross reference triggers the status date in the appropriate field.  
+
+
+              CROSS-REFERENCE:  444^AH 
+                                1)= S ^PRC(444,"AH",$E(X,1,30),DA)=""
+                                2)= K ^PRC(444,"AH",$E(X,1,30),DA)
+                                This cross reference enables selection of RFQs by status for processing i.e. closing RFQ by background process.  
+
+
+              CROSS-REFERENCE:  444^AI^MUMPS 
+                                1)= S:X=1 ^PRC(444,"F",$P(^PRC(444,DA,0),U),DA)=""
+                                2)= K ^PRC(444,"F",$P(^PRC(444,DA,0),U),DA)
+                                This "F" node cross reference is jointly maintained by the Status field and the #.01 field so that it only contains INCOMPLETE RFQs.  
+
+
+
+444,7.5       CLOSED DATE/TIME       1;12 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 22, 1996 
+              HELP-PROMPT:      This is the date and time that RFQ was CLOSED. 
+              DESCRIPTION:
+                                This field indicates when the RFQ was closed to further quotes.  
+
+
+444,7.6       EVALUATION COMPLETE DATE/TIME 1;13 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 22, 1996 
+              HELP-PROMPT:      This is the date and time that Evaluation of the Quotes was completed. 
+              DESCRIPTION:
+                                This field records when evaluation of the RFQ was completed.  
+
+
+444,7.7       AWARDED DATE/TIME      1;14 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 22, 1996 
+              HELP-PROMPT:      This is the date and time that the winning quotes were awarded. 
+              DESCRIPTION:
+                                This records when the wining quotes were awarded.  
+
+
+444,7.8       PENDING QUOTES DATE/TIME 1;15 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 22, 1996 
+              HELP-PROMPT:      Enter Date and Time that the Status was changed to Pending Quotes. 
+              DESCRIPTION:
+                                This field indicates when the RFQ was submitted to vendor(s) for quote(s).  
+
+
+444,7.9       CANCEL DATE/TIME       1;16 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 27, 1996 
+              HELP-PROMPT:      Enter Date/Time when this RFQ is cancelled. 
+              DESCRIPTION:
+                                This field records when an RFQ has been cancelled.  
+
+
+444,8         PRIMARY 2237           0;9 POINTER TO CONTROL POINT ACTIVITY FILE (#410) (Required)
+
+              LAST EDITED:      MAY 03, 1996 
+              DESCRIPTION:
+                                This is the initially added 2237, the one which is the basis for the RFQ number.  This 2237 will provide the defaults for the RFQ's header information.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^444^8.1 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRC(444,D0,0)):^(0),1:"") S X=$P(Y(1),U,10),X=X S DIU=X K Y X ^DD(444,8,1,1,1.1) X ^DD(444,8,1,1,1.4)
+                                1.1)= S X=DIV S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^PRCS(410,+D0,0)) D0=-1 S Y(101)=$S($D(^PRCS(410,D0,0)):^(0),1:"") S X=$P(Y(101),U,10),X=X S X=X S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^PRC(444,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,10)=DIV,DIH=444,DIG=8.1 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRC(444,D0,0)):^(0),1:"") S X=$P(Y(1),U,10),X=X S DIU=X K Y S X="" S DIH=$S($D(^PRC(444,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,10)=DIV,DIH=444,DIG=8.1 D ^DICR:$O(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                CREATE VALUE)= INTERNAL(#8:#448)
+                                DELETE VALUE)= @
+                                FIELD)= #8.1
+                                This cross reference transfers the 2237's substation to the SUBSTATION field of the RFQ entry.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^444^8.2 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRC(444,D0,0)):^(0),1:"") S X=$P(Y(1),U,14),X=X S DIU=X K Y X ^DD(444,8,1,2,1.1) X ^DD(444,8,1,2,1.4)
+                                1.1)= S X=DIV S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^PRCS(410,+D0,0)) D0=-1 S Y(101)=$S($D(^PRCS(410,D0,3)):^(3),1:"") S X=$P(Y(101),U,1) S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^PRC(444,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,14)=DIV,DIH=444,DIG=8.2 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= #8:#15
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #8.2
+                                This cross reference triggers the Primary 2237's Fund Control Point into the FCP field of the RFQ entry.  
+
+
+
+444,8.1       SUBSTATION             0;10 POINTER TO ADMIN. ACTIVITY SITE PARAMETER FILE (#411)
+
+              LAST EDITED:      MAY 06, 1996 
+              DESCRIPTION:
+                                When the Primary 2237 field #8 is populated, the substation field is triggered into this field if the 2237 has a substation entered in field #448.  
+
+              NOTES:            TRIGGERED by the PRIMARY 2237 field of the REQUEST FOR QUOTATION File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^444^14 
+                                1)= Q
+                                2)= X ^DD(444,8.1,1,1,2.3) I X S X=DIV S Y(1)=$S($D(^PRC(444,D0,1)):^(1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(444,8.1,1,1,2.4)
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^PRC(444,D0,0)):^(0),1:"") S X=$S('$D(^PRC(411,+X,0)):"",1:$P(^(0),U,1))'=$S('$D(^PRC(411,+$P(Y(1),U,10),0)):"",1:$P(^(0),U,1))
+                                2.4)= S DIH=$S($D(^PRC(444,DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,3)=DIV,DIH=444,DIG=14 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD SUBSTATION'=SUBSTATION
+                                DELETE VALUE)= @
+                                FIELD)= #14
+                                This trigger cross reference clears the SHIP TO field (#14) whenever the existing value in the SUBSTATION field is changed.  
+
+
+
+444,8.2       FCP                    0;14 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X D:$D(X) FCP^PRCHQ1B
+              LAST EDITED:      APR 26, 1996 
+              HELP-PROMPT:      Answer with Fund Control Point from Primary 2237 imported into this RFQ 
+              DESCRIPTION:
+                                This is the Fund Control Point for this RFQ.  It is imported into this RFQ entry at the time the Primary 2237 is selected.  
+
+              EXECUTABLE HELP:  D FCPHLP^PRCHQ1B
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PRIMARY 2237 field of the REQUEST FOR QUOTATION File 
+
+
+444,9         REQUESTING SERVICE     0;11 POINTER TO SERVICE/SECTION FILE (#49) (Required)
+
+              LAST EDITED:      NOV 13, 1995 
+              DESCRIPTION:
+                                This is the Service/Section of the Requester.  
+
+
+444,10        POINT OF CONTACT       0;12 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      NOV 13, 1995 
+              DESCRIPTION:
+                                This is the Requester of the goods or services.  
+
+
+444,11        POINT OF CONTACT PHONE 0;13 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>21!($L(X)<4) X
+              LAST EDITED:      JAN 11, 1996 
+              HELP-PROMPT:      Answer must be 4-21 characters in length. 
+              DESCRIPTION:
+                                This is the Requester's phone number plus any applicable extension.  
+
+
+444,12        FOB                    1;1 SET (Required)
+
+                                'D' FOR DESTINATION; 
+                                'O' FOR ORIGIN; 
+              LAST EDITED:      NOV 30, 1995 
+              DESCRIPTION:      This field indicates whether prices include shipping. If FOB (Freight on Board) is Destination, there will be no additional shipping fees.  If, in contrast, FOB is Origin, the price assumes the buyer will pick up the 
+                                item(s) at the vendor's location, and shipping incurs additional charges.  
+
+
+444,13        REQD DELIVERY DATE     1;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:3941231<X!(2950101>X) X
+              LAST EDITED:      JAN 11, 1996 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1/1/1995 AND 12/31/2094 
+              DESCRIPTION:
+                                This is the date by which the vendor must supply the goods or services.  
+
+
+444,14        SHIP TO                1;3 NUMBER
+
+              INPUT TRANSFORM:  D IT1^PRCHQ1
+              OUTPUT TRANSFORM: D OT1^PRCHQ1
+              LAST EDITED:      NOV 13, 1995 
+              HELP-PROMPT:      Enter a Receiving Location. 
+              DESCRIPTION:
+                                This is the address for the delivery.  
+
+              EXECUTABLE HELP:  D EH1^PRCHQ1
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the SUBSTATION field of the REQUEST FOR QUOTATION File 
+
+
+444,15        DELIVER TO             1;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      NOV 13, 1995 
+              HELP-PROMPT:      Enter individual's name and/or the room number receiving delivery. 3-30 chars 
+              DESCRIPTION:
+                                This is the individual or location to which delivery should be made.  
+
+
+444,16        SPECIAL REMARKS        3;0   WORD-PROCESSING #444.016
+
+              DESCRIPTION:
+                                These are Special Remarks for the Request, originally brought over from the Primary 2237, but subject to subsequent editing.  
+
+
+444,17        ADMINISTRATIVE CERTIFICATIONS 4;0   WORD-PROCESSING #444.017
+
+              DESCRIPTION:      These are the Administrative Certifications pertaining to the RFQ.  This field is originally populated with canned phrases selected from the Adminstrative Certifications file (#442.7), and then subject to further local
+                                editing.  
+
+
+444,17.5      SET ASIDE?             1;7 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      AUG 20, 1996 
+              HELP-PROMPT:      Answer 'YES' if award influenced by set aside program (i.e. race or gender) 
+              DESCRIPTION:
+                                This field flags those RFQ's whose award should consider set aside programs for targeted groups.  
+
+
+444,18        JUSTIFICATION          6;0   WORD-PROCESSING #444.018
+
+              DESCRIPTION:
+                                This field is populated upon the completion of the evaluation of Vendors' quotes and explains the basis of the decisions for award.  
+
+
+444,19        ITEM                   2;0 Multiple #444.019
+
+              DESCRIPTION:
+                                This is the list of items submitted for the vendor's quote.  
+
+
+444.019,.01     LINE ITEM NBR          0;1 NUMBER (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Type a Whole Number between 1 and 999 
+                DESCRIPTION:
+                                  This is the Line Item # for this item on the RFQ 
+
+                CROSS-REFERENCE:  444.019^B 
+                                  1)= S ^PRC(444,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRC(444,DA(1),2,"B",$E(X,1,30),DA)
+
+
+444.019,1       ITEM MASTER FILE NBR   0;4 POINTER TO ITEM MASTER FILE (#441)
+
+                LAST EDITED:      NOV 30, 1995 
+                HELP-PROMPT:      Select the procurement (UIR) card number that you wish to order 
+                DESCRIPTION:      This is a number used to identify an item in the Item File when entering a repetitive form type (associated with the Item Master Number).  
+                                   
+                                   i.e.  322  Widget-3/4 IN 
+
+
+444.019,1.5     DESCRIPTION            2;0   WORD-PROCESSING #444.029
+
+                DESCRIPTION:
+                                  This is the description of the desired item.  
+
+
+444.019,1.6     DESCRIPTION (SHORT)    5;1 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                LAST EDITED:      JAN 25, 1996 
+                HELP-PROMPT:      Answer must be 3-60 characters in length. 
+                DESCRIPTION:
+                                  This field contains a short description of the desired item.  It will appear in reports and editing sessions.  
+
+
+444.019,1.8     SOLICITED VENDOR'S PRODUCT # 5;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      MAR 04, 1996 
+                HELP-PROMPT:      For solicitation going only to a single vendor, enter 1-30 chars product #. 
+                DESCRIPTION:
+                                  This field enables entering the vendor's product number, if known, for solicitations going only to a single vendor.  
+
+
+444.019,2       QUANTITY               0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<.01)!(X?.E1"."3N.N) X
+                LAST EDITED:      NOV 14, 1995 
+                HELP-PROMPT:      Enter number of units desired, from .01 to 999999 (2 decimals max) 
+                DESCRIPTION:
+                                  This is the quantity of the item requested.  
+
+
+444.019,3       UNIT OF PURCHASE       0;3 POINTER TO UNIT OF ISSUE FILE (#420.5) (Required)
+
+                LAST EDITED:      NOV 14, 1995 
+                HELP-PROMPT:      Select the appropriate unit for this item 
+                DESCRIPTION:      This is the unit of measurement for items being procured.  
+                                   
+                                   i.e. each, dozen, box, bottle, case, pound, square foot, etc.  
+
+
+444.019,4       FEDERAL SUPPLY CLASSIFICATION 0;5 POINTER TO FEDERAL SUPPLY CLASSIFICATION FILE (#441.2)
+
+                FSC/PSC                                                                                                        
+                INPUT TRANSFORM:  D EN101^PRCHNPO7
+                LAST EDITED:      AUG 09, 2005 
+                DESCRIPTION:
+                                  This is the Federal Supply Classification for an item, or the Product Service Code for a service.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+444.019,5       NSN                    0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>17!($L(X)<16)!'(X?4N1"-"2UN1"-"3N1"-"4N.UN) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Enter National Stock Number in format: 6505-56-789-1234A (last char optional) 
+                DESCRIPTION:
+                                  This is the National Stock Number for this item.  
+
+
+444.019,6       SIC CODE               0;7 POINTER TO SIC CODE FILE (#444.2)
+
+                LAST EDITED:      NOV 30, 1995 
+                HELP-PROMPT:      Enter the 4-6 digits code 
+                DESCRIPTION:
+                                  The Standard Industrial Classification coding system categorizes organizations by type of economic activity.  
+
+
+444.019,7       NATIONAL DRUG CODE     0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>14!($L(X)<11)!'(X?1.6N1"-"1.4N1"-"1.2N) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Enter in format 1-6 digits, hyphen, 1-4 digits, hyphen, 1-2 digits i.e. 123456-1234-12 
+                DESCRIPTION:
+                                  This is the National Drug Code for the item, if applicable.  
+
+
+444.019,8       MFG PART NO.           0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Enter the Manufacturer's Part # (3-30 chars) 
+                DESCRIPTION:
+                                  This is the Manufacturer's Part Number.  
+
+
+444.019,9       LOT NBR                1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This is the Lot # for the product desired.  
+
+
+444.019,10      SERIAL NBR             1;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This is the serial number of an equipment item.  This might be entered if the quote was for service on an item of equipment.  
+
+
+444.019,12      HAZARDOUS MATERIAL     0;11 SET
+
+                                  'HM' FOR HAZARDOUS MATERIAL; 
+                LAST EDITED:      APR 29, 1996 
+                DESCRIPTION:
+                                  If the item is marked as hazardous material, there may be special requirements for shipping and storage of this item.  
+
+
+444.019,12.5    BOC                    1;8 POINTER TO BUDGET OBJECT CODE FILE (#420.2) (Required)
+
+                INPUT TRANSFORM:  D:$D(X) BOCINP^PRCHQ1B
+                LAST EDITED:      FEB 15, 1996 
+                HELP-PROMPT:      Select the appropriate budget object code for this item 
+                DESCRIPTION:
+                                  This is a fiscal code which describes the type of item/service being procured (associated with Control Points and Cost Centers).  
+
+                EXECUTABLE HELP:  D BOCHLP^PRCHQ1B
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+444.019,13      PRIOR VENDOR           1;3 POINTER TO VENDOR FILE (#440)
+
+                LAST EDITED:      JAN 17, 1996 
+                HELP-PROMPT:      Vendor from which this item was last ordered (from Item Master File) 
+                DESCRIPTION:
+                                  This is the vendor associated with the Vendor Product # field.  
+
+
+444.019,14      PRIOR PRODUCT NBR      1;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JAN 17, 1996 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This is the stock number of the item from the prior vendor.  
+
+
+444.019,14.1    PRIOR UNIT COST        1;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999.9999)!(X<0)!(X?.E1"."5N.N) X
+                LAST EDITED:      JAN 17, 1996 
+                HELP-PROMPT:      Type a Number between 0 and 9999999.9999, 4 Decimal Digits 
+                DESCRIPTION:
+                                  This is the unit cost from the prior vendor.  
+
+
+444.019,14.2    PRIOR UNIT OF PURCHASE 1;6 POINTER TO UNIT OF ISSUE FILE (#420.5)
+
+                LAST EDITED:      JAN 17, 1996 
+                HELP-PROMPT:      Enter the most recent unit of purchase. 
+                DESCRIPTION:
+                                  This is the unit in the purchase from the prior vendor.  
+
+
+444.019,14.3    PRIOR PURCHASE DATE    1;7 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JAN 17, 1996 
+                HELP-PROMPT:      Enter the date of most recent purchase. 
+                DESCRIPTION:
+                                  This is the date of purchase from the prior vendor.  
+
+
+444.019,15      ORIGINATING 2237       3;1 POINTER TO CONTROL POINT ACTIVITY FILE (#410)
+
+                LAST EDITED:      FEB 29, 1996 
+                DESCRIPTION:
+                                  This is the 2237 which is the source document for this item on the RFQ.  
+
+                CROSS-REFERENCE:  444^C 
+                                  1)= S ^PRC(444,"C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PRC(444,"C",$E(X,1,30),DA(1),DA)
+                                  This index will enable the locating of an RFQ upon input of the 2237 reference number.  
+
+
+
+444.019,16      ORIGINAL 2237 LINE NBR 3;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the value of the .01 field for the Item from the originating 2237 in file 410.  
+
+
+444.019,16.5    EST. ITEM (UNIT) COST  3;10 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) Q:X?1"N/C"  K:+X'=X&(X'?.N1"."2N)!(X>9999999)!(X<0) X I $D(X) S:X=0 X="N/C"
+                LAST EDITED:      JUL 05, 1996 
+                HELP-PROMPT:      Enter the unit cost for this item (a dollar amount between 0 and 9999999) or N/C for no charge.  Commas are not allowed. 
+                DESCRIPTION:      This is the individual unit cost of the item(s) in a dollar amount or N/C for no charge.  This field is populated during import from field #7 of subfile 410.02 of the CONTROL POINT ACTIVITY file (#410).  It is used for
+                                  reference in evaluating quotes.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+444.019,17      VENDOR SELECTED        3;3        VARIABLE POINTER
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   440  1    A            n   Site's Main Vendor File 
+               444.1    2    B            n   RFQ Temporary Vendor File 
+                                         
+                LAST EDITED:      APR 16, 1996 
+                DESCRIPTION:
+                                  Enter the Name of the Vendor selected for the purchase of this item.  
+
+                CROSS-REFERENCE:  444.019^AG 
+                                  1)= S ^PRC(444,DA(1),2,"AG",$E(X,1,30),DA)=""
+                                  2)= K ^PRC(444,DA(1),2,"AG",$E(X,1,30),DA)
+                                  This cross reference lumps together items for an RFQ by award vendor.  
+
+
+
+444.019,18      VENDOR'S UNIT OF PURCHASE 3;4 POINTER TO UNIT OF ISSUE FILE (#420.5)
+
+                LAST EDITED:      NOV 20, 1995 
+                DESCRIPTION:
+                                  This is the unit of issue for the winning quote.  
+
+
+444.019,19      VENDOR'S UNIT PRICE    3;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999.9999)!(X<0)!(X?.E1"."5N.N) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Type a Number between 0 and 9999999.9999, 4 Decimal Digits 
+                DESCRIPTION:
+                                  This is the unit price of the item from the winning quote.  
+
+
+444.019,20      DELIVERY SCHEDULE      4;0 Multiple #444.039
+
+                DESCRIPTION:
+                                  This is the Delivery Schedule Sequence Number for this Item.  
+
+
+444.039,.01       DELIVERY SCHEDULE      0;1 NUMBER (Multiply asked)
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      NOV 20, 1995 
+                  HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field is the Delivery Schedule for this Item.  
+
+                  CROSS-REFERENCE:  444.039^B 
+                                    1)= S ^PRC(444,DA(2),2,DA(1),4,"B",$E(X,1,30),DA)=""
+                                    2)= K ^PRC(444,DA(2),2,DA(1),4,"B",$E(X,1,30),DA)
+
+
+444.039,1         DELIVERY DATE          0;2 DATE (Required)
+
+                  INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:3941231<X!(2950101>X) X
+                  LAST EDITED:      NOV 20, 1995 
+                  HELP-PROMPT:      Enter the date for delivery between 1 Jan 95 and 31 Dec 2094. 
+                  DESCRIPTION:
+                                    This is the date for this delivery.  
+
+
+444.039,2         QUANTITY               0;3 NUMBER (Required)
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999.99)!(X<1)!(X?.E1"."3N.N) X
+                  LAST EDITED:      NOV 28, 1995 
+                  HELP-PROMPT:      Enter the Quantity to be delivered on this Date (1-999999.99) 
+                  DESCRIPTION:
+                                    This is the quantity to be delivered.  
+
+
+444.039,3         LOCATION               0;4 POINTER TO DELIVERY POINT FILE (#410.8)
+
+                  LAST EDITED:      JAN 16, 1996 
+                  HELP-PROMPT:      Enter a delivery location. 
+                  DESCRIPTION:
+                                    This is a delivery location.  
+
+
+444.039,4         SUB-CONTROL POINT      0;5 POINTER TO SUB-CONTROL POINT FILE (#410.4)
+
+                  LAST EDITED:      JAN 16, 1996 
+                  HELP-PROMPT:      Enter sub-control point purchasing the item. 
+                  DESCRIPTION:
+                                    This is the sub-control point which will be purchasing the item.  
+
+
+444.039,5         DELIVERY REFERENCE NUMBER 0;6 POINTER TO DELIVERY SCHEDULE FILE (#410.6)
+
+                  LAST EDITED:      JAN 16, 1996 
+                  HELP-PROMPT:      Pointer to File 410.6 
+                  DESCRIPTION:
+                                    This is the reference number for the delivery schedule used by the Control Point Clerk.  
+
+
+
+
+444.019,21      DESTINATION 2237         3;6 POINTER TO CONTROL POINT ACTIVITY FILE (#410)
+
+                  LAST EDITED:      FEB 27, 1996 
+                  HELP-PROMPT:      Enter the 2237 to which this item is attached at Award. 
+                  DESCRIPTION:
+                                    This field provides a link between a line item on the RFQ and its new 2237.  
+
+                  CROSS-REFERENCE:  444^AE 
+                                    1)= S ^PRC(444,"AE",$E(X,1,30),DA(1),DA)=""
+                                    2)= K ^PRC(444,"AE",$E(X,1,30),DA(1),DA)
+                                    This cross reference will be used to link destination 2237 with an RFQ.  
+
+
+
+444.019,22      DESTINATION 2237 LINE NBR 3;7 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 27, 1996 
+                  HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field indicates the line number of this item on its destination 2237.  
+
+
+444.019,23      QUOTE SELECTED           3;8 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X D:$D(X) QUOTECHK^PRCHQ13
+                  LAST EDITED:      MAY 13, 1996 
+                  HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the internal entry number of the selected Quote.  
+
+                  EXECUTABLE HELP:  D EXHLP^PRCHQ13
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  444.019^AJ 
+                                    1)= S ^PRC(444,DA(1),2,"AJ",$E(X,1,30),DA)=""
+                                    2)= K ^PRC(444,DA(1),2,"AJ",$E(X,1,30),DA)
+                                    This cross-reference groups items by quote following the evaluation of quotes.  It is used during the award process.  
+
+
+
+444.019,23.5    QUOTE LINE               3;9 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      APR 16, 1996 
+                  HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the internal entry number of the item in the vendor's Quote.  
+
+
+
+
+444,20        SOLICITED VENDOR       5;0          VARIABLE POINTER  Multiple #444.01
+
+444.01,.01      SOLICITED VENDOR       0;1        VARIABLE POINTER (Multiply asked)
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   440  1    XXX          n   Site's Main Vendor File 
+               444.1    2    YYY          y   RFQ Temporary Vendor File 
+                SCREEN ON FILE 440: S DIC("S")="I '$P($G(^(10)),U,5)"
+                                         
+                LAST EDITED:      NOV 20, 1995 
+                DESCRIPTION:
+                                  This field contains vendor's to whom the Request for Quotation should be sent.  
+
+                CROSS-REFERENCE:  444.01^B 
+                                  1)= S ^PRC(444,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRC(444,DA(1),5,"B",$E(X,1,30),DA)
+                                  3)= Required Index for Variable Pointer
+
+
+444.01,1        METHOD                 0;2 SET (Required)
+
+                                  'e' FOR ELECTRONIC DATA INTERCHANGE; 
+                                  'm' FOR MANUAL; 
+                LAST EDITED:      JUN 28, 1996 
+                HELP-PROMPT:      Enter the code to indicate how you wish the vendor to be contacted. 
+                DESCRIPTION:
+                                  This field indicates whether an electronic message or a hard copy Request for Quotation should be sent to the vendor.  
+
+
+444.01,2        DUN #                   ;  COMPUTED
+
+                MUMPS CODE:       S X=$$DUN^PRCHQ1B(5)
+                ALGORITHM:        S X=$$DUN^PRCHQ1B(5)
+                DESCRIPTION:
+                                  This computed field extracts the Dun and Bradstreet number from the vendor referenced in this multiple entry.  
+
+
+
+
+444,20.5      TRANSMIT TO 'PUBLIC'   1;8 SET
+
+                                'y' FOR YES; 
+                                'n' FOR NO; 
+              LAST EDITED:      FEB 26, 1996 
+              HELP-PROMPT:       Answer 'YES' if this RFQ is to be broadcast to all possible vendors. 
+              DESCRIPTION:
+                                A 'YES' in this field indicates that the Request for Quotation is to get the widest possible exposure rather than being limited to only those vendors entered into the Solicited Vendors list.  
+
+
+444,20.7      REQUEST'S LAST EDITOR  1;9 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 27, 1996 
+              HELP-PROMPT:      Enter the name of the last editor of the Request for Quotation data. 
+              DESCRIPTION:
+                                This is the Purchasing Agent who last edited the information on the Request that will go to the vendors, soliciting their quotes.  
+
+
+444,20.8      LAST EDIT DATE/TIME    1;10 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1996 
+              HELP-PROMPT:      Enter the Date and Time of the last edit of Request data. 
+              DESCRIPTION:
+                                This field contains the date/time of the last edit of Request information.  
+
+
+444,20.9      RFQ'S MAILMAN MSG #    1;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 06, 1996 
+              HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the ID number of the MailMan message which is generated in transmitting an RFQ to Austin for distribution to vendors.  
+
+
+444,21        864 MESSAGES           7;0 Multiple #444.021
+
+              DESCRIPTION:
+                                This multiple contains the history of 864 transactions concerning this RFQ.  
+
+
+444.021,.01     MESSAGE SEQUENCE NBR   0;1 NUMBER (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This entry contains the sequential number of an 864 transaction message.  
+
+                CROSS-REFERENCE:  444.021^B 
+                                  1)= S ^PRC(444,DA(1),7,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRC(444,DA(1),7,"B",$E(X,1,30),DA)
+
+
+444.021,1       DIRECTION              0;2 SET
+
+                                  'I' FOR INBOUND; 
+                                  'O' FOR OUTBOUND; 
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Enter 'I' if received from vendor or 'O' if sent to vendor 
+                DESCRIPTION:
+                                  This field indicates whether the message was sent to a vendor or received from a vendor.  
+
+
+444.021,2       VENDOR ID              0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>12!($L(X)<5) X
+                LAST EDITED:      MAR 11, 1996 
+                HELP-PROMPT:      Enter vendor's Dun & Bradstreet #  (5-12 characters). 
+                DESCRIPTION:
+                                  This is the vendor's Dun & Bradstreet #.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+444.021,2.5     VENDOR NAME            0;12 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>36!($L(X)<3)!'(X'?1P.E) X
+                LAST EDITED:      JUN 13, 1996 
+                HELP-PROMPT:      Answer must be 3-36 characters in length. 
+                DESCRIPTION:
+                                  This is the name of the vendor sending the inbound 864 Text Message.  
+
+
+444.021,3       VENDOR REFERENCE NBR   0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This is the vendor's reference number for this RFQ.  
+
+
+444.021,4       SENDER MESSAGE NBR     0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      APR 29, 1996 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This is the sequence counter for this RFQ on the originating system.  
+
+
+444.021,5       DATE/TIME CREATED      0;6 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Enter Date/Time message was created on the origin system. 
+                DESCRIPTION:
+                                  This is the date/time that the message was created on the origin system.  
+
+
+444.021,6       DATE/TIME STORED       0;7 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Enter Date/Time this message is stored in this entry 
+                DESCRIPTION:
+                                  This field stores the date/time that the message is stored in this file.  
+
+
+444.021,7       OFFICIAL'S NAME        0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  The name of the originator of this message.  
+
+
+444.021,8       OFFICIAL'S PHONE       0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>21!($L(X)<10) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Enter the phone # of the individual initiating message. 
+                DESCRIPTION:
+                                  This is the phone number of the contact about this message.  
+
+
+444.021,9       MSG DESCRIPTION        1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+                LAST EDITED:      NOV 20, 1995 
+                HELP-PROMPT:      Answer must be 1-80 characters in length. 
+                DESCRIPTION:
+                                  This is a descriptive caption for this message.  
+
+
+444.021,10      TEXT                   2;0   WORD-PROCESSING #444.031
+
+
+444.021,11      RECIPIENT              3;0        VARIABLE POINTER  Multiple #444.022
+                DESCRIPTION:
+                                  This is a recipient of the 864 transaction Text Message.  
+
+
+444.022,.01       RECIPIENT              0;1      VARIABLE POINTER (Multiply asked)
+
+                  FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                     440  1    XXX          n   Site's Main Vendor File 
+                 444.1    2    YYY          n   RFQ Temporary Vendor File 
+                  SCREEN ON FILE 440: S DIC("S")="I $$SC^PRCHQ5"
+                  SCREEN ON FILE 444.1: S DIC("S")="I $$SC^PRCHQ5"
+                                         
+                  LAST EDITED:      MAR 04, 1996 
+                  HELP-PROMPT:      Enter Vendor who should receive this (864) Text Message 
+                  DESCRIPTION:
+                                    This field is a Vendor recipient list for the message.  
+
+                  EXECUTABLE HELP:  D RHLP^PRCHQ5
+                  CROSS-REFERENCE:  444.022^B 
+                                    1)= S ^PRC(444,DA(2),7,DA(1),3,"B",$E(X,1,30),DA)=""
+                                    2)= K ^PRC(444,DA(2),7,DA(1),3,"B",$E(X,1,30),DA)
+                                    3)= Required Index for Variable Pointer
+
+
+
+
+444.021,12      PUBLIC TRANSMISSION      1;2 SET
+
+                                    'y' FOR YES; 
+                                    'n' FOR NO; 
+                  LAST EDITED:      MAR 04, 1996 
+                  HELP-PROMPT:      Enter 'YES' if this should be broadcast to all vendors. 
+                  DESCRIPTION:
+                                    This flag indicates whether the message should only go to specified vendors or should be broadcast to the widest possible group.  
+
+
+444.021,13      MSG LAST EDITOR          0;10 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      MAR 06, 1996 
+                  HELP-PROMPT:      Enter the name of the last editor of the message. 
+                  DESCRIPTION:
+                                    This field stores the DUZ of the last editor.  
+
+
+444.021,13.1    LAST EDIT DATE/TIME      0;11 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      MAR 06, 1996 
+                  HELP-PROMPT:      Enter the Date and Time of last edit. 
+                  DESCRIPTION:
+                                    This field stores the Date/Time stamp after the last edit.  
+
+
+444.021,14      MAILMAN MSG #            1;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      MAR 06, 1996 
+                  HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field stores the ID number of the MailMan message sending the 864 Transaction.  
+
+
+444.021,15      FILE 423.6 ENTRY         1;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      MAR 10, 1996 
+                  HELP-PROMPT:      Type a Number between 1 and 999999999, 0 Decimal Digits 
+                  DESCRIPTION:      This is the internal number of the file 423.6 entry which is the holding file for a message sent from the vendor and imported into this message in file 444.  Note: this value is useful only for checking the import soon
+                                    after completion as the internal entry number could be reused after this entry is purged.  
+
+
+
+
+444,22        MSG COUNTER            1;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 21, 1995 
+              HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field is updated each time a message is added to the 864 MESSAGES multiple.  The updated counter value is placed in the .01 field.  
+
+
+444,23        OUTBOUND MSG COUNTER   1;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 21, 1995 
+              HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the counter for messages generated on this computer and going to the vendor.  
+
+
+444,24        QUOTES                 8;0          VARIABLE POINTER  Multiple #444.024
+              DESCRIPTION:
+                                This multiple contains the quotes submitted by the responding vendors.  
+
+
+444.024,.01     QUOTE VENDOR           0;1        VARIABLE POINTER (Multiply asked)
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   440  1    XXX          n   Site's Main Vendor File 
+               444.1    2    YYY          y   RFQ Temporary Vendor File 
+                                         
+                LAST EDITED:      NOV 22, 1995 
+                HELP-PROMPT:      Enter the Vendor submitting the Quote 
+                DESCRIPTION:
+                                  This is the vendor for this quote.  
+
+                CROSS-REFERENCE:  444.024^B 
+                                  1)= S ^PRC(444,DA(1),8,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRC(444,DA(1),8,"B",$E(X,1,30),DA)
+                                  3)= Required Index for Variable Pointer
+
+
+444.024,1       SELLER REFERENCE NBR   0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 21, 1995 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This is the seller's reference number.  
+
+
+444.024,2       EFFECTIVE DATE         0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 21, 1995 
+                HELP-PROMPT:      Enter the Date that the Quote was offered. 
+                DESCRIPTION:
+                                  This is the date that the Quote was submitted, as contrast to the date received.  
+
+
+444.024,3       RECEIPT DATE/TIME      0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 21, 1995 
+                HELP-PROMPT:      Enter the time that the Quote was Filed in the database. 
+                DESCRIPTION:
+                                  This is the date/time that the quote was filed in the database, as contrast to sent by the vendor.  
+
+
+444.024,3.5     FILE 423.6 ENTRY       1;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 15, 1996 
+                HELP-PROMPT:      Type a Number between 1 and 999999999, 0 Decimal Digits 
+                DESCRIPTION:      This is the internal number of the file 423.6 entry which is the holding file for a message sent from the vendor and imported into this quote in file 444.  Note: this value is useful only for checking the import soon 
+                                  after completion, as the internal entry number could be reused after this entry is purged.  
+
+
+444.024,4       VENDOR CONTACT         0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 21, 1995 
+                HELP-PROMPT:      Enter the name of the contact name (1-30 chars) 
+                DESCRIPTION:
+                                  This is the name of the Vendor's Contact associated with this Quote.  
+
+
+444.024,5       CONTACT PHONE          0;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>21!($L(X)<10) X
+                LAST EDITED:      NOV 21, 1995 
+                HELP-PROMPT:      Enter the voice Telephone Number for the vendor's contact 
+                DESCRIPTION:
+                                  This is the telephone number to direct questions concerning this quote.  
+
+
+444.024,6       FOB                    1;1 SET
+
+                                  'D' FOR DESTINATION; 
+                                  'O' FOR ORIGIN; 
+                LAST EDITED:      NOV 22, 1995 
+                HELP-PROMPT:      Enter 'D' if the price includes any applicable shipping, else 'O' 
+                DESCRIPTION:      This field indicates whether prices include shipping.  If Freight on Board (FOB) is Destination, there will be no additional shipping fees.  If, in contrast, FOB is Origin, then price assumes that the buyer will pick up 
+                                  the items at the vendor's location, and shipping incurs additional charges.  
+
+
+444.024,7       EST. SHIPPING AND/OR HANDLING 1;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+                OUTPUT TRANSFORM: S Y=$FN(Y,"",2)
+                LAST EDITED:      MAR 21, 1996 
+                HELP-PROMPT:      Enter a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the estimate of shipping and handling costs.  
+
+
+444.024,8       TOTAL AMOUNT           1;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+                LAST EDITED:      NOV 24, 1995 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the total cost from vendor's quote.  
+
+
+444.024,9       PROMPT PAYMENT TERMS   2;0 Multiple #444.025
+
+                DESCRIPTION:
+                                  These are the prompt payment terms.  
+
+
+444.025,.01       PROMPT PAYMENT TERMS   0;1 FREE TEXT (Multiply asked)
+
+                  INPUT TRANSFORM:  K:+X'=X&(X'="NET") X I $D(X),+X=X K:X?.E1"."3N.N!(X<.01)!(X>99) X
+                  LAST EDITED:      NOV 24, 1995 
+                  HELP-PROMPT:      Enter 'NET' or a number from .01 to 99 with up to two decimal places (i.e. 2 for two percent) 
+                  DESCRIPTION:
+                                    This is the prompt payment percent.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  444.025^B 
+                                    1)= S ^PRC(444,DA(2),8,DA(1),2,"B",$E(X,1,30),DA)=""
+                                    2)= K ^PRC(444,DA(2),8,DA(1),2,"B",$E(X,1,30),DA)
+
+
+444.025,1         DAYS (TERM)            0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:X>60!(X<1)!(X?.E1"."1N.N) X I $D(X),+X'=X K:X'?.N2A X Q:'$D(X)  S Z0=$E(X,$L(X)-1,$L(X)),X=$E(X,1,$L(X)-2)_$S("STst"[Z0:"st","NDnd"[Z0:"nd","RDrd"[Z0:"rd","THth"[Z0:"th",1:"ZZZZZ") K:$L(X)>4 X
+                  LAST EDITED:      NOV 24, 1995 
+                  HELP-PROMPT:      Enter a whole number between 1 and 60. You may append the number with "st", "nd", "rd", or "th" to indicate a date. 
+                  DESCRIPTION:
+                                    This is the term in days for prompt payment.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+444.024,10      GOVT CONTRACT NBR        0;7 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X D:$L($G(X))>19 EN^DDIOL("Warning - Contract # will have to be trimmed to 19 characters for PO")
+                  LAST EDITED:      FEB 15, 1996 
+                  HELP-PROMPT:      Enter government contract # applicable to entire quote (1-30 chars) 
+                  DESCRIPTION:
+                                    This is the vendor's contract # which is applicable to all items on the quote.  If individual line items fall under different contract numbers, then the contract number should be entered at the item level.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+444.024,11      ITEM                     3;0 Multiple #444.026
+
+                  DESCRIPTION:
+                                    This is the list of items for which the vendor has submitted quotes.  
+
+
+444.026,.01       RFQ LINE ITEM            0;1 NUMBER (Multiply asked)
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                    LAST EDITED:      DEC 28, 1995 
+                    HELP-PROMPT:      Enter a Whole Number between 1 and 999 
+                    DESCRIPTION:
+                                      This is the Line Item # for this item on the RFQ 
+
+                    CROSS-REFERENCE:  444.026^B 
+                                      1)= S ^PRC(444,DA(2),8,DA(1),3,"B",$E(X,1,30),DA)=""
+                                      2)= K ^PRC(444,DA(2),8,DA(1),3,"B",$E(X,1,30),DA)
+
+
+444.026,1         VENDOR PRODUCT NBR       0;4 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      MAR 17, 1996 
+                    HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                    DESCRIPTION:
+                                      This is the Product # which the vendor supplied with his quote.  
+
+
+444.026,1.5       DESCRIPTION              2;0   WORD-PROCESSING #444.036
+
+                    DESCRIPTION:
+                                      This is the vendor's description of the item.  
+
+
+444.026,2         QUANTITY                 0;2 NUMBER (Required)
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<.01)!(X?.E1"."3N.N) X
+                    OUTPUT TRANSFORM: S Y=$FN(Y,"",2)
+                    LAST EDITED:      MAR 21, 1996 
+                    HELP-PROMPT:      Enter number of units, from .01 to 999999 (2 decimals max) 
+                    DESCRIPTION:
+                                      This is the quantity of the item quoted.  
+
+
+444.026,3         UNIT OF PURCHASE         0;3 POINTER TO UNIT OF ISSUE FILE (#420.5) (Required)
+
+                    LAST EDITED:      NOV 24, 1995 
+                    HELP-PROMPT:      Select the vendor's quoted unit for this item 
+                    DESCRIPTION:
+                                      This is the unit of measurement for items being supplied. (i.e. each, dozen, box, bottle, case, pound, square foot, etc.) 
+
+
+444.026,4         FEDERAL SUPPLY CLASSIFICATION 0;5 POINTER TO FEDERAL SUPPLY CLASSIFICATION FILE (#441.2)
+
+                    LAST EDITED:      NOV 24, 1995 
+                    DESCRIPTION:
+                                      This is the Federal Supply Classification for this item.  
+
+
+444.026,5         NSN                      0;6 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>17!($L(X)<16)!'(X?4N1"-"2UN1"-"3N1"-"4N.UN) X
+                    LAST EDITED:      NOV 24, 1995 
+                    HELP-PROMPT:      Enter National Stock Number in format: 6505-56-789-1234A (last char optional) 
+                    DESCRIPTION:
+                                      This is the National Stock Number for this item.  
+
+
+444.026,6         SIC CODE                 0;7 POINTER TO SIC CODE FILE (#444.2)
+
+                    LAST EDITED:      NOV 30, 1995 
+                    HELP-PROMPT:      Enter the 4-6 digits code 
+                    DESCRIPTION:
+                                      The Standard Industrial Classification coding system categorizes organizations by type of economic activity.  
+
+
+444.026,7         NATIONAL DRUG CODE       0;8 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>14!($L(X)<11)!'(X?1.6N1"-"1.4N1"-"1.2N) X
+                    LAST EDITED:      NOV 24, 1995 
+                    HELP-PROMPT:      Enter in format 1-6 digits, hyphen, 1-4 digits, hyphen, 1-2 digits i.e. 123456-1234-12 
+                    DESCRIPTION:
+                                      This is the National Drug Code for the item, if applicable.  
+
+
+444.026,8         MFG PART NO.             0;9 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                    LAST EDITED:      NOV 24, 1995 
+                    HELP-PROMPT:      Enter the Manufacturer's Part # (3-30 chars) 
+                    DESCRIPTION:
+                                      This is the Manufacturer's Part Number.  
+
+
+444.026,9         LOT NBR                  1;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      NOV 27, 1995 
+                    HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                    DESCRIPTION:
+                                      This is the Lot # of the item in the vendor's quote.  
+
+
+444.026,10        SERIAL NBR               1;2 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      NOV 27, 1995 
+                    HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                    DESCRIPTION:
+                                      This is the serial number of the item of equipment for this quote.  
+
+
+444.026,11        FOB                      0;10 SET
+
+                                      'D' FOR DESTINATION; 
+                                      'O' FOR ORIGIN; 
+                    LAST EDITED:      NOV 27, 1995 
+                    HELP-PROMPT:      Enter 'D' if this is the delivered price or 'O' if there are shipping/handling charges 
+                    DESCRIPTION:      This field indicates whether price includes shipping.  If FOB is Destination, there will be no additional shipping fees.  If, in contrast, FOB is Origin, the price assumes ath the buyer will pick up the item at the
+                                      vendor's location, and shipping incurs additional charges.  
+
+
+444.026,12        HAZARDOUS MATERIAL       0;11 SET
+
+                                      'HM' FOR HAZARDOUS MATERIAL; 
+                    LAST EDITED:      NOV 27, 1995 
+                    DESCRIPTION:
+                                      If the item is marked as hazardous material, there may be special requirements for shipping and storage of this item.  
+
+
+444.026,13        UNIT COST                1;3 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999.9999)!(X<0)!(X?.E1"."5N.N) X
+                    OUTPUT TRANSFORM: S Y=$FN(Y,"",4)
+                    LAST EDITED:      MAR 21, 1996 
+                    HELP-PROMPT:      Enter the Cost between 0 and 999999.9999, up to 4 Decimal Digits 
+                    DESCRIPTION:
+                                      This is the pre-discount cost.  
+
+
+444.026,14        VOLUME DISCOUNT PERCENT  1;4 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>99.99)!(X<0)!(X?.E1"."3N.N) X
+                    LAST EDITED:      NOV 27, 1995 
+                    HELP-PROMPT:      Enter a percent between 0 and 99.99 (max 2 decimal places) 
+                    DESCRIPTION:
+                                      This is the discount % given on the basis of proposed purchase amount.  
+
+
+444.026,15        VOLUME DISCOUNT AMOUNT   1;5 NUMBER
+
+                    INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+                    OUTPUT TRANSFORM: S Y=$FN(Y,"",2)
+                    LAST EDITED:      MAR 21, 1996 
+                    HELP-PROMPT:      Enter a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+                    DESCRIPTION:
+                                      This is a dollar discount based on the size of the proposed purchase.  
+
+
+444.026,16        GOVT CONTRACT NBR        1;6 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X D:$L($G(X))>19 EN^DDIOL("Warning - Contract # will have to be trimmed to 19 characters for PO")
+                    LAST EDITED:      FEB 15, 1996 
+                    HELP-PROMPT:      Enter active government contract # applicable to this item (1-30 chars) 
+                    DESCRIPTION:
+                                      This is the vendor's governmental contract which is applicable to this item and which will be active at the proposed time of purchase.  
+
+                    NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+444.026,17        DELIVERY SCHEDULE        3;0 Multiple #444.027
+
+                    DESCRIPTION:
+                                      This is one of the Vendor's proposed deliveries for this item.  
+
+
+444.027,.01         DELIVERY SCHEDULE        0;1 NUMBER (Multiply asked)
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 28, 1995 
+                      HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the Vendor's proposed Delivery Schedule for this item.  
+
+                      CROSS-REFERENCE:  444.027^B 
+                                        1)= S ^PRC(444,DA(3),8,DA(2),3,DA(1),3,"B",$E(X,1,30),DA)=""
+                                        2)= K ^PRC(444,DA(3),8,DA(2),3,DA(1),3,"B",$E(X,1,30),DA)
+
+
+444.027,1           DELIVERY DATE            0;2 DATE (Required)
+
+                      INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:3941231<X!(2950101>X) X
+                      LAST EDITED:      NOV 28, 1995 
+                      HELP-PROMPT:      Enter the date for delivery between 1 Jan 95 and 31 Dec 2094 
+                      DESCRIPTION:
+                                        This is the date for this delivery.  
+
+
+444.027,2           QUANTITY                 0;3 NUMBER (Required)
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>999999.99)!(X<1)!(X?.E1"."3N.N) X
+                      OUTPUT TRANSFORM: S Y=$FN(Y,"",2)
+                      LAST EDITED:      MAR 21, 1996 
+                      HELP-PROMPT:      Enter the Quantity to be delivered on this Date (1-999999.99) 
+                      DESCRIPTION:
+                                        This is the quantity to be delivered.  
+
+
+444.027,3           UNIT OF PURCHASE         0;4 POINTER TO UNIT OF ISSUE FILE (#420.5) (Required)
+
+                      LAST EDITED:      NOV 28, 1995 
+                      HELP-PROMPT:      Select the unit being delivered 
+                      DESCRIPTION:      This is the unit of measurement for items being procured.  
+                                         
+                                         i.e. each, dozen, box, bottle, case, pound, square foot, etc.  
+
+
+
+
+444.026,18        NET LINE AMT               1;7 NUMBER
+
+                      INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+                      LAST EDITED:      FEB 27, 1996 
+                      HELP-PROMPT:      Type a Dollar Amount between 0 and 999999.99, 2 Decimal Digits 
+                      DESCRIPTION:
+                                        This field contains the net line amount calculated as the Gross Amount (Unit Price x Quantity) minus Volume Discount.  Note that it does not reflect any prompt pay discount.  
+
+
+
+
+444.024,12      MANUALLY EDITED              1;4 SET
+
+                                        '1' FOR YES; 
+                                        '0' FOR NO; 
+                      LAST EDITED:      FEB 16, 1996 
+                      HELP-PROMPT:      "Enter 'YES' if the last edit for this record was manual" 
+                      DESCRIPTION:
+                                        This flags a record as having been manually edited, either exclusively or after any electronic transmission.  
+
+
+444.024,13      LAST EDITOR                  1;5 POINTER TO NEW PERSON FILE (#200)
+
+                      LAST EDITED:      FEB 16, 1996 
+                      HELP-PROMPT:      Enter the name of the person doing the most recent edit. 
+                      DESCRIPTION:
+                                        This field identifies the last editor of this quote.  
+
+
+444.024,14      DATE/TIME LAST EDITED        1;6 DATE
+
+                      INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      FEB 27, 1996 
+                      HELP-PROMPT:      Enter the date and time that this quote was last edited. 
+                      DESCRIPTION:
+                                        This field records the date and time that this quote was last edited.  
+
+
+444.024,15      CALCULATED LINE TOTAL         ;  COMPUTED
+
+                      MUMPS CODE:       X ^DD(444.024,15,9.3) S X=Y(444.024,15,103) S D0=Y(444.024,15,80) S D1=Y(444.024,15,81) S D2=Y(444.024,15,82)
+                                        9.2 = S Y(444.024,15,80)=$S($D(D0):D0,1:""),Y(444.024,15,81)=$S($D(D1):D1,1:""),Y(444.024,15,82)=$S($D(D2):D2,1:""),Y(444.024,15,103)=""
+                                        9.3 = X ^DD(444.024,15,9.2) X "F D2=0:0 S D2=$O(^PRC(444,D0,8,D1,3,D2)) Q:D2'>0  S Y(444.024,15,103)=Y(444.024,15,103)+$S($D(^(D2,1)):$P(^(1),U,7),1:"""")" S D(2)=D2
+                      ALGORITHM:        TOTAL(#11:#18)
+                      DESCRIPTION:
+                                        This field sums the net line amounts.  
+
+
+444.024,16      DUN #                         ;  COMPUTED
+
+                      MUMPS CODE:       S X=$$DUN^PRCHQ1B(8)
+                      ALGORITHM:        S X=$$DUN^PRCHQ1B(8)
+
+
+
+444,25        EVALUATOR OF QUOTES    1;17 POINTER TO NEW PERSON FILE (#200)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^(400)),$P(^(400),U)>2" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 17, 1996 
+              HELP-PROMPT:      Enter the name of the Supply person evaluating the quotes for award. 
+              DESCRIPTION:
+                                This field references the Supply person who assigned vendors to the RFQ items in preparation for making the award.  
+
+              SCREEN:           S DIC("S")="I $D(^(400)),$P(^(400),U)>2"
+              EXPLANATION:      Must be Purchasing Agent or Manager in Supply
+
+444,26        TRANSMIT DATE/TIME     1;18 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 19, 1996 
+              HELP-PROMPT:      Enter Date/Time that MailMan message set up with 840 data 
+              DESCRIPTION:
+                                This field records the last time that 840 Transaction data was loaded into a MailMan message for transmission to Austin.  
+
+
+444,27        MANUAL RFQ PRINT DATE/TIME 9;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 28, 1996 
+              HELP-PROMPT:      Enter the Date and Time when the manual RFQ form was printed 
+              DESCRIPTION:
+                                This field records when the Manual Request for Quotation form was printed for distribution to potential vendors.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ADMIN. ACTIVITY SITE PARAMETER 
+                   (#411)         SUBSTATION (#8.1)
+
+BUDGET OBJECT CODE (#420.2)       ITEM:BOC (#12.5)
+
+CONTROL POINT ACTIVITY (#410)     PRIMARY 2237 (#8)
+                                  ITEM:ORIGINATING 2237 (#15)
+                                  DESTINATION 2237 (#21)
+
+DELIVERY POINT (#410.8)           DELIVERY SCHEDULE:LOCATION (#3)
+
+DELIVERY SCHEDULE (#410.6)        DELIVERY SCHEDULE:DELIVERY REFERENCE NUMBER (#5)
+
+FEDERAL SUPPLY CLASSIFICATION 
+                   (#441.2)       ITEM:FEDERAL SUPPLY CLASSIFICATION (#4)
+                                  ITEM:FEDERAL SUPPLY CLASSIFICATION (#4)
+
+ITEM MASTER (#441)                ITEM:ITEM MASTER FILE NBR (#1)
+
+NEW PERSON (#200)                 CONTRACTING OFFICER (#3)
+                                  POINT OF CONTACT (#10)
+                                  REQUEST'S LAST EDITOR (#20.7)
+                                  EVALUATOR OF QUOTES (#25)
+                                  864 MESSAGES:MSG LAST EDITOR (#13)
+                                  QUOTES:LAST EDITOR (#13)
+
+SERVICE/SECTION (#49)             REQUESTING SERVICE (#9)
+
+SIC CODE (#444.2)                 ITEM:SIC CODE (#6)
+                                  ITEM:SIC CODE (#6)
+
+SUB-CONTROL POINT (#410.4)        DELIVERY SCHEDULE:SUB-CONTROL POINT (#4)
+
+UNIT OF ISSUE (#420.5)            ITEM:UNIT OF PURCHASE (#3)
+                                  PRIOR UNIT OF PURCHASE (#14.2)
+                                  VENDOR'S UNIT OF PURCHASE (#18)
+                                  ITEM:UNIT OF PURCHASE (#3)
+                                  DELIVERY SCHEDULE:UNIT OF PURCHASE (#3)
+
+VENDOR (#440)                     ITEM:PRIOR VENDOR (#13)
+
+
+
+INPUT TEMPLATE(S):
+PRCHQ RFQ REQUEST             MAY 09, 2006@08:53  USER #0    
+
+PRINT TEMPLATE(S):
+PRCHQ RFQ FULL                SEP 07, 1996@22:27  USER #0                                                                                                                                                                                                    @
+PRCHQ RFQ MESSAGES 2          JUN 30, 1996@15:37  USER #0                                                                                                                                                                           TEXT MESSAGES FOR THIS RFQ
+PRCHQ RFQ SYNOPSIS            SEP 07, 1996@22:35  USER #0                                                                                                                                                                                                    @
+PRCHQ UNAWARDED               JUL 14, 1996@14:33  USER #0                                                                                                                                                                           REQUEST FOR QUOTATION LIST
+
+SORT TEMPLATE(S):
+PRCHQ RFQ MESSAGE SORT        MAR 28, 1996@15:28  USER #0    
+SORT BY: @RFQ NBR//    (User is asked range)
+  WITHIN RFQ NBR, SORT BY: 864 MESSAGES//
+  864 MESSAGES SUB-FIELD: MESSAGE SEQUENCE NBR//    (User is asked range)
+     This Sort Template will be used in the display of 864 TEXT Messages.
+
+
+FORM(S)/BLOCK(S):
+PRCHQ1                        JAN 23, 1996@12:00  USER #0
+  PRCHQH1                       DD #444
+  PRCHQ1                        DD #444
+  PRCHQP2                       DD #444
+  PRCHQ3                        DD #444
+  PRCHQ4                        DD #444.019
+  PRCHQ5                        DD #444.019
+  PRCHQ6                        DD #444.039
+  PRCHQ7                        DD #444
+  PRCHQ8                        DD #444.01
+  PRCHQ10                       DD #444.1
+  PRCHQ13                       DD #444.01
+  PRCHQ11                       DD #440
+
+PRCHQ2                        FEB 20, 1996@22:45  USER #0
+  PRCHQ30                       DD #444
+  PRCHQ31                       DD #444.024
+  PRCHQ32                       DD #444.025
+  PRCHQ33                       DD #444.026
+  PRCHQ34                       DD #444.026
+  PRCHQ35                       DD #444.027
+     This form supports the editing of a vendor's quote.  This will be used
+     for manually entering data, where the quote is NOT submitted
+     electronically.
+
+PRCHQ4                        MAR 05, 1996@13:53  USER #0
+  PRCHQ40                       DD #444
+  PRCHQ41                       DD #444.021
+  PRCHQ42                       DD #444.022
+  PRCHQ43                       DD #444.1
+     This form enables the user to enter the 864 Text Message and Addressees.
+
+PRCHQ5                        APR 16, 1996@16:20  USER #0
+  PRCHQ50                       DD #444
+  PRCHQ51                       DD #444.019
+  PRCHQ52                       DD #444
+

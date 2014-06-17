@@ -1,0 +1,159 @@
+STANDARD DATA DICTIONARY #405.1 -- FACILITY MOVEMENT TYPE FILE                                                                                                                                                                    MAY 20,2014@15:40:59  PAGE 1
+STORED IN ^DG(405.1,  (47 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                           (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains all allowable admission, discharge, transfer, specialty change, check-in lodger, and check-out lodger movements.  These are site determined and site maintained.  However, we STRONGLY recommend that when updating movement types, you
+utilize the 'Edit Bed Control Movement Types' option to ensure all data is properly updated.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: D
+             DEL ACCESS: @
+           LAYGO ACCESS: D
+IDENTIFIED BY: TRANSACTION TYPE (#.02)[R], ACTIVE (#.04)[R]
+
+POINTED TO BY: TYPE OF MOVEMENT field (#.04) of the PATIENT MOVEMENT File (#405) 
+               CAN ONLY FOLLOW MOVEMENT(S) field (#.01) of the CAN ONLY FOLLOW MOVEMENT(S) sub-field (#405.11) of the FACILITY MOVEMENT TYPE File (#405.1) 
+               
+
+CROSS
+REFERENCED BY: CAN ONLY FOLLOW MOVEMENT(S)(AF), MOVEMENT TYPE(AM), TRANSACTION TYPE(AT), NAME(B), PRINT NAME(C)
+
+405.1,.001    NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 30, 1991 
+              HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the internal entry number for this facility movement type.  This number is assigned by the system sequentially with each new entry.  
+
+
+405.1,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      DEC 28, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 3-40 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Enter the name of the movement type.  This name will be displayed on many of the bed control outputs.  
+
+              DELETE TEST:      1,0)= I 1 W !?5,*7,"Deletion of movement types is not allowed!"
+
+              CROSS-REFERENCE:  405.1^B 
+                                1)= S ^DG(405.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^DG(405.1,"B",$E(X,1,30),DA)
+
+
+405.1,.02     TRANSACTION TYPE       0;2 POINTER TO MAS MOVEMENT TRANSACTION TYPE FILE (#405.3) (Required)
+
+              LAST EDITED:      AUG 23, 1989 
+              HELP-PROMPT:      Enter this facility movement type transaction type. 
+              DESCRIPTION:
+                                Enter the type of transaction (admission, transfer, discharge, check-in lodger, check-out lodger, or specialty change) for this movement type.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  405.1^AT 
+                                1)= S ^DG(405.1,"AT",$E(X,1,30),DA)=""
+                                2)= K ^DG(405.1,"AT",$E(X,1,30),DA)
+
+
+405.1,.03     MOVEMENT TYPE          0;3 POINTER TO MAS MOVEMENT TYPE FILE (#405.2) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),""^"",2)=$P(^DG(405.1,DA,0),""^"",2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 13, 1988 
+              HELP-PROMPT:      Select from the available listing the MAS MOVEMENT TYPE which best defines this facility movement type. 
+              DESCRIPTION:      Enter the MAS MOVEMENT TYPE you wish this local movement type to be associated with.  All entries in this file must point to an entry in the MAS MOVEMENT TYPE file.  This field is used to determine the flow of many ADT
+                                functions.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),""^"",2)=$P(^DG(405.1,DA,0),""^"",2)"
+              EXPLANATION:      Transaction types must match.
+              CROSS-REFERENCE:  405.1^AM 
+                                1)= S ^DG(405.1,"AM",$E(X,1,30),DA)=""
+                                2)= K ^DG(405.1,"AM",$E(X,1,30),DA)
+
+
+405.1,.04     ACTIVE                 0;4 SET (Required)
+
+                                '0' FOR INACTIVE; 
+                                '1' FOR ACTIVE; 
+              HELP-PROMPT:      Enter '1' if you want to use this movement type, '0' if you don't. 
+              DESCRIPTION:
+                                Enter 1 if this movement type may be selected by users at your site.  
+
+
+405.1,.05     ASK SPECIALTY AT MOVEMENT? 0;5 SET (Required)
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 13, 1988 
+              HELP-PROMPT:      Should user be prompted for treating specialty when entering this type of movement? 
+              DESCRIPTION:
+                                Do you want the user to be asked to add/edit a treating specialty movement when this type of movement is entered/edited? 
+
+
+405.1,.07     PRINT NAME             0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      JUL 20, 1990 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:      This field contains the PRINT NAME.  It will be printed on the extended patient inquiry, extended bed control, as well as other bed control options.  If it is not defined, the NAME field will be used in an abbreviated
+                                format.  This field will also be used for look-up.  
+
+              CROSS-REFERENCE:  405.1^C 
+                                1)= S ^DG(405.1,"C",$E(X,1,30),DA)=""
+                                2)= K ^DG(405.1,"C",$E(X,1,30),DA)
+
+
+405.1,10      CAN ONLY FOLLOW MOVEMENT(S) F;0 POINTER Multiple #405.11 (Add New Entry without Asking)
+
+              DESCRIPTION:      This multiple contains all other movement types which this entry can follow.  For admissions and check-in lodger movements, this multiple will be blank as they can not follow anything.  The multiple will never contain a
+                                discharge or a check-out lodger movement as nothing can follow those movements.  The 'Can Only Follow' syntax relates to one episode, either a lodger stay or an inpatient admission.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),""^"",2)'=3,$P(^DG(405.1,D0,0),""^"",2)'=1"
+              EXPLANATION:      Nothing follows discharges, admissions follow nothing.
+
+405.11,.01      CAN ONLY FOLLOW MOVEMENT(S) 0;1 POINTER TO FACILITY MOVEMENT TYPE FILE (#405.1) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="S DGY=+$P(^(0),""^"",3),DGX=$P(^DG(405.1,+DA,0),""^"",3) I DGX,$D(^DG(405.2,DGX,""F"",DGY,0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X) S DINUM=X
+                LAST EDITED:      APR 29, 1991 
+                HELP-PROMPT:      Enter the movement which this one can follow. 
+                DESCRIPTION:      Enter a movement type which this movement type can follow.  Admissions can not follow any movement types.  Nothing can follow a discharge.  Likewise, check-in lodgers can not follow any movement types and nothing can
+                                  follow a check-out lodger movement.  
+
+                SCREEN:           S DIC("S")="S DGY=+$P(^(0),""^"",3),DGX=$P(^DG(405.1,+DA,0),""^"",3) I DGX,$D(^DG(405.2,DGX,""F"",DGY,0))"
+                EXPLANATION:      Can't follow discharge or check-out.  Check-in and admission follow nothing.  Must be consistent with distributed movement types.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  405.11^B 
+                                  1)= S ^DG(405.1,DA(1),"F","B",$E(X,1,30),DA)=""
+                                  2)= K ^DG(405.1,DA(1),"F","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  405.1^AF^MUMPS 
+                                  1)= S ^DG(405.1,"AF",+X,DA(1))=""
+                                  2)= K ^DG(405.1,"AF",+X,DA(1))
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FACILITY MOVEMENT TYPE (#405.1)   CAN ONLY FOLLOW MOVEMENT(S):CAN ONLY FOLLOW MOVEMENT(S) (#.01)
+
+MAS MOVEMENT TRANSACTION TYPE 
+                   (#405.3)       TRANSACTION TYPE (#.02)
+
+MAS MOVEMENT TYPE (#405.2)        MOVEMENT TYPE (#.03)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+CAPTIONED                                         USER #0    
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

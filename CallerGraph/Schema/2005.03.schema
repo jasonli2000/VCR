@@ -1,0 +1,185 @@
+STANDARD DATA DICTIONARY #2005.03 -- PARENT DATA FILE FILE                                                                                                                                                                        MAY 20,2014@15:34:37  PAGE 1
+STORED IN ^MAG(2005.03,  (16 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                        (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ +---------------------------------------------------------------+ 
+ |                                                               |
+ | Property of the US Government.                                | 
+ | No permission to copy or redistribute this software is given. | 
+ | Use of unreleased versions of this software requires the user | 
+ | to execute a written test agreement with the VistA Imaging    | 
+ | Development Office of the Department of Veterans Affairs,     | 
+ | telephone (301) 734-0100.                                     | 
+ |                                                               |
+ | The Food and Drug Administration classifies this software as  | 
+ | a medical device.  As such, it may not be changed in any way. | 
+ | Modifications to this software may result in an adulterated   | 
+ | medical device under 21CFR820, the use of which is considered | 
+ | to be a violation of US Federal Statutes.                     | 
+ |                                                               |
+ +---------------------------------------------------------------+
+ 
+The Imaging File (2005) has many "imaging multiples" pointing to it from other packages such as Radiology, Medicine, Surgery, Mailman and the various sub-files of Laboratory such as Surgical Pathology etc.  In order to have a method of tracing back from
+the Image file to the parent file multiple, a file was developed to aid in this process, along with some additional fields in the Image file. Using these fields along with the PARENT DATA FILE, backward navigation is possible whether it be to a multiple
+of a file, or a multiple of a sub-file of a file. Each image that is captured is associated with a procedure or test report.  Depending on the service collecting the image, different types of reports will be associated.  For example: 
+ 
+  * Medical Procedures:  Endoscopy, Dermatology, Hematology, Rheumatology, etc.  
+  * Anatomic Pathology:  Surgical Pathology, Cytology, Autopsy, Electron Microscopy 
+  * Radiology:  Xray, CT, MRI, Ultrasound 
+  * Surgery  Operation reports 
+  * Text Integration Utility  Progress notes 
+ 
+ In order to be able to display information from the associated report, references to that report are stored in the Image file. One of these references is a pointer to the Parent Report file (2005.03), which contains an entry for each package's report
+file that is currently supported.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: 
+
+POINTED TO BY: PARENT DATA FILE# field (#16) of the IMAGE File (#2005) 
+               PARENT DATA FILE# field (#1) of the IMAGING STUDY File (#2005.001) 
+               PARENT DATA FILE# field (#16) of the IMAGE AUDIT File (#2005.1) 
+               
+
+CROSS
+REFERENCED BY: FILE/SUBFILE NAME(B)
+
+2005.03,.001  FILE/SUBFILE NUMBER        NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."6N.N) X
+              LAST EDITED:      JUL 05, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 99999999, 5 Decimal Digits 
+              DESCRIPTION:      This is the actual number of a file or sub-file of a file. Some examples of the .001 field are: For Radiology Reports file it is 74, for the Message file (MailMan) it is 3.9, for Endoscopy (Medicine) 655, for Surgery 130, 
+                                and for Surgical Pathology it is 63.08 (the sub-file number of Lab Data file, 63).  
+
+
+2005.03,.01   FILE/SUBFILE NAME      0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3)!'(X?1.E) X
+              LAST EDITED:      SEP 09, 1993 
+              HELP-PROMPT:      Answer must be 3-40 characters in length. 
+              DESCRIPTION:
+                                This is the actual name of the file or sub-file of a file. Some examples would be Message, Surgery, Surgical Pathology.  
+
+              CROSS-REFERENCE:  2005.03^B 
+                                1)= S ^MAG(2005.03,"B",$E(X,1,30),DA)=""
+                                2)= K ^MAG(2005.03,"B",$E(X,1,30),DA)
+
+
+2005.03,.02   ABBREVIATION           0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<2) X
+              LAST EDITED:      JUL 12, 1993 
+              HELP-PROMPT:      Answer must be 2-8 characters in length. 
+              DESCRIPTION:
+                                This is the commonly used abbreviation for the file or sub-file.  Some examples would be SUR, MAIL, ENDO, SP etc.  
+
+
+2005.03,.03   GLOBAL ROOT TYPE       0;3 SET
+
+                                '1' FOR ROOT1; 
+                                '2' FOR ROOT2; 
+                                '3' FOR ROOT3; 
+              LAST EDITED:      APR 19, 1994 
+              HELP-PROMPT:      Enter the global root type of the file or sub-file. 
+              DESCRIPTION:      This is used in the editing and deletion of image pointers in other files.  Since the Image file (2005) is pointed to by a variety of files a system had to be created to enable backward navigation. The global root data 
+                                types or forms have been put into three groups: 
+                                 
+                                 ROOT1 -   like "^RARPT("; "^SRO("; "^LR("; 
+                                 ROOT2 -   like "^XMB(3.9,"; "^MCAR(699," 
+                                 ROOT3 -   like "^LR(D0,""SP"","                  SUB-FILE of ^LR( 
+                                                   (where D0 = LRDFN) 
+
+
+2005.03,.04   FILE POINTER           0;4 POINTER TO FILE FILE (#1)
+
+              LAST EDITED:      SEP 09, 1993 
+              HELP-PROMPT:      POINTS TO ^DIC if regular file. 
+              DESCRIPTION:      This is the parent file pointing to ^DIC( - in most cases it will also be the .001 field since it will be a parent file itself. But in the case of sub-files, like the laboratory sub-files, it will not be the .001 field,
+                                but the number of the parent file. For example the Radiology entry has 74 for the .001 field and 74 for this field. However the Surgical Pathology entry has 68.03 for the .001 field, and 63 for the .04 field.  
+
+
+2005.03,40    PACKAGE INDEX          2;1 SET
+
+                                'RAD' FOR RAD; 
+                                'LAB' FOR LAB; 
+                                'MED' FOR MED; 
+                                'NOTE' FOR NOTE; 
+                                'CP' FOR CP; 
+                                'SUR' FOR SUR; 
+                                'CONS' FOR CONS; 
+                                'PHOTOID' FOR PHOTOID; 
+                                'NONE' FOR NONE; 
+              LAST EDITED:      FEB 03, 2003 
+              HELP-PROMPT:      The Package associated with the image. 
+              DESCRIPTION:
+                                This is the abbreviation of the application (package) that the image is attached to. 
+
+
+2005.03,41    CLASS INDEX            2;2 POINTER TO IMAGE INDEX FOR CLASS FILE (#2005.82)
+
+              LAST EDITED:      FEB 03, 2003 
+              DESCRIPTION:
+                                The classification of the image.  CLASS is an index field used for sorting and searching.  
+
+
+2005.03,42    TYPE INDEX             2;3 POINTER TO IMAGE INDEX FOR TYPES FILE (#2005.83)
+
+              LAST EDITED:      FEB 03, 2003 
+              DESCRIPTION:
+                                The TYPE of image. TYPE is an index field used for sorting and searching.  
+
+
+2005.03,43    PROC/EVENT INDEX       2;4 POINTER TO IMAGE INDEX FOR PROCEDURE/EVENT FILE (#2005.85)
+
+              LAST EDITED:      FEB 03, 2003 
+              DESCRIPTION:
+                                The PROCEDURE/EVENT for the image.  PROCEDURE/EVENT is an index field used for sorting and searching.  
+
+
+2005.03,44    SPEC/SUBSPEC INDEX     2;5 POINTER TO IMAGE INDEX FOR SPECIALTY/SUBSPECIALTY FILE (#2005.84)
+
+              LAST EDITED:      FEB 03, 2003 
+              DESCRIPTION:
+                                The SPECIALTY/SUBSPECIALTY of the image.  SPECIALTY/SUBSPECIALTY is an index field used for sorting and searching.  
+
+
+2005.03,45    ORIGIN INDEX           2;6 SET
+
+                                'V' FOR VA; 
+                                'N' FOR NON-VA; 
+              LAST EDITED:      AUG 14, 2003 
+              DESCRIPTION:
+                                This field indicates whether an image or document originated inside or outside of VA.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FILE (#1)                         FILE POINTER (#.04)
+
+IMAGE INDEX FOR CLASS (#2005.82)  CLASS INDEX (#41)
+
+IMAGE INDEX FOR PROCEDURE/EVEN 
+                   (#2005.85)     PROC/EVENT INDEX (#43)
+
+IMAGE INDEX FOR SPECIALTY/SUBS 
+                   (#2005.84)     SPEC/SUBSPEC INDEX (#44)
+
+IMAGE INDEX FOR TYPES (#2005.83)  TYPE INDEX (#42)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

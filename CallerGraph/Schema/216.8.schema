@@ -1,0 +1,336 @@
+STANDARD DATA DICTIONARY #216.8 -- NURS CARE PLAN FILE                                                                                                                                                                            MAY 20,2014@15:38:37  PAGE 1
+STORED IN ^NURSC(216.8,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Data pertaining to the Nursing Care Plan or Patient Plan of Care for a particular patient.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+IDENTIFIED BY: 
+      "WRITE": D EN^DDIOL("",,"?0")
+
+CROSS
+REFERENCED BY: TEXT FILE ENTRY(B)
+
+216.8,.01     TEXT FILE ENTRY        0;1 POINTER TO GMR TEXT FILE (#124.3) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="D EN2^NURCCPU4" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 12, 1990 
+              DESCRIPTION:
+                                This field is a pointer to the GMR Text (#124.3) File.  The data in this record pertains to the entry that this field points to.  
+
+              SCREEN:           S DIC("S")="D EN2^NURCCPU4"
+              EXPLANATION:      Only the nursing care plan entries otherwise known a patient plan of care in the GMR Text file are valid selections.
+                                UNEDITABLE
+              CROSS-REFERENCE:  216.8^B 
+                                1)= S ^NURSC(216.8,"B",$E(X,1,30),DA)=""
+                                2)= K ^NURSC(216.8,"B",$E(X,1,30),DA)
+                                This is the main cross-reference on the Text File Entry field.  
+
+
+
+216.8,1       NURSING PROBLEM LIST   PROB;0 POINTER Multiple #216.81
+
+              DESCRIPTION:
+                                A list of problems for this nursing care plan or patient plan of care.  
+
+
+216.81,.01      PROBLEM                0;1 POINTER TO AGGREGATE TERM FILE (#124.2) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^GMRD(124.2,+Y,0),U,4)=$O(^GMRD(124.25,""B"",""NURSING PROBLEM"",0)),$D(^GMR(124.3,$P(^NURSC(216.8,D0,0),U),1,""B"",+Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      FEB 27, 1989 
+                DESCRIPTION:
+                                  A particular problem for this nursing care plan or patient plan of care.  
+
+                SCREEN:           S DIC("S")="I $P(^GMRD(124.2,+Y,0),U,4)=$O(^GMRD(124.25,""B"",""NURSING PROBLEM"",0)),$D(^GMR(124.3,$P(^NURSC(216.8,D0,0),U),1,""B"",+Y))"
+                EXPLANATION:      Select only patient problems that have been chosen for this nursing care plan or patient plan of care.
+                CROSS-REFERENCE:  216.81^B 
+                                  1)= S ^NURSC(216.8,DA(1),"PROB","B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSC(216.8,DA(1),"PROB","B",$E(X,1,30),DA)
+                                  This is the main cross-reference on the problem field.  
+
+
+
+
+
+216.8,2       EVALUATION DATE        EVAL;0 DATE Multiple #216.82
+
+              DESCRIPTION:
+                                Evaluation information for a particular problem for a particular date.  
+
+              IDENTIFIED BY:    PROBLEM(#.02)[R]
+
+216.82,.01      DATE/TIME ENTERED      0;1 DATE (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 05, 1996 
+                DESCRIPTION:
+                                  Date/time this evaluation information was entered.  
+
+                CROSS-REFERENCE:  216.82^B 
+                                  1)= S ^NURSC(216.8,DA(1),"EVAL","B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSC(216.8,DA(1),"EVAL","B",$E(X,1,30),DA)
+                                  This is the main cross-reference evaluation date field.  
+
+
+                CROSS-REFERENCE:  216.82^AA^MUMPS 
+                                  1)= S NURS=$S($D(^NURSC(216.8,DA(1),"EVAL",DA,0)):$P(^(0),U,2),1:"") S:NURS'="" ^NURSC(216.8,DA(1),"EVAL","AA",NURS,9999999-X,DA)="" K NURS
+                                  2)= S NURS=$S($D(^NURSC(216.8,DA(1),"EVAL",DA,0)):$P(^(0),U,2),1:"") K:NURS'="" ^NURSC(216.8,DA(1),"EVAL","AA",NURS,9999999-X,DA) K NURS
+                                  This is an inverted time/date mumps cross-reference on the date field.  
+
+
+                CROSS-REFERENCE:  ^^TRIGGER^216.82^1 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^NURSC(216.8,D0,"EVAL",D1,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(216.82,.01,1,3,1.1) X ^DD(216.82,.01,1,3,1.4)
+                                  1.1)= S X=DIV S X=$P($G(^NURSC(216.8,DA(1),"EVAL",DA,0)),"^",3),X=$S(X]"":X,1:DUZ)
+                                  1.4)= S DIH=$S($D(^NURSC(216.8,DIV(0),"EVAL",DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=216.82,DIG=1 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= Q
+                                  2.4)= S DIH=$S($D(^NURSC(216.8,DIV(0),"EVAL",DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=216.82,DIG=1 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= S X=$P($G(^NURSC(216.8,DA(1),"EVAL",DA,0)),"^",3),X=$S(X]"":X,1:DUZ)
+                                  DELETE VALUE)= NO EFFECT
+                                  FIELD)= USER WHO EVALUATED
+                                  This cross-reference triggers an entry into the User Who Evaluated field of the Evaluation Date sub-file in the NURS Care Plan (#216.8) file when the evaluation date is edited.  
+
+
+
+216.82,.02      PROBLEM                0;2 POINTER TO AGGREGATE TERM FILE (#124.2) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $D(^NURSC(216.8,DA(1),""PROB"",""B"",+Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      FEB 27, 1989 
+                DESCRIPTION:
+                                  The problem associated with this evaluation date.  
+
+                SCREEN:           S DIC("S")="I $D(^NURSC(216.8,DA(1),""PROB"",""B"",+Y))"
+                EXPLANATION:      Only select problems that are in the problem list of this nursing care plan or patient plan of care.
+                CROSS-REFERENCE:  216.82^AA1^MUMPS 
+                                  1)= S NURS=$S($D(^NURSC(216.8,DA(1),"EVAL",DA,0)):$P(^(0),U),1:"") S:NURS'="" ^NURSC(216.8,DA(1),"EVAL","AA",X,9999999-NURS,DA)="" K NURS
+                                  2)= S NURS=$S($D(^NURSC(216.8,DA(1),"EVAL",DA,0)):$P(^(0),U),1:"") K:NURS'="" ^NURSC(216.8,DA(1),"EVAL","AA",X,9999999-NURS,DA) K NURS
+                                  This is an inverted time/date mumps cross-reference on the Problem field.  
+
+
+
+216.82,1        USER WHO EVALUATED     0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      JAN 13, 1992 
+                DESCRIPTION:
+                                  User who made this evaluation.  
+
+                WRITE AUTHORITY:  ^
+                NOTES:            TRIGGERED by the DATE/TIME ENTERED field of the EVALUATION DATE sub-field of the NURS CARE PLAN File 
+
+
+216.82,2        PROBLEM STATUS         0;4 SET (Required)
+
+                                  '0' FOR EVALUATE; 
+                                  '1' FOR RESOLVED; 
+                                  '2' FOR UNRESOLVED @ DC; 
+                                  '3' FOR SUSPENDED; 
+                LAST EDITED:      DEC 08, 1993 
+                DESCRIPTION:
+                                  The status of the problem associated with this evaluation.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+216.82,3        EVALUATION DATE        0;5 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 27, 1989 
+                DESCRIPTION:
+                                  This is the date/time of the follow up evaluation when a problem had been evaluated.  
+
+
+
+
+216.8,3       TARGET DATE            TARG;0 DATE Multiple #216.83
+
+              DESCRIPTION:
+                                The target dates for the goals/expected outcomes for the plan of care.  
+
+              IDENTIFIED BY:    GOAL/EXPECTED OUTCOME(#.03)[R]
+
+216.83,.01      DATE/TIME ENTERED      0;1 DATE (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 05, 1996 
+                DESCRIPTION:
+                                  The date/time this target date info. was added to the system 
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  216.83^B 
+                                  1)= S ^NURSC(216.8,DA(1),"TARG","B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSC(216.8,DA(1),"TARG","B",$E(X,1,30),DA)
+                                  This is the main cross-reference on the Target date field.  
+
+
+                CROSS-REFERENCE:  216.83^AA1^MUMPS 
+                                  1)= S NURS=$S($D(^NURSC(216.8,DA(1),"TARG",DA,0)):^(0),1:""),NURS(3)=$P(NURS,U,3) S:NURS(3)'="" ^NURSC(216.8,DA(1),"TARG","AA",NURS(3),9999999-X,DA)="" K NURS
+                                  2)= S NURS=$S($D(^NURSC(216.8,DA(1),"TARG",DA,0)):^(0),1:""),NURS(3)=$P(NURS,U,3) K:NURS(3)'="" ^NURSC(216.8,DA(1),"TARG","AA",NURS(3),9999999-X,DA) K NURS
+                                  This is an inverted time/date mumps cross-reference on the Target Date field.  
+
+
+                CROSS-REFERENCE:  ^^TRIGGER^216.83^1 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^NURSC(216.8,D0,"TARG",D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(216.83,.01,1,3,1.1) X ^DD(216.83,.01,1,3,1.4)
+                                  1.1)= S X=DIV S X=$P($G(^NURSC(216.8,DA(1),"TARG",DA,0)),"^",4),X=$S(X]"":X,1:DUZ)
+                                  1.4)= S DIH=$S($D(^NURSC(216.8,DIV(0),"TARG",DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=216.83,DIG=1 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= Q
+                                  2.4)= S DIH=$S($D(^NURSC(216.8,DIV(0),"TARG",DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=216.83,DIG=1 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= S X=$P($G(^NURSC(216.8,DA(1),"TARG",DA,0)),"^",4),X=$S(X]"":X,1:DUZ)
+                                  DELETE VALUE)= NO EFFECT
+                                  FIELD)= USER WHO ENTERED
+                                  This cross-reference triggers an entry into the User Who Entered field of the Target Date sub-file in the NURS Care Plan (#216.8) file when the Target Date field is edited.  
+
+
+
+216.83,.03      GOAL/EXPECTED OUTCOME  0;3 POINTER TO AGGREGATE TERM FILE (#124.2) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="D EN3^NURCCPU4" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 12, 1990 
+                DESCRIPTION:
+                                  The particular goal/expected outcome associated with this target date.  
+
+                SCREEN:           S DIC("S")="D EN3^NURCCPU4"
+                EXPLANATION:      Data can only be a goal/expected outcome for this particular problem for this nursing care plan or patient plan of care entry.
+                CROSS-REFERENCE:  216.83^AA2^MUMPS 
+                                  1)= S NURS=$S($D(^NURSC(216.8,DA(1),"TARG",DA,0)):^(0),1:""),NURS(1)=$P(NURS,U) S:NURS(1)'="" ^NURSC(216.8,DA(1),"TARG","AA",X,9999999-NURS(1),DA)="" K NURS
+                                  2)= S NURS=$S($D(^NURSC(216.8,DA(1),"TARG",DA,0)):^(0),1:""),NURS(1)=$P(NURS,U) K:NURS(1)'="" ^NURSC(216.8,DA(1),"TARG","AA",X,9999999-NURS(1),DA) K NURS
+                                  This is an inverted time/date cross-reference on the goal/expected outcome field.  
+
+
+
+216.83,1        USER WHO ENTERED       0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      JAN 13, 1992 
+                DESCRIPTION:
+                                  The user who entered this target date.  
+
+                WRITE AUTHORITY:  ^
+                NOTES:            TRIGGERED by the DATE/TIME ENTERED field of the TARGET DATE sub-field of the NURS CARE PLAN File 
+
+
+216.83,2        GOAL MET/DC'D          0;2 SET
+
+                                  '0' FOR CURRENT; 
+                                  '1' FOR MET; 
+                                  '2' FOR DISCONTINUED; 
+                LAST EDITED:      OCT 28, 1989 
+                DESCRIPTION:
+                                  This field tracks whether the outcome is still current, has been met, or has been discontinued for this particular patient plan of care.  
+
+
+216.83,3        TARGET DATE            0;5 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 25, 1989 
+                DESCRIPTION:
+                                  The target date that was entered for this patient's goal.  
+
+
+
+
+216.8,4       ORDER INFO             ORD;0 DATE Multiple #216.84
+
+              DESCRIPTION:
+                                Stored here is the status information for nursing orderables (or interventions).  
+
+              IDENTIFIED BY:    ORDERABLE(#.02)[R]
+
+216.84,.01      ORDER STATUS DATE/TIME 0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 05, 1996 
+                DESCRIPTION:
+                                  The date/time associated with the order information.  
+
+                CROSS-REFERENCE:  216.84^B 
+                                  1)= S ^NURSC(216.8,DA(1),"ORD","B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSC(216.8,DA(1),"ORD","B",$E(X,1,30),DA)
+                                  This is the main cross-reference on the Order Status Date/Time field.  
+
+
+                CROSS-REFERENCE:  216.84^AA^MUMPS 
+                                  1)= S NURS=$S($D(^NURSC(216.8,DA(1),"ORD",DA,0)):$P(^(0),"^",2),1:"") S:NURS'="" ^NURSC(216.8,DA(1),"ORD","AA",NURS,9999999-X,DA)="" K NURS
+                                  2)= S NURS=$S($D(^NURSC(216.8,DA(1),"ORD",DA,0)):$P(^(0),"^",2),1:"") K:NURS'="" ^NURSC(216.8,DA(1),"ORD","AA",NURS,9999999-X,DA) K NURS
+                                  This is an inverted time/date mumps cross-reference on the Order Status Date/Time field.  
+
+
+                CROSS-REFERENCE:  ^^TRIGGER^216.84^2 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^NURSC(216.8,D0,"ORD",D1,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(216.84,.01,1,3,1.1) X ^DD(216.84,.01,1,3,1.4)
+                                  1.1)= S X=DIV S X=$P($G(^NURSC(216.8,DA(1),"ORD",DA,0)),"^",4),X=$S(X]"":X,1:DUZ)
+                                  1.4)= S DIH=$S($D(^NURSC(216.8,DIV(0),"ORD",DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=216.84,DIG=2 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= Q
+                                  2.4)= S DIH=$S($D(^NURSC(216.8,DIV(0),"ORD",DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=216.84,DIG=2 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= S X=$P($G(^NURSC(216.8,DA(1),"ORD",DA,0)),"^",4),X=$S(X]"":X,1:DUZ)
+                                  DELETE VALUE)= NO EFFECT
+                                  FIELD)= USER MODIFY
+                                  This cross-reference triggers an entry into the User Modifying field of the Order Info sub-file in the NURS Care Plan (#216.8) file whenever the Order Status Date/Time field is edited.  
+
+
+
+216.84,.02      ORDERABLE              0;2 POINTER TO AGGREGATE TERM FILE (#124.2) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="D EN5^NURCCPU1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      MAR 21, 1989 
+                DESCRIPTION:
+                                  This is the nursing order associated with this problem.  
+
+                SCREEN:           S DIC("S")="D EN5^NURCCPU1"
+                EXPLANATION:      Select only valid orderables.
+                CROSS-REFERENCE:  216.84^AA1^MUMPS 
+                                  1)= S NURS=$S($D(^NURSC(216.8,DA(1),"ORD",DA,0)):$P(^(0),"^"),1:"") S:NURS'="" ^NURSC(216.8,DA(1),"ORD","AA",X,9999999-NURS,DA)="" K NURS
+                                  2)= S NURS=$S($D(^NURSC(216.8,DA(1),"ORD",DA,0)):$P(^(0),"^"),1:"") K:NURS'="" ^NURSC(216.8,DA(1),"ORD","AA",X,9999999-NURS,DA) K NURS
+                                  This is an inverted time/date mumps cross-reference on the Orderable field.  
+
+
+
+216.84,1        STATUS                 0;3 SET
+
+                                  '0' FOR RE-ACTIVATED; 
+                                  '1' FOR DC; 
+                LAST EDITED:      MAR 21, 1989 
+                DESCRIPTION:
+                                  The status of the order in question.  
+
+                SCREEN:           S DIC("S")="D EN1^NURCCPU4"
+                EXPLANATION:      Select proper status.
+
+216.84,2        USER MODIFYING         0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      JAN 13, 1992 
+                DESCRIPTION:
+                                  The user who made this modification.  
+
+                WRITE AUTHORITY:  ^
+                NOTES:            TRIGGERED by the ORDER STATUS DATE/TIME field of the ORDER INFO sub-field of the NURS CARE PLAN File 
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+AGGREGATE TERM (#124.2)           NURSING PROBLEM LIST:PROBLEM (#.01)
+                                  EVALUATION DATE:PROBLEM (#.02)
+                                  TARGET DATE:GOAL/EXPECTED OUTCOME (#.03)
+                                  ORDER INFO:ORDERABLE (#.02)
+
+GMR TEXT (#124.3)                 TEXT FILE ENTRY (#.01)
+
+NEW PERSON (#200)                 EVALUATION DATE:USER WHO EVALUATED (#1)
+                                  TARGET DATE:USER WHO ENTERED (#1)
+                                  ORDER INFO:USER MODIFYING (#2)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

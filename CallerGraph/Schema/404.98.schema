@@ -1,0 +1,684 @@
+STANDARD DATA DICTIONARY #404.98 -- SCHEDULING CONVERSION SPECIFICATION TEMPLATE FILE                                                                                                                                             MAY 20,2014@15:41:35  PAGE 1
+STORED IN ^SD(404.98,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains Conversion Specification Templates (CST) that are used by the ACRP Database Conversion (SD*5.3*137). These templates allow management of the conversion process to meet the needs of the individual site.  
+ 
+Each template contains the following: 
+      1) Start and End dates for encounters to be converted 
+      2) Event logs (estimate, convert, re-convert) 
+      3) Action logs (schedule, stop, re-start) 
+      4) Error logs 
+      5) Conversion event start/stop parameters 
+      6) Estimate statistics 
+      7) Record creation statistics 
+ 
+The database conversion logic utilizes and updates the information stored in each CST. 
+
+
+IDENTIFIED BY: TYPE (#.02)[R], START DATE (#.03)[R], END DATE (#.04)[R]
+
+CROSS
+REFERENCED BY: LAST LOG EVENT(AIX1), NUMBER(B), START DATE(C), TYPE(TYP)
+
+404.98,.01    NUMBER                 0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X I $D(X) S DINUM=X
+              LAST EDITED:      APR 26, 1996 
+              HELP-PROMPT:      Type a Number between 1 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the CST number.  It is the primary key to this file.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  404.98^B 
+                                1)= S ^SD(404.98,"B",$E(X,1,30),DA)=""
+                                2)= K ^SD(404.98,"B",$E(X,1,30),DA)
+                                This cross-reference allows look-up by number.  
+
+
+
+404.98,.02    TYPE                   0;2 SET (Required)
+
+                                '1' FOR ENCOUNTER; 
+              LAST EDITED:      FEB 17, 1998 
+              DESCRIPTION:      This field contains the type of template entry.  
+                                 
+                                (Currently, only the 'ENCOUNTER' type is used.) 
+
+              CROSS-REFERENCE:  404.98^TYP 
+                                1)= S ^SD(404.98,"TYP",$E(X,1,30),DA)=""
+                                2)= K ^SD(404.98,"TYP",$E(X,1,30),DA)
+                                This cross-reference allows look-up by type of conversion.  
+
+
+
+404.98,.03    START DATE             0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:2960930<X!(2700101>X) X
+              LAST EDITED:      FEB 04, 1998 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1/1/1970 AND 9/30/1996 
+              DESCRIPTION:
+                                This field contains the user specified start date for encounters to be converted by this CST.  
+
+              CROSS-REFERENCE:  404.98^C 
+                                1)= S ^SD(404.98,"C",$E(X,1,30),DA)=""
+                                2)= K ^SD(404.98,"C",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+
+
+404.98,.04    END DATE               0;4 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:2960930<X!(2700101>X) X
+              LAST EDITED:      FEB 04, 1998 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1/1/1970 AND 9/30/1996 
+              DESCRIPTION:
+                                This field contains the user specified end date for encounters to be converted by this CST.  
+
+
+404.98,.05    LAST LOG EVENT         0;5 SET
+
+                                '0' FOR ESTIMATE; 
+                                '1' FOR CONVERT; 
+                                '2' FOR RE-CONVERT; 
+                                '3' FOR CANCEL; 
+              LAST EDITED:      OCT 29, 1998 
+              DESCRIPTION:
+                                This field contains the last event logged for this CST.  
+
+              SCREEN:           S DIC("S")="IF $S(Y'=2:1,1:$P($G(^SD(404.91,1,""CNV"")),U,6))"
+              EXPLANATION:      For re-convert, site parameter must be set to 'YES'.
+              NOTES:            TRIGGERED by the CONVERSION CANCELED field of the SCHEDULING CONVERSION SPECIFICATION TEMPLATE File 
+
+              CROSS-REFERENCE:  404.98^AIX1^MUMPS 
+                                1)= I '$P(^SD(404.98,DA,0),U,7) D HIS^SCCVLOG($$NOW^XLFDT,DA,1,"",404.98)
+                                2)= I $P(^SD(404.98,DA,0),U,5)'=X D HIS^SCCVLOG($$NOW^XLFDT,DA,1,"",404.98)
+                                This mumps cross-reference works like a "trigger" cross-reference.  When the CST event changes, a new action of 'Pending' is added to the CST EVENT sub-file.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^404.98^.08 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SD(404.98,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X="" X ^DD(404.98,.05,1,2,1.4)
+                                1.4)= S DIH=$S($D(^SD(404.98,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,8)=DIV,DIH=404.98,DIG=.08 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SD(404.98,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X="" X ^DD(404.98,.05,1,2,2.4)
+                                2.4)= S DIH=$S($D(^SD(404.98,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,8)=DIV,DIH=404.98,DIG=.08 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                3)= DO NOT DELETE
+                                CREATE VALUE)= @
+                                DELETE VALUE)= @
+                                FIELD)= LAST LOG REQUEST ACTION
+                                This forces the last request action to be deleted when a new event is selected.  
+
+
+
+404.98,.06    BULLETIN UPON COMPLETION 0;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 02, 1996 
+              DESCRIPTION:
+                                This field indicates whether or not a user requested a bulletin to be sent at the completion of a specified event.  
+
+
+404.98,.07    LAST LOG EVENT STATUS  0;7 SET
+
+                                '1' FOR PENDING; 
+                                '2' FOR STARTED; 
+                                '3' FOR STOPPED; 
+                                '4' FOR RE-STARTED; 
+                                '5' FOR COMPLETED; 
+                                '6' FOR QUEUED; 
+                                '7' FOR CANCELED; 
+              LAST EDITED:      MAR 02, 1998 
+              DESCRIPTION:
+                                This field is triggered by the EVENT field of the CST EVENT sub-file.  It contains the last event status for this CST.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the STATUS field of the EVENT LOG sub-field of the SCHEDULING CONVERSION SPECIFICATION TEMPLATE File 
+                                TRIGGERED by the CONVERSION CANCELED field of the SCHEDULING CONVERSION SPECIFICATION TEMPLATE File 
+
+
+404.98,.08    LAST LOG REQUEST ACTION 0;8 SET
+
+                                '1' FOR SCHEDULE; 
+                                '2' FOR STOP; 
+                                '3' FOR RE-START; 
+              LAST EDITED:      MAY 07, 1996 
+              DESCRIPTION:
+                                This field contains the last action request for this CST.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the REQUEST ACTION field of the REQUEST LOG sub-field of the SCHEDULING CONVERSION SPECIFICATION TEMPLATE File 
+                                TRIGGERED by the LAST LOG EVENT field of the SCHEDULING CONVERSION SPECIFICATION TEMPLATE File 
+
+
+404.98,.09    CONVERSION CANCELED    0;9 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAR 09, 1998 
+              DESCRIPTION:
+                                This field indicates that the CST has been canceled when set to 'YES'.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^404.98^.05 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SD(404.98,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X=3 X ^DD(404.98,.09,1,1,1.4)
+                                1.4)= S DIH=$S($D(^SD(404.98,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,5)=DIV,DIH=404.98,DIG=.05 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= S X=3
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= LAST LOG EVENT
+
+              CROSS-REFERENCE:  ^^TRIGGER^404.98^.07 
+                                1)= X ^DD(404.98,.09,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^SD(404.98,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X=5 X ^DD(404.98,.09,1,2,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(404.98,.09,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_Y(0)_":",2),$C(59),1)="YES"
+                                1.4)= S DIH=$S($D(^SD(404.98,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=404.98,DIG=.07 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SD(404.98,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X="" X ^DD(404.98,.09,1,2,2.4)
+                                2.4)= S DIH=$S($D(^SD(404.98,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=404.98,DIG=.07 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                3)= DO NOT DELETE
+                                CREATE CONDITION)= CONVERSION CANCELED="YES"
+                                CREATE VALUE)= S X=5
+                                DELETE VALUE)= @
+                                FIELD)= #.07
+
+
+404.98,1.01   LAST ENTRY PROCESSED   1;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 08, 1998 
+              HELP-PROMPT:      Type a Number between 1 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:      This field contains the last entry converted by the CST. If the conversion process is interrupted or stopped, this field is used to determine where to re-start the CST.  
+                                 
+                                For the 'Encounter' type CST, this field will be the Outpatient Encounter IEN of the last entry successfully converted.  This field is not filled in until all processing of the encounter has taken place.  
+
+                                UNEDITABLE
+
+404.98,1.02   NUMBER OF ENTRIES      1;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 15, 1996 
+              HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of entries converted by this CST.  It is incremented each time an entry is successfully converted.  
+
+                                UNEDITABLE
+
+404.98,1.03   TASK #                 1;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 30, 1995 
+              HELP-PROMPT:      Type a Number between 0 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the TaskMan task number of current event for this CST.  If the task is completed or stopped this field is deleted.  
+
+
+404.98,1.04   VOLUME SET             1;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+              LAST EDITED:      DEC 04, 1995 
+              HELP-PROMPT:      Answer must be 1-4 characters in length. 
+              DESCRIPTION:      This field is used to determine if the last TaskMan task number assigned is active so more than one conversion job doesn't run at a time for the CST.  
+                                 
+                                This value is used as input to STAT^%ZTLOAD. The results are used to determine if the task is active or not.  
+
+
+404.98,1.05   TOTAL ERRORS LOGGED    1;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 20, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The total # of errors logged for this CST.  This number is reset on reconvert to 0.  
+
+              NOTES:            TRIGGERED by the NUMBER ERRORS LOGGED field of the REQUEST LOG sub-field of the SCHEDULING CONVERSION SPECIFICATION TEMPLATE File 
+
+
+404.98,2.01   NUMBER OF ADD/EDITS FOUND 2;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 10, 1996 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the total number of add/edits found by the estimator for this CST.  
+
+
+404.98,2.02   NUMBER OF ANCILLARIES FOUND 2;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 20, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of ancillaries visits associated with appointments found by the estimator for this CST.  
+
+
+404.98,2.03   NUMBER OF APPOINTMENTS FOUND 2;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 20, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 99999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of appointments found by the estimator for this CST.  
+
+
+404.98,2.04   NUMBER OF CREDIT STOPS FOUND 2;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 20, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of credit stops associated with appointments found by the estimator for this CST.  
+
+
+404.98,2.05   NUMBER OF DISPOSITIONS FOUND 2;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 20, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of dispositions found by the estimator for this CST.  
+
+
+404.98,2.06   RECORDS NOT CONVERTED  2;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 09, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the total # of records not converted by this CST due to errors or missing data.  
+
+
+404.98,2.07   NUMBER OF ENCOUNTERS   2;7 NUMBER
+
+              NUMBER OF ENCOUNTERS TO BE CREATED                                                                               
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 03, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of records that will be created in the OUTPATIENT ENCOUNTER (#409.68) file by this CST, as determined by the estimator.  
+
+
+404.98,2.08   NUMBER OF VISITS       2;8 NUMBER
+
+              NUMBER OF VISITS TO BE CREATED                                                                                   
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 03, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of records that will be created in the VISIT (#9000010) file by this CST, as determined by the estimator.  
+
+
+404.98,2.09   NUMBER OF V PROVIDERs  2;9 NUMBER
+
+              NUMBER OF V PROVIDERs TO BE CREATED                                                                              
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 03, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of PCE provider records that will be created in the V PROVIDER (#9000010.06) file by this CST, as determined by the estimator.  
+
+
+404.98,2.1    NUMBER OF V POVs       2;10 NUMBER
+
+              NUMBER OF V POVs TO BE CREATED                                                                                   
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 03, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of PCE diagnosis records that will be created in the V POV (#9000010.07) file by this CST, as determined by the estimator.  
+
+
+404.98,2.11   NUMBER OF V CPTs       2;11 NUMBER
+
+              NUMBEROF V CPTs TO BE CREATED                                                                                    
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 03, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of PCE procedure records that will be created in the V CPT (#9000010.18) file by this CST, as determined by the estimator.  
+
+
+404.98,25     REQUEST LOG            R;0 DATE Multiple #404.9825 (Add New Entry without Asking)
+
+              LAST EDITED:      JAN 08, 1998 
+              DESCRIPTION:
+                                This sub-file contains the request action log for events executed for this CST.  
+
+              IDENTIFIED BY:    REQUEST ACTION(#.02)[R], EVENT(#.03)
+
+404.9825,.01    REQUEST DATE/TIME      0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 27, 1995 
+                DESCRIPTION:
+                                  This field contains the date/time the request was entered.  
+
+                CROSS-REFERENCE:  404.9825^B 
+                                  1)= S ^SD(404.98,DA(1),"R","B",+$E(X,1,30),DA)=""
+                                  2)= K ^SD(404.98,DA(1),"R","B",+$E(X,1,30),DA)
+
+
+404.9825,.02    REQUEST ACTION         0;2 SET (Required)
+
+                                  '1' FOR SCHEDULE; 
+                                  '2' FOR STOP; 
+                                  '3' FOR RE-START; 
+                LAST EDITED:      MAY 07, 1996 
+                DESCRIPTION:
+                                  This field contains the requested action.  
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  ^^TRIGGER^404.98^.08 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^SD(404.98,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X=DIV S X=X X ^DD(404.9825,.02,1,1,1.4)
+                                  1.4)= S DIH=$S($D(^SD(404.98,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,8)=DIV,DIH=404.98,DIG=.08 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^SD(404.98,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X="" X ^DD(404.9825,.02,1,1,2.4)
+                                  2.4)= S DIH=$S($D(^SD(404.98,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,8)=DIV,DIH=404.98,DIG=.08 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= S X=X
+                                  DELETE VALUE)= @
+                                  FIELD)= LAST LOG REQUEST ACTION
+
+
+404.9825,.03    EVENT                  0;3 SET
+
+                                  '0' FOR ESTIMATE; 
+                                  '1' FOR CONVERT; 
+                                  '2' FOR RE-CONVERT; 
+                LAST EDITED:      MAY 08, 1996 
+                DESCRIPTION:
+                                  This field contains the event corresponding to the request.  
+
+                                  UNEDITABLE
+
+404.9825,.04    START DATE/TIME        0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 27, 1995 
+                DESCRIPTION:
+                                  This field contains the requested start date/time.  
+
+
+404.9825,.05    STOP DATE/TIME         0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 27, 1995 
+                DESCRIPTION:
+                                  This field contains the requested stop date/time.  
+
+
+404.9825,.06    USER                   0;6 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAY 06, 1996 
+                DESCRIPTION:
+                                  This field contains the user who entered the request.  
+
+
+404.9825,.07    NUMBER ERRORS LOGGED   0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 06, 1998 
+                HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the number of errors that occurred as a result of this request.  
+
+                CROSS-REFERENCE:  ^^TRIGGER^404.98^1.05 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^SD(404.98,D0,1)):^(1),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X=DIU+DIV X ^DD(404.9825,.07,1,1,1.4)
+                                  1.4)= S DIH=$S($D(^SD(404.98,DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,5)=DIV,DIH=404.98,DIG=1.05 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^SD(404.98,D0,1)):^(1),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X=DIU-X X ^DD(404.9825,.07,1,1,2.4)
+                                  2.4)= S DIH=$S($D(^SD(404.98,DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,5)=DIV,DIH=404.98,DIG=1.05 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  3)= PLEASE DO NOT DELETE
+                                  CREATE VALUE)= TOTAL ERRORS LOGGED+NUMBER ERRORS LOGGED
+                                  DELETE VALUE)= TOTAL ERRORS LOGGED-OLD NUMBER ERRORS LOGGED
+                                  FIELD)= TOTAL ERRORS LOGGED
+                                  This trigger keeps track of the total # of errors that occur during a full run of a CST, regardless of the # of times it is stopped and restarted.  
+
+
+
+
+
+404.98,50     ERROR LOG              ERROR;0   WORD-PROCESSING #404.985   (NOWRAP)
+
+              DESCRIPTION:
+                                This field contains any errors encountered while processing the CST events.  
+
+
+404.98,75     EVENT LOG              E;0 DATE Multiple #404.9875 (Add New Entry without Asking)
+
+              LAST EDITED:      JAN 08, 1998 
+              DESCRIPTION:
+                                This sub-file contains information about the events which took place for this CST.  
+
+              IDENTIFIED BY:    STATUS(#.02)[R], EVENT(#.03)
+
+404.9875,.01    EVENT DATE/TIME        0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 20, 1998 
+                DESCRIPTION:
+                                  This field contains the date/time the event was logged.  
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  404.9875^B 
+                                  1)= S ^SD(404.98,DA(1),"E","B",$E(X,1,30),DA)=""
+                                  2)= K ^SD(404.98,DA(1),"E","B",$E(X,1,30),DA)
+                                  This cross-reference allows look-up by event date/time.  
+
+
+                CROSS-REFERENCE:  404.9875^AID^MUMPS 
+                                  1)= S ^SD(404.98,DA(1),"E","AID",-X,DA)=""
+                                  2)= K ^SD(404.98,DA(1),"E","AID",-X,DA)
+                                  This cross-reference is sorted by the following: 
+                                    ^SD(404.98,<1>,"E","AID",<2>,<3>) where the subscripts are the following: 
+                                   
+                                    Subscript    Description 
+                                    ---------    -----------
+                                      <1>        CST number then by 
+                                      <2>        Inverse Event date/time 
+                                      <3>        Internal entry number in the EVENT sub-file 
+
+
+                CROSS-REFERENCE:  404.9875^AEV^MUMPS 
+                                  1)= S:$P(^SD(404.98,DA(1),"E",DA,0),U,2)&($P(^(0),U,3)'="") ^SD(404.98,DA(1),"E","AEV",X,$P(^(0),U,3),+$P(^(0),U,2),DA)=""
+                                  2)= K ^SD(404.98,DA(1),"E","AEV",X,$P(^SD(404.98,DA(1),"E",DA,0),U,3),+$P(^(0),U,2),DA)
+                                   This multiple field cross-reference is subcripted as follows: 
+                                   ^SD(404.98,<1>,"E","AEV",<2>,<3>,<4>,<5>) 
+                                   
+                                    Subscript      Description 
+                                    ---------      -----------
+                                       <1>         CST number 
+                                       <2>         Event date/time 
+                                       <3>         Event 
+                                       <4>         Status 
+                                       <5>         Internal entry number of EVENT sub-file entry 
+
+
+
+404.9875,.02    STATUS                 0;2 SET (Required)
+
+                                  '1' FOR PENDING; 
+                                  '2' FOR STARTED; 
+                                  '3' FOR STOPPED; 
+                                  '4' FOR RE-STARTED; 
+                                  '5' FOR COMPLETED; 
+                                  '6' FOR QUEUED; 
+                                  '7' FOR CANCELED; 
+                LAST EDITED:      MAR 02, 1998 
+                DESCRIPTION:
+                                  This field contains the event status.  
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  404.9875^AEV1^MUMPS 
+                                  1)= S:$P(^SD(404.98,DA(1),"E",DA,0),U,3)'="" ^SD(404.98,DA(1),"E","AEV",$P(^(0),U),$P(^(0),U,3),X,DA)=""
+                                  2)= K ^SD(404.98,DA(1),"E","AEV",$P(^SD(404.98,DA(1),"E",DA,0),U),$P(^(0),U,3),X,DA)
+                                  This multiple field cross-reference is subcripted as follows: 
+                                   ^SD(404.98,<1>,"E","AEV",<2>,<3>,<4>,<5>) 
+                                   
+                                    Subscript      Description 
+                                    ---------      -----------
+                                       <1>         CST number 
+                                       <2>         Event date/time 
+                                       <3>         Event 
+                                       <4>         Status 
+                                       <5>         Internal entry number of EVENT sub-file entry 
+
+
+                CROSS-REFERENCE:  ^^TRIGGER^404.98^.07 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^SD(404.98,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X=X X ^DD(404.9875,.02,1,2,1.4)
+                                  1.4)= S DIH=$S($D(^SD(404.98,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=404.98,DIG=.07 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^SD(404.98,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X="" X ^DD(404.9875,.02,1,2,2.4)
+                                  2.4)= S DIH=$S($D(^SD(404.98,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=404.98,DIG=.07 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                  CREATE VALUE)= S X=X
+                                  DELETE VALUE)= @
+                                  FIELD)= LAST LOG EVENT ACTION
+
+
+404.9875,.03    EVENT                  0;3 SET
+
+                                  '0' FOR ESTIMATE; 
+                                  '1' FOR CONVERT; 
+                                  '2' FOR RE-CONVERT; 
+                                  '3' FOR CANCEL; 
+                LAST EDITED:      OCT 08, 1998 
+                DESCRIPTION:
+                                  This field contains the requested event which is determined by the system.  
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  404.9875^AEV2^MUMPS 
+                                  1)= S:$P(^SD(404.98,DA(1),"E",DA,0),U,2) ^SD(404.98,DA(1),"E","AEV",$P(^(0),U),X,+$P(^(0),U,2),DA)=""
+                                  2)= K ^SD(404.98,DA(1),"E","AEV",$P(^SD(404.98,DA(1),"E",DA,0),U),X,+$P(^(0),U,2),DA)
+                                  This multiple field cross-reference is subcripted as follows: 
+                                   ^SD(404.98,<1>,"E","AEV",<2>,<3>,<4>,<5>) 
+                                   
+                                    Subscript      Description 
+                                    ---------      -----------
+                                       <1>         CST number 
+                                       <2>         Event date/time 
+                                       <3>         Event 
+                                       <4>         Status 
+                                       <5>         Internal entry number of EVENT sub-file entry 
+
+
+
+404.9875,50     COMMENT                C;0   WORD-PROCESSING #404.98755   (NOWRAP)
+
+                DESCRIPTION:
+                                  This field contains any comments related to the event.  
+
+
+
+
+404.98,207    SCE GLOBAL ESTIMATE     ;  COMPUTED
+
+              MUMPS CODE:       N E S E=$G(^SD(404.98,D0,2)) S X=($$SCE^SCCVEGU1()*$P(E,U,7))+($$SCEUPD^SCCVEGU1()*($P(E,U,8)-$P(E,U,7))) S X=$J(X,0,0)
+              ALGORITHM:        N E S E=$G(^SD(404.98,D0,2)) S X=($$SCE^SCCVEGU1()*$P(E,U,7))+($$SCEUPD^SCCVEGU1()*($P(E,U,8)-$P(E,U,7)))  (ALWAYS 0 DECIMAL DIGITS)
+              LAST EDITED:      DEC 03, 1998 
+              DESCRIPTION:      This computed field provides an estimate on how much disk space will be required for OUTPATIENT ENCOUNTER (#409.68)records created or modified by this CST.  
+                                 
+                                The records are stored in the ^SCE global.  
+                                 
+                                 
+                                The formula used is the following: 
+                                 
+                                  NUMBER OF ENCOUNTERS TO BE CREATED * SCE BLOCKS PER NEW RECORD 
+                                                                +
+                                  ((NUMBER OF VISITS TO BE CREATED - NUMBER OF ENOCUNTERS TO BE CREATED) 
+                                                                     * SCE BLOCKS PER UPDATED RECORD) 
+
+
+404.98,208    AUPNVSIT GLOBAL ESTIMATE  ;  COMPUTED
+
+              MUMPS CODE:       N E S E=$G(^SD(404.98,D0,2)) S X=$$AUPNVSIT^SCCVEGU1()*$P(E,U,8) S X=$J(X,0,0)
+              ALGORITHM:        N E S E=$G(^SD(404.98,D0,2)) S X=$$AUPNVSIT^SCCVEGU1()*$P(E,U,8)  (ALWAYS 0 DECIMAL DIGITS)
+              LAST EDITED:      NOV 28, 1998 
+              DESCRIPTION:      This computed field provides an estimate on how much disk space will be required for VISIT (#9000010) records created by this CST.  
+                                 
+                                The records are stored in the ^AUPNVSIT global.  
+                                 
+                                 
+                                The formula used is the following: 
+                                 
+                                     NUMBER OF VISITS TO BE CREATED * AUPNVSIT BLOCKS PER NEW RECORD 
+                                 
+
+
+404.98,209    AUPNVPRV GLOBAL ESTIMATE  ;  COMPUTED
+
+              MUMPS CODE:       N E S E=$G(^SD(404.98,D0,2)) S X=$$AUPNVPRV^SCCVEGU1()*$P(E,U,9) S X=$J(X,0,0)
+              ALGORITHM:        N E S E=$G(^SD(404.98,D0,2)) S X=$$AUPNVPRV^SCCVEGU1()*$P(E,U,9)  (ALWAYS 0 DECIMAL DIGITS)
+              DESCRIPTION:      This computed field provides an estimate on how much disk space will be required for V PROVIDER (#9000010.06) records created by this CST.  
+                                 
+                                The records are stored in the ^AUPNVPRV global.  
+                                 
+                                 
+                                The formula used is the following: 
+                                 
+                                     NUMBER OF V PROVIDERs TO BE CREATED * AUPNVPRV BLOCKS PER NEW RECORD 
+                                 
+
+
+404.98,210    AUPNVPOV GLOBAL ESTIMATE  ;  COMPUTED
+
+              MUMPS CODE:       N E S E=$G(^SD(404.98,D0,2)) S X=$$AUPNVPOV^SCCVEGU1()*$P(E,U,10) S X=$J(X,0,0)
+              ALGORITHM:        N E S E=$G(^SD(404.98,D0,2)) S X=$$AUPNVPOV^SCCVEGU1()*$P(E,U,10)  (ALWAYS 0 DECIMAL DIGITS)
+              DESCRIPTION:      This computed field provides an estimate on how much disk space will be required for V POV (#9000010.07) records created by this CST.  
+                                 
+                                The records are stored in the ^AUPNVPOV global.  
+                                 
+                                 
+                                The formula used is the following: 
+                                 
+                                     NUMBER OF V POVs TO BE CREATED * AUPNVPOV BLOCKS PER NEW RECORD 
+                                 
+
+
+404.98,211    AUPNVCPT GLOBAL ESTIMATE  ;  COMPUTED
+
+              MUMPS CODE:       N E S E=$G(^SD(404.98,D0,2)) S X=$$AUPNVCPT^SCCVEGU1()*$P(E,U,11) S X=$J(X,0,0)
+              ALGORITHM:        N E S E=$G(^SD(404.98,D0,2)) S X=$$AUPNVCPT^SCCVEGU1()*$P(E,U,11)  (ALWAYS 0 DECIMAL DIGITS)
+              DESCRIPTION:      This computed field provides an estimate on how much disk space will be required for V CPT (#9000010.18) records created by this CST.  
+                                 
+                                The records are stored in the ^AUPNVCPT global.  
+                                 
+                                 
+                                The formula used is the following: 
+                                 
+                                     NUMBER OF V CPTs TO BE CREATED * AUPNVCPT BLOCKS PER NEW RECORD 
+                                 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 REQUEST LOG:USER (#.06)
+
+SCHEDULING CONVERSION SPECIFIC 
+                   (#404.98)      REQUEST LOG:REQUEST ACTION (#.02)
+                                  NUMBER ERRORS LOGGED (#.07)
+                                  EVENT LOG:STATUS (#.02)
+
+
+
+INPUT TEMPLATE(S):
+SCCV CONV CANCEL              MAR 02, 1998@16:14  USER #0    
+SCCV CREATE TEMPLATE          JAN 15, 1998@14:23  USER #0    
+SCCV EDIT TEMPLATE            FEB 05, 1998@15:26  USER #0    
+SCCV SCHEDULE REQUEST         APR 07, 2000@11:10  USER #0    
+
+PRINT TEMPLATE(S):
+SCCV ERROR LOG PRINT          OCT 09, 1998@10:07  USER #0                                                                                                                                                                                   CST ERROR LOG LIST
+SCCV EVENT LOG PRINT          OCT 09, 1998@10:14  USER #0                                                                                                                                                                                   CST EVENT LOG LIST
+SCCV REQUEST LOG PRINT        OCT 09, 1998@10:01  USER #0                                                                                                                                                                         CST ACTION REQUEST LOG PRINT
+
+SORT TEMPLATE(S):
+SCCV ERROR LOG                JAN 08, 1998@16:06  USER #0    
+SORT BY: @NUMBER//    (User is asked range)
+
+SCCV EVENT LOG                JAN 08, 1998@15:52  USER #0    
+SORT BY: @NUMBER//    (User is asked range)
+  WITHIN NUMBER, SORT BY: -@EVENT LOG//
+  EVENT LOG SUB-FIELD: EVENT DATE/TIME// (EVENT DATE/TIME not null)
+
+SCCV REQUEST LOG              JAN 08, 1998@15:14  USER #0    
+SORT BY: @NUMBER//    (User is asked range)
+  WITHIN NUMBER, SORT BY: @-@REQUEST LOG//
+  REQUEST LOG SUB-FIELD: REQUEST DATE/TIME// (REQUEST DATE/TIME not null)
+
+
+FORM(S)/BLOCK(S):

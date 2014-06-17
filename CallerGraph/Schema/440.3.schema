@@ -1,0 +1,957 @@
+STANDARD DATA DICTIONARY #440.3 -- VENDOR EDIT FILE                                                                                                                                                                               MAY 20,2014@15:34:18  PAGE 1
+STORED IN ^PRC(440.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 5.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the listing of Vendors used by the facility. The data includes the name, address, contact person, contract number and FPDS data used when entering a request and purchase order.  
+
+
+IDENTIFIED BY: 
+         "Z0": I $D(^(3)),$P(^(3),U,2)="Y" W "   EDI VENDOR"
+         "Z1": S Z9=$S('$D(^(10)):1,'$P(^(10),U,5):1,1:0) I 'Z9 W *7,"   **** THIS VENDOR IS INACTIVE, USE VENDOR NUMBER "_$S($D(^(9)):+^(9),1:"")_" ****"
+         "Z2": I '$D(PRCFD("PAY")),Z9 W:$D(^(0)) "   ",$P(^(0),U,10)
+         "Z3": I Z9 W:$D(Y) "NO. ",Y W:$D(^(3))&('$D(PRCFD("PAY"))) !?10,"SPECIAL FACTORS: ",$P(^(3),U,1)
+         "Z4": I '$D(PRCFD("PAY")),Z9 S Z8=$S($D(^(0)):^(0),1:"") W !?10,"ORDERING ADDRESS: ",$P(Z8,U,2),!?26,"  ",$P(Z8,U,6),", ",$S($D(^DIC(5,+$P(Z8,U,7),0)):$P(^(0),U,2),1:"")," ",$P(^PRC(440.3,Y,0),U,8)
+         "Z5": I '$D(PRCFD("PAY")),Z9 W !,$S($P(^(0),U,11)]"":"",'$D(^(2)):"Business Type is undefined",$P(^(2),U,2):"",$P(^(2),U,3)']"":"Business Type is undefined",1:"")
+         "Z7": I $D(PRCFD("PAY")),Z9 S Z8=$S($D(^(7)):^(7),1:"") I Z8]"" D ADD^PRCFDADD
+         "Z8": K Z8,Z9 W $E(^PRC(440.3,Y,0),0)
+
+POINTED TO BY: REPLACEMENT VENDOR field (#15) of the VENDOR EDIT File (#440.3) 
+               VENDOR RECORD field (#48) of the VENDOR EDIT File (#440.3) 
+               VENDOR RECORD - AR field (#51) of the VENDOR EDIT File (#440.3) 
+               
+
+CROSS
+REFERENCED BY: SITE(AC), VENDOR RECORD(AD), VENDOR RECORD - AR(AE), SITE AR(AF), NAME(B)
+
+440.3,.001    NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 25, 1985 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 999999 
+              DESCRIPTION:
+                                This is the vendor number.  
+
+
+440.3,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>36!($L(X)<1)!'(X'?1P.E) X I $D(X) S:$D(PRCHPO) DIC("DR")="[PRCHVENDOR]"
+              LAST EDITED:      FEB 22, 1994 
+              HELP-PROMPT:      ANSWER MUST BE 1-36 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the vendor name.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  440.3^B 
+                                1)= S ^PRC(440.3,"B",X,DA)=""
+                                2)= K ^PRC(440.3,"B",X,DA)
+
+
+440.3,.05     SUPPLY WHSE. INDICATOR 0;11 SET
+
+                                'S' FOR SUPPLY WAREHOUSE; 
+              INPUT TRANSFORM:  I $D(^PRC(440.3,"AC")) S Z0=+$O(^("AC","S",0)) I $D(^PRC(440.3,Z0,0)) W !,*7,$P(^(0),U,1)_" is already designated as the SUPPLY WAREHOUSE " K X
+              LAST EDITED:      FEB 22, 1994 
+              HELP-PROMPT:      There can only be one source designated as the SUPPLY WAREHOUSE 
+              DESCRIPTION:
+                                This is the set of codes for supply warehouse indicator.  Only one source can be designated as the supply warehouse.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.3,.06     FEDERAL SOURCE         2;2 POINTER TO SOURCE CODE FILE (#420.8)
+
+              INPUT TRANSFORM:  S DIC("S")="I ""1390""[$E(^(0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 04, 1987 
+              HELP-PROMPT:      Enter only if this is Federal Source vendor and will only be used on a requisition. 
+              DESCRIPTION:
+                                This is the federal source.  
+
+              SCREEN:           S DIC("S")="I ""1390""[$E(^(0))"
+              EXPLANATION:      ENTER THE APPROPRIATE SOURCE CODE
+
+440.3,.2      EDI VENDOR?            3;2 SET
+
+                                'Y' FOR YES; 
+              LAST EDITED:      AUG 01, 1991 
+              HELP-PROMPT:      Enter YES if this vendor can accept purchase orders electronically using EDI X12. 
+              DESCRIPTION:
+                                     This field identifies those vendors who are prepared to receive purchase orders electronically through the EDI system in AUSTIN.  
+
+
+440.3,.4      VENDOR ID NUMBER       3;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<5) X I $D(X) K:X'?5.12UN X
+              LAST EDITED:      JUL 26, 1991 
+              HELP-PROMPT:      Enter the vendor's EDI identification number.  It should be 5-12 upper case           alpha/numeric characters. 
+              DESCRIPTION:
+                                     This field uniquely identifies a vendor to the EDI system.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.3,1       ORDERING ADDRESS1      0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>33!($L(X)<1) X
+              LAST EDITED:      FEB 20, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-33 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the vendor ordering address 1.  
+
+
+440.3,2       ORDERING ADDRESS2      0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>33!($L(X)<1) X
+              LAST EDITED:      FEB 20, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-33 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the vendor ordering address 2.  
+
+
+440.3,3       ORDERING ADDRESS3      0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      FEB 20, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-25 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the vendor ordering address 3.  
+
+
+440.3,4       ORDERING ADDRESS4      0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      FEB 20, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-25 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the vendor ordering address 4.  
+
+
+440.3,4.2     ORDERING CITY          0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      FEB 08, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 3-20 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the city of the vendor ordering address.  
+
+
+440.3,4.4     ORDERING STATE         0;7 POINTER TO STATE FILE (#5)
+
+              LAST EDITED:      FEB 08, 1986 
+              DESCRIPTION:
+                                This is the state of the vendor ordering address.  
+
+
+440.3,4.6     ORDERING ZIP CODE      0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)<5!(X'?5N.E)!($L(X)>5&(X'?5N1"-"4N)) X
+              LAST EDITED:      FEB 08, 1986 
+              HELP-PROMPT:      5 DIGIT ZIP OR A 9 DIGIT ZIP IN THIS FORMAT 12345-6789 
+              DESCRIPTION:
+                                This is the zip code of the ordering address.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.3,4.7     COUNTY                 2;4 FREE TEXT
+
+              INPUT TRANSFORM:  S Z0=$S($P(^PRC(440.3,D0,0),U,7)]"":$P(^(0),U,7),1:0) K:'Z0 X Q:'Z0!'$D(^DIC(5,Z0,1,0))  S DIC="^DIC(5,Z0,1,",DIC(0)="QEM" D ^DIC S X=+Y K:Y'>0 X K Z0,DIC
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$S($P(^PRC(440.3,D0,0),U,7)]"":$P(^(0),U,7),1:0) Q:'Z0  S Y=$S($D(^DIC(5,Z0,1,Y,0)):$P(^(0),U,1),1:"") K Z0
+              LAST EDITED:      MAY 14, 1986 
+              HELP-PROMPT:      Enter the appropriate county for the given state 
+              DESCRIPTION:
+                                This is the appropriate county for the given state of the vendor ordering address.  
+
+              EXECUTABLE HELP:  S ZD=D,X="?",Z0=$S($P(^PRC(440.3,D0,0),U,7)]"":$P(^(0),U,7),1:0) Q:'Z0!'$D(^DIC(5,Z0,1,0))  S DIC="^DIC(5,Z0,1,",DIC(0)="QEM" D ^DIC S DIC=DIE,D=ZD K ZD,Z0
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.3,4.8     PROCUREMENT CONTACT PERSON 0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      JUL 27, 1985 
+              HELP-PROMPT:      ANSWER MUST BE 3-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the name of the procurement contact person.  
+
+
+440.3,5       VA P&C contact phone number 0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>18!($L(X)<3) X
+              LAST EDITED:      MAY 27, 1994 
+              HELP-PROMPT:      ANSWER MUST BE 3-18 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the phone number of the procurement contact person.  
+
+
+440.3,5.1     ACCOUNT NO.            2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>33!($L(X)<3) X
+              HELP-PROMPT:      ANSWER MUST BE 3-33 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the vendor account number.  
+
+
+440.3,5.2     GUARANTEED DELIVERY VENDOR? 2;11 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      JAN 20, 1989 
+              HELP-PROMPT:      Enter 'Y' if an agreement has been set up with this vendor to guarantee delivery on direct deliveries to patients. 
+              DESCRIPTION:
+                                Enter YES if there is a guaranteed delivery agreement for this vendor.  
+
+
+440.3,6       CONTRACT NUMBER        4;0 Multiple #440.33
+
+              DESCRIPTION:
+                                This is the vendor contract number.  
+
+              IDENTIFIED BY:    EXPIRATION DATE(#1)[R], CONTRACT TERMS(#2)
+
+440.33,.01      CONTRACT NUMBER        0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>19!($L(X)<7) X
+                LAST EDITED:      JUL 12, 1986 
+                HELP-PROMPT:      ANSWER MUST BE 7-19 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  This is the contract number.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  440.33^B 
+                                  1)= S ^PRC(440.3,DA(1),4,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRC(440.3,DA(1),4,"B",$E(X,1,30),DA)
+
+
+440.33,1        EXPIRATION DATE        0;2 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 22, 1986 
+                DESCRIPTION:
+                                  This is the expiration date of the vendor contract.  
+
+
+440.33,2        CONTRACT TERMS         1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+                LAST EDITED:      APR 05, 1986 
+                HELP-PROMPT:      ANSWER MUST BE 3-50 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  These are the contract terms.  
+
+
+440.33,3        PROMPT PAYMENT TERMS % 0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>5!($L(X)<1) X
+                LAST EDITED:      MAR 04, 1986 
+                HELP-PROMPT:      ANSWER MUST BE 1-5 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  These are the prompt payment terms.  
+
+
+440.33,4        PROMPT PAYMENT TERMS DAYS 0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 04, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 60 
+                DESCRIPTION:
+                                  These are the prompt payment terms number of days.  
+
+
+
+
+440.3,8       LABOR SURPLUS AREA?    2;5 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      FEB 19, 1986 
+              DESCRIPTION:
+                                This indicates whether or not the vendor is located in a labor surplus.  
+
+
+440.3,8.2     BUSINESS TYPE (FPDS-88) 2;6 SET (Required)
+
+                                '1' FOR SMALL; 
+                                '2' FOR LARGE; 
+                                '3' FOR STATE/LOCAL/ED./NON-PROFIT; 
+                                '4' FOR OUTSIDE U.S.; 
+                                '5' FOR FEDERAL GOVT. SOURCE; 
+              LAST EDITED:      AUG 25, 1988 
+              DESCRIPTION:
+                                This is the type of business for FY88 FPDS reporting purposes.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.3,8.3     BUSINESS TYPE (FPDS)   2;3 SET (Required)
+
+                                '1' FOR SMALL; 
+                                '2' FOR LARGE; 
+                                '3' FOR OUTSIDE U.S.; 
+                                '4' FOR STATE/LOC/ED/NPF; 
+              LAST EDITED:      AUG 25, 1988 
+              HELP-PROMPT:      Enter FPDS Business Type for FPDS reports for FY 1989 or later. 
+              DESCRIPTION:
+                                This is the type of business for FY89 FPDS reporting purposes.  
+
+
+440.3,9       TYPE OF OWNERSHIP (FY88) 1;0 POINTER Multiple #440.31 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is the type of ownership for FY88 FPDS reporting purposes.  
+
+
+440.31,.01      TYPE OF OWNERSHIP (FY88) 0;1 POINTER TO CODE INDEX FILE (#420.6) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I ""MWVY""[$P(^PRCD(420.6,Y,0),U,1),$P(^(0),U,3)=0" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X) S DINUM=X
+                OUTPUT TRANSFORM: Q:Y=""  S Y=$S($D(^PRCD(420.6,Y,0)):^(0),1:""),Y=$P(Y,U,1)_"   "_$P(Y,U,2)
+                LAST EDITED:      SEP 21, 1988 
+                DESCRIPTION:
+                                  This is the type of ownership.  
+
+                SCREEN:           S DIC("S")="I ""MWVY""[$P(^PRCD(420.6,Y,0),U,1),$P(^(0),U,3)=0"
+                EXPLANATION:      CAN ONLY BE AN M,W,Y OR V
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+440.3,10      SOCIOECONOMIC GROUP (FPDS) 1.1;0 POINTER Multiple #440.35
+
+              DESCRIPTION:
+                                This is the socioeconomic group of the vendor for the current year.  
+
+
+440.35,.01      SOCIOECONOMIC GROUP (FPDS) 0;1 POINTER TO CODE INDEX FILE (#420.6) (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I Y>155,$P(^(0),U,3)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X S:$D(X) DINUM=X
+                OUTPUT TRANSFORM: Q:Y=""  S Y=$S($D(^PRCD(420.6,Y,0)):^(0),1:""),Y=$P(Y,U,1)_"  "_$P(Y,U,2)
+                LAST EDITED:      SEP 21, 1988 
+                HELP-PROMPT:      Enter FPDS Socioeconomic Group for use in FPDS reporting for FY 1989 or later. 
+                DESCRIPTION:
+                                  This is the socioeconomic group.  
+
+                SCREEN:           S DIC("S")="I Y>155,$P(^(0),U,3)=1"
+                EXPLANATION:      Select N,P,Q,R,W or OO
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+440.3,11      SPECIAL FACTORS        3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+              HELP-PROMPT:      ANSWER MUST BE 3-50 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                These are the special factors to be considered when ordering from this vendor.  
+
+
+440.3,12.4    AUSTIN DELETED?        2;9 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      MAY 13, 1986 
+              DESCRIPTION:
+                                This indicates whether or not the vendor has been deleted from the Austin DPC vendor file.  
+
+
+440.3,12.5    FEE VENDOR             2;10 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      MAY 13, 1986 
+              DESCRIPTION:
+                                This indicates whether or not this vendor is a fee basis vendor.  
+
+
+440.3,13      IS A SF129 ON FILE?    2;7 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                                'NA' FOR NOT APPLICABLE; 
+              LAST EDITED:      MAR 29, 1986 
+              DESCRIPTION:
+                                This indicates whether or not a Standard Form 129 is on file.  
+
+
+440.3,14      DATE OF SF129          2;8 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 29, 1986 
+              DESCRIPTION:
+                                This is the date of the Standard Form 129.  
+
+
+440.3,15      REPLACEMENT VENDOR     9;1 POINTER TO VENDOR EDIT FILE (#440.3)
+
+              INPUT TRANSFORM:  S DIC("S")="I $S('$D(^(9)):1,+^(9)=0:1,1:0)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 25, 1987 
+              DESCRIPTION:
+                                This is the replacement vendor.  
+
+              SCREEN:           S DIC("S")="I $S('$D(^(9)):1,+^(9)=0:1,1:0)"
+              EXPLANATION:      CANNOT CHOOSE AN INACTIVE VENDOR
+
+440.3,16      SERVICE/RETURN ADDRESS1 6;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>33!($L(X)<1) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-33 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the service/return address 1.  
+
+
+440.3,16.1    SERVICE/RETURN ADDRESS2 6;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>33!($L(X)<1) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-33 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the service/return address 2.  
+
+
+440.3,16.2    SERVICE/RETURN ADDRESS3 6;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-25 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the service/return address 3.  
+
+
+440.3,16.3    SERVICE/RETURN ADDRESS4 6;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-25 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                 This is the service/return address 4 
+
+
+440.3,16.4    SERVICE/RETURN CITY    6;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 3-20 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the city of the service/return address.  
+
+
+440.3,16.5    SERVICE/RETURN STATE   6;6 POINTER TO STATE FILE (#5)
+
+              LAST EDITED:      NOV 22, 1986 
+              DESCRIPTION:
+                                This is the state of the service/return address.  
+
+
+440.3,16.6    SERVICE/RETURN ZIP CODE 6;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)<5!(X'?5N.E)!($L(X)>5&(X'?5N1"-"4N)) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      5 DIGIT ZIP CODE OR 9 DIGIT ZIP CODE IN THIS FORMAT 12345-6789 
+              DESCRIPTION:
+                                This is the zip code of the service/return address.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.3,16.7    SERVICE CONTACT PERSON 6;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 3-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the service contact person.  
+
+
+440.3,16.8    SERVICE PHONE NO.      6;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>18!($L(X)<3) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 3-18 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the phone number for the service/return contact person.  
+
+
+440.3,17      PAYMENT CONTACT PERSON 7;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 3-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the payment contact person.  
+
+
+440.3,17.2    PAYMENT PHONE NO.      7;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>18!($L(X)<3) X
+              LAST EDITED:      NOV 22, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 3-18 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the phone number for the payment contact person.  
+
+
+440.3,17.3    PAYMENT ADDRESS1       7;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>33!($L(X)<1) X
+              LAST EDITED:      FEB 09, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 1-33 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the payment address 1.  
+
+
+440.3,17.4    PAYMENT ADDRESS2       7;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>33!($L(X)<1) X
+              LAST EDITED:      FEB 09, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 1-33 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the payment address 2.  
+
+
+440.3,17.5    PAYMENT ADDRESS3       7;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      FEB 09, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 1-25 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the payment address 3.  
+
+
+440.3,17.6    PAYMENT ADDRESS4       7;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      FEB 09, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 1-25 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the payment address 4.  
+
+
+440.3,17.7    PAYMENT CITY           7;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      FEB 09, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 3-20 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the city of payment address.  
+
+
+440.3,17.8    PAYMENT STATE          7;8 POINTER TO STATE FILE (#5)
+
+              LAST EDITED:      FEB 09, 1987 
+              DESCRIPTION:
+                                This is the state of the payment address.  
+
+
+440.3,17.9    PAYMENT ZIP CODE       7;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)<5!(X'?5N.E)!($L(X)>5&(X'?5N1"-"4N)) X
+              LAST EDITED:      FEB 09, 1987 
+              HELP-PROMPT:      ENTER 5 DIGIT ZIP CODE OR 9 DIGIT ZIP CODE IN THIS FORMAT 12345-6789 
+              DESCRIPTION:
+                                This is the zip code for the payment address.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.3,18      CALM ID NUMBER         7;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<9)!(X'?9UN) X
+              LAST EDITED:      OCT 06, 1989 
+              HELP-PROMPT:      Answer must be 9 characters in length. 
+              DESCRIPTION:
+                                This is the CALM identification number.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.3,18.2    CALM STUB NAME         7;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+              LAST EDITED:      FEB 12, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 3 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the CALM stub name.  
+
+
+440.3,18.3    DUN & BRADSTREET #     7;12 FREE TEXT
+
+              INPUT TRANSFORM:  S:$E(X,1,3)="DUN" X=$E(X,4,99) K:X'?9N&(X'?13N) X
+              LAST EDITED:      MAR 13, 2007 
+              HELP-PROMPT:      ANSWER MUST BE EITHER 9 OR 13 DIGITS IN LENGTH 
+              DESCRIPTION:
+                                This is the vendor's Dun & Bradstreet number, if applicable.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+440.3,20      SYNONYM                5;0 Multiple #440.32
+
+              DESCRIPTION:
+                                This is a synonym for the vendor.  
+
+
+440.32,.01      SYNONYM                0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>36!($L(X)<3) X
+                LAST EDITED:      FEB 22, 1994 
+                HELP-PROMPT:      ANSWER MUST BE 3-36 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  This is the synonym for the vendor.  
+
+
+
+
+440.3,21      REMARKS                8;0   WORD-PROCESSING #440.34
+
+              DESCRIPTION:
+                                These are remarks about the vendor.  
+
+
+440.3,22.1    BILLING ADDRESS1       .11;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      MAY 18, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 1-50 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the billing address 1.  
+
+
+440.3,22.2    BILLING ADDRESS2       .11;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      MAY 18, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 1-50 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the billing address 2.  
+
+
+440.3,22.3    BILLING ADDRESS3       .11;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      MAY 18, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 2-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the billing address 3.  
+
+
+440.3,22.4    BILLING CITY           .11;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      MAY 18, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 2-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the city of the billing address.  
+
+
+440.3,22.5    BILLING STATE          .11;5 POINTER TO STATE FILE (#5)
+
+              LAST EDITED:      NOV 25, 1987 
+              DESCRIPTION:
+                                This is the state of the billing address.  
+
+
+440.3,22.6    BILLING ZIP CODE       .11;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<5) X
+              LAST EDITED:      MAY 18, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 5-9 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the zip code of the billing address.  
+
+
+440.3,22.7    BILLING PHONE NUMBER   .11;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      MAR 01, 1991 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                 This is the phone number of the billing address.  
+
+
+440.3,30      DATE VENDOR CREATED    10;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 07, 1989 
+              HELP-PROMPT:      Date Vendor was originally created, or Vendor Name was changed. 
+              DESCRIPTION:
+                                This is the date the vendor was created, or the date the vendor name changed.  
+
+
+440.3,31      CREATED BY             10;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 21, 1992 
+              HELP-PROMPT:      Name of person who added vendor to this file. 
+              DESCRIPTION:
+                                This is the person who created the vendor.  
+
+
+440.3,31.5    INACTIVATED VENDOR     10;5 SET
+
+                                '1' FOR INACTIVATED; 
+              LAST EDITED:      FEB 22, 1994 
+              HELP-PROMPT:      Set to '1' automatically by the option used to inactivate a vendor. 
+              DESCRIPTION:
+                                This field is set automatically by the option used to inactivate a vendor.  
+
+
+440.3,32      DATE INACTIVATED       10;3 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 07, 1989 
+              DESCRIPTION:
+                                This is the date the vendor was made inactive.  
+
+
+440.3,33      INACTIVATED BY         10;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 21, 1992 
+              DESCRIPTION:
+                                This is the person who made the vendor inactive.  
+
+
+440.3,34      FMS VENDOR CODE        3;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<1) X
+              LAST EDITED:      JAN 27, 1994 
+              DESCRIPTION:
+                                 This is the code that FMS uses to identify a vendor.  It comes from the SSN/TAX ID NUMBER field in this file.  
+
+
+440.3,35      ALT-ADDR-IND           3;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<1) X
+              LAST EDITED:      JAN 27, 1994 
+              DESCRIPTION:
+                                This field allows one VENDOR to have many payment addresses.  
+
+
+440.3,36      NON-RECURRING VENDOR   3;6 SET
+
+                                'N' FOR NON-RECURRING VENDOR; 
+              LAST EDITED:      JAN 27, 1994 
+              DESCRIPTION:
+                                This field having a 'N' will represent that this vendor will be used only one time.  
+
+
+440.3,38      TAX ID/SSN             3;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<9) X
+              LAST EDITED:      MAY 23, 1994 
+              HELP-PROMPT:      Answer must be 9-11 characters in length. 
+              DESCRIPTION:
+                                This field will send FMS information that will be used as the FMS VENDOR CODE.  FMS might use a different FMS VENDOR CODE but that is normally not done.  
+
+
+440.3,39      SSN/TAX ID INDICATOR   3;9 SET
+
+                                'S' FOR SOCIAL SECURITY NUMBER; 
+                                'T' FOR TAX IDENTIFICATION NUMBER; 
+              LAST EDITED:      FEB 04, 1994 
+              DESCRIPTION:
+                                This field identifies what the TAX ID/SSN field is.  
+
+
+440.3,40      PAYMENT HOLD INDICATOR 3;10 SET
+
+                                'N' FOR NO; 
+                                'Y' FOR YES; 
+                                'C' FOR CORRESPONDENCE; 
+              LAST EDITED:      FEB 04, 1994 
+              DESCRIPTION:
+                                Is payment for this vendor placed on hold?  Do we pay this vendor or don't we? 
+
+
+440.3,41      1099 VENDOR INDICATOR  3;11 SET
+
+                                'N' FOR NO; 
+                                'Y' FOR YES; 
+              LAST EDITED:      FEB 09, 1994 
+              DESCRIPTION:
+                                Is a 1099 form filled out for this vendor? 
+
+
+440.3,42      PENDING FLAG           3;12 SET
+
+                                'P' FOR PENDING APPROVAL; 
+                                'C' FOR CONFIRMATION OF APPROVAL; 
+              LAST EDITED:      FEB 04, 1994 
+              DESCRIPTION:      Internal IFCAP flag used to state what is being done with this vendor and FMS.  When a vendor request is sent to FMS other requests should wait until there is a FMS VENDOR UPDATE.  Actually no other requests can be created
+                                until the update comes back.  
+
+
+440.3,43      CENTRAL REMIT          3;13 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      FEB 09, 1994 
+              DESCRIPTION:
+                                Should all payments for this vendor be sent to one place? 
+
+
+440.3,44      VENDOR TYPE            3;14 SET
+
+                                'A' FOR AGENT CASHIER; 
+                                'C' FOR COMMERCIAL; 
+                                'E' FOR EMPLOYEE; 
+                                'F' FOR FEDERAL GOVERNMENT; 
+                                'G' FOR GSA; 
+                                'I' FOR INDIVIDUALS-OTHER; 
+                                'O' FOR OTHER COUNTRIES; 
+                                'R' FOR COMMERCIAL-RECURRING PMTS; 
+                                'U' FOR UTILITY COMPANIES; 
+              LAST EDITED:      FEB 04, 1994 
+              DESCRIPTION:
+                                This is a list of different kinds of vendors.  
+
+
+440.3,45      MTI ACTION             3;15 SET
+
+                                'A' FOR ADD; 
+                                'F' FOR ADD IFCAP ONLY; 
+                                'C' FOR CHANGE; 
+                                'D' FOR DELETE; 
+              LAST EDITED:      FEB 17, 1994 
+              DESCRIPTION:
+                                This is a set of conditions telling IFCAP what to do with the FMS VENDOR UPDATE.  This field is never changed by IFCAP users.  
+
+
+440.3,46      FAX #                  10;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>18!($L(X)<3) X
+              LAST EDITED:      MAY 26, 1994 
+              DESCRIPTION:
+                                This is the vendor's FAX phone number.  
+
+
+440.3,47      FLAG                   VRQ;1 SET
+
+                                '1' FOR ADD; 
+                                '2' FOR CHANGE; 
+              LAST EDITED:      JAN 29, 1996 
+              HELP-PROMPT:      ENTER 'FLAG' VALUE 
+              DESCRIPTION:      This field is the parameter from PRCHE1 that decides whether to create a NEW or UPDATE a VENDOR REQUEST.  
+                                     
+                                In addition the TRIGGER will add one (1) to the VRQ COUNT field when this field is entered.  
+
+
+440.3,48      VENDOR RECORD          VRQ;2 POINTER TO VENDOR EDIT FILE (#440.3)
+
+              LAST EDITED:      SEP 23, 1998 
+              HELP-PROMPT:      Enter the vendor record selected. 
+              DESCRIPTION:
+                                This field has the internal entry number for the VENDOR file entry that may be used to create a VRQ to Austin.  Actually the field should be the same as the IEN of the entry being edited.  
+
+              CROSS-REFERENCE:  440.3^AD^MUMPS 
+                                1)= S NAME=$S($P($G(^PRC(440.3,DA,0)),U)]"":$P($G(^PRC(440.3,DA,0)),U),1:$P($G(^PRC(440,DA,0)),U)) S:NAME]"" ^PRC(440.3,"AD",NAME,$E(X,1,30),DA)="" K NAME
+                                2)= S NAME=$S($P($G(^PRC(440.3,DA,0)),U)]"":$P($G(^PRC(440.3,DA,0)),U),1:$P($G(^PRC(440,DA,0)),U)) K:NAME]"" ^PRC(440.3,"AD",NAME,$E(X,1,30),DA) K NAME
+                                This Is a list of VENDOR file entries that need VRQs created or reviewed.  
+
+
+
+440.3,49      SITE                   VRQ;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1)!'(X?1.3N) X
+              LAST EDITED:      FEB 22, 1996 
+              HELP-PROMPT:      Enter the SITE number. 
+              DESCRIPTION:
+                                This field will be used to create the VRQ to Austin.  
+
+              CROSS-REFERENCE:  440.3^AC^MUMPS 
+                                1)= D AC^PRCFQ1
+                                2)= Q
+                                VRQ)= ^^688
+                                This M cross-reference will add one (1) to the entry in the COUNTER file (file 422.2).  The entry is 123-VRQ-01.  
+
+
+
+440.3,50      FLAG AR                AR;1 SET
+
+                                '1' FOR ADD; 
+                                '2' FOR CHANGE; 
+              LAST EDITED:      SEP 03, 1998 
+              DESCRIPTION:
+                                This field will be filled in when Accounts Receivable chooses a vendor that is not vendorized. This vendor needs to be edited before the VRQ can be sent.  
+
+
+440.3,51      VENDOR RECORD - AR     AR;2 POINTER TO VENDOR EDIT FILE (#440.3)
+
+              LAST EDITED:      SEP 23, 1998 
+              HELP-PROMPT:      Enter the vendor record selected. 
+              DESCRIPTION:      This field has the internal entry number for the VENDOR file entry that needs to be edited.  This record needs to be edited because Accounts Receivable is having a record in the DEBTOR file pointing to this record.  
+                                Presently this record is not vendorized and is missing some data to be able to become a VRQ.  This record needs to be edited by SUPPLY and maybe FISCAL before it is able to create a VRQ.  This field's data should equal the
+                                IEN for this record.  
+
+              CROSS-REFERENCE:  440.3^AE^MUMPS 
+                                1)= S NAME=$P($G(^PRC(440.3,DA,0)),U) S:NAME]"" ^PRC(440.3,"AE",NAME,$E(X,1,30),DA)="" K NAME
+                                2)= S NAME=$P($G(^PRC(440.3,DA,0)),U) K:NAME]"" ^PRC(440.3,"AE",NAME,$E(X,1,30),DA) K NAME
+                                This is a list of VENDOR file entries that AR has selected.  These entries need to be vendorized but first need to be edited to supply missing data.  
+
+
+
+440.3,52      SITE AR                AR;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1)!'(X?1.3N) X
+              LAST EDITED:      SEP 14, 1998 
+              DESCRIPTION:
+                                This field will be used to edit this record in preparation to entering a VRQ for this record.  
+
+              CROSS-REFERENCE:  440.3^AF^MUMPS 
+                                1)= D AF^PRCHUTL
+                                2)= Q
+                                This M cross-reference will add one (1) to the AR EDIT entry in the COUNTER file.  
+
+
+
+440.3,53      OK                     AR;4 SET
+
+                                'OK' FOR OK; 
+                                'GOOD' FOR GOOD; 
+              LAST EDITED:      OCT 19, 1998 
+              DESCRIPTION:      This field, when filled in, will signify that this record has all the required fields to create a VRQ.  
+                                   
+                                This field is entered in EDIT^PRCOVL.  
+
+
+440.3,54      SENT                   AR;5 SET
+
+                                'SENT' FOR SENT; 
+              LAST EDITED:      SEP 24, 1998 
+              DESCRIPTION:
+                                When SENT is set the record will have sent a VRQ to Austin or to FISCAL for review.  This will be set by programming in VRQ^PRCOVL1.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CODE INDEX (#420.6)               TYPE OF OWNERSHIP (FY88):TYPE OF OWNERSHIP (FY88) (#.01)
+                                  SOCIOECONOMIC GROUP (FPDS):SOCIOECONOMIC GROUP (FPDS) (#.01)
+
+NEW PERSON (#200)                 CREATED BY (#31)
+                                  INACTIVATED BY (#33)
+
+SOURCE CODE (#420.8)              FEDERAL SOURCE (#.06)
+
+STATE (#5)                        ORDERING STATE (#4.4)
+                                  SERVICE/RETURN STATE (#16.5)
+                                  PAYMENT STATE (#17.8)
+                                  BILLING STATE (#22.5)
+
+VENDOR EDIT (#440.3)              REPLACEMENT VENDOR (#15)
+                                  VENDOR RECORD (#48)
+                                  VENDOR RECORD - AR (#51)
+
+
+
+INPUT TEMPLATE(S):
+PRCFACALM                     FEB 12, 1987        USER #0    
+PRCO EDI VENDOR               JAN 14, 1993@14:18  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,525 @@
+STANDARD DATA DICTIONARY #650 -- SOCIAL WORK CASE FILE                                                                                                                                                                            MAY 20,2014@15:41:47  PAGE 1
+STORED IN ^SOWK(650,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to log Social Work cases.  
+ 
+
+
+IDENTIFIED BY: 
+      "WRITE": W:$D(^(0)) "  ",$E($P(^(0),U,2),4,5)_"-"_$E($P(^(0),U,2),6,7)_"-"_$E($P(^(0),U,2),2,3),"  ",$S($D(^VA(200,+$P(^(0),U,3),0))#2:$P(^(0),U,1),1:""),@("$E("_DIC_"Y,0),0)"),"  ",?40,$S($D(^DPT(+$P(^(0),U,8),0))#2:$P(^(0),U,1),1:"")
+
+POINTED TO BY: CASE NUMBER field (#5) of the RCH sub-field (#655.02) of the SOCIAL WORK PATIENT File (#655) 
+               PRIMARY CASE NUMBER field (#.031) of the SWS ASSESSMENT DATA BASE File (#655.2) 
+               CASE NUMBER field (#1) of the NOTES SECTION sub-field (#655.218) of the SWS ASSESSMENT DATA BASE File (#655.2) 
+               
+
+CROSS
+REFERENCED BY: SOCIAL WORKER(AC), CLOSE DATE(ACD), CLOSE DATE(AD), AMIS DIVISION(AE), NUMBER(B), PATIENT NAME(BS5), PATIENT NAME(CP), OPEN DATE(O), PATIENT NAME(P), SOCIAL WORKER(W)
+
+650,.01       NUMBER                 0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X S:$D(X) DINUM=X
+              LAST EDITED:      OCT 18, 1991 
+              HELP-PROMPT:      Enter a whole number between 1 and 99999999.  Case numbers are not entered directly with VA FileMan. 
+              DESCRIPTION:      This is the case number to identify each case that is opened.  
+                                 
+
+              DELETE TEST:      4000,0)= I $D(^SOWK(650,DA,0))#2,$P(^(0),"^",4)="16" W *7," PATIENT IN HOME " Q
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  650^B 
+                                1)= S ^SOWK(650,"B",$E(X,1,30),DA)=""
+                                2)= K ^SOWK(650,"B",$E(X,1,30),DA)
+
+
+650,1         OPEN DATE              0;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX",%DT(0)=-DT D ^%DT S X=Y K:Y<1 X K %DT(0) I $D(X),$P(^SOWK(650,DA,0),"^",18),X>$P(^(0),"^",18) W *7,!!," *** OPEN DATE CANNOT BE BEYOND CLOSE DATE !! ***",! K X
+              LAST EDITED:      NOV 09, 2000 
+              HELP-PROMPT:      Enter date that case is considered open. 
+              DESCRIPTION:      This is the date the case was opened to the Social Work service.  
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  650^O 
+                                1)= S ^SOWK(650,"O",$E(X,1,30),DA)=""
+                                2)= K ^SOWK(650,"O",$E(X,1,30),DA)
+
+
+650,2         SOCIAL WORKER          0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^VA(200,+Y,654)),$P(^(654),""^"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      DEC 17, 1990 
+              HELP-PROMPT:      Enter name of social worker that will be reviewing patient's case. 
+              DESCRIPTION:      This is the name of the social worker who opened this case.  
+                                 
+
+              SCREEN:           S DIC("S")="I $D(^VA(200,+Y,654)),$P(^(654),""^"")"
+              EXPLANATION:      Only valid social workers to be selected.
+              CROSS-REFERENCE:  650^W 
+                                1)= S ^SOWK(650,"W",$E(X,1,30),DA)=""
+                                2)= K ^SOWK(650,"W",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  650^AC^MUMPS 
+                                1)= I $P(^SOWK(650,DA,0),"^",5),$P(^(0),"^",8),'$P(^(0),"^",18) S ^SOWK(650,"AC",$P(^SOWK(650,DA,0),"^",8),X,$P(^(0),"^",5),DA)=""
+                                2)= I $P(^SOWK(650,DA,0),"^",5)]"",$P(^(0),"^",8)]"",$D(^SOWK(650,"AC",$P(^SOWK(650,DA,0),"^",8),X,$P(^(0),"^",5),DA)) K ^SOWK(650,"AC",$P(^SOWK(650,DA,0),"^",8),X,$P(^(0),"^",5),DA)
+                                This MUMPS cross reference is used to indicate an opened case.  
+
+
+
+650,3         COST DISTRIBUTION CENTER 0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+              LAST EDITED:      OCT 29, 1991 
+              HELP-PROMPT:      FIELD NOT IN USE. 
+              DESCRIPTION:      FIELD NOT IN USE.  
+                                 
+
+              CROSS-REFERENCE:  ^^TRIGGER^650^3.1 
+                                1)= I '$D(DIU(0)) K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SOWK(650,D0,0)):^(0),1:"") S X=$P(Y(1),U,13),X=X S DIU=X K Y S X="" X ^DD(650,3,1,1,1.4)
+                                1.4)= S DIH=$S($D(^SOWK(650,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,13)=DIV,DIH=650,DIG=3.1 D ^DICR:$O(^DD(DIH,DIG,1,0))
+                                2)= I '$D(DIU(0)) K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SOWK(650,D0,0)):^(0),1:"") S X=$P(Y(1),U,13),X=X S DIU=X K Y S X="" X ^DD(650,3,1,1,2.4)
+                                2.4)= S DIH=$S($D(^SOWK(650,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,13)=DIV,DIH=650,DIG=3.1 D ^DICR:$O(^DD(DIH,DIG,1,0))
+                                CREATE VALUE)= @
+                                DELETE VALUE)= @
+                                FIELD)= CDC SUB-SECTION
+
+
+650,3.1       CDC SECTION            0;13 POINTER TO COST DISTRIBUTION CENTER FILE (#651) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^SOWK(651,+Y,0),""^"",2),$P(^(0),""^"",5),$P(^SOWK(651,+Y,0),U,7)'=0" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 15, 1994 
+              HELP-PROMPT:      Enter active Cost Distribution Center.  If choices are not listed see Maintenance Section of user's guide (Active/Deactive Cost Distribution Centers). 
+              DESCRIPTION:      This field is used for the Cost Distribution Center section of the patient.  If choices are not listed there may not be any activated CDCs. Please see maintenance section of user's guide (Activate/Deactive Cost 
+                                Distribution Centers).  
+
+              SCREEN:           S DIC("S")="I '$P(^SOWK(651,+Y,0),""^"",2),$P(^(0),""^"",5),$P(^SOWK(651,+Y,0),U,7)'=0"
+              EXPLANATION:      Only active cost distribution centers are to be selected
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the COST DISTRIBUTION CENTER field of the SOCIAL WORK CASE File 
+
+
+650,4         AMIS DIVISION          0;5 POINTER TO SOCIAL WORK SITE PARAMETERS FILE (#650.1) (Required)
+
+              LAST EDITED:      JAN 20, 1993 
+              HELP-PROMPT:      Enter division where case is opened.  Some VAMCs are multi-divisional. 
+              DESCRIPTION:      This is the number used for AMIS reporting purposes.  In  most cases, this number will be different from the regular site number.  
+                                 
+
+              CROSS-REFERENCE:  650^AE^MUMPS 
+                                1)= I $P(^SOWK(650,DA,0),"^",3),$P(^(0),"^",8),'$P(^(0),"^",18) S ^SOWK(650,"AC",$P(^SOWK(650,DA,0),"^",8),$P(^(0),"^",3),X,DA)=""
+                                2)= I $P(^SOWK(650,DA,0),"^",3)]"",$P(^(0),"^",8)]"",$D(^SOWK(650,"AC",$P(^SOWK(650,DA,0),"^",8),$P(^(0),"^",3),X,DA)) K ^SOWK(650,"AC",$P(^SOWK(650,DA,0),"^",8),$P(^(0),"^",3),X,DA)
+                                This MUMPS type cross reference is used to clean up the "AC" cross reference on field #2 (SOCIAL WORKER).  
+
+
+
+650,4.1       SPECIAL PATIENT POPULATION 0;14 NUMBER
+
+              INPUT TRANSFORM:  S Z0=$S($P(^SOWK(650,DA,0),"^",5):$P(^(0),"^",5),1:0) K:'Z0 X Q:'Z0  S DIC="^SOWK(650.1,Z0,2,",DIC(0)="QEM" D ^DIC S X=+Y K:Y'>0 X K DIC,Z0
+              OUTPUT TRANSFORM: Q:Y']""  S Z0=$P(^SOWK(650,D0,0),"^",5) Q:'Z0  S Y=$P(^SOWK(650.1,Z0,2,$P(^(0),"^",14),0),"^")
+              LAST EDITED:      SEP 25, 1990 
+              HELP-PROMPT:      Enter a valid special patient population.  This may not apply to all cases. 
+              DESCRIPTION:
+                                This field is used to show what special population the patient may be a member of, for example, HIV, Homeless, RCH, etc.  
+
+              EXECUTABLE HELP:  S Z0=$P(^SOWK(650,DA,0),"^",5),DIC="^SOWK(650.1,Z0,2,",DIC(0)="QEM" D ^DIC K DIC,Z0
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+650,4.2       DIRECT SERVICE CATEGORY 5;0 POINTER Multiple #650.04 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This field is used for direct services provided.  
+
+
+650.04,.01      DIRECT SERVICE CATEGORY 0;1 POINTER TO DIRECT SERVICE CATEGORIES FILE (#655.202) (Required) (Multiply asked)
+
+                LAST EDITED:      MAR 18, 1991 
+                HELP-PROMPT:      Enter a valid category for direct services provided.  Only a maximum of eight services will be transmitted for individual patient data.  All services will be transmitted for AMIS Segment. 
+                DESCRIPTION:
+                                  This field is used to indicate direct services provided.  Only a maximum of eight services will be transmitted to Austin for individual patient data.  All services will be transmitted for AMIS Segment 255.  
+
+                CROSS-REFERENCE:  650.04^B 
+                                  1)= S ^SOWK(650,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^SOWK(650,DA(1),5,"B",$E(X,1,30),DA)
+
+
+650.04,1        MANHOURS               0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X S:$D(X) X=$E("000",$L(X)+1,3)_X
+                LAST EDITED:      AUG 29, 1991 
+                HELP-PROMPT:      Enter the total amount of time, in minutes, spent in direct service.  For example, enter 90 for 1.5 hours or enter 60 for 1 hour. 
+                DESCRIPTION:
+                                  This field is used to show manhours providing services.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+650,4.3       CONSULTATION ONLY      0;16 SET (Required)
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      OCT 16, 1989 
+              HELP-PROMPT:      Enter '1' for Yes or '0' for No if case is for consultation purposes only. 
+              DESCRIPTION:
+                                This field is used to indicate if the case is for consultation purposes only.  
+
+
+650,5         TRANSMITTED TO AUSTIN ? 0;6 SET
+
+                                '1' FOR TRANSMITTED; 
+                                '0' FOR NOT TRANSMITTED; 
+              LAST EDITED:      MAY 15, 1987 
+              HELP-PROMPT:      This data is not entered directly by VA FileMan. 
+              DESCRIPTION:      This field will flag cases transmitted to Austin, DPC.  
+                                 
+
+
+650,6         DIAGNOSTIC CATEGORY    0;7 SET (Required)
+
+                                '1' FOR MEDICAL/SURGICAL; 
+                                '2' FOR PSYCHOSIS; 
+                                '3' FOR ORGANIC and SENILE BRAIN DISEASE; 
+                                '4' FOR SUBSTANCE ABUSE; 
+                                '5' FOR ALL OTHER; 
+              LAST EDITED:      APR 25, 1991 
+              HELP-PROMPT:      Enter diagnostic category which best fits the patient. 
+              DESCRIPTION:      Diagnostic category which best fits the patient.  
+                                               [RCH ONLY] 
+
+
+650,7         PATIENT NAME           0;8 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      SEP 03, 1987 
+              HELP-PROMPT:      This is the name of the patient whose case is being reviewed.  Data is not entered directly by VA FileMan. 
+              DESCRIPTION:      This is the name of the patient.  
+                                 
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  650^P 
+                                1)= S ^SOWK(650,"P",$E(X,1,30),DA)=""
+                                2)= K ^SOWK(650,"P",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  650^CP^MUMPS 
+                                1)= S ^SOWK(650,"CP",$P(^DPT(X,0),"^"),DA)=""
+                                2)= K ^SOWK(650,"CP",$P(^DPT(X,0),"^"),DA)
+                                This MUMPS cross reference is used to store the patient's full name as stored in the MAS Patient File (#2).  
+
+
+              CROSS-REFERENCE:  650^BS5^MUMPS 
+                                1)= S:$P(^DPT(X,0),"^",9)]"" ^SOWK(650,"BS5",$E($P(^DPT(X,0),"^"),1)_$E($P(^DPT(X,0),"^",9),6,9),DA)=""
+                                2)= K ^SOWK(650,"BS5",$E($P(^DPT(X,0),"^"),1)_$E($P(^DPT(X,0),"^",9),6,9),DA)
+                                This cross references is for lookups and sorting.  
+
+
+
+650,8         SC STATUS              0;9 SET (Required)
+
+                                '1' FOR NSC; 
+                                '2' FOR LESS THAN 50% SC; 
+                                '3' FOR SC 50% or MORE; 
+              LAST EDITED:      SEP 04, 1985 
+              HELP-PROMPT:      Enter the Service Connected Status of the patient. 
+              DESCRIPTION:      This is the Service Connected Status. (RCH only) 
+                                 
+
+
+650,9         COMPETENCY STATUS      0;10 SET (Required)
+
+                                'I' FOR INCOMPETENT; 
+                                'C' FOR COMPETENT; 
+              LAST EDITED:      SEP 04, 1985 
+              HELP-PROMPT:      Enter the competency of the patient. 
+              DESCRIPTION:      This is the competency status of the residential care home patient.  
+                                 
+
+
+650,10        PRIOR LIVING ARRANGEMENTS 0;11 SET (Required)
+
+                                '1' FOR OWN HOME; 
+                                '2' FOR VA NHCU; 
+                                '3' FOR VA HOSPITAL- EXCESS OF 60 DAYS; 
+                                '4' FOR NON-VA HOSPITAL; 
+                                '5' FOR VA DOMICILIARY; 
+                                '6' FOR VA CONTRACT NH; 
+                                '7' FOR NON-VA NH; 
+                                '8' FOR NON-VA RESIDENTIAL RESOURCE; 
+                                '9' FOR VA CONTRACT CARE (NON NH); 
+                                '10' FOR OTHER; 
+              LAST EDITED:      APR 25, 1991 
+              HELP-PROMPT:      Enter prior living arrangement of patient prior to placement in RCH. 
+              DESCRIPTION:      This is the location of the patient prior to being placed in a residential care home.  (RCH only) 
+                                 
+
+
+650,10.1      LEVEL OF CARE          0;23 SET (Required)
+
+                                '1' FOR LIGHT; 
+                                '2' FOR MODERATE; 
+                                '3' FOR HEAVY; 
+              LAST EDITED:      NOV 08, 1991 
+              HELP-PROMPT:      Enter level of care that patient receives in residential care program. 
+              DESCRIPTION:
+                                This field is used to show the level of care that a patient receives while in the residential care home program.  
+
+
+650,11        CORRT                  0;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<5) X
+              LAST EDITED:      DEC 17, 1990 
+              HELP-PROMPT:      Answer must be 5 characters in length. 
+              DESCRIPTION:
+                                This field is to be used to flag a case in which corrections were made for SWARS.  
+
+
+650,13        DBA NUMBER             0;17 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<1) X
+              LAST EDITED:      MAR 07, 1991 
+              HELP-PROMPT:      Answer must be 1-5 characters in length. 
+              DESCRIPTION:
+                                This field is used to keep track of the Data Base Assessment pointer number associated with Case Registry.  This data is not entered directly with VA FileMan.  
+
+
+650,17        CLOSE DATE             0;18 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX",%DT(0)=-DT D ^%DT S X=Y K:Y<1 X Q:Y<1  K %DT(0) I X<$P(^SOWK(650,DA,0),"^",2) W !,"**** CLOSE DATE CANNOT BE EARLIER THAN OPEN DATE ****",! K X
+              LAST EDITED:      JAN 17, 1990 
+              HELP-PROMPT:      Enter date case is closed to social worker. 
+              DESCRIPTION:      This is the date closed to a particular social worker.  The close date cannot be a future date.  
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  650^AD^MUMPS 
+                                1)= Q
+                                2)= I $P(^SOWK(650,DA,0),"^",5)]"",$P(^(0),"^",8)]"",$P(^(0),"^",18) K ^SOWK(650,"AC",$P(^SOWK(650,DA,0),"^",8),$P(^(0),"^",3),$P(^(0),"^",5),DA)
+                                This cross reference is used to kill the 'AC' cross reference when the case is closed.  There is no set logic for this cross reference.  
+
+
+              CROSS-REFERENCE:  650^ACD 
+                                1)= S ^SOWK(650,"ACD",$E(X,1,30),DA)=""
+                                2)= K ^SOWK(650,"ACD",$E(X,1,30),DA)
+
+
+650,18        PLACEMENT              0;19 SET (Required)
+
+                                'I' FOR INPATIENT; 
+                                'O' FOR OTHER; 
+                                'N' FOR NO PLACEMENT MADE; 
+              LAST EDITED:      SEP 04, 1985 
+              HELP-PROMPT:      Enter the type placement for discharge planning. 
+              DESCRIPTION:      This is the placement made based on Problem Discharge/Planning.  
+                                 
+
+
+650,19        DISPOSITION of PLACEMENT 0;20 SET (Required)
+
+                                '1' FOR CNHC; 
+                                '2' FOR CNH-Non VA; 
+                                '3' FOR Domiciliary; 
+                                '4' FOR NHCU; 
+                                '5' FOR Own Home; 
+                                '6' FOR RCH; 
+                                '7' FOR Other; 
+              LAST EDITED:      SEP 04, 1985 
+              HELP-PROMPT:      Enter the type of disposition due to placement. 
+              DESCRIPTION:
+                                This field shows the disposition of the patient if placement was made.  
+
+
+650,20        DISPOSITION FROM RCH   0;21 SET (Required)
+
+                                '1' FOR INDIVIDUAL; 
+                                '2' FOR HOSPITAL; 
+                                '3' FOR OTHER INSTITUTIONAL; 
+                                '4' FOR DEATH; 
+                                '5' FOR TRANSFER; 
+              LAST EDITED:      APR 08, 1987 
+              HELP-PROMPT:      Enter the disposition of patient from RCH. 
+              DESCRIPTION:      This field is the patient's disposition from the residential care home.  
+                                 
+
+
+650,21        RESOURCES/REFERRALS?   0;22 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      DEC 30, 1991 
+              HELP-PROMPT:      Enter '1' for YES if resources/referrals are being assigned for the patient, else enter '0' for NO. 
+              DESCRIPTION:      This field is used to indicate if any resources/referrals are being assigned.  
+                                 
+
+
+650,23        MISC.                  0;24 FREE TEXT
+
+              Miscellaneous                                                                                                    
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      OCT 03, 1991 
+              HELP-PROMPT:      Your answer must be 1 to 15 characters in length.  Enter '??' for a more info. 
+              DESCRIPTION:      This free text field will allow workers to enter identifying information on certain cases.  
+                                 
+                                For instance, if a patient is placed in a contract nursing home, the worker can use this field to abbreviate the name of the nursing home - Civic Center would be Civic.  This field can be used as a ready reference to where
+                                their cases are.  It can be used to identify special categories on wards such as POW, Agent Orange, etc.  This is not a mandatory field and can be bypassed.  
+                                 
+
+
+650,24        RESOURCE/REFERRALS     1;0 POINTER Multiple #650.01 (Add New Entry without Asking)
+
+              DESCRIPTION:      This shows where referrals and number were made.  
+                                 
+
+
+650.01,.01      RESOURCE/REFERRAL      0;1 POINTER TO RESOURCES/REFERRALS FILE (#653) (Required) (Multiply asked)
+
+                LAST EDITED:      APR 24, 1991 
+                HELP-PROMPT:      Enter the type of resource/referral made to the patient. 
+                DESCRIPTION:      This field is used to show what type of referral was made.  
+                                   
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+650.01,1        NUMBER of REFERRALS    0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 21, 1986 
+                HELP-PROMPT:      Enter a whole number between 1 and 9. 
+                DESCRIPTION:      This field is used to show the number of the type referrals made.  
+                                   
+
+
+650.01,2        USED/NEEDED UNABLE TO ACCESS 0;3 SET (Required)
+
+                                  '1' FOR USED; 
+                                  '0' FOR NEEDED BUT UNABLE TO ACCESS; 
+                LAST EDITED:      OCT 05, 1989 
+                DESCRIPTION:
+                                  This field is used to show if resources/referrals were used or needed but unable to access.  
+
+
+
+
+650,25        PROBLEM                2;0 POINTER Multiple #650.02 (Add New Entry without Asking)
+
+              DESCRIPTION:      This field is used to show problems encountered.  
+                                 
+
+
+650.02,.01      PROBLEMS ENCOUNTERED   0;1 POINTER TO PSYCHO-SOCIAL PROBLEMS FILE (#655.201) (Required) (Multiply asked)
+
+                LAST EDITED:      JAN 08, 1992 
+                HELP-PROMPT:      Enter problem(s) encountered by patient.  Only a maximum of eight problems will be transmitted for individual patient data to Austin.  All problems will be reported for AMIS Segment 255. 
+                DESCRIPTION:
+                                  This field is used to show problems encountered.  Only a maximum of eight problems will be reported for individual patient data to Austin (SWARS).  All problems will be reported for AMIS Segment 255.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  650.02^B 
+                                  1)= S ^SOWK(650,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^SOWK(650,DA(1),2,"B",$E(X,1,30),DA)
+                                  This regular x-ref is used for lookups and sorting.  
+
+
+
+650.02,1        OUTCOME                0;2 POINTER TO PSYCHO-SOCIAL OUTCOMES FILE (#655.203) (Required)
+
+                LAST EDITED:      APR 23, 1991 
+                HELP-PROMPT:      Enter appropriate outcome of psycho-social problem. 
+                DESCRIPTION:      This is the outcome of the problem.  There should only be one outcome for each problem.  
+                                   
+
+
+
+
+650,26        REASON CASE IS OPENED  3;0   WORD-PROCESSING #650.03
+
+              DESCRIPTION:
+                                This is a short description of why the case was opened.  
+
+
+650,28        SPECIAL DATA           4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      JUL 24, 1985 
+              HELP-PROMPT:      Your answer must be 1 to 20 characters in length. 
+              DESCRIPTION:
+                                Not used at this time.  
+
+
+650,29        SSN                    SSN;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<9)!'(X?9N.N) X
+              LAST EDITED:      FEB 02, 1988 
+              HELP-PROMPT:      Enter the Social Security Number.  Your answer must be 9 characters long.  Data is not entered directly by VA FileMan. 
+              DESCRIPTION:
+                                This field is to contain the original Social Security Number of the patient at the time the case was opened.  This SSN is used when reporting to Austin.  This data is not entered directly with VA FileMan.  
+
+
+650,30        ORIGINAL WORKER'S NUMBER SSN;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<2)!'(X?2N.N) X
+              LAST EDITED:      JUL 31, 1991 
+              HELP-PROMPT:      Answer must be 2-3 characters in length. 
+              DESCRIPTION:
+                                This field is to contain the original worker's number of the social worker at the time the case was opened.  The worker's number is used when reporting to Austin.  Data is not entered directly with VA FileMan.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+COST DISTRIBUTION CENTER 
+                   (#651)         CDC SECTION (#3.1)
+
+DIRECT SERVICE CATEGORIES 
+                   (#655.202)     DIRECT SERVICE CATEGORY:DIRECT SERVICE CATEGORY (#.01)
+
+NEW PERSON (#200)                 SOCIAL WORKER (#2)
+
+PATIENT (#2)                      PATIENT NAME (#7)
+
+PSYCHO-SOCIAL OUTCOMES (#655.203)  PROBLEM:OUTCOME (#1)
+
+PSYCHO-SOCIAL PROBLEMS (#655.201)  PROBLEM:PROBLEMS ENCOUNTERED (#.01)
+
+RESOURCES/REFERRALS (#653)        RESOURCE/REFERRALS:RESOURCE/REFERRAL (#.01)
+
+SOCIAL WORK SITE PARAMETERS 
+                   (#650.1)       AMIS DIVISION (#4)
+
+
+
+INPUT TEMPLATE(S):
+SOWKCHAT                      AUG 13, 1991@08:39  USER #0    
+SOWKCLOT                      NOV 25, 1991@08:27  USER #0    
+SOWKEDIT                      NOV 25, 1991@08:33  USER #0    
+SOWKOPEN                      APR 06, 1992@07:39  USER #0    
+
+PRINT TEMPLATE(S):
+SOWKCLT                       FEB 27, 1991@08:15  USER #0                                                                                                                                                                   Closed Residential Care Home Cases
+SOWKOPCT                      FEB 27, 1991@08:28  USER #0                                                                                                                                                                   Active Residential Care Home Cases
+
+SORT TEMPLATE(S):
+SOWKCLC                       DEC 18, 1991@15:11  USER #0    
+SORT BY: PATIENT NAME//
+  WITHIN PATIENT NAME, SORT BY: CLOSE DATE'="";L1;L1//     From '0'  To '1'
+    WITHIN CLOSE DATE'="", SORT BY: @CDC SECTION//
+      WITHIN CDC SECTION, SORT BY: 3.1:SERVICE TYPE="R";L1//     From '0'  To '1'
+
+SOWKOPC                       DEC 18, 1991@15:09  USER #0    
+SORT BY: PATIENT NAME//
+  WITHIN PATIENT NAME, SORT BY: @CLOSE DATE="";L1//     From '0'  To '1'
+    WITHIN CLOSE DATE="", SORT BY: @CDC SECTION//
+      WITHIN CDC SECTION, SORT BY: 3.1:SERVICE TYPE="R";L1//     From '0'  To '1'
+
+
+FORM(S)/BLOCK(S):

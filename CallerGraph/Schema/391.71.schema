@@ -1,0 +1,217 @@
+STANDARD DATA DICTIONARY #391.71 -- ADT/HL7 PIVOT FILE                                                                                                                                                                            MAY 20,2014@15:40:56  PAGE 1
+STORED IN ^VAT(391.71,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file serves as a funnel for all of the ADT events that need to be broadcast to any system.  The VISIT file may replace this file in the  future.  The entries in this file will contain information on how to get back to its parent event in PIMS. 
+There are no parent child relationships stored here.  
+
+
+              DD ACCESS: #
+              RD ACCESS: #
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: #
+IDENTIFIED BY: PIVOT NUMBER (#.02)[R], PATIENT (#.03)[R], TYPE OF EVENT (#.04)[R]
+
+CROSS
+REFERENCED BY: TRANSMITTED(AC), DATE/TIME OF EVENT(AD), TYPE OF EVENT(AD2), EVENT POINTER(AD3), TYPE OF EVENT(AXMIT1), REQUIRES TRANSMISSION(AXMIT2), DATE/TIME OF EVENT(B), PATIENT(C), PIVOT NUMBER(D)
+
+391.71,.01    DATE/TIME OF EVENT     0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 19, 1995 
+              DESCRIPTION:
+                                This will contain the date time of the event.  
+
+              CROSS-REFERENCE:  391.71^B 
+                                1)= S ^VAT(391.71,"B",$E(X,1,30),DA)=""
+                                2)= K ^VAT(391.71,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  391.71^AD^MUMPS 
+                                1)= N A,B,M S M=$G(^VAT(391.71,DA,0)),A=$P(M,U,4),B=$P(M,U,5) I A'=""&(B'="") S ^VAT(391.71,"AKY",A,X,B,DA)=""
+                                2)= N A,B,M S M=$G(^VAT(391.71,DA,0)),A=$P(M,U,4),B=$P(M,U,5) I A'=""&(B'="") K ^VAT(391.71,"AKY",A,X,B,DA)
+                                This cross reference is one of the three fields used to create a unique key for the entries in this file.  .04 and .05 are the other fields.  
+
+
+
+391.71,.02    PIVOT NUMBER           0;2 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N)!($D(^VAT(391.71,"D",X))) X
+              LAST EDITED:      MAY 29, 1997 
+              HELP-PROMPT:      Type a Number between 1 and 999999999, 0 Decimal Digits, and a pivot number that does not already exist in the file 
+              DESCRIPTION:
+                                This will contain a unique pivot number that is created by the system.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  391.71^D 
+                                1)= S ^VAT(391.71,"D",$E(X,1,30),DA)=""
+                                2)= K ^VAT(391.71,"D",$E(X,1,30),DA)
+
+
+391.71,.03    PATIENT                0;3 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      MAY 31, 1995 
+              DESCRIPTION:
+                                This is the pointer to the patient file (#2) to the patient this event belongs to.  
+
+              CROSS-REFERENCE:  391.71^C 
+                                1)= S ^VAT(391.71,"C",$E(X,1,30),DA)=""
+                                2)= K ^VAT(391.71,"C",$E(X,1,30),DA)
+                                This cross reference is a standard cross reference to be used by FM and programmers to indentify the patient this entry is related to.  
+
+
+
+391.71,.04    TYPE OF EVENT          0;4 SET (Required)
+
+                                '1' FOR INPATIENT EVENTS; 
+                                '2' FOR OUTPATIENT EVENTS; 
+                                '3' FOR REGISTRATION EVENTS; 
+                                '4' FOR UPDATES TO DATA; 
+                                '5' FOR TREATING FACILITY UPDATES; 
+                                '6' FOR COTS UPDATE EVENTS; 
+              LAST EDITED:      OCT 04, 1999 
+              DESCRIPTION:
+                                This indicates the type of event that has occurred.  
+
+              CROSS-REFERENCE:  391.71^AD2^MUMPS 
+                                1)= N A,B,M S M=$G(^VAT(391.71,DA,0)),A=$P(M,U),B=$P(M,U,5) I A'=""&(B'="") S ^VAT(391.71,"AKY",X,A,B,DA)=""
+                                2)= N A,B,M S M=$G(^VAT(391.71,DA,0)),A=$P(M,U),B=$P(M,U,5) I A'=""&(B'="") K ^VAT(391.71,"AKY",X,A,B,DA)
+                                This cross reference is one of the three fields used to create a unique key for entries in this file.  .01 and .05 are the other two.  
+
+
+              CROSS-REFERENCE:  391.71^AXMIT1^MUMPS 
+                                1)= Q:($G(VAFCA08))  N A S A=$P(^VAT(391.71,DA,0),"^",8) S:(+A) ^VAT(391.71,"AXMIT",X,DA)=""
+                                2)= K ^VAT(391.71,"AXMIT",X,DA)
+                                This cross reference is used to gather the entries that need to be broadcasted because an update has occured to a patient's data.  The set logic will only be executed when the REQUIRES TRANSMISSION field (#.08) has a value
+                                of 'YES'.  
+                                 
+                                  
+                                 Resulting node: 
+                                   ^VAT(391.71,"AXMIT",[.04],DA) = "" 
+                                  
+                                 Where: 
+                                   [.04] = Value contained in TYPE OF EVENT field (#.04) 
+                                      DA = Pointer to entry that requires transmission 
+
+
+
+391.71,.05    EVENT POINTER          0;5          VARIABLE POINTER
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 2    1    P            n   PTR TO PATIENT FILE 
+                 405  2    I            n   POINTER TO PATIENT MOVEMENT 
+            409.68    3    O            n   PTR TO OUTPATIENT ENCOUNTER 
+                                         
+              LAST EDITED:      MAY 21, 1995 
+              DESCRIPTION:      This field is a variable pointer to the Patient Movement, Outpatient Encounter or Patient file.  When the type of event is inpatient, it points to the event in the Patient Movement file.  Outpatient, it points to either
+                                the Patient file or the Outpatient Encounter file.  Registration and Updates point to the Patient file.  
+
+              CROSS-REFERENCE:  391.71^AD3^MUMPS 
+                                1)= N B,A,M S M=$G(^VAT(391.71,DA,0)),A=$P(M,U),B=$P(M,U,4) I A'=""&(B'="") S ^VAT(391.71,"AKY",B,A,X,DA)=""
+                                2)= N B,A,M S M=$G(^VAT(391.71,DA,0)),A=$P(M,U),B=$P(M,U,4) I A'=""&(B'="") K ^VAT(391.71,"AKY",B,A,X,DA)
+                                This cross reference is one of the three fields used to create a unique key for entries in this file.  .01 and .04 are the other two.  
+
+
+
+391.71,.06    TRANSMITTED            0;6 SET
+
+                                '1' FOR NEED TO TRANSMIT; 
+              LAST EDITED:      FEB 03, 1997 
+              CROSS-REFERENCE:  391.71^AC^MUMPS 
+                                1)= S:+X ^VAT(391.71,"AC",$E(X,1,30),DA)=""
+                                2)= K ^VAT(391.71,"AC",$E(X,1,30),DA)
+                                This cross reference is used to gather the entries that need to be broadcasted because an update has occured to a patient's data.  The set logic will not be executed for anything other than a postive send.  
+
+
+
+391.71,.07    DELETED                0;7 SET
+
+                                '1' FOR DELETED; 
+              LAST EDITED:      MAY 25, 1995 
+              DESCRIPTION:
+                                This field is used to mark the given entry for the event as being deleted.  It indicates that the ADT event was deleted, but an ancillary system may still hold the PIVOT number.  
+
+
+391.71,.08    REQUIRES TRANSMISSION  0;8 SET
+
+              Requires Transmission                                                                                            
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      SEP 12, 1996 
+              HELP-PROMPT:      Enter 'Yes' if this entry needs to be transmitted 
+              DESCRIPTION:
+                                This field denotes whether or not the entry requires transmission.  
+
+              CROSS-REFERENCE:  391.71^AXMIT2^MUMPS 
+                                1)= Q:(($G(VAFCA08))!('X))  N A S A=$P(^VAT(391.71,DA,0),"^",4) S:(+A) ^VAT(391.71,"AXMIT",A,DA)=""
+                                2)= N A S A=$P(^VAT(391.71,DA,0),"^",4) K:(+A) ^VAT(391.71,"AXMIT",A,DA)
+                                This cross reference is used to gather the entries that need to be broadcasted because an update has occured to a patient's data.  The set logic will only be executed when the REQUIRES TRANSMISSION field (#.08) has a value
+                                of 'YES'.  
+                                                                                                       
+                                 
+                                 Resulting node: 
+                                   ^VAT(391.71,"AXMIT",[.04],DA) = "" 
+                                 
+                                 Where: 
+                                   [.04] = Value contained in TYPE OF EVENT field (#.04) 
+                                      DA = Pointer to entry that requires transmission 
+
+
+
+391.71,.09    USER                   0;9 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 17, 1997 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+
+391.71,.1     EVENT REASON CODE      0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+              LAST EDITED:      MAY 22, 1998 
+              HELP-PROMPT:      Answer must be 1-3 characters in length. 
+              DESCRIPTION:      This field may contain an HL7 event reason code for certain entries in the pivot file. For example, if a user causes an ADT-A08 message to be generated, by adding a patient to the security log file the event reason code is
+                                97, indicating a 'Sensitivity Update' triggered the A08.  
+
+
+391.71,1.1    RESULTING MESSAGE      1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      JUL 22, 1997 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                This field will store the result from attempting to build and send an HL7 message.  The result will either be a message ID when the attempt is successful or an error message.  
+
+
+391.71,2.1    FIELD(S) EDITED        2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+              LAST EDITED:      AUG 21, 1997 
+              HELP-PROMPT:      Answer must be 1-200 characters in length. 
+              DESCRIPTION:
+                                This field will be used to store the fields edited, delimited by ; for the event.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 USER (#.09)
+
+OUTPATIENT ENCOUNTER (#409.68)    EVENT POINTER (#.05)
+
+PATIENT (#2)                      PATIENT (#.03)
+                                  EVENT POINTER (#.05)
+
+PATIENT MOVEMENT (#405)           EVENT POINTER (#.05)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

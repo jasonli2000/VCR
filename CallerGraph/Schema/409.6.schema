@@ -1,0 +1,385 @@
+STANDARD DATA DICTIONARY #409.6 -- PATIENT APPOINTMENT INFO LOG FILE                                                                                                                                                              MAY 20,2014@15:41:40  PAGE 1
+STORED IN ^SDWL(409.6,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The Patient Appointment Information Transmission (PAIT) log is maintained in this file.  Log entries are added when appointment information is transmitted to the Austin Automation Center via HL7 messages.  File entries are deleted automatically when HL7
+acknowledgments are received.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: TASK ID(AD), RUN DATE(B)
+
+INDEXED BY:    PATIENT & APPT DATE (AC), RETENTION FLAG (AE), HL7 MESSAGE ID & HL7 SEQUENCE ID (AMSG)
+
+
+409.6,.01     RUN DATE               0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 24, 2003 
+              HELP-PROMPT:      Date the extract is run 
+              DESCRIPTION:
+                                The date the extract started running at the site. Extracts are run as Taskman background jobs.  
+
+              TECHNICAL DESCR:
+                                This field is populated by the run routine.  
+
+              CROSS-REFERENCE:  409.6^B 
+                                1)= S ^SDWL(409.6,"B",$E(X,1,30),DA)=""
+                                2)= K ^SDWL(409.6,"B",$E(X,1,30),DA)
+
+
+409.6,1       TASK ID                0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      SEP 24, 2003 
+              HELP-PROMPT:      Taskman Task ID 
+              DESCRIPTION:
+                                The Taskman task ID number.  When the extract is run the Taskman ID of the process is stored in this field.  
+
+              CROSS-REFERENCE:  409.6^AD 
+                                1)= S ^SDWL(409.6,"AD",$E(X,1,30),DA)=""
+                                2)= K ^SDWL(409.6,"AD",$E(X,1,30),DA)
+
+
+409.6,1.1     LAST BATCH # OF THIS RUN 0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 21, 2004 
+              HELP-PROMPT:      Type a Number between 0 and 9999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the the Message Conrol ID of MSH segment in the latest created HL7 batch. When the extract is run an HL7 batch is created that may contain up to 5000 individual messages.  
+
+
+409.6,1.2     LAST SCANNED DATE      0;4 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 21, 2004 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This field represents an appointment creation date that was completely scanned as the last one with this transmission.  
+
+
+409.6,1.3     # OF APPOINTMENTS      0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 21, 2004 
+              HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of appointments corresponding to individual MSG segments sent with this transmission.  
+
+
+409.6,1.4     # OF BATCHES           0;6 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 21, 2004 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of batches generated during the run.  
+
+              TECHNICAL DESCR:
+                                Batches are generated with up to 5000 messages per batch.  
+
+
+409.6,1.5     TRANSMISSION FINISHED  0;7 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 21, 2004 
+              HELP-PROMPT:      This is a date/time when generating of all batches is complete. 
+
+409.6,2       PATIENT                1;0 POINTER Multiple #409.69 (Add New Entry without Asking)
+
+              LAST EDITED:      OCT 21, 2003 
+              DESCRIPTION:
+                                The multiple field that records key elements of the patient appointment extract.  
+
+
+409.69,.01      PATIENT                0;1 POINTER TO PATIENT FILE (#2)
+
+                LAST EDITED:      SEP 29, 2003 
+                HELP-PROMPT:      The patient whose appoinment is being transmitted 
+                DESCRIPTION:
+                                  This subfield will hold the pointer to the Patient file to identify a name of each patient whose appointment information is being transmitted.  
+
+                CROSS-REFERENCE:  409.69^B 
+                                  1)= S ^SDWL(409.6,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^SDWL(409.6,DA(1),1,"B",$E(X,1,30),DA)
+
+                RECORD INDEXES:   AC (#87) (WHOLE FILE #409.6)
+
+409.69,1        APPT DATE              0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JAN 21, 2004 
+                HELP-PROMPT:      Scheduled date/time of the transmitted appointment 
+                DESCRIPTION:
+                                  This is the date/timen the appointment was scheduled for by the scheduling package. This date and the appointment creation date is used in the patient wait time calculation.  
+
+                RECORD INDEXES:   AC (#87) (WHOLE FILE #409.6)
+
+409.69,2        HL7 MESSAGE ID         0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                LAST EDITED:      OCT 05, 2004 
+                HELP-PROMPT:      The HL7 message number. 
+                DESCRIPTION:      This field represents the HL7 message number.  The message number is used in conjunction with incoming HL7 acknowledgement messages to identify the original extract message. This message # corresponds to the Message
+                                  Control ID in MSG segment. Each message # corresponds to a unique batch # and that relation is identified in the Batch Tracking multiple  (#3) where it is represented as the MESSAGE CONTROL ID field (#.03).  
+
+                TECHNICAL DESCR:
+                                  The first three digits represent site number and by dropping it you have the Internal Entry Number of the HL7 MESSAGE TEXT file (#772). 
+
+                RECORD INDEXES:   AMSG (#99) (WHOLE FILE #409.6)
+
+409.69,3        HL7 SEQUENCE ID        0;4 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                LAST EDITED:      JAN 20, 2004 
+                HELP-PROMPT:      Sequence # of this message within the batch 
+                DESCRIPTION:
+                                  This number corresponds to a location of this nessage within the Batch #.  
+
+                RECORD INDEXES:   AMSG (#99) (WHOLE FILE #409.6)
+
+409.69,4        RETENTION FLAG         0;5 SET (Required)
+
+                RETENTION FLAG INDICATING STATUS OF RECORD                                                                     
+                                  'Y' FOR YES - to be sent when 'Final'; 
+                                  'N' FOR NO - was sent as 'Final'; 
+                                  'S' FOR SENT as 'Final' with another entry; 
+                                  'R' FOR RESENT - because of rejection; 
+                LAST EDITED:      SEP 19, 2003 
+                HELP-PROMPT:      Will the entry be retained for next transmission 
+                DESCRIPTION:      This flag will determine if the entry is to remain in the file to be transmitted on the subsequent run. Also it may indicate that another entry was created because of 'S' - sending as final or 'R' - resending because of
+                                  rejection.  
+
+                FIELD INDEX:      AE (#88)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#409.6)
+                    Short Descr:  RETENTION FLAGE XREF
+                      Set Logic:  S ^SDWL(409.6,"AE",$E(X,1,1),DA(1),DA)=""
+                     Kill Logic:  K ^SDWL(409.6,"AE",$E(X,1,1),DA(1),DA)
+                     Whole Kill:  K ^SDWL(409.6,"AE")
+                           X(1):  RETENTION FLAG  (409.69,4)  (Subscr 1)  (Len 1)  (forwards)
+
+
+409.69,5        EVENT REASON           0;6 SET
+
+                                  'CI' FOR Check-in; 
+                                  'NS' FOR No Show; 
+                                  'CC' FOR Canceled by Clinic; 
+                                  'CP' FOR Canceled by Patient; 
+                                  'COE' FOR Checked out by Encounter; 
+                                  'NM' FOR No Match; 
+                                  'CO' FOR Checked-out; 
+                                  'CT' FOR Canceled Terminated; 
+                LAST EDITED:      JAN 21, 2004 
+                DESCRIPTION:
+                                  Event reason code as it is files into SCH.6 segment of HL7 message.  
+
+
+409.69,6        DATE APPT MADE         0;7 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JAN 21, 2004 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  This is the date when an appointment was created.  
+
+
+409.69,7        ERROR MESSAGE          0;8 POINTER TO PCMM HL7 ERROR CODE FILE (#404.472)
+
+                Optional Error Flag or Error Code indicating rejection                                                         
+                LAST EDITED:      JAN 26, 2004 
+                DESCRIPTION:
+                                  If the Error Flag as 'R' or numeric error code is entered it means that that appointment has to be resent with its current status. A new entry will be created.  
+
+
+409.69,8        APPOINTMENT TYPE       0;9 SET
+
+                                  'AR' FOR Action Required; 
+                                  'NAT' FOR No Action Taken; 
+                                  'F' FOR Future; 
+                                  'NC' FOR Non Count; 
+                                  'I' FOR Inpatient; 
+                                  'NCF' FOR Non Count Future; 
+                                  'ABK' FOR Auto Rebook; 
+                                  'RS' FOR Rescheduled; 
+                                  'O' FOR Outpatient; 
+                                  'RSN' FOR Rescheduled Non Count; 
+                LAST EDITED:      SEP 21, 2004 
+                DESCRIPTION:
+                                  This field records a descriptive code of the appointment type and it implements the Event Reason as the appointment identifier.  
+
+
+409.69,9        CLINIC                 0;10 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+                LAST EDITED:      DEC 29, 2003 
+
+
+
+409.6,3       BATCH TRACKING         2;0 Multiple #409.7 (Add New Entry without Asking)
+
+
+409.7,.01       BATCH CONTROL ID       0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JAN 08, 2004 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This fields corresponds to the Batch Control ID from the BSH segment.  
+
+                CROSS-REFERENCE:  409.7^B 
+                                  1)= S ^SDWL(409.6,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^SDWL(409.6,DA(1),2,"B",$E(X,1,30),DA)
+
+
+409.7,.02       BATCH CREATE DATE/TIME 0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 24, 2003 
+                DESCRIPTION:
+                                  The date/time HL7 packages creates the batch message.  
+
+
+409.7,.03       MESSAGE CONTROL ID     0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JAN 21, 2004 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This fields corresponds to the Message Control ID from MSH segment.  
+
+
+409.7,.04       APPLICATION ACK DATE/TIME 0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 24, 2003 
+                DESCRIPTION:
+                                  This is the date/time Vista HL7 receives the application acknowledgement from the Vista Interface Engine.  
+
+
+409.7,.05       APPLICATION ACK TYPE   0;5 SET
+
+                                  'AA' FOR APPLICATION ACCEPT; 
+                                  'AE' FOR APPLICATION ERROR; 
+                                  'AR' FOR APPLICATION REJECT; 
+                                  'MR' FOR MANUAL REJECTION; 
+                LAST EDITED:      FEB 10, 2004 
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+HOSPITAL LOCATION (#44)           PATIENT:CLINIC (#9)
+
+PATIENT (#2)                      PATIENT:PATIENT (#.01)
+
+PCMM HL7 ERROR CODE (#404.472)    PATIENT:ERROR MESSAGE (#7)
+
+
+Subfile #409.69
+
+  Record Indexes:
+
+  AC (#87)    RECORD    REGULAR    IR    SORTING ONLY    WHOLE FILE (#409.6)
+      Short Descr:  XREF
+        Set Logic:  S ^SDWL(409.6,"AC",X(1),X(2),DA(1),DA)=""
+       Kill Logic:  K ^SDWL(409.6,"AC",X(1),X(2),DA(1),DA)
+       Whole Kill:  K ^SDWL(409.6,"AC")
+             X(1):  PATIENT  (409.69,.01)  (Subscr 1)  (forwards)
+             X(2):  APPT DATE  (409.69,1)  (Subscr 2)  (forwards)
+
+  AMSG (#99)    RECORD    REGULAR    IR    SORTING ONLY    WHOLE FILE (#409.6)
+      Short Descr:  Message xref
+        Set Logic:  S ^SDWL(409.6,"AMSG",$E(X(1),1,30),$E(X(2),1,30),DA(1),DA)=""
+       Kill Logic:  K ^SDWL(409.6,"AMSG",$E(X(1),1,30),$E(X(2),1,30),DA(1),DA)
+       Whole Kill:  K ^SDWL(409.6,"AMSG")
+             X(1):  HL7 MESSAGE ID  (409.69,2)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  HL7 SEQUENCE ID  (409.69,3)  (Subscr 2)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PATIENT PENDING APPT          SEP 29, 2003@10:12  USER #0                                                                                                                                                                      PATIENT PENDING APPOINTMENT LOG
+REJECTED APPT LIST            SEP 29, 2003@15:02  USER #0                                                                                                                                                                    REJECTED TRANSMITTED APPOINTMENTS
+SD-PAIT PAIT ACK SUMMARY      JAN 27, 2004@14:09  USER #0                                                                                                                                                                                     PAIT ACK SUMMARY
+SD-PAIT PATIENT HL7 LOCATION  OCT 05, 2004@10:46  USER #0                                                                                                                                                                         SD-PAIT PATIENT HL7 LOCATION
+SD-PAIT PATIENT PENDING APPT  JAN 22, 2004@21:16  USER #0                                                                                                                                                                      PATIENT PENDING APPOINTMENT LOG
+SD-PAIT REJECTED APPT         JAN 29, 2004@10:32  USER #0                                                                                                                                                                    PATIENT APPOINTMENT INFO LOG LIST
+SD-PAIT TRANS SUMMARY         JAN 27, 2004@13:47  USER #0                                                                                                                                                                    PATIENT APPOINTMENT INFO LOG LIST
+
+SORT TEMPLATE(S):
+PENDING APPT EXCLUDING FUTURE SEP 29, 2003@10:03  USER #0    
+SORT BY: PATIENT//
+PATIENT SUB-FIELD: RETENTION FLAG// (RETENTION FLAG equals Y (YES - to be sent when 'Final'))
+  WITHIN RETENTION FLAG, SORT BY: PATIENT//
+  PATIENT SUB-FIELD: APPT DATE//    (User is asked range)
+    WITHIN APPT DATE, SORT BY: PATIENT//
+    PATIENT SUB-FIELD: APPOINTMENT TYPE// (All APPOINTMENT TYPE (includes nulls))
+      WITHIN APPOINTMENT TYPE, SORT BY: PATIENT//
+      PATIENT SUB-FIELD: EVENT REASON// (All EVENT REASON (includes nulls))
+     This template allows to print a list of pending appointments in the APPT 
+     DATE order, to be evaluated for possible finalizing.
+
+REJECTED APPT                 SEP 29, 2003@14:59  USER #0    
+SORT BY: PATIENT//
+PATIENT SUB-FIELD: ERROR MESSAGE// (ERROR MESSAGE not null)
+  WITHIN ERROR MESSAGE, SORT BY: PATIENT//
+  PATIENT SUB-FIELD: RETENTION FLAG// (RETENTION FLAG equals Y (YES - to be sent when 'Final'))
+    WITHIN RETENTION FLAG, SORT BY: PATIENT//
+    PATIENT SUB-FIELD: PATIENT// (PATIENT not null)
+      WITHIN PATIENT, SORT BY: PATIENT//
+      PATIENT SUB-FIELD: APPT DATE// (APPT DATE not null)
+     This template will generate rejected appointments that are still in 
+     pending status, ready to be transmitted.
+
+SD-PAIT PAIT ACK SORT         JAN 27, 2004@14:08  USER #0    
+SORT BY: TRANSMISSION FINISHED// (TRANSMISSION FINISHED not null)
+  WITHIN TRANSMISSION FINISHED, SORT BY: BATCH TRACKING//
+  BATCH TRACKING SUB-FIELD: BATCH CONTROL ID// (BATCH CONTROL ID not null)
+    WITHIN BATCH CONTROL ID, SORT BY: BATCH TRACKING//
+    BATCH TRACKING SUB-FIELD: MESSAGE CONTROL ID// (MESSAGE CONTROL ID not null)
+
+SD-PAIT PATIENT HL7 LOCATION  OCT 05, 2004@09:59  USER #0    
+SORT BY: @PATIENT//
+PATIENT SUB-FIELD: APPT DATE//    (User is asked range)
+
+SD-PAIT PEND EXCL FUTURE      APR 06, 2004@15:10  USER #0                                                                                                                                                                        '' Print Template always used
+SORT BY: PATIENT//
+PATIENT SUB-FIELD: RETENTION FLAG// (RETENTION FLAG equals Y (YES - to be sent when 'Final'))
+  WITHIN RETENTION FLAG, SORT BY: PATIENT//
+  PATIENT SUB-FIELD: APPT DATE//    (User is asked range)
+    WITHIN APPT DATE, SORT BY: PATIENT//
+    PATIENT SUB-FIELD: DATE APPT MADE// (DATE APPT MADE from Sep 1,2002)
+      WITHIN DATE APPT MADE, SORT BY: PATIENT//
+      PATIENT SUB-FIELD: APPOINTMENT TYPE// (APPOINTMENT TYPE not null)
+        WITHIN APPOINTMENT TYPE, SORT BY: PATIENT//
+        PATIENT SUB-FIELD: EVENT REASON// (EVENT REASON not null)
+     This template allows to print a list of pending appointments in the APPT 
+     DATE order, to be evaluated for possible finalizing.
+
+SD-PAIT REJECTED APPT         APR 15, 2004@16:02  USER #0                                                                                                                                                                        '' Print Template always used
+SORT BY: PATIENT//
+PATIENT SUB-FIELD: RETENTION FLAG// (RETENTION FLAG equals Y (YES - to be sent when 'Final'))
+  WITHIN RETENTION FLAG, SORT BY: PATIENT//
+  PATIENT SUB-FIELD: ERROR MESSAGE// (ERROR MESSAGE not null)
+    WITHIN ERROR MESSAGE, SORT BY: PATIENT//
+    PATIENT SUB-FIELD: PATIENT// (PATIENT not null)
+      WITHIN PATIENT, SORT BY: PATIENT//
+      PATIENT SUB-FIELD: APPT DATE// (APPT DATE not null)
+     This template will generate rejected appointments that are still in 
+     pending status, ready to be transmitted.
+
+SD-PAIT TRANS SUMMARY         JAN 27, 2004@13:42  USER #0    
+SORT BY: RUN DATE//    (User is asked range)
+
+
+FORM(S)/BLOCK(S):

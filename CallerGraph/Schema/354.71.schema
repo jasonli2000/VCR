@@ -1,0 +1,310 @@
+STANDARD DATA DICTIONARY #354.71 -- IB COPAY TRANSACTIONS FILE                                                                                                                                                                    MAY 20,2014@15:35:40  PAGE 1
+STORED IN ^IBAM(354.71,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DO NOT delete entries in this file.  DO NOT edit data in this file with VA File Manager.  
+ 
+This file stores individual transactions for outpatient medication copayments.  The transactions in this file will be used to store detailed information about a patient's rx copayments, including amounts billed and not billed.  There should be
+transactions stored in this file for both this facility and other treating facilities through out the VA system.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: COPAY EXCEEDING CAP field (#106.6) of the PRESCRIPTION File (#52) 
+               COPAY EXCEEDING CAP field (#9.1) of the REFILL sub-field (#52.1) of the PRESCRIPTION File (#52) 
+               IB COPAY TRANSACTION NUMBER field (#.19) of the INTEGRATED BILLING ACTION File (#350) 
+               PARENT TRANSACTION ENTRY field (#.1) of the IB COPAY TRANSACTIONS File (#354.71) 
+               
+
+CROSS
+REFERENCED BY: STATUS(AC), TRANS EFFECTIVE DATE(AE), PARENT TRANSACTION ENTRY(AF), TRANSACTION NUMBER(B)
+
+INDEXED BY:    PATIENT & TRANS EFFECTIVE DATE (AD)
+
+
+354.71,.01    TRANSACTION NUMBER     0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      FEB 06, 2001 
+              HELP-PROMPT:      Answer with the transaction number. 
+              DESCRIPTION:      This is the transaction number.  The format is: 
+                                 
+                                        Station number (3 digits) - Sequential Number 
+
+              CROSS-REFERENCE:  354.71^B 
+                                1)= S ^IBAM(354.71,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBAM(354.71,"B",$E(X,1,30),DA)
+
+
+354.71,.02    PATIENT                0;2 POINTER TO IB PATIENT COPAY ACCOUNT FILE (#354.7) (Required)
+
+              LAST EDITED:      FEB 16, 2001 
+              HELP-PROMPT:      Enter the patient's name 
+              DESCRIPTION:
+                                This is the pointer to the patient copay account.  The ien stored here is the same as the patient's dfn.  
+
+              RECORD INDEXES:   AD (#65)
+
+354.71,.03    TRANS EFFECTIVE DATE   0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 21, 2001 
+              HELP-PROMPT:      Enter the effective date of this transaction 
+              DESCRIPTION:
+                                This is the effective date of the transaction that is used to determine the month/year in which to count the transaction amount towards the patient's cap.  
+
+              CROSS-REFERENCE:  354.71^AE 
+                                1)= S ^IBAM(354.71,"AE",$E(X,1,30),DA)=""
+                                2)= K ^IBAM(354.71,"AE",$E(X,1,30),DA)
+                                This index is used to sort by the effective date of the transaction.  
+
+
+              RECORD INDEXES:   AD (#65)
+
+354.71,.04    IB ACTION POINTER      0;4 POINTER TO INTEGRATED BILLING ACTION FILE (#350)
+
+              LAST EDITED:      NOV 16, 2000 
+              HELP-PROMPT:      Answer with an entry in the Integrated Billing Action file. 
+              DESCRIPTION:
+                                This is a pointer to the INTEGRATED BILLING ACTION (#350) file.  This will only be filled in for entries that have been billed.  
+
+
+354.71,.05    STATUS                 0;5 SET (Required)
+
+                                'P' FOR PENDING TRANSMISSION; 
+                                'C' FOR COMPLETE; 
+                                'Y' FOR CANCELLED PENDING TRANSMISSION; 
+                                'X' FOR CANCELLED COMPLETE; 
+              LAST EDITED:      APR 20, 2001 
+              HELP-PROMPT:      Enter the status of this transaction. 
+              DESCRIPTION:
+                                This is the status of this transaction.  
+
+              CROSS-REFERENCE:  354.71^AC 
+                                1)= S ^IBAM(354.71,"AC",$E(X,1,30),DA)=""
+                                2)= K ^IBAM(354.71,"AC",$E(X,1,30),DA)
+                                This cross reference is used to find transactions based upon their status.  The nightly background job uses this to find transactions that have not completed their transmissions to other facilities.  
+
+
+
+354.71,.06    RESULTING FROM         0;6 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      APR 20, 2001 
+              HELP-PROMPT:      Enter the internal pointer information indicating the event source. 
+              DESCRIPTION:      This is a soft link pointer to indicate where this transaction came from.  The information should be in the following format: 
+                                 
+                                Station Number:File Number:IEN;refill number (if any) 
+
+
+354.71,.07    UNITS                  0;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 30, 2001 
+              HELP-PROMPT:      Enter the number of units for this transaction. 
+              DESCRIPTION:
+                                This is the number of units for this transaction.  
+
+
+354.71,.08    TOTAL CHARGE           0;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<.01)!(X?.E1"."3.N) X
+              LAST EDITED:      NOV 17, 2000 
+              HELP-PROMPT:      Enter the total charge for this account transaction. 
+              DESCRIPTION:
+                                This is the total charge for this transaction.  
+
+
+354.71,.09    BRIEF DESCRIPTION      0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      NOV 17, 2000 
+              HELP-PROMPT:      Answer with a description of this transaction. 
+              DESCRIPTION:
+                                This is descriptive information regarding this transaction.  
+
+
+354.71,.1     PARENT TRANSACTION ENTRY 0;10 POINTER TO IB COPAY TRANSACTIONS FILE (#354.71)
+
+              LAST EDITED:      AUG 22, 2001 
+              HELP-PROMPT:      Answer with the parent of this transaction entry. 
+              DESCRIPTION:
+                                This is a pointer to the parent transaction entry.  If this is the same as this entry, then this is the parent.  
+
+              CROSS-REFERENCE:  354.71^AF 
+                                1)= S ^IBAM(354.71,"AF",$E(X,1,30),DA)=""
+                                2)= K ^IBAM(354.71,"AF",$E(X,1,30),DA)
+                                Used to look up the parents of a transaction.  
+
+
+
+354.71,.11    BILLED AMOUNT          0;11 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0)!(X?.E1"."3.N) X
+              LAST EDITED:      FEB 01, 2006 
+              HELP-PROMPT:      Type a Dollar amount between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount that was billed for this transaction.  
+
+
+354.71,.12    NON-BILLABLE AMOUNT    0;12 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0)!(X?.E1"."3.N) X
+              LAST EDITED:      FEB 01, 2006 
+              HELP-PROMPT:      Type a Dollar amount between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the non-billable amount for this transaction.  
+
+
+354.71,.13    INSTITUTION            0;13 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      NOV 17, 2000 
+              HELP-PROMPT:      Answer with an institution name. 
+              DESCRIPTION:
+                                This pointer indicates where this account transaction came from.  
+
+
+354.71,.14    USER ADDING ENTRY      0;14 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      NOV 17, 2000 
+              HELP-PROMPT:      Answer with the person's name who added this entry. 
+              DESCRIPTION:
+                                This is the person who added this entry. This may be a remote person since they are also stored in the New Person file.  
+
+
+354.71,.15    DATE ENTRY ADDED       0;15 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      NOV 17, 2000 
+              HELP-PROMPT:      Enter the date when this entry was added. 
+              DESCRIPTION:
+                                This indicates when this entry was added.  
+
+
+354.71,.16    USER LAST UPDATING     0;16 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      NOV 17, 2000 
+              HELP-PROMPT:      Answer with the person who last updated this transaction. 
+              DESCRIPTION:
+                                This is the person who last updated this transaction.  
+
+
+354.71,.17    DATE LAST UPDATED      0;17 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      APR 20, 2001 
+              HELP-PROMPT:      Answer with the last date/time there was an update to this transaction. 
+              DESCRIPTION:
+                                This is the last date/time this transaction was updated.  
+
+
+354.71,.18    ACTION TYPE            0;18 POINTER TO IB ACTION TYPE FILE (#350.1)
+
+              LAST EDITED:      JUN 08, 2001 
+              HELP-PROMPT:      Answer with the appropriate action type. 
+              DESCRIPTION:
+                                This pointer to the action type identifies what action type this transaction was created with.  
+
+
+354.71,.19    CANCELLATION REASON    0;19 POINTER TO IB CHARGE REMOVE REASONS FILE (#350.3)
+
+              LAST EDITED:      SEP 12, 2001 
+              HELP-PROMPT:      Answer with the reason to cancel this charge. 
+              DESCRIPTION:
+                                This is the reason this transaction is cancelled.  
+
+
+354.71,.2     PFSS REMOTE TRANSACTION 0;20 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 15, 2005 
+              HELP-PROMPT:      Enter YES if this transaction came from a PFSS remote system. 
+              DESCRIPTION:
+                                This field is a flag/indicator that this billing transaction is from a PFSS remote system to the local VistA M system.  It is used to determine which system should be used for update processing.  
+
+
+354.71,1      TRANSMISSION RECORD    1;0 POINTER Multiple #354.711
+
+              DESCRIPTION:
+                                This is a record of transmission(s) to each facility that is a treating facility for the patient. This record will indicate if a transmission has been accepted or not at the individual facilities.  
+
+
+354.711,.01     TRANSMISSION FACILITY  0;1 POINTER TO INSTITUTION FILE (#4)
+
+                LAST EDITED:      NOV 17, 2000 
+                HELP-PROMPT:      Enter a facility name. 
+                DESCRIPTION:
+                                  This multiple is a list of facilities a transmission would go to for this transaction.  
+
+                CROSS-REFERENCE:  354.711^B 
+                                  1)= S ^IBAM(354.71,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBAM(354.71,DA(1),1,"B",$E(X,1,30),DA)
+
+
+354.711,.02     TRANSMISSION STATUS    0;2 SET
+
+                                  '0' FOR NOT COMPLETED; 
+                                  '1' FOR COMPLETED/ACCEPTED; 
+                LAST EDITED:      NOV 17, 2000 
+                HELP-PROMPT:      Enter the status for this facility's transmission. 
+                DESCRIPTION:
+                                  This is the status of this facility's transmission.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+IB ACTION TYPE (#350.1)           ACTION TYPE (#.18)
+
+IB CHARGE REMOVE REASONS 
+                   (#350.3)       CANCELLATION REASON (#.19)
+
+IB COPAY TRANSACTIONS (#354.71)   PARENT TRANSACTION ENTRY (#.1)
+
+IB PATIENT COPAY ACCOUNT 
+                   (#354.7)       PATIENT (#.02)
+
+INSTITUTION (#4)                  INSTITUTION (#.13)
+                                  TRANSMISSION RECORD:TRANSMISSION FACILITY (#.01)
+
+INTEGRATED BILLING ACTION 
+                   (#350)         IB ACTION POINTER (#.04)
+
+NEW PERSON (#200)                 USER ADDING ENTRY (#.14)
+                                  USER LAST UPDATING (#.16)
+
+
+File #354.71
+
+  Record Indexes:
+
+  AD (#65)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  This is the main transaction sorting cross reference.
+      Description:  This is used to sort all transactions by patient, and then by the month/year they apply to.  
+        Set Logic:  S ^IBAM(354.71,"AD",X(1),X(2),DA)=""
+       Kill Logic:  K ^IBAM(354.71,"AD",X(1),X(2),DA)
+       Whole Kill:  K ^IBAM(354.71,"AD")
+             X(1):  PATIENT  (354.71,.02)  (Subscr 1)  (forwards)
+             X(2):  TRANS EFFECTIVE DATE  (354.71,.03)  (Subscr 2)  (forwards)
+                      Transform (Storage):  S X=$E(X,1,5)_"00"
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

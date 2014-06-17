@@ -1,0 +1,264 @@
+STANDARD DATA DICTIONARY #41.1 -- SCHEDULED ADMISSION FILE                                                                                                                                                                        MAY 20,2014@15:41:04  PAGE 1
+STORED IN ^DGS(41.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains data concerning patients scheduled for a future admission to the medical facility.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: D
+             DEL ACCESS: D
+           LAYGO ACCESS: D
+IDENTIFIED BY: RESERVATION DATE/TIME (#2)[R]
+
+POINTED TO BY: SCHEDULED ADMISSION field (#.32) of the CLAIMS TRACKING File (#356) 
+               
+
+CROSS
+REFERENCED BY: ADMITTED(AMVT), WARD(ARSV), PATIENT(B), RESERVATION DATE/TIME(C)
+
+41.1,.01      PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      MAY 05, 1987 
+              DESCRIPTION:
+                                Enter the name of the patient that is scheduled for a future admission at this facility.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  41.1^B 
+                                1)= S ^DGS(41.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^DGS(41.1,"B",$E(X,1,30),DA)
+
+
+41.1,2        RESERVATION DATE/TIME  0;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ERTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 06, 1987 
+              DESCRIPTION:
+                                Enter the date/time this patient is scheduled to appear at your facility for this admission.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  41.1^C 
+                                1)= S ^DGS(41.1,"C",$E(X,1,30),DA)=""
+                                2)= K ^DGS(41.1,"C",$E(X,1,30),DA)
+
+
+41.1,3        LENGTH OF STAY EXPECTED 0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+              DESCRIPTION:
+                                Enter the length of time it is expected this patient will have to remain at your facility until inpatient treatment is complete.  
+
+
+41.1,4        ADMITTING DIAGNOSIS    0;4 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      MAY 09, 1991 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                Enter the diagnosis of the illness or injury for which this patient will be treated.  
+
+
+41.1,5        PROVIDER               0;5 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$SCREEN^DGPMDD(Y,DA,DT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      DEC 07, 1994 
+              HELP-PROMPT:      Allow only active providers. 
+              DESCRIPTION:
+                                Enter the name of the provider who has ordered this admission.  
+
+              SCREEN:           S DIC("S")="I $$SCREEN^DGPMDD(Y,DA,DT)"
+              EXPLANATION:      Only select active providers
+              EXECUTABLE HELP:  D HELP^DGPMDD(DA,DT)
+
+41.1,6        SURGERY                0;6 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              DESCRIPTION:
+                                Answer YES if surgery will be required as part of the treatement this patient is scheduled for.  
+
+
+41.1,7        OPT/NSC STATUS         0;7 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              DESCRIPTION:
+                                Enter yes if this patient will be admitted under the movement type OPT-NSC.  Otherwise, answer no.  
+
+
+41.1,8        WARD                   0;8 POINTER TO WARD LOCATION FILE (#42) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $S($D(^(""I"")):^(""I"")="""",1:1)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 02, 1999 
+              DESCRIPTION:
+                                Enter the name of the ward this patient will be admitted to.  
+
+              SCREEN:           S DIC("S")="I $S($D(^(""I"")):^(""I"")="""",1:1)"
+              EXPLANATION:      Only select active wards.
+              NOTES:            TRIGGERED by the WARD OR TREATING SPECIALTY field of the SCHEDULED ADMISSION File 
+
+              CROSS-REFERENCE:  41.1^ARSV 
+                                1)= S ^DGS(41.1,"ARSV",$E(X,1,30),DA)=""
+                                2)= K ^DGS(41.1,"ARSV",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^41.1^12 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGS(41.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,12),X=X S DIU=X K Y X ^DD(41.1,8,1,2,1.1) X ^DD(41.1,8,1,2,1.4)
+                                1.1)= S X=DIV S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^DIC(42,+D0,0)) D0=-1 S I(100,0)=$S($D(D0):D0,1:""),Y(101)=X,D0=DIU S:'$D(^DG(40.8,+D0,0)) D0=-1 S X=$S('$D(D0):"",D0<0:"",1:D0) S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^DGS(41.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,12)=DIV,DIH=41.1,DIG=12 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^DGS(41.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,12),X=X S DIU=X K Y S X="" X ^DD(41.1,8,1,2,2.4)
+                                2.4)= S DIH=$S($D(^DGS(41.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,12)=DIV,DIH=41.1,DIG=12 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= WARD:DIVISION:NUMBER
+                                DELETE VALUE)= @
+                                FIELD)= DIVISION
+
+
+41.1,9        TREATING SPECIALTY     0;9 POINTER TO FACILITY TREATING SPECIALTY FILE (#45.7) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$ACTIVE^DGACT(45.7,Y,$P($G(^DGS(41.1,DA,0)),U,2))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 28, 1995 
+              HELP-PROMPT:      Enter treating specialty.  This must be an active treating specialty. 
+              DESCRIPTION:
+                                Enter the name of the treating specialty under which this patient will be treated.  
+
+              SCREEN:           S DIC("S")="I $$ACTIVE^DGACT(45.7,Y,$P($G(^DGS(41.1,DA,0)),U,2))"
+              EXPLANATION:      Allows only active treating specialties.
+              NOTES:            TRIGGERED by the WARD OR TREATING SPECIALTY field of the SCHEDULED ADMISSION File 
+
+
+41.1,10       WARD OR TREATING SPECIALTY 0;10 SET (Required)
+
+                                'W' FOR WARD; 
+                                'T' FOR TREATING SPECIALTY; 
+              LAST EDITED:      APR 17, 2000 
+              DESCRIPTION:
+                                Respond W if this patient is being scheduled for an admission to a particular ward or T if the sheduled admission is for a particular treating specialty.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^41.1^8 
+                                1)= X ^DD(41.1,10,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^DGS(41.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X="" X ^DD(41.1,10,1,1,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(41.1,10,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_Y(0)_":",2),$C(59),1)'="WARD"
+                                1.4)= S DIH=$S($D(^DGS(41.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,8)=DIV,DIH=41.1,DIG=8 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= WARD OR TREATING SPECIALTY'="WARD"
+                                CREATE VALUE)= @
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= WARD
+
+              CROSS-REFERENCE:  ^^TRIGGER^41.1^9 
+                                1)= X ^DD(41.1,10,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^DGS(41.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X="" X ^DD(41.1,10,1,2,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$S($D(^DD(41.1,10,0)):$P(^(0),U,3),1:"") S X=$P($P(Y(1),$C(59)_Y(0)_":",2),$C(59),1)'="TREATING SPECIALTY"
+                                1.4)= S DIH=$S($D(^DGS(41.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,9)=DIV,DIH=41.1,DIG=9 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= WARD OR TREATING SPECIALTY'="TREATING SPECIALTY"
+                                CREATE VALUE)= @
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= TREATING SPECIALTY
+
+
+41.1,11       PERSON SCHEDULING ADMIT 0;11 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      OCT 06, 1990 
+              DESCRIPTION:
+                                The name of the user entering the scheduled admission will be stored here.  
+
+
+41.1,12       DIVISION               0;12 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUN 03, 1986 
+              DESCRIPTION:
+                                Enter the name of the division to which this patient should report.  
+
+              SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+              EXPLANATION:      Not Outpatient Divisions
+              NOTES:            TRIGGERED by the WARD field of the SCHEDULED ADMISSION File 
+
+
+41.1,13       DATE/TIME CANCELLED    0;13 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 06, 1987 
+              DESCRIPTION:
+                                If this scheduled admission was cancelled, enter the date/time it was cancelled.  
+
+
+41.1,14       CANCELLED BY           0;14 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      OCT 06, 1990 
+              DESCRIPTION:
+                                If this scheduled admission was cancelled, this field will contain the name of the user that cancelled it.  
+
+
+41.1,15       REASON CANCELLED       0;15 SET
+
+                                '1' FOR EXPIRED; 
+                                '2' FOR OVERDUE; 
+                                '3' FOR REFUSED ADMISSION; 
+                                '4' FOR NO AVAILABLE BEDS; 
+                                '5' FOR OTHER; 
+              LAST EDITED:      MAY 07, 1987 
+              DESCRIPTION:
+                                Choose from the available list the reason this scheduled admission was cancelled.  
+
+
+41.1,16       WAS PATIENT NOTIFIED   0;16 SET
+
+                                '0' FOR YES; 
+                                '1' FOR NO; 
+                                '2' FOR NOT APPLICABLE; 
+              LAST EDITED:      JUL 31, 1987 
+              DESCRIPTION:
+                                If the scheduled admission was cancelled, enter YES here if the patient was notified of the cancellation.  Otherwise answer NO.  
+
+
+41.1,17       ADMITTED               0;17 POINTER TO PATIENT MOVEMENT FILE (#405)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),""^"",2)=1,($P(^(0),""^"",3)=+^DGS(41.1,DA,0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 23, 1990 
+              HELP-PROMPT:      If the patient was actually admitted, enter the admission movement 
+              DESCRIPTION:
+                                This field will contain the admission entry in the PATIENT MOVEMENT file.  If this field is not filled in, the patient was not admitted for this scheduled admission.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),""^"",2)=1,($P(^(0),""^"",3)=+^DGS(41.1,DA,0))"
+              EXPLANATION:      Must be an admission movement and for the same patient
+              CROSS-REFERENCE:  41.1^AMVT 
+                                1)= S ^DGS(41.1,"AMVT",$E(X,1,30),DA)=""
+                                2)= K ^DGS(41.1,"AMVT",$E(X,1,30),DA)
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FACILITY TREATING SPECIALTY 
+                   (#45.7)        TREATING SPECIALTY (#9)
+
+MEDICAL CENTER DIVISION (#40.8)   DIVISION (#12)
+
+NEW PERSON (#200)                 PROVIDER (#5)
+                                  PERSON SCHEDULING ADMIT (#11)
+                                  CANCELLED BY (#14)
+
+PATIENT (#2)                      PATIENT (#.01)
+
+PATIENT MOVEMENT (#405)           ADMITTED (#17)
+
+WARD LOCATION (#42)               WARD (#8)
+
+
+
+INPUT TEMPLATE(S):
+DGSCHADMIT                    MAY 19, 1998@13:27  USER #0    
+
+PRINT TEMPLATE(S):
+DGADTRESVB                    MAY 17, 1990@09:04  USER #0                                                                                                                                                                                 SCHEDULED ADMISSIONS
+DGSCHAD                       AUG 24, 1988        USER #0                                                                                                                                                                      FUTURE SCHEDULED ADMISSION LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

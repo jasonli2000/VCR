@@ -1,0 +1,524 @@
+STANDARD DATA DICTIONARY #451 -- POC DAILY TIME RECORDS FILE                                                                                                                                                                      MAY 20,2014@15:39:25  PAGE 1
+STORED IN ^PRSN(451,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The file stores all nurse Point of Care (POC) data for direct patient care and non-direct nurses. The POC data includes the daily time card records and its approval, release and correction information.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: POINT OF CARE(AL), PAY PERIOD(B)
+
+INDEXED BY:    POC RECORD PP STATUS & NURSE DIVISION (AA), CORRECTION STATUS (ACA), CORRECTION STATUS (ACE), CORRECTION STATUS (ACR), POC RECORD PP STATUS (AE), POC RECORD PP STATUS (AEP), POINT OF CARE (ALN), POC RECORD PP STATUS & NURSE DIVISION (AR), 
+               CORRECTION STATUS (CS)
+
+
+451,.01       PAY PERIOD             0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<5)!'(X?2N1"-"2N) X I $D(X) S DINUM=$O(^PRST(458,"B",X,0)) K:'DINUM DINUM,X
+              LAST EDITED:      NOV 02, 2009 
+              HELP-PROMPT:      Enter a Pay Period with format YY-PP, where PP is PP#. 
+              DESCRIPTION:
+                                This is the Pay Period in format YY-PP.  
+
+              TECHNICAL DESCR:
+                                The IEN of the entry with YY-PP will be the same IEN of the file #458. Before adding a new entry YY-PP in this file, the same YY-PP entry must exist in file #458 first.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  451^B 
+                                1)= S ^PRSN(451,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRSN(451,"B",$E(X,1,30),DA)
+
+
+451,6         RELEASE HISTORY        D;0 POINTER Multiple #451.06
+
+              LAST EDITED:      JUN 03, 2009 
+              DESCRIPTION:
+                                This is the released log for each releasing by the release option.  
+
+
+451.06,.01      DIVISION               0;1 POINTER TO INSTITUTION FILE (#4)
+
+                LAST EDITED:      JUL 08, 2009 
+                HELP-PROMPT:      Enter a POC Daily Time Card Release Division. 
+                DESCRIPTION:
+                                  This is the POC Daily Time Card Release Division.  
+
+                CROSS-REFERENCE:  451.06^B 
+                                  1)= S ^PRSN(451,DA(1),"D","B",$E(X,1,30),DA)=""
+                                  2)= K ^PRSN(451,DA(1),"D","B",$E(X,1,30),DA)
+
+
+451.06,1        RELEASE USER           0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUL 08, 2009 
+                HELP-PROMPT:      Enter the user who released the POC Daily Time Records. 
+
+451.06,2        RELEASE DATE/TIME      0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:3090101>X X
+                LAST EDITED:      JUL 08, 2009 
+                HELP-PROMPT:      TYPE A DATE/TIME NOT EARLIER THAN JAN 01, 2009 
+                DESCRIPTION:
+                                  This is the date and time when the POC Daily Time Card is released.  
+
+
+451.06,3        TOTAL # VA NURSES RELEASED 0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 30, 2009 
+                HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  The total number of employees for whom time card have been transmitted.  
+
+
+451.06,4        TOTAL # RECORDS RELEASED 0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      MAY 22, 2009 
+                HELP-PROMPT:      Type a number between 0 and 999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  The total number of time card records that have been released.  
+
+
+
+
+451,9         VA NURSE               E;0 POINTER Multiple #451.09
+
+              LAST EDITED:      JUN 04, 2009 
+              DESCRIPTION:
+                                It contains the point of care data associated with the VA nurse for this pay period.  
+
+
+              INDEXED BY:       NURSE DIVISION (AC)
+
+451.09,.01      VA NURSE               0;1 POINTER TO PAID EMPLOYEE FILE (#450)
+
+                INPUT TRANSFORM:  I $D(X) S DINUM=X
+                LAST EDITED:      JUN 17, 2009 
+                HELP-PROMPT:      Enter a nurse employee. 
+                DESCRIPTION:
+                                  A pointer to the PAID EMPLOYEE file (#450) which identifies the name of the employee.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  451.09^B 
+                                  1)= S ^PRSN(451,DA(1),"E","B",$E(X,1,30),DA)=""
+                                  2)= K ^PRSN(451,DA(1),"E","B",$E(X,1,30),DA)
+
+
+451.09,1        POC RECORD PP STATUS   0;2 SET
+
+                                  'E' FOR ENTERED; 
+                                  'A' FOR APPROVED; 
+                                  'R' FOR RELEASED; 
+                LAST EDITED:      JAN 20, 2012 
+                HELP-PROMPT:      Enter a POC Record PP status. 
+                DESCRIPTION:
+                                  This is the Pay Period status of the POC Daily Time Card Record.  
+
+                FIELD INDEX:      AE (#1008)    MUMPS    IR    SORTING ONLY    WHOLE FILE (#451)
+                    Short Descr:  This index is used to find all records for a nurse that need to be approved
+                    Description:  This is an index of all nurse POC records that have a pay period status of Entered and that need to be approved.  
+                      Set Logic:  S ^PRSN(451,"AE",DA,DA(1))=""
+                       Set Cond:  S X=X(1)="E"
+                     Kill Logic:  K ^PRSN(451,"AE",DA,DA(1))
+                     Whole Kill:  K ^PRSN(451,"AE")
+                           X(1):  POC RECORD PP STATUS  (451.09,1)  (Subscr 1)  (forwards)
+
+                FIELD INDEX:      AEP (#1009)    MUMPS    IR    SORTING ONLY    WHOLE FILE (#451)
+                    Short Descr:  Unapproved time records by pay period
+                    Description:  This is an index of all nurse POC records by pay period that have a pay period status of Entered and that need to be approved.  
+                      Set Logic:  S ^PRSN(451,"AEP",DA(1),DA)=""
+                       Set Cond:  S X=X(1)="E"
+                     Kill Logic:  K ^PRSN(451,"AEP",DA(1),DA)
+                     Whole Kill:  K ^PRSN(451,"AEP")
+                           X(1):  POC RECORD PP STATUS  (451.09,1)  (Subscr 1)  (forwards)
+
+                RECORD INDEXES:   AA (#1004) (WHOLE FILE #451), AR (#1011) (WHOLE FILE #451)
+
+451.09,2        APP. SUPERVISOR        0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUL 08, 2009 
+                HELP-PROMPT:      Enter an approval supervisor name. 
+                DESCRIPTION:
+                                  A pointer to the NEW PERSON file (#200) which identifies the name of the supervisor who approved the employee's time card.  
+
+
+451.09,3        APP. DATE/TIME         0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:3090101>X X
+                LAST EDITED:      MAY 22, 2009 
+                HELP-PROMPT:      TYPE A DATE AND TIME NOT EARLIER THAN JAN 01, 2009 
+                DESCRIPTION:
+                                  The date and time the supervisor approved the employee's time card.  
+
+
+451.09,4        NURSE DIVISION         0;5 POINTER TO INSTITUTION FILE (#4)
+
+                LAST EDITED:      NOV 03, 2009 
+                HELP-PROMPT:      Enter the nurse Division. 
+                DESCRIPTION:
+                                  This is the nurse Division at the time of Approval of POC Daily Time Records.  
+
+                FIELD INDEX:      AC (#1013)    REGULAR    IR    SORTING ONLY
+                    Short Descr:  index allows sorting nurses by division for each pay period
+                    Description:  index will provide the ability to sort nurses by division within each pay period and make it possible to quickly find all nurses in a particular division.  
+                      Set Logic:  S ^PRSN(451,DA(1),"E","AC",X,DA)=""
+                     Kill Logic:  K ^PRSN(451,DA(1),"E","AC",X,DA)
+                     Whole Kill:  K ^PRSN(451,DA(1),"E","AC")
+                           X(1):  NURSE DIVISION  (451.09,4)  (Subscr 1)  (forwards)
+
+                RECORD INDEXES:   AA (#1004) (WHOLE FILE #451), AR (#1011) (WHOLE FILE #451)
+
+451.09,5        NURSE LOCATION         0;6 POINTER TO NURS LOCATION FILE (#211.4)
+
+                LAST EDITED:      AUG 05, 2009 
+                HELP-PROMPT:      Enter the nurse default NURS LOCATION. 
+                DESCRIPTION:
+                                  This is the nurse default NURS LOCATION at the time of Approval of POC Daily Time Records.  
+
+
+451.09,6        NURSE T&L UNIT         0;7 POINTER TO T&L UNIT FILE (#455.5)
+
+                LAST EDITED:      AUG 05, 2009 
+                HELP-PROMPT:      Enter the Nurse T&L UNIT. 
+                DESCRIPTION:
+                                  This is the nurse T&L UNIT at the time of Approval of POC Daily Time Records.  
+
+
+451.09,9        DAY #                  D;0 Multiple #451.99
+
+                DESCRIPTION:
+                                  Day # multiple may have employee's working day # from 1 to 14.  
+
+
+451.99,.01        DAY #                  0;1 NUMBER (Multiply asked)
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>14)!(X<1)!(X?.E1"."1.N) X I $D(X) S DINUM=X
+                  LAST EDITED:      SEP 03, 2009 
+                  HELP-PROMPT:      Type a day number between 1 and 14, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    The day # from day 1 to day 14 of a pay period.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  451.99^B 
+                                    1)= S ^PRSN(451,DA(2),"E",DA(1),"D","B",$E(X,1,30),DA)=""
+                                    2)= K ^PRSN(451,DA(2),"E",DA(1),"D","B",$E(X,1,30),DA)
+
+
+451.99,1          CORRECTION STATUS      0;2 SET
+
+                                    'E' FOR Entered; 
+                                    'A' FOR Approved; 
+                                    'R' FOR Released; 
+                  LAST EDITED:      NOV 23, 2009 
+                  HELP-PROMPT:      Enter processing status for the corrected released daily POC record. 
+                  DESCRIPTION:
+                                    This is the status of a correction to the daily point of care record.  Daily status only applies to records that have been released with a pay period and then the daily record is corrected.  
+
+                  FIELD INDEX:      ACA (#1005)    MUMPS    IR    SORTING ONLY    WHOLE FILE (#451)
+                      Short Descr:  X-REF contains all daily corrections to released pay periods.
+                      Description:  Cross reference contains all approved daily corrections to POC records for which the pay period has already been released.  The index is sorted by Division, pay period, nurse and then day number.  
+                        Set Logic:  S ^PRSN(451,"ACA",X(1),DA(2),DA(1),DA)=""
+                         Set Cond:  S X=X(2)="A"
+                       Kill Logic:  K ^PRSN(451,"ACA",X(1),DA(2),DA(1),DA)
+                       Whole Kill:  K ^PRSN(451,"ACA")
+                             X(1):  Computed Code: S X=$P($G(^PRSN(451,DA(2),"E",DA(1),0)),U,5)
+                                      (Subscr 1)
+                             X(2):  CORRECTION STATUS  (451.99,1)  (Subscr 2)  (forwards)
+
+                  FIELD INDEX:      ACE (#1006)    MUMPS    IR    SORTING ONLY    WHOLE FILE (#451)
+                      Short Descr:  x-ref contains entered daily corrections to released pay periods.
+                      Description:  Cross reference contains all "Entered" daily corrections to POC records for which the pay period has already been released.  The index is sorted by Division, pay period, nurse and then day number.  
+                        Set Logic:  S ^PRSN(451,"ACE",X(1),DA(2),DA(1),DA)=""
+                         Set Cond:  S X=X(2)="E"
+                       Kill Logic:  K ^PRSN(451,"ACE",X(1),DA(2),DA(1),DA)
+                       Whole Kill:  K ^PRSN(451,"ACE")
+                             X(1):  Computed Code: S X=$P($G(^PRSN(451,DA(2),"E",DA(1),0)),U,5)
+                                      (Subscr 1)
+                             X(2):  CORRECTION STATUS  (451.99,1)  (forwards)
+
+                  FIELD INDEX:      ACR (#1007)    MUMPS    IR    SORTING ONLY    WHOLE FILE (#451)
+                      Short Descr:  x-ref contains all released corrections
+                      Description:  Cross reference contains all "Released" daily corrections to POC records for which the pay period has already been released.  The index is sorted by Division, pay period, nurse and then day number.  
+                        Set Logic:  S ^PRSN(451,"ACR",X(1),DA(2),DA(1),DA)=""
+                         Set Cond:  S X=X(2)="R"
+                       Kill Logic:  K ^PRSN(451,"ACR",X(1),DA(2),DA(1),DA)
+                       Whole Kill:  K ^PRSN(451,"ACR")
+                             X(1):  Computed Code: S X=$P($G(^PRSN(451,DA(2),"E",DA(1),0)),U,5)
+                                      (Subscr 1)
+                             X(2):  CORRECTION STATUS  (451.99,1)  (Subscr 2)  (forwards)
+
+                  FIELD INDEX:      CS (#1012)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#451)
+                      Short Descr:  Index of correction status of day # multiple of va nurse.
+                      Description:  This index is used to approve and release all POC corrected data records.  
+                        Set Logic:  S ^PRSN(451,"CS",$E(X,1,5),DA(2),DA(1),DA)=""
+                         Set Cond:  S X=",E,A,"[(","_X_",")
+                       Kill Logic:  K ^PRSN(451,"CS",$E(X,1,5),DA(2),DA(1),DA)
+                       Whole Kill:  K ^PRSN(451,"CS")
+                             X(1):  CORRECTION STATUS  (451.99,1)  (Subscr 1)  (Len 5)  (forwards)
+
+
+451.99,2          ACTIVITY EXTRACTION #  0;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1.N) X
+                  LAST EDITED:      JUL 20, 2009 
+                  HELP-PROMPT:      Type a number between 1 and 999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    The field is updated during Releasing POC DAILY TIME RECORDS of File #451.7. The ACTIVITY EXTRACTION # is set in a field of the POC DAILY ACTIVITY record 
+
+
+451.99,9          VERSION #              V;0 Multiple #451.999
+
+                  DESCRIPTION:
+                                    The version # of a release (corrected) employee's time card.  
+
+
+451.999,.01         VERSION #              0;1 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X I $D(X) S DINUM=X
+                    LAST EDITED:      JUL 08, 2009 
+                    HELP-PROMPT:      Type a version number between 1 and 999, 0 Decimal Digits 
+                    TECHNICAL DESCR:
+                                      The version # of the employee's day # time card increases by 1 for each correction of a released time card.  
+
+                    NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                    CROSS-REFERENCE:  451.999^B 
+                                      1)= S ^PRSN(451,DA(3),"E",DA(2),"D",DA(1),"V","B",$E(X,1,30),DA)=""
+                                      2)= K ^PRSN(451,DA(3),"E",DA(2),"D",DA(1),"V","B",$E(X,1,30),DA)
+
+
+451.999,1           APP. CORRECT SUPERVISOR 0;2 POINTER TO NEW PERSON FILE (#200)
+
+                    LAST EDITED:      JUL 08, 2009 
+                    HELP-PROMPT:      Enter an approval correct released supervisor name. 
+                    DESCRIPTION:
+                                      A pointer to the NEW PERSON file (#200) that identifies the employee's supervisor who approved the correct released time card.  
+
+
+451.999,2           APP. CORRECT DATE/TIME 0;3 DATE
+
+                    INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:3090101>X X
+                    LAST EDITED:      MAY 22, 2009 
+                    HELP-PROMPT:      TYPE A DATE AND TIME NOT EARLIER THAN JAN 01, 2009 
+                    DESCRIPTION:
+                                      The date and time the supervisor approved the correct released time card of the version # of the day #.  
+
+
+451.999,9           TIME SEGMENT           T;0 Multiple #451.9999
+
+                    DESCRIPTION:
+                                      This multiple field stores all work time segments of point of care data.  
+
+
+451.9999,.01          START TIME             0;1 FREE TEXT (Required) (Multiply asked)
+
+                      INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                      LAST EDITED:      OCT 07, 2009 
+                      HELP-PROMPT:      Enter work start time in format 7:30A, 12:30P, MID (or 12M) for Midnight, NOON (or 12N) for noon. 
+                      DESCRIPTION:
+                                        This is the work start time of a time segment.  
+
+                      EXECUTABLE HELP:  D HLP^PRSATIM
+                      NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                      CROSS-REFERENCE:  451.9999^B 
+                                        1)= S ^PRSN(451,DA(4),"E",DA(3),"D",DA(2),"V",DA(1),"T","B",$E(X,1,30),DA)=""
+                                        2)= K ^PRSN(451,DA(4),"E",DA(3),"D",DA(2),"V",DA(1),"T","B",$E(X,1,30),DA)
+
+
+451.9999,1            STOP TIME              0;2 FREE TEXT
+
+                      INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                      LAST EDITED:      JUL 13, 2009 
+                      HELP-PROMPT:      Enter work stop time in format 7:30A, 12:30P, MID (or 12M) for midnight, or NOON (or 12N) for noon. 
+                      DESCRIPTION:
+                                        This is the work stop time of a time segment.  
+
+                      EXECUTABLE HELP:  D HLP^PRSATIM
+                      NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+451.9999,2            MEAL TIME              0;3 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<0)!(X?.E1"."1.N) X I $D(X) K:X#15 X
+                      LAST EDITED:      JUL 09, 2009 
+                      HELP-PROMPT:      Enter 0, 15, 30, 45 or 60 for minutes. 
+                      DESCRIPTION:
+                                        This is number of minutes for meal time.  
+
+                      NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+451.9999,3            TYPE OF TIME           0;4 FREE TEXT
+
+                      INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I "",ON,SB,UN,""'[$P(^(0),U)" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                      LAST EDITED:      JUL 08, 2009 
+                      HELP-PROMPT:      Enter a type of time worked or leave taken for the time segment. 
+                      DESCRIPTION:
+                                        The type of time worked or leave taken for the time segment.  
+
+                      TECHNICAL DESCR:
+                                        The field stores the field #1 - Short Description in Type of Time File #457.3.  
+
+                      EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I "",ON,SB,UN,""'[$P(^(0),U)",D="B" D DQ^DICQ Q
+                      NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+451.9999,4            POINT OF CARE          0;5 POINTER TO NURS LOCATION FILE (#211.4) (Required)
+
+                      LAST EDITED:      DEC 09, 2011 
+                      HELP-PROMPT:      Enter a Nurse Location of the time segment worked. 
+                      DESCRIPTION:
+                                        This is the nurse location where the nurse worked in the time segment.  
+
+                      CROSS-REFERENCE:  451^AL^MUMPS 
+                                        1)= S ^PRSN(451,"AL",$E(X,1,30),DA(4),DA(2),DA(3),DA(1),DA)=""
+                                        2)= K ^PRSN(451,"AL",$E(X,1,30),DA(4),DA(2),DA(3),DA(1),DA)
+                                        This index provides the abiltiy to find and report on all nursing work activity at a Nursing Location.  It provides access by identifing the Point of Care, pay period, day number, nurse, version, and time segment. 
+                                        Be careful to find the record of interest by identifying the latest version of the time segments.  Also, note that subscript are in descending order except that the nurse and day number are reversed.  
+
+
+                      RECORD INDEXES:   ALN (#1010) (WHOLE FILE #451)
+
+451.9999,5            TYPE OF WORK           0;6 POINTER TO TYPE OF WORK FILE (#451.5)
+
+                      LAST EDITED:      MAY 27, 2009 
+                      HELP-PROMPT:      Enter a Type of Work. 
+                      DESCRIPTION:
+                                        This is a Type of Work for the time segment.  
+
+
+451.9999,6            MANDATORY INDICATOR    0;7 SET
+
+                                        'M' FOR MANDATORY; 
+                                        'V' FOR VOLUNTARY; 
+                      LAST EDITED:      JUL 09, 2009 
+                      HELP-PROMPT:      Enter: M for Mandatory or V for Voluntary. 
+                      DESCRIPTION:
+                                        The is the mandatory indicator for OT/CT/RG type of time.  
+
+
+451.9999,7            REASON FOR OT/CT/RG    0;8 POINTER TO REASON FOR OVERTIME FILE (#451.6)
+
+                      LAST EDITED:      MAY 27, 2009 
+                      HELP-PROMPT:      Enter a reason for the OT/CT/RG Type of Time. 
+                      DESCRIPTION:
+                                        This is the reason of OT/CT/RG type of time.  
+
+
+451.9999,8            MILITARY START TIME    0;9 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>4800)!(X<0)!(X?.E1"."1.N) X
+                      LAST EDITED:      OCT 01, 2009 
+                      HELP-PROMPT:      Type a number between 0 and 4800, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the start time in military time (+2400) format without leading 0.  
+
+                      CROSS-REFERENCE:  451.9999^AC 
+                                        1)= S ^PRSN(451,DA(4),"E",DA(3),"D",DA(2),"V",DA(1),"T","AC",$E(X,1,30),DA)=""
+                                        2)= K ^PRSN(451,DA(4),"E",DA(3),"D",DA(2),"V",DA(1),"T","AC",$E(X,1,30),DA)
+
+
+451.9999,9            MILITARY STOP TIME     0;10 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>4800)!(X<0)!(X?.E1"."1.N) X
+                      LAST EDITED:      JUL 09, 2009 
+                      HELP-PROMPT:      Type a number between 0 and 4800, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the stop time in military time (+2400) format without leading 0.  
+
+
+
+
+
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  RELEASE HISTORY:DIVISION (#.01)
+                                  VA NURSE:NURSE DIVISION (#4)
+
+NEW PERSON (#200)                 RELEASE HISTORY:RELEASE USER (#1)
+                                  VA NURSE:APP. SUPERVISOR (#2)
+                                  VERSION #:APP. CORRECT SUPERVISOR (#1)
+
+NURS LOCATION (#211.4)            VA NURSE:NURSE LOCATION (#5)
+                                  TIME SEGMENT:POINT OF CARE (#4)
+
+PAID EMPLOYEE (#450)              VA NURSE:VA NURSE (#.01)
+
+REASON FOR OVERTIME (#451.6)      TIME SEGMENT:REASON FOR OT/CT/RG (#7)
+
+T&L UNIT (#455.5)                 VA NURSE:NURSE T&L UNIT (#6)
+
+TYPE OF WORK (#451.5)             TIME SEGMENT:TYPE OF WORK (#5)
+
+
+Subfile #451.09
+
+  Record Indexes:
+
+  AA (#1004)    RECORD    MUMPS    IR    SORTING ONLY    WHOLE FILE (#451)
+      Short Descr:  The index is used to release POC Daily Time Records.
+      Description:  The Release Option will use this index to get the POC Daily Time Records.  
+        Set Logic:  S ^PRSN(451,"AA",X(2),DA(1),DA)=""
+         Set Cond:  S X=X(1)="A"
+       Kill Logic:  K ^PRSN(451,"AA",X(2),DA(1),DA)
+       Whole Kill:  K ^PRSN(451,"AA")
+             X(1):  POC RECORD PP STATUS  (451.09,1)  (Subscr 1)  (forwards)
+             X(2):  NURSE DIVISION  (451.09,4)  (Subscr 2)  (forwards)
+
+  AR (#1011)    RECORD    MUMPS    IR    SORTING ONLY    WHOLE FILE (#451)
+      Short Descr:  ALL RELEASED POC RECORDS
+      Description:  This index contains only POC records with a pay period status of released.  
+        Set Logic:  S ^PRSN(451,"AR",X(2),DA(1),DA)=""
+         Set Cond:  S X=X(1)="R"
+       Kill Logic:  K ^PRSN(451,"AR",X(2),DA(1),DA)
+       Whole Kill:  K ^PRSN(451,"AR")
+             X(1):  POC RECORD PP STATUS  (451.09,1)  (Subscr 1)  (forwards)
+             X(2):  NURSE DIVISION  (451.09,4)  (Subscr 2)  (forwards)
+
+Subfile #451.9999
+
+  Record Indexes:
+
+  ALN (#1010)    RECORD    MUMPS    IR    SORTING ONLY    WHOLE FILE (#451)
+      Short Descr:  Location,Nurse,Pay Period,Day,Version,Time Segment
+        Set Logic:  S ^PRSN(451,"ALN",X,DA(3),DA(4),DA(2),DA(1),DA)=""
+       Kill Logic:  K ^PRSN(451,"ALN",X,DA(3),DA(4),DA(2),DA(1),DA)
+       Whole Kill:  K ^PRSN(451,"ALN")
+             X(1):  POINT OF CARE  (451.9999,4)  (Subscr 1)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+PRSN DAILY TIME RECORDS A/E/D JUN 01, 2009@09:25  USER #0
+  TIME SEGMENT                  DD #451.9999
+  HEADER OPTION, PP & DATE      DD #451.999
+  POC Type of Time              DD #451.9999
+  POC OT REASONS                DD #451.6
+  POC START TIME DAY #          DD #451.9999
+     The Form is used to add/edit/delete POC data.
+

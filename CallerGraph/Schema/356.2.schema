@@ -1,0 +1,726 @@
+STANDARD DATA DICTIONARY #356.2 -- INSURANCE REVIEW FILE                                                                                                                                                                          MAY 20,2014@15:35:49  PAGE 1
+STORED IN ^IBT(356.2,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains information about the MCCR/UR portion of Utilization Review and the associated contacts with Insurance Carriers.  Appropriateness of care is inferred from the approval and denial of billing days by the insurance carriers UR section.  
+ 
+While this information appears to be primarily administrative in nature it may contain sensitive clinical information and should be treated with the same confidentiality as required of all clinical data.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: TRACKING ID (#.02), TYPE OF CONTACT (#.04)[R], PATIENT (#.05), INSURANCE COMPANY CONTACTED (#.08), HEALTH INSURANCE POLICY (#1.05)[R]
+
+POINTED TO BY: PARENT REVIEW field (#.18) of the INSURANCE REVIEW File (#356.2) 
+               
+
+CROSS
+REFERENCED BY: TYPE OF CONTACT(AC), ACTION(ACT), RELATED REVIEW(AD), PATIENT(ADFN), REVIEW DATE(ADFN1), REVIEW STATUS(AE), INSURANCE COMPANY CONTACTED(AIACT), ACTION(AIACT1), PARENT REVIEW(AP), PATIENT(APACT), ACTION(APACT1), NEXT REVIEW DATE(APEND), 
+               TRACKING ID(APRE), AUTHORIZATION NUMBER(APRE1), REVIEW DATE(ATIDT), TRACKING ID(ATIDT1), TRACKING ID(ATRP), TYPE OF CONTACT(ATRTP1), REVIEW DATE(B), TRACKING ID(C), PATIENT(D)
+
+356.2,.01     REVIEW DATE            0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 07, 1993 
+              DESCRIPTION:      This is the date of the contact for this entry.  
+                                 
+                                It is frequently necessary to call insurance companies for insurance verification, pre-certification reviews, continued stay review, appeals, etc.  This is the date that you called the insurance company.  
+
+              CROSS-REFERENCE:  356.2^B 
+                                1)= S ^IBT(356.2,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.2,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356.2^ATIDT^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U,2) ^IBT(356.2,"ATIDT",+$P(^(0),U,2),-X,DA)=""
+                                2)= K ^IBT(356.2,"ATIDT",+$P(^IBT(356.2,DA,0),U,2),-X,DA)
+                                Cross-Reference of all entries by tracking ID and by inverse date so can list most recent first.  
+
+
+              CROSS-REFERENCE:  356.2^ADFN1^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U,2) ^IBT(356.2,"ADFN"_+$P(^(0),U,2),X,DA)=""
+                                2)= K ^IBT(356.2,"ADFN"_+$P(^IBT(356.2,DA,0),U,2),X,DA)
+                                Cross-reference used for quick look up of entries for a patient.  
+
+
+
+356.2,.02     TRACKING ID            0;2 POINTER TO CLAIMS TRACKING FILE (#356)
+
+              LAST EDITED:      JUL 29, 1993 
+              DESCRIPTION:
+                                This is the Claims Tracking entry that was the primary episode of care that caused this contact.  Generally contacts are associated with an episode of care but occasionally they are not.  
+
+              CROSS-REFERENCE:  356.2^C 
+                                1)= S ^IBT(356.2,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.2,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356.2^ATRP^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),"^",4) ^IBT(356.2,"ATRTP",X,+$P(^(0),"^",4),DA)=""
+                                2)= K ^IBT(356.2,"ATRTP",X,+$P(^IBT(356.2,DA,0),"^",4),DA)
+                                Index of all communications by tracking id and type.  
+
+
+              CROSS-REFERENCE:  356.2^ATIDT1^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U) ^IBT(356.2,"ATIDT",X,-$P(^(0),U),DA)=""
+                                2)= K ^IBT(356.2,"ATIDT",X,-$P(^IBT(356.2,DA,0),U),DA)
+                                Cross-Reference of all entries by tracking ID and by inverse date so can list most recent first.  
+
+
+              CROSS-REFERENCE:  356.2^APRE^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U,28) ^IBT(356.2,"APRE",X,$P(^(0),U,28),DA)=""
+                                2)= K ^IBT(356.2,"APRE",X,+$P(^IBT(356.2,DA,0),U,28),DA)
+                                Cross-Reference of all pre-cert numbers by tracking ID.  This is used to display the Pre-cert number in the claims tracking screens and the Review edit screens.  
+
+
+
+356.2,.03     RELATED REVIEW         0;3 POINTER TO HOSPITAL REVIEW FILE (#356.1)
+
+              LAST EDITED:      JUL 15, 1993 
+              DESCRIPTION:      This is the review in the Claims Tracking Reviews file that this insurance contact is associated with.  
+                                 
+                                This field will be system generated wheneve there is a utilization review entry created for a case that is also an insurance case.  
+
+              CROSS-REFERENCE:  356.2^AD 
+                                1)= S ^IBT(356.2,"AD",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.2,"AD",$E(X,1,30),DA)
+
+
+356.2,.04     TYPE OF CONTACT        0;4 POINTER TO CLAIMS TRACKING REVIEW TYPE FILE (#356.11) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$CONTCT^IBTRC(DA,Y)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 03, 1993 
+              DESCRIPTION:      This is the type of contact with a patient or insurance company that you are making.  If this is a contact with a patient then select patient.  If this is a contact with an insurance company then indicate if this is for
+                                pre-certification, urgent/emergent admission, continued stay, discharge, outpatient treatment, or an appeal.  You may also select other if this is a contact that you wish to record but does not meet one of these
+                                categories.  
+                                 
+                                To add an appeal it must be associated with a denial.  
+
+              SCREEN:           S DIC("S")="I $$CONTCT^IBTRC(DA,Y)"
+              EXPLANATION:      If not associated with a tracking entry, only a patient or other type of contact may be selected.
+              CROSS-REFERENCE:  356.2^AC 
+                                1)= S ^IBT(356.2,"AC",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.2,"AC",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356.2^ATRTP1^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U,2) ^IBT(356.2,"ATRTP",+$P(^(0),U,2),X,DA)=""
+                                2)= K ^IBT(356.2,"ATRTP",+$P(^IBT(356.2,DA,0),U,2),X,DA)
+                                Index of all communications by tracking id and type.  
+
+
+
+356.2,.05     PATIENT                0;5 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      JUN 10, 2004 
+              DESCRIPTION:
+                                Enter the patient that was contacted.  
+
+              CROSS-REFERENCE:  356.2^D 
+                                1)= S ^IBT(356.2,"D",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.2,"D",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356.2^APACT^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U,11) ^IBT(356.2,"APACT",X,+$P(^(0),U,11),DA)=""
+                                2)= K ^IBT(356.2,"APACT",X,+$P(^IBT(356.2,DA,0),U,11),DA)
+                                Index of insurance contacts with actions by patient by action.  Used primarily to find denials by patient.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^356.2^1.05 
+                                1)= X ^DD(356.2,.05,1,3,1.3) I X S X=DIV S Y(1)=$S($D(^IBT(356.2,D0,1)):^(1),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X=$P($$HIP^IBTRC3(DA),"^",1) X ^DD(356.2,.05,1,3,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBT(356.2,D0,1)):^(1),1:"") S X=$$EXTERNAL^DIDU(356.2,1.05,"",$P(Y(1),U,5))=""
+                                1.4)= S DIH=$G(^IBT(356.2,DIV(0),1)),DIV=X S $P(^(1),U,5)=DIV,DIH=356.2,DIG=1.05 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356.2,D0,1)):^(1),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X="" S DIH=$G(^IBT(356.2,DIV(0),1)),DIV=X S $P(^(1),U,5)=DIV,DIH=356.2,DIG=1.05 D ^DICR
+                                CREATE CONDITION)= #1.05=""
+                                CREATE VALUE)= S X=$P($$HIP^IBTRC3(DA),"^",1)
+                                DELETE VALUE)= @
+                                FIELD)= #1.05
+                                Trigger of Primary Health Insurance Policy.  
+
+
+              CROSS-REFERENCE:  356.2^ADFN^MUMPS 
+                                1)= S ^IBT(356.2,"ADFN"_X,+^IBT(356.2,DA,0),DA)=""
+                                2)= K ^IBT(356.2,"ADFN"_X,+^IBT(356.2,DA,0),DA)
+                                cross-reference used for speedy lookups.  
+
+
+
+356.2,.06     PERSON CONTACTED       0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      JUN 10, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is the name of the person you contacted.  This is a free text name that can be entered.  It is recommended that you use the format of Firstname MI Lastname, just as they would say it to you.  
+
+
+356.2,.07     CONTACT PHONE #        0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<7) X
+              LAST EDITED:      JUN 10, 1993 
+              HELP-PROMPT:      Answer must be 7-20 characters in length. 
+              DESCRIPTION:      This is the phone number of the person you contacted.  
+                                 
+                                If you contacted an insurance company and this number is not in the insurance company file, then you may want to enter it into that file as well.  The number entered here will only be seen when looking at this contact.  
+
+
+356.2,.08     INSURANCE COMPANY CONTACTED 0;8 POINTER TO INSURANCE COMPANY FILE (#36)
+
+              LAST EDITED:      AUG 11, 1993 
+              DESCRIPTION:
+                                This is the insurance company that is being contacted.  This is generally triggered by the HEALTH INSURANCE POLICY field.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the HEALTH INSURANCE POLICY field of the INSURANCE REVIEW File 
+
+              CROSS-REFERENCE:  356.2^AIACT^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U,11) ^IBT(356.2,"AIACT",X,+$P(^(0),U,11),DA)=""
+                                2)= K ^IBT(356.2,"AIACT",X,+$P(^IBT(356.2,DA,0),U,11),DA)
+                                Index of insurance contacts with actions by patient by action.  Used primarily to find denials by patient.  
+
+
+
+356.2,.09     CALL REFERENCE NUMBER  0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+              LAST EDITED:      JUN 10, 1993 
+              HELP-PROMPT:      Answer must be 3-15 characters in length. 
+              DESCRIPTION:      If the company you called gave you a reference number for the call then enter that reference number here.  Many companies will issue reference numbers so that they can track their calls and allow reference back to them by
+                                others.  
+
+
+356.2,.1      APPEAL STATUS          0;10 SET
+
+                                '1' FOR OPEN; 
+                                '2' FOR PENDING; 
+                                '3' FOR CLOSED; 
+                                '4' FOR REFERED TO DISTRICT COUNSEL; 
+              LAST EDITED:      FEB 07, 1994 
+              DESCRIPTION:
+                                If this Insurance Action is an appeal, this is the status of the appeal.  Appeals that are OPEN will continue to be on the list of pending work based on the next review date.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^356.2^.24 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I $P(^IBT(356.2,DA,0),U,10)=3 I X S X=DIV S Y(1)=$S($D(^IBT(356.2,D0,0)):^(0),1:"") S X=$P(Y(1),U,24),X=X S DIU=X K Y S X="" X ^DD(356.2,.1,1,1,1.4)
+                                1.4)= S DIH=$S($D(^IBT(356.2,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,24)=DIV,DIH=356.2,DIG=.24 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE CONDITION)= I $P(^IBT(356.2,DA,0),U,10)=3
+                                CREATE VALUE)= @
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #.24
+
+
+356.2,.11     ACTION                 0;11 POINTER TO CLAIMS TRACKING ACTION FILE (#356.7)
+
+              INPUT TRANSFORM:  S DIC("S")="N ACODE,CTYPE S ACODE=$P(^(0),U,3),CTYPE=$P(^IBT(356.2,DA,0),U,4) I $$SCREEN^IBTRC1(ACODE,CTYPE)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 05, 2004 
+              HELP-PROMPT:      Select the action taken by the insurance company on this call. 
+              DESCRIPTION:      Enter the action that the insurance company took on this call.  Each contact can only have one action.  If you need to enter more than one action, enter another contact.  If you change the action, previously entered
+                                information will be deleted.  
+                                 
+                                If this contact was with an insurance company as part of an admission or continued stay review then you should enter the action that the insurance company took on thecall.  Based upon the answer to this question along with
+                                the type of contact, you will be prompted for varying information.  
+
+              SCREEN:           S DIC("S")="N ACODE,CTYPE S ACODE=$P(^(0),U,3),CTYPE=$P(^IBT(356.2,DA,0),U,4) I $$SCREEN^IBTRC1(ACODE,CTYPE)"
+              EXPLANATION:      Only actions appropriate for the type of contact may be selected!
+              CROSS-REFERENCE:  356.2^ACT 
+                                1)= S ^IBT(356.2,"ACT",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.2,"ACT",$E(X,1,30),DA)
+                                Regular cross refence of actions 
+
+
+              CROSS-REFERENCE:  356.2^APACT1^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U,5) ^IBT(356.2,"APACT",+$P(^(0),U,5),X,DA)=""
+                                2)= K ^IBT(356.2,"APACT",+$P(^IBT(356.2,DA,0),U,5),X,DA)
+                                Index of insurance contacts with actions by patient by action.  Used primarily to find denials by patient.  
+
+
+              CROSS-REFERENCE:  356.2^AIACT1^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U,8) ^IBT(356.2,"AIACT",+$P(^(0),U,8),X,DA)=""
+                                2)= K ^IBT(356.2,"AIACT",+$P(^IBT(356.2,DA,0),U,8),X,DA)
+                                Index of insurance contacts with actions by insurance co. by type of action.  Used primarily to find denials by insurance company.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^356.2^.19 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBT(356.2,D0,0)):^(0),1:"") S X=$P(Y(1),U,19),X=X S X=X=1 I X S X=DIV S Y(1)=$S($D(^IBT(356.2,D0,0)):^(0),1:"") S X=$P(Y(1),U,19),X=X S DIU=X K Y S X=DIV S X=2 X ^DD
+                                (356.2,.11,1,4,1.4)
+
+                                1.4)= S DIH=$G(^IBT(356.2,DIV(0),0)),DIV=X S $P(^(0),U,19)=DIV,DIH=356.2,DIG=.19 D ^DICR
+
+                                2)= Q
+
+                                CREATE CONDITION)= INTERNAL(#.19)=1
+                                CREATE VALUE)= S X=2
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #.19
+                                Trigger Review Status from entered to Pending when an action is entered.  
+
+
+
+356.2,.12     CARE AUTHORIZED FROM   0;12 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X) K:'$$AFDT^IBTUTL4(DA,X) X
+              LAST EDITED:      JAN 27, 1994 
+              DESCRIPTION:
+                                If the insurance company pre-approved the admission for this patient, this is the beginning date that they approved care from.  
+
+              EXECUTABLE HELP:  D HELP^IBTUTL3(DA)
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+356.2,.13     CARE AUTHORIZED TO     0;13 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X) K:'$$ATDT^IBTUTL4(DA,X) X
+              LAST EDITED:      JUN 10, 2004 
+              DESCRIPTION:      If the insurance company pre-approved the admission for this patient, this is the ending date of the care approved. 
+                                 
+                                Typically insurance companies will approve only a certain number of days of care for reimbursement.  This is the ending date of the number of days that they approved for reimbursement.  
+
+              EXECUTABLE HELP:  D HELP^IBTUTL3(DA)
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^356.2^.24 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356.2,D0,0)):^(0),1:"") S X=$P(Y(1),U,24),X=X S DIU=X K Y S X=DIV S X=$P(^IBT(356.2,DA,0),U,13) S DIH=$G(^IBT(356.2,DIV(0),0)),DIV=X S $P(^(0),U,24)=DIV,DIH=356.2,DIG=.24
+                                 D ^DICR
+
+                                2)= Q
+
+                                CREATE VALUE)= S X=$P(^IBT(356.2,DA,0),U,13)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #.24
+
+
+356.2,.14     DIAGNOSIS AUTHORIZED   0;14 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$ICD9ACT^IBACSV(+Y,$P($G(^IBT(356.2,+$G(DA),0)),U))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 28, 1993 
+              DESCRIPTION:      If the insurance company approved the care for this patient for reimbursement this is the diagnosis that they approved.  
+                                 
+                                Typically when an insurance company approves care for reimbursement they approve it for a specific diagnosis.  This is the diagnosis that they approved.  
+
+              TECHNICAL DESCR:   
+                                 
+
+              SCREEN:           S DIC("S")="I $$ICD9ACT^IBACSV(+Y,$P($G(^IBT(356.2,+$G(DA),0)),U))"
+              EXPLANATION:      Only Active Diagnosis may be selected
+
+356.2,.15     DATES OF DENIAL FROM   0;15 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X) K:'$$DFDT^IBTUTL4(DA,X) X
+              LAST EDITED:      JAN 27, 1994 
+              DESCRIPTION:
+                                If the insurance company disapproved or denied pre-approving the care for this patient, this is the beginning date of care that they denied.  For some patients there may be both a number of approved and denied days.  
+
+              EXECUTABLE HELP:  D HELP^IBTUTL3(DA)
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+356.2,.16     DATES OF DENIAL TO     0;16 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X) K:'$$DTDT^IBTUTL4(DA,X) X
+              LAST EDITED:      JUN 10, 2004 
+              DESCRIPTION:
+                                If the insurance company disapproved or denied pre-approving  the care for this patient, this is the ending date of care that they denied.  For some patients there may be both a number of approved and denied days.  
+
+              EXECUTABLE HELP:  D HELP^IBTUTL3(DA)
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^356.2^.24 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356.2,D0,0)):^(0),1:"") S X=$P(Y(1),U,24),X=X S DIU=X K Y S X=DIV S X=$P(^IBT(356.2,DA,0),U,16) S DIH=$G(^IBT(356.2,DIV(0),0)),DIV=X S $P(^(0),U,24)=DIV,DIH=356.2,DIG=.24
+                                 D ^DICR
+
+                                2)= Q
+
+                                CREATE VALUE)= S X=$P(^IBT(356.2,DA,0),U,16)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #.24
+
+
+356.2,.17     METHOD OF CONTACT      0;17 SET
+
+                                '1' FOR PHONE; 
+                                '2' FOR MAIL; 
+                                '3' FOR OVERNIGHT MAIL; 
+                                '4' FOR PERSONAL; 
+                                '5' FOR VOICE MAIL; 
+                                '6' FOR OTHER; 
+              LAST EDITED:      SEP 15, 1993 
+              DESCRIPTION:
+                                This is the method that you used to contact the person contacted in this entry.  Most contacts will be by phone but many others will be by mail.  
+
+
+356.2,.18     PARENT REVIEW          0;18 POINTER TO INSURANCE REVIEW FILE (#356.2)
+
+              INPUT TRANSFORM:  S DIC("S")="N TYPE S TYPE=$P(^IBE(356.7,+$P(^(0),U,11),0),U,3) I TYPE=20!(TYPE=30)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 07, 1993 
+              DESCRIPTION:
+                                This is the first contact in a series of contacts.  This field will generally be system generated.  When adding an appeal to a denied claim, this will be the denial contact that is being appealed.  
+
+              SCREEN:           S DIC("S")="N TYPE S TYPE=$P(^IBE(356.7,+$P(^(0),U,11),0),U,3) I TYPE=20!(TYPE=30)"
+              EXPLANATION:      Only penalties and denials can be appealed.
+              CROSS-REFERENCE:  356.2^AP 
+                                1)= S ^IBT(356.2,"AP",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.2,"AP",$E(X,1,30),DA)
+
+
+356.2,.19     REVIEW STATUS          0;19 SET
+
+                                '0' FOR INACTIVE; 
+                                '1' FOR ENTERED; 
+                                '2' FOR PENDING; 
+                                '10' FOR COMPLETE; 
+              LAST EDITED:      FEB 07, 1994 
+              DESCRIPTION:
+                                Enter whether or not this entry is active or not.  Inactivating an entry has the same effect as deleting the entry.  
+
+              NOTES:            TRIGGERED by the ACTION field of the INSURANCE REVIEW File 
+
+              CROSS-REFERENCE:  356.2^AE 
+                                1)= S ^IBT(356.2,"AE",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.2,"AE",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^356.2^.24 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I $P(^IBT(356.2,DA,0),U,19)'=10 I X S X=DIV S Y(1)=$S($D(^IBT(356.2,D0,0)):^(0),1:"") S X=$P(Y(1),U,24),X=X S DIU=X K Y S X=DIV S X=DT X ^DD(356.2,.19,1,2,1.4)
+                                1.4)= S DIH=$S($D(^IBT(356.2,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,24)=DIV,DIH=356.2,DIG=.24 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I $P(^IBT(356.2,DA,0),U,19)=10 I X S X=DIV S Y(1)=$S($D(^IBT(356.2,D0,0)):^(0),1:"") S X=$P(Y(1),U,24),X=X S DIU=X K Y S X="" X ^DD(356.2,.19,1,2,2.4)
+                                2.4)= S DIH=$S($D(^IBT(356.2,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,24)=DIV,DIH=356.2,DIG=.24 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE CONDITION)= I $P(^IBT(356.2,DA,0),U,19)'=10
+                                CREATE VALUE)= S X=DT
+                                DELETE CONDITION)= I $P(^IBT(356.2,DA,0),U,19)=10
+                                DELETE VALUE)= @
+                                FIELD)= #.24
+                                This trigger deletes the NEXT REVIEW DATE when completing a review.  
+
+
+
+356.2,.2      CASE PENDING           0;20 SET
+
+                                '1' FOR UR/CLINICAL INFORMATION; 
+                                '2' FOR PENDING MEDICAL REVIEW; 
+                                '3' FOR OTHER; 
+              LAST EDITED:      JUN 10, 1993 
+              DESCRIPTION:      If the action by the insurance company on this contact is pending, then this is what the case is pending for.  Generally cases are pending further UR/Clinical information from the site or Medical Review at the insurance
+                                company.  
+
+
+356.2,.21     NO COVERAGE            0;21 SET
+
+                                '1' FOR PATIENT NOT ELIGIBLE; 
+                                '2' FOR SERVICE NOT PROGRAM BENEFIT; 
+                                '3' FOR COVERAGE CANCELED BEFORE TREATMENT; 
+                                '4' FOR OTHER; 
+              LAST EDITED:      JUN 10, 1993 
+              DESCRIPTION:
+                                If the action by the insurance company on this contact was that the patient was not covered by this carrier for this care then this is the reason that they claim no coverge.  
+
+
+356.2,.22     FOLLOW-UP WITH APPEAL  0;22 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 10, 1993 
+              DESCRIPTION:
+                                If the action by the insurance company on this contact was a denial, then enter whether you wish to follow up with an appeal.  If you answer 'YES' then this will be included on your Pending Work.  
+
+
+356.2,.23     TYPE OF APPEAL         0;23 SET
+
+                                '1' FOR CLINICAL; 
+                                '2' FOR ADMINISTRATIVE; 
+              LAST EDITED:      JUN 10, 1993 
+              DESCRIPTION:
+                                If you are appealing the decision of an insurance company enter whether this is a clinical or administrative appeal.  
+
+
+356.2,.24     NEXT REVIEW DATE       0;24 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 04, 1993 
+              DESCRIPTION:      This is the date that this should show up on your Pending Work list.  If you have entered an admission review with a next review date in three days, you will, in three days, have either a continued stay review or a
+                                discharge review to do depending on the patient's status.  If this is a denial contact an the next review date is in three days, in three days you will show and appeal that needs to be done.  Etc.  
+                                 
+                                If no entry is in this field then you will not be reminded of pending work.  
+
+              NOTES:            TRIGGERED by the CARE AUTHORIZED TO field of the INSURANCE REVIEW File 
+                                TRIGGERED by the DATES OF DENIAL TO field of the INSURANCE REVIEW File 
+                                TRIGGERED by the REVIEW STATUS field of the INSURANCE REVIEW File 
+                                TRIGGERED by the APPEAL STATUS field of the INSURANCE REVIEW File 
+
+              CROSS-REFERENCE:  356.2^APEND 
+                                1)= S ^IBT(356.2,"APEND",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.2,"APEND",$E(X,1,30),DA)
+                                This cross-refence is used to find contacts that need futher action.  
+
+
+
+356.2,.25     NUMBER OF DAYS PENDING APPEAL 0;25 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 12, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                If the insurance company denied reimbursement for days of care, either in part or in total, and you are appealing that denial, then enter the number of days being appealed.  
+
+
+356.2,.26     OUTPATIENT TREATMENT   0;26 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      JUN 10, 1993 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                If this contact is to determine if a particular outpatient treatment will be authorized for reimbursement, this is the outpatient treatment that is authorized.  Enter the free-text description of the outpatient treatment.  
+
+
+356.2,.27     TREATMENT AUTHORIZED   0;27 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 10, 1993 
+              DESCRIPTION:      Entry 'YES' if this was authorized or 'NO' if it was not authorized.  
+                                 
+                                If this contact is to determine if a particular outpatient treatment is authorized for reimbursement, then this is whether or not the treatment was authorized.  
+
+
+356.2,.28     AUTHORIZATION NUMBER   0;28 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>18!($L(X)<3) X
+              LAST EDITED:      DEC 20, 1993 
+              HELP-PROMPT:      Answer must be 3-18 characters in length. 
+              DESCRIPTION:      Enter the treatment authorization number that the insurance company gave you during this contact.  
+                                 
+                                The data in this field if it exists will be considered the Treatment Authorization code for this care and will automatically used by the billing module.  
+
+              CROSS-REFERENCE:  356.2^APRE1^MUMPS 
+                                1)= S:$P(^IBT(356.2,DA,0),U,2) ^IBT(356.2,"APRE",+$P(^(0),U,2),X,DA)=""
+                                2)= K ^IBT(356.2,"APRE",+$P(^IBT(356.2,DA,0),U,2),X,DA)
+                                Cross-reference of pre-cert numbers by tracking id.  
+
+
+
+356.2,.29     FINAL OUTCOME OF APPEAL 0;29 SET
+
+                                '1' FOR APPROVED; 
+                                '2' FOR DENIED; 
+                                '3' FOR PARITIAL APPROVAL; 
+              LAST EDITED:      AUG 25, 1993 
+              DESCRIPTION:      Enter the final outcome of this appeal.  Did the insurance company approve, partially approve or deny this appeal? 
+                                 
+                                If the appeal was approved or partially approved you may enter the dates that it was approved for.  
+
+
+356.2,1.01    DATE ENTERED           1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 10, 1993 
+              DESCRIPTION:
+                                This is the date this contact was entered into the computer.  It is generated when the contact is entered and is not editable by the user.  
+
+
+356.2,1.02    ENTERED BY             1;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 10, 1993 
+              DESCRIPTION:      This is the user who was signed on to the computer system when this contact was created.  If this contact was created automatically by the computer from an admission or discharge, then this might be a user from IRM, MAS,
+                                or other service.  
+
+
+356.2,1.03    DATE LAST EDITED       1;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 10, 1993 
+              DESCRIPTION:
+                                This is the date that this contact was last edited by a user using the input options.  After every editing sequence the files are checked for changes.  If any are noted then this field is updated.  
+
+
+356.2,1.04    LAST EDITED BY         1;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 10, 1993 
+              DESCRIPTION:
+                                This is the user that last edited this contact using the input screens.  
+
+
+356.2,1.05    HEALTH INSURANCE POLICY 1;5 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X D:$D(X) DD^IBTRC2(X,DA)
+              OUTPUT TRANSFORM: S Y=$$TRANS^IBTRC2(D0,Y)
+              LAST EDITED:      JUN 14, 2004 
+              HELP-PROMPT:      Select the policy for the insurance company that you contacted. 
+              DESCRIPTION:
+                                Select the policy for this patient that you are contacting the insurance company for.  
+
+              TECHNICAL DESCR:  This field points to the patient insurance type field in the patient file.  It is used to do look-ups on the ins. type multiple and to display help.  It is needed because a patient may have more than one entry with the
+                                same ins. co. and same policy except for different effective dates.  
+
+              EXECUTABLE HELP:  D DDHELP^IBTRC2(DA)
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PATIENT field of the INSURANCE REVIEW File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^356.2^.08 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356.2,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X=DIV S X=+$$INSCO^IBTRC2(DA,$P(^IBT(356.2,DA,1),U,5)) X ^DD(356.2,1.05,1,1,1.4)
+                                1.4)= S DIH=$G(^IBT(356.2,DIV(0),0)),DIV=X S $P(^(0),U,8)=DIV,DIH=356.2,DIG=.08 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBT(356.2,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X="" S DIH=$G(^IBT(356.2,DIV(0),0)),DIV=X S $P(^(0),U,8)=DIV,DIH=356.2,DIG=.08 D ^DICR
+                                CREATE VALUE)= S X=+$$INSCO^IBTRC2(DA,$P(^IBT(356.2,DA,1),U,5))
+                                DELETE VALUE)= @
+                                FIELD)= #.08
+
+
+356.2,1.07    DENY ENTIRE ADMISSION  1;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 27, 1994 
+              DESCRIPTION:      If the insurance company denies the entire admission for reimbursement then enter YES.  You will then not asked to enter the Care Denied From and Care Denied To questions for this admission.  If you want to enter the dates
+                                care was denied from and to, then answer NO.  
+                                 
+                                If this question is answered YES, then the days denied for this episode will be the admission to discharge date and any report will use the portion of the episode that falls within the date range of the report.   
+
+              SCREEN:           S DIC("S")="I $S(Y:$$DEA^IBTUTL4(DA,Y),1:1)"
+              EXPLANATION:      An entire admission can only be authorized or denied once.
+              EXECUTABLE HELP:  D HELP^IBTUTL3(DA)
+
+356.2,1.08    AUTHORIZE ENTIRE ADMISSION 1;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 27, 1994 
+              DESCRIPTION:      If the insurance company authorizes the entire admission for reimbursement then enter YES.  You will then not asked to enter the Care Authorized From and Care Authorized To questions for this admission.  If you want to
+                                enter the dates care was authorized from and to, then answer NO.  
+                                 
+                                If this question is answered YES, then the days authorized for this episode will be the admission to discharge date and any report will use the portion of the episode that falls within the date range of the report.  
+
+              SCREEN:           S DIC("S")="I $S(Y:$$AEA^IBTUTL4(DA,Y),1:1)"
+              EXPLANATION:       An entire admission can only be authorized or denied once.
+              EXECUTABLE HELP:  D HELP^IBTUTL3(DA)
+
+356.2,11      COMMENTS               11;0   WORD-PROCESSING #356.211
+
+              DESCRIPTION:
+                                This field is used to store long textual information about the contact.  This may be used to document specific information that is not captured in other fields or to pass along pertinent information to other users.  
+
+
+356.2,12      REASONS FOR DENIAL     12;0 POINTER Multiple #356.212 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                If this contact was a denial, this is the reason(s) for denial.  More than one reason may be selected from the available choices.  
+
+
+356.212,.01     REASONS FOR DENIAL     0;1 POINTER TO CLAIMS TRACKING DENIAL REASONS FILE (#356.21) (Multiply asked)
+
+                LAST EDITED:      JUN 10, 1993 
+                DESCRIPTION:
+                                  If this contact was a denial, this is the reason(s) for denial.  More than one reason may be selected from the available choices.  
+
+                CROSS-REFERENCE:  356.212^B 
+                                  1)= S ^IBT(356.2,DA(1),12,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBT(356.2,DA(1),12,"B",$E(X,1,30),DA)
+
+
+
+
+356.2,13      PENALTY                13;0 SET Multiple #356.213 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                If the action taken by an insurance company was to assess a penalty, then this is the reason for the penalty.  
+
+
+356.213,.01     PENALTY                0;1 SET (Multiply asked)
+
+                                  '1' FOR NO PRE ADMISSION CERTIFICATION; 
+                                  '2' FOR UNTIMELY PRE ADMISSION CERTIFICATION; 
+                                  '3' FOR VA A NON-PROVIDER; 
+                LAST EDITED:      JAN 25, 1994 
+                DESCRIPTION:
+                                  If the action taken by an insurance company was to assess a penalty, then this is the reason for the penalty.  
+
+                CROSS-REFERENCE:  356.213^B 
+                                  1)= S ^IBT(356.2,DA(1),13,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBT(356.2,DA(1),13,"B",$E(X,1,30),DA)
+
+
+356.213,.02     AMOUNT OF PENALTY      0;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+                LAST EDITED:      AUG 06, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  If the action taken by an insurance company was to assess a penalty, this is the amount of the penalty assessed.  
+
+
+
+
+356.2,14      APPROVE ON APPEAL FROM 14;0 DATE Multiple #356.214 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Enter the dates that were approved for payment after an appeal.  If the appeal was partially or fully approved enter the dates that this appeal was approved from.  
+
+
+356.214,.01     APPROVE ON APPEAL FROM 0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 25, 1993 
+                DESCRIPTION:
+                                  Enter the dates that were approved for payment after an appeal.  If the appeal was partially or fully approved enter the dates that this appeal was approved from.  
+
+                CROSS-REFERENCE:  356.214^B 
+                                  1)= S ^IBT(356.2,DA(1),14,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBT(356.2,DA(1),14,"B",$E(X,1,30),DA)
+
+
+356.214,.02     APPROVE ON APPEAL TO   0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 25, 1993 
+                DESCRIPTION:
+                                  Enter the dates that were approved for payment after an appeal.  If the appeal was partially or fully approved enter the dates that this appeal was approved to.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CLAIMS TRACKING (#356)            TRACKING ID (#.02)
+
+CLAIMS TRACKING ACTION (#356.7)   ACTION (#.11)
+
+CLAIMS TRACKING DENIAL REASONS 
+                   (#356.21)      REASONS FOR DENIAL:REASONS FOR DENIAL (#.01)
+
+CLAIMS TRACKING REVIEW TYPE 
+                   (#356.11)      TYPE OF CONTACT (#.04)
+
+HOSPITAL REVIEW (#356.1)          RELATED REVIEW (#.03)
+
+ICD DIAGNOSIS (#80)               DIAGNOSIS AUTHORIZED (#.14)
+
+INSURANCE COMPANY (#36)           INSURANCE COMPANY CONTACTED (#.08)
+
+INSURANCE REVIEW (#356.2)         PARENT REVIEW (#.18)
+
+NEW PERSON (#200)                 ENTERED BY (#1.02)
+                                  LAST EDITED BY (#1.04)
+
+PATIENT (#2)                      PATIENT (#.05)
+
+
+
+INPUT TEMPLATE(S):
+IBT ACTION INFO               FEB 07, 1994@09:26  USER #1453 
+IBT ADD APPEAL                FEB 07, 1994@09:27  USER #1453 
+IBT APPEAL INFO               AUG 02, 1993@10:18  USER #1453 
+IBT COMMENT INFO              JUL 29, 1993@12:47  USER #1453 
+IBT CONTACT INFO              OCT 06, 1993@15:40  USER #1453 
+IBT FINAL OUTCOME             FEB 07, 1994@09:31  USER #1453 
+IBT INS VERIFICATION          MAR 01, 1994@09:20  USER #1453 
+IBT INSURANCE INFO            FEB 16, 1994@11:38  USER #1453 
+IBT QUICK EDIT                FEB 07, 1994@09:24  USER #1453 
+IBT REMOVE NEXT REVIEW        FEB 24, 1994@10:15  USER #1453 
+IBT STATUS CHANGE             SEP 07, 1993@12:06  USER #1453 
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

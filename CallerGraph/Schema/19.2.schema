@@ -1,0 +1,259 @@
+STANDARD DATA DICTIONARY #19.2 -- OPTION SCHEDULING FILE                                                                                                                                                                          MAY 20,2014@15:36:23  PAGE 1
+STORED IN ^DIC(19.2,  (17 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                           (VERSION 8.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file hold records that relate to the scheduling of options to run on a one time basis or more likely on a schedule.  There is one record for each time that an option is scheduled.  This allows one option to be scheduled to run on more that one CPU
+or at more that one time without having to duplicated the option in the option file.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: SPECIAL QUEUEING(ASTARTUP), QUEUED TO RUN AT WHAT TIME(AZT), DEVICE FOR QUEUED JOB OUTPUT(AZTIO), QUEUED TO RUN ON VOLUME SET(AZTVOL), NAME(B)
+
+19.2,.01      NAME                   0;1 POINTER TO OPTION FILE (#19) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I ""APR""[$P(^(0),U,4)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 09, 1994 
+              HELP-PROMPT:      Enter OPTION to schedule. 
+              DESCRIPTION:      This field is a pointer to the OPTION file and indicates which option is to be scheduled to be run by taskman.  
+                                 
+                                Only options that have the 'Scheduleing Recommended' field set to YES can be selected.  
+
+              SCREEN:           S DIC("S")="I ""APR""[$P(^(0),U,4)"
+              EXPLANATION:      Only allow Action, Print, and Run type options.
+              CROSS-REFERENCE:  19.2^B 
+                                1)= S ^DIC(19.2,"B",$E(X,1,30),DA)=""
+                                2)= K ^DIC(19.2,"B",$E(X,1,30),DA)
+
+
+19.2,2        QUEUED TO RUN AT WHAT TIME 0;2 DATE
+
+              TIME AT WHICH TASKMAN WILL AUTOMATICALLY START UP THIS OPTION                                                    
+              INPUT TRANSFORM:  D IT2^XUTMG19
+              LAST EDITED:      FEB 20, 1991 
+              HELP-PROMPT:      Time must be at least 2 minutes in the future and type run, action, print 
+              DESCRIPTION:      If this field has a value, the Task Manager will try to run this OPTION on or after the date/time entered.  This field should NOT have a value if the OPTION TYPE is MENU, INQUIRY, or EDIT, since it doesn't make sense to
+                                start up automatically a process that requires user terminal input.  
+
+              EXECUTABLE HELP:  N % S %(1)="Changing or deleting this date/time field will re-queue",%(2)="or un-queue the Option." D EN^DDIOL(.%)
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  19.2^AZT^MUMPS 
+                                1)= Q:$D(DIFROM)  D S2^XUTMG19
+                                2)= Q:$D(DIFROM)  D K2^XUTMG19
+                                3)= SPECIAL TASKMAN CALL
+                                This cross-reference causes the entry or deletion of a value (if it is not part of a package install) to set or remove the option as a task queued for the specified time.  
+
+
+
+19.2,3        DEVICE FOR QUEUED JOB OUTPUT 0;3 FREE TEXT
+
+              INPUT TRANSFORM:  D IT3^XUTMG19
+              LAST EDITED:      JUN 18, 1991 
+              HELP-PROMPT:      MUST BE NAME OF DEVICE ON WHICH THE QUEUED OPTION WILL PRINT 
+              DESCRIPTION:
+                                The name of the device on which this Option will be queued to print by TaskMan. If, at the time the queueing, TaskMan cannot identify a device by this name, then the job will not be run.  
+
+              EXECUTABLE HELP:  N % S %(1)="If TASKMAN cannot identify a DEVICE by this name",%(2)="at the time of dequeueing, job will not run, " D EN^DDIOL(.%)
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  19.2^AZTIO^MUMPS 
+                                1)= Q:$D(DIFROM)  D S3^XUTMG19
+                                2)= Q:$D(DIFROM)  D K3^XUTMG19
+                                3)= SPECIAL TASKMAN CALL
+                                This cross-reference causes the update of the task record.  To reflect changes to the device.  
+
+
+
+19.2,4        OTHER DEVICE PARAMETERS 0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>70!($L(X)<3) X
+              LAST EDITED:      MAR 09, 1994 
+              HELP-PROMPT:      Answer must be 3-70 characters in length. 
+              DESCRIPTION:
+                                This field is not in use yet.  
+
+
+19.2,5        QUEUED TO RUN ON VOLUME SET 0;5 FREE TEXT
+
+              INPUT TRANSFORM:  D IT5^XUTMG19
+              LAST EDITED:      FEB 20, 1991 
+              HELP-PROMPT:      Answer must be the (2-15 char) volume set (CPU) name that the option should run on. 
+              DESCRIPTION:
+                                This field is used to let the Task Manager know where to run the queued job.  
+
+              EXECUTABLE HELP:  D EN^DDIOL("The volume set name must also be in the Kernel site parameters as a volume set.")
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  19.2^AZTVOL^MUMPS 
+                                1)= Q:$D(DIFROM)  D S5^XUTMG19
+                                2)= Q:$D(DIFROM)  D K5^XUTMG19
+                                3)= SPECIAL TASKMAN CALL
+                                This cross-reference causes the updating of the ZTVOL value (if it is not part of a package install) for the option as a queued task.  
+
+
+
+19.2,6        RESCHEDULING FREQUENCY 0;6 FREE TEXT
+
+              FREQUENCY WITH WHICH THIS OPTION WILL BE AUTOMATICALLY RESCHEDULED TO RUN                                        
+              INPUT TRANSFORM:  D IT6^XUTMG19
+              LAST EDITED:      FEB 20, 1991 
+              HELP-PROMPT:      FOR AUTOMATIC RE-QUEUING, ANSWER WITH INCREMENT OF HOURS, DAYS, OR MONTHS 
+              DESCRIPTION:      This field has a value only if the OPTION is to be re-queued automatically for a subsequent run every time it is run by the TaskManager.  Valid codes are: 
+                                       Every n seconds         nS 
+                                       Every n hours           nH 
+                                       Every n days            nD 
+                                       Every n months          nM 
+                                       Day of Week             day[@time] 
+                                       weekday                 D[@time] 
+                                       weekend day             E[@time] (saturday, sunday) 
+                                       Different days in month nM(sch...) 
+                                 
+                                           sch:    dd[@time]       day of month ie: 15 
+                                                   nDay[@time]     day of week in month 
+                                                                   ie: 1W,3W  first and third wednesday 
+                                                   L               last 
+                                 
+                                       day:=   M       monday 
+                                               T       tusday 
+                                               W       wednesday 
+                                               R       thursday 
+                                               F       friday 
+                                               S       saturday 
+                                               U       sunday 
+                                       Examples: 
+                                               1M(1,15)        The first and 15th of the month.  
+                                               1M(L)           The last day of the month.  
+                                               1M(LS)          The last saturday of the month.  
+                                               W@4pm           Each wednesday at 4 pm.  
+                                               D               Each weekday 
+
+              EXECUTABLE HELP:  N % S %(1)="Examples:",%(2)=" 120S = job will be re-run every two minutes",%(3)="   1H = job will be rerun every hour",%(4)="   7D = job will be re-run every week",%(5)="   3M = job will be run once a quarter" D EN^DDIOL(.
+                                %)
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+19.2,9        SPECIAL QUEUEING       0;9 SET
+
+                                'S' FOR STARTUP; 
+                                'SP' FOR Startup Persistent; 
+                                'P' FOR Persistent; 
+              LAST EDITED:      OCT 02, 1997 
+              DESCRIPTION:      If this Option is set for "STARTUP", then TaskMan will queue the job to run whenever the TaskMan/computer is started up, i.e. at System Boot. If this Option is set for "Startup/Persistent", then Taskman will queue the job
+                                as it does for "STARTUP" and it will mark it as a persistent task to be restarted if it stops unexpectedly.  If this Option is set for "Persistent" then TaskMan will run it on its normal schedule, marking it as Persistent,
+                                This way TaskMan will restart the task if it stops unexpectedly.  When a task stop in a normal fashion its persistent flag will be cleared.  
+
+              TECHNICAL DESCR:
+                                The persistent part is done at ZTSK^XQ1 when it looks back to the Option Scheduleing file 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  19.2^ASTARTUP^MUMPS 
+                                1)= D S9^XUTMG19
+                                2)= D K9^XUTMG19
+                                3)= SPECIAL TASKMAN CALL
+                                This cross-reference causes the updating of the option as a startup option to be started when the system is started.  
+
+
+
+19.2,10       OTHER PARAMETERS       2;0 Multiple #19.21
+
+              DESCRIPTION:
+                                This multipule holds name-value pairs that are setup before the option is run.  
+
+
+19.21,.01       VARIABLE NAME          0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1)!'((X?1.8U.1"(".E)) X
+                LAST EDITED:      MAR 09, 1994 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This field holds the name of a VARIABLE that is to be set into the SYMBOL TABLE of the job before it starts.  
+
+                CROSS-REFERENCE:  19.21^B 
+                                  1)= S ^DIC(19.2,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^DIC(19.2,DA(1),2,"B",$E(X,1,30),DA)
+
+
+19.21,1         VALUE                  0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                LAST EDITED:      MAR 09, 1994 
+                HELP-PROMPT:      Answer must be 1-200 characters in length. 
+                DESCRIPTION:
+                                  This field holds the value that will be put in the VARIABLE when the job starts.  
+
+
+
+
+19.2,11       USER TO RUN TASK       1.1;1 POINTER TO NEW PERSON FILE (#200)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$ACTIVE^XUSER(Y)>0" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X K:'$D(^XUSEC("XUMGR",DUZ)) X
+              LAST EDITED:      APR 16, 2003 
+              DESCRIPTION:      This field will allow a site to select the user that should run a given scheduled task.  To set this field you must hold the XUMGR key. The user must be an ACTIVE user on the system. This is checked with $$ACTIVE^XUSER() 
+                                An example would be to have Postmaster run the MailMan background filers.  Or to create a special user to run HL7 background filers.  
+
+              SCREEN:           S DIC("S")="I $$ACTIVE^XUSER(Y)>0"
+              EXPLANATION:      Only Active users.
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+19.2,12       TASK ID                1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      MAR 09, 1994 
+              HELP-PROMPT:      This field is ONLY for TASKMAN 
+              DESCRIPTION:
+                                This field is only to be set by TASKMAN.  It holds the TASK number that was assigned to run the option.  
+
+
+19.2,15       TASK PARAMETERS        3;E1,245 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      OCT 20, 1994 
+              HELP-PROMPT:      Answer must be 1-245 characters in length. 
+              DESCRIPTION:
+                                This field holds a string that is passed to queued jobs thru the variable ZTQPARAM.  You will have to lookup in the options description how to use this field.  
+
+
+19.2,99.1     TASK DEFIND             ;  COMPUTED
+
+              MUMPS CODE:       S Y(19.2,99.1,1)=$G(^DIC(19.2,D0,1)),X=$P(Y(19.2,99.1,1),U) I X>0 S X=$D(^%ZTSK(X,0))#2
+              ALGORITHM:        $D(^%ZTSK(TASK ID,0))#2
+              LAST EDITED:      OCT 13, 1994 
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 USER TO RUN TASK (#11)
+
+OPTION (#19)                      NAME (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+CAPTIONED                                         USER #0    
+XQ-BACKGROUND SCHEDULE        OCT 13, 1994@08:27  USER #0                                                                                                                                                                            Option's Scheduled to Run
+
+SORT TEMPLATE(S):
+XQ-BACKGROUND SCHEDULE        OCT 18, 1994@10:59  USER #0    
+SORT BY: NAME// (NAME not null)
+     This is the sort template for the XQ-BACKGROUND SCHEDULE
+
+
+FORM(S)/BLOCK(S):
+XU OPTION SCHEDULE            MAR 10, 1994        USER #0
+  XU OPTION SCHEDULE            DD #19.2
+  XUOPTION SCHEDULE 2           DD #19.2
+  XUOPTION SCHEDULE 3           DD #19.21
+

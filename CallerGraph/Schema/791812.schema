@@ -1,0 +1,193 @@
+STANDARD DATA DICTIONARY #791812 -- TRANSMISSION BATCH FILE                                                                                                                                                                       MAY 20,2014@15:41:23  PAGE 1
+STORED IN ^RMPF(791812,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The Transmission Batch File contains individual batches of orders with pointers to all orders that have been grouped in that batch for transmission to the DDC. The file contains information specific to each batch, such as the status of the batch and the
+pointer to the transmission message. This is a dynamic file whose entries are deleted as part of the purge process when all orders in the batch are no longer active.  
+ 
+When a transmission batch is closed, all information needed by the DDC for each order is gathered and stored in the Transmission Batch File in the exact format that is sent in the mail message to the DDC. This information is stored in the "H" node of the
+file which is a non-standard node. The "H" node has been made non-standard in order to conserve space in the transmission message.  
+ 
+Data definitions for this file are distributed with the ROES. No data is distributed.  
+
+
+              DD ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: TRANSMISSION BATCH field (#.12) of the STATION ORDER File (#791810) 
+               
+
+CROSS
+REFERENCED BY: ENTRY DATE/TIME(AC), ENTRY DATE/TIME(B), STATUS OF BATCH(C)
+
+791812,.01    ENTRY DATE/TIME        0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 12, 1991 
+              DESCRIPTION:
+                                This is the date and time that the order batch was created.  It is automatically assigned when a batch is opened.  
+
+              CROSS-REFERENCE:  791812^B 
+                                1)= S ^RMPF(791812,"B",$E(X,1,30),DA)=""
+                                2)= K ^RMPF(791812,"B",$E(X,1,30),DA)
+                                Standard name cross-reference.  It is used to look up a batch.  
+
+
+              CROSS-REFERENCE:  791812^AC^MUMPS 
+                                1)= S ^RMPF(791812,"AC",9999999.9999-X,DA)=""
+                                2)= K ^RMPF(791812,"AC",9999999.9999-X,DA)
+                                Cross-reference to sort batches in reverse chronological order by entry date/time for display and print purposes.  
+
+
+
+791812,.02    STATUS OF BATCH        0;2 SET
+
+                                '1' FOR OPEN; 
+                                '2' FOR CLOSED; 
+                                '3' FOR TRANSMITTED; 
+                                '4' FOR QUEUED FOR TRANSMISSION; 
+              LAST EDITED:      OCT 28, 1991 
+              DESCRIPTION:
+                                This is the current status of the batch.  
+
+              CROSS-REFERENCE:  791812^C 
+                                1)= S ^RMPF(791812,"C",$E(X,1,30),DA)=""
+                                2)= K ^RMPF(791812,"C",$E(X,1,30),DA)
+                                Cross-reference to sort batches by status for the purpose of performing certain actions on batches of a particular status.  
+
+
+
+791812,.03    DATE/TIME CLOSED       0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                This is the date and time that the batch was closed.  
+
+
+791812,.04    # ACTIVE IN BATCH      0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the current number of active orders in the batch.  When an order is deleted from the batch, it is removed from the number of active orders.  
+
+
+791812,.05    CLOSED BY              0;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      NOV 12, 1991 
+              DESCRIPTION:
+                                This is a pointer to the New Person File for the person who closed the batch.  
+
+
+791812,.06    TRANSMISSION MESSAGE   0;6 POINTER TO MESSAGE FILE (#3.9)
+
+              LAST EDITED:      JUN 28, 1990 
+              DESCRIPTION:
+                                This is a pointer to the message file indicating the message in which the batch was transmitted.  
+
+
+791812,.07    TRANSMISSION DATE/TIME 0;7 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 29, 1990 
+              DESCRIPTION:
+                                This is the date and time that the batch was transmitted to the DDC.  
+
+
+791812,.08    STATION NUMBER         0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      JAN 29, 1992 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                This is the free text station number and name for the station originating the order.  
+
+
+791812,.09    ALLOCIATED MENU        0;9 POINTER TO ROES MENU FILE (#791810.5)
+
+              LAST EDITED:      JUL 27, 1994 
+              DESCRIPTION:
+                                This field holds the name of the menu associated with the transmission batch.  The entry in this field restricts selection of a batch to users holding the menu for the service that created the batch.  
+
+
+791812,.1     TASK NUMBER OF AUTO-QUEUE 0;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 08, 1994 
+              HELP-PROMPT:      Type a Number between 1 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field holds that task number of the transmission queue for batches that have been queued by the auto-queue option.  This task number may be retrieved to reschedule the closing and transmission of the batch.  
+
+
+791812,101    ORDER                  101;0 POINTER Multiple #791812.0101 (Add New Entry without Asking)
+
+              LAST EDITED:      MAY 01, 1995 
+              DESCRIPTION:
+                                This is a multiple field that lists the orders in the batch.  
+
+
+791812.0101,.01 ORDER                  0;1 POINTER TO STATION ORDER FILE (#791810)
+
+                LAST EDITED:      MAY 01, 1995 
+                DESCRIPTION:
+                                  This is a pointer to the Station Order File for each order entered into the batch.  
+
+                CROSS-REFERENCE:  791812.0101^B 
+                                  1)= S ^RMPF(791812,DA(1),101,"B",$E(X,1,30),DA)=""
+                                  2)= K ^RMPF(791812,DA(1),101,"B",$E(X,1,30),DA)
+                                  Standard name cross-reference.  It is used to look up an order in the batch.  
+
+
+
+791812.0101,.02 DELETED BY             0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      DEC 06, 1990 
+                DESCRIPTION:
+                                  This is a pointer to the New Person File for the person who deleted a order from the batch.  
+
+
+791812.0101,.03 DATE/TIME DELETED      0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 06, 1990 
+                DESCRIPTION:
+                                  This is the date and time that an order was deleted from the batch.  
+
+
+791812.0101,.04 REASON FOR DELETION    0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      DEC 06, 1990 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                DESCRIPTION:
+                                  This is a free text reason for deleting an order.  It must be entered for each order deleted.  
+
+
+791812.0101,791810.2ORDER              
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MESSAGE (#3.9)                    TRANSMISSION MESSAGE (#.06)
+
+NEW PERSON (#200)                 CLOSED BY (#.05)
+                                  TRANSACTION:DELETED BY (#.02)
+
+ROES MENU (#791810.5)             ALLOCIATED MENU (#.09)
+
+STATION ORDER (#791810)           TRANSACTION:ORDER (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,186 @@
+STANDARD DATA DICTIONARY #394.62 -- VAQ - DATA FILE                                                                                                                                                                               MAY 20,2014@15:39:51  PAGE 1
+STORED IN ^VAT(394.62,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 1.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds any patient information that was transmitted using PDX.  
+ 
+ 
+If field # .05 is set to 'YES', fields # .03, .04, 10, 20, and 30 will not contain data (field # 50 will contain the display ready format of the segment).  
+ 
+If field # .05 is set to 'NO', field # 50 will not contain data (fields # .03, .04, 10, 20, and 30 will contain the information required to rebuild the Extraction Array).  
+ 
+Segments stored as display ready will only have one entry.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: Segment(AC1), Transaction Number(AC2), Segment(AF1), Transaction Number(AF2), Display Ready(AG), Data(B)
+
+394.62,.01    Data                   0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 08, 1992 
+              HELP-PROMPT:      Type a Number between 1 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                 Incrementing number (used to uniquely identify each value).  
+
+              PRE-LOOKUP:       I X="+" S X=$$AUTO^VAQXRF2(2) K:(X<0) X
+              CROSS-REFERENCE:  394.62^B 
+                                1)= S ^VAT(394.62,"B",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.62,"B",$E(X,1,30),DA)
+
+
+394.62,.02    Segment                0;2 POINTER TO VAQ - DATA SEGMENT FILE (#394.71)
+
+              LAST EDITED:      APR 09, 1993 
+              DESCRIPTION:
+                                Data segment to which the information belongs.  
+
+              CROSS-REFERENCE:  394.62^AF1^MUMPS 
+                                1)= S VAQXRF=$$AF^VAQXRF3(DA,1) K VAQXRF
+                                2)= S VAQXRF=$$AF^VAQXRF3(DA,0,.02,X) K VAQXRF
+                                Creates a cross reference of all data segments for a given transaction that are stored in displayable format.  This cross reference is only set if the field Display Ready (.05) is set to 'YES'.  
+                                 
+                                Resulting node ==>  ^VAT(394.62,"A-DISPLAY",[40],[.02],DA) 
+                                   Where:   [.02] is field number .02 
+                                            [40] is field number 40 
+                                            DA is the entry number 
+                                 
+                                The resulting node is created by the AF1 and AF2 cross references.  Re-indexing either of these cross references will correctly update/create the resulting node.  
+
+
+              CROSS-REFERENCE:  394.62^AC1^MUMPS 
+                                1)= S VAQXRF=$$AC^VAQXRF1(DA,1) K VAQXRF
+                                2)= S VAQXRF=$$AC^VAQXRF1(DA,0,.02,X) K VAQXRF
+                                Creates a cross reference of all data segments for a given transaction.  
+                                 
+                                Resulting node ==>  ^VAT(394.62,"A-SEGMENT",[40],[.02],DA) 
+                                   Where:   [.02] is field number .02 
+                                            [40] is field number 40 
+                                            DA is the entry number 
+                                 
+                                The resulting node is created by the AC1 and AC2 cross references.  Re-indexing either of these cross references will correctly update/create the resulting node.  
+
+
+
+394.62,.03    File Number            0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."10N.N) X
+              LAST EDITED:      APR 09, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 9999999999, 9 Decimal Digits 
+              DESCRIPTION:
+                                File number from which the information came.  
+
+
+394.62,.04    Field Number           0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."10N.N) X
+              LAST EDITED:      NOV 25, 1992 
+              HELP-PROMPT:      Type a Number between 0 and 9999999999, 9 Decimal Digits 
+              DESCRIPTION:
+                                Field number from which the information came.  
+
+
+394.62,.05    Display Ready          0;5 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      FEB 17, 1993 
+              DESCRIPTION:
+                                Set to 'YES' if the segment is being stored in display ready format.  Set to 'NO' if segment is being stored as individual pieces of information.  
+
+              CROSS-REFERENCE:  394.62^AG^MUMPS 
+                                1)= Q
+                                2)= S VAQXRF=$$AG^VAQXRF3(DA) K VAQXRF
+
+
+394.62,10     Value                  VAL;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>240!($L(X)<1) X
+              LAST EDITED:      NOV 25, 1992 
+              HELP-PROMPT:      Answer must be 1-240 characters in length. 
+              DESCRIPTION:
+                                Information that was stored in the specified field of the specified file.  
+
+
+394.62,20     Identifier             IDNT1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>240!($L(X)<1) X
+              LAST EDITED:      APR 09, 1993 
+              HELP-PROMPT:      Answer must be 1-240 characters in length. 
+              DESCRIPTION:
+                                This field uniquely identifies the "master" value (to whom the information pertains).  
+
+
+394.62,30     Sequence Number        SQNCE;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 09, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Sequencing number used when more than one value came from the same file/field.  
+
+
+394.62,40     Transaction Number     TRNS;1 POINTER TO VAQ - TRANSACTION FILE (#394.61)
+
+              LAST EDITED:      APR 09, 1993 
+              DESCRIPTION:
+                                Transaction from which the information came.  
+
+              CROSS-REFERENCE:  394.62^AF2^MUMPS 
+                                1)= S VAQXRF=$$AF^VAQXRF3(DA,1) K VAQXRF
+                                2)= S VAQXRF=$$AF^VAQXRF3(DA,0,40,X) K VAQXRF
+                                Creates a cross reference of all data segments for a given transaction that are stored in displayable format.  This cross reference is only set if the field Display Ready (.05) is set to 'YES'.  
+                                 
+                                Resulting node ==>  ^VAT(394.62,"A-DISPLAY",[40],[.02],DA) 
+                                   Where:   [.02] is field number .02 
+                                            [40] is field number 40 
+                                            DA is the entry number 
+                                 
+                                The resulting node is created by the AF1 and AF2 cross references.  Re-indexing either of these cross references will correctly update/create the resulting node.  
+
+
+              CROSS-REFERENCE:  394.62^AC2^MUMPS 
+                                1)= S VAQXRF=$$AC^VAQXRF1(DA,1) K VAQXRF
+                                2)= S VAQXRF=$$AC^VAQXRF1(DA,0,40,X) K VAQXRF
+                                Creates a cross reference of all data segments for a given transaction.  
+                                 
+                                Resulting node ==>  ^VAT(394.62,"A-SEGMENT",[40],[.02],DA) 
+                                   Where:   [.02] is field number .02 
+                                            [40] is field number 40 
+                                            DA is the entry number 
+                                 
+                                The resulting node is created by the AC1 and AC2 cross references.  Re-indexing either of these cross references will correctly update/create the resulting node.  
+
+
+
+394.62,50     Displayable Segment    DSP;0   WORD-PROCESSING #394.625   (NOWRAP)
+
+              DESCRIPTION:
+                                Segment in display ready format.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+VAQ - DATA SEGMENT (#394.71)      Segment (#.02)
+
+VAQ - TRANSACTION (#394.61)       Transaction Number (#40)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

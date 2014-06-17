@@ -1,0 +1,151 @@
+STANDARD DATA DICTIONARY #356.9 -- INPATIENT DIAGNOSIS FILE                                                                                                                                                                       MAY 20,2014@15:35:53  PAGE 1
+STORED IN ^IBT(356.9,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is designed to hold all inpatient diagnoses.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: ONSET DATE THIS VISIT (#.03)[R], TYPE (#.04)
+      "WRITE": N Y S Y=$G(^(0)) W "   ",$P($G(^DPT(+$P($G(^DGPM(+$P(Y,U,2),0)),U,3),0)),U)
+
+POINTED TO BY: ADMITTING REASON (ICD-9) field (#.3) of the CLAIMS TRACKING File (#356) 
+               
+
+CROSS
+REFERENCED BY: DIAGNOSIS(ADG), ADMISSION MOVEMENT(ADG1), TYPE(ADG2), DIAGNOSIS(ADGPM), ADMISSION MOVEMENT(ADGPM1), ADMISSION MOVEMENT(APD), ONSET DATE THIS VISIT(APD1), TYPE(ATP), ADMISSION MOVEMENT(ATP1), DIAGNOSIS(B), ADMISSION MOVEMENT(C), 
+               ONSET DATE THIS VISIT(D)
+
+356.9,.01     DIAGNOSIS              0;1 POINTER TO ICD DIAGNOSIS FILE (#80) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$ICD9ACT^IBACSV(+Y,$P($G(^IBT(356.9,+$G(DA),0)),U,3))" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      APR 21, 2003 
+              DESCRIPTION:
+                                This is the diagnosis for this patient for this episode of care.  
+
+              SCREEN:           S DIC("S")="I $$ICD9ACT^IBACSV(+Y,$P($G(^IBT(356.9,+$G(DA),0)),U,3))"
+              EXPLANATION:      Only active diagnosis codes may be selected.
+              CROSS-REFERENCE:  356.9^B 
+                                1)= S ^IBT(356.9,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.9,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356.9^ADG^MUMPS 
+                                1)= S:$P(^IBT(356.9,DA,0),U,4)=3&($P(^(0),U,2)) ^IBT(356.9,"ADG",+$P(^(0),U,2),X,DA)=""
+                                2)= K ^IBT(356.9,"ADG",+$P(^IBT(356.9,DA,0),U,2),X,DA)
+                                Cross-reference of admitting diagnosis by admission movement.  
+
+
+              CROSS-REFERENCE:  356.9^ADGPM^MUMPS 
+                                1)= S:$P(^IBT(356.9,DA,0),U,2) ^IBT(356.9,"ADGPM",+$P(^(0),U,2),X,DA)=""
+                                2)= K ^IBT(356.9,"ADGPM",+$P(^IBT(356.9,DA,0),U,2),X,DA)
+                                Cross-reference of all diagnosis by admission movement 
+
+
+
+356.9,.02     ADMISSION MOVEMENT     0;2 POINTER TO PATIENT MOVEMENT FILE (#405)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 01, 1993 
+              DESCRIPTION:
+                                This field should point to the admission movement of the inpatient episode that this diagnosis is for.  For ASIH movements it should point to the admission in the acute setting.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,2)=1"
+              EXPLANATION:      Must be an admission movement
+              CROSS-REFERENCE:  356.9^C 
+                                1)= S ^IBT(356.9,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.9,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356.9^APD^MUMPS 
+                                1)= S:$P(^IBT(356.9,DA,0),U,3) ^IBT(356.9,"APD",X,-$P(^(0),U,3),DA)=""
+                                2)= K ^IBT(356.9,"APD",X,-$P(^IBT(356.9,DA,0),U,3),DA)
+                                cross reference of all diagnoses by tracking id and inverse date 
+
+
+              CROSS-REFERENCE:  356.9^ATP1^MUMPS 
+                                1)= S:$P(^IBT(356.9,DA,0),U,4) ^IBT(356.9,"ATP",X,$P(^(0),U,4),DA)=""
+                                2)= K ^IBT(356.9,"ATP",X,+$P(^IBT(356.9,DA,0),U,4),DA)
+                                Cross reference of primary diagnosis for a tracking entry so only one diagnosis can be primary 
+
+
+              CROSS-REFERENCE:  356.9^ADG1^MUMPS 
+                                1)= S:$P(^IBT(356.9,DA,0),U,4)=3&(+^(0)) ^IBT(356.9,"ADG",X,+^(0),DA)=""
+                                2)= K ^IBT(356.9,"ADG",X,+^IBT(356.9,DA,0),DA)
+                                Cross-reference of admitting diagnosis by admission movement.  
+
+
+              CROSS-REFERENCE:  356.9^ADGPM1^MUMPS 
+                                1)= S:+^IBT(356.9,DA,0) ^IBT(356.9,"ADGPM",X,+^(0),DA)=""
+                                2)= K ^IBT(356.9,"ADGPM",X,+^IBT(356.9,DA,0),DA)
+                                Cross-reference of all diagnoses by admission movement.  
+
+
+
+356.9,.03     ONSET DATE THIS VISIT  0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X K:$G(X)+.9<+$G(^DGPM(+$P(^IBT(356.9,DA,0),U,2),0)) X
+              LAST EDITED:      SEP 02, 1993 
+              HELP-PROMPT:      Dates must be during the admission. 
+              DESCRIPTION:      This is the date of the onset of this diagnosis for this episode of care.  If the diagnosis is for an admission then the date of onset should be within the dates of admission and discharge.  If the diagnosis is for an 
+                                outpatient visit then the date of onset should be the visit date.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  356.9^D 
+                                1)= S ^IBT(356.9,"D",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.9,"D",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  356.9^APD1^MUMPS 
+                                1)= S:$P(^IBT(356.9,DA,0),U,2) ^IBT(356.9,"APD",+$P(^(0),U,2),-X,DA)=""
+                                2)= K ^IBT(356,"APD",+$P(^IBT(356.9,DA,0),U,2),-X,DA)
+                                cross reference of all diagnoses by tracking id and inverse date.  
+
+
+
+356.9,.04     TYPE                   0;4 SET
+
+                                '1' FOR PRIMARY; 
+                                '2' FOR SECONDARY; 
+                                '3' FOR ADMITTING; 
+              LAST EDITED:      SEP 01, 1993 
+              DESCRIPTION:
+                                Enter 'PRIMARY' if this is the primary diagnosis for this date, enter 'SECONDARY' if this is not the primary diagnosis for this date.  Enter "ADMITTING" if this is the admitting diagnosis.  
+
+              SCREEN:           S DIC("S")="I $$DICS^IBTRED1(Y)"
+              EXPLANATION:      Only one diagnosis can be primary or admitting diagnosis for an admission.
+              CROSS-REFERENCE:  356.9^ATP^MUMPS 
+                                1)= S:$P(^IBT(356.9,DA,0),U,2) ^IBT(356.9,"ATP",$P(^(0),U,2),X,DA)=""
+                                2)= K ^IBT(356.9,"ATP",+$P(^IBT(356.9,DA,0),U,2),X,DA)
+                                Cross reference of primary diagnosis for a tracking entry so only one diagnosis can be primary at a time.  
+
+
+              CROSS-REFERENCE:  356.9^ADG2^MUMPS 
+                                1)= S:X=3&($P(^IBT(356.9,DA,0),U,2))&(+^(0)) ^IBT(356.9,"ADG",+$P(^(0),U,2),+^(0),DA)=""
+                                2)= K ^IBT(356.9,"ADG",+$P(^IBT(356.9,DA,0),U,2),+^(0),DA)
+                                Cross-reference of admitting diagnosis by admission movement.  
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ICD DIAGNOSIS (#80)               DIAGNOSIS (#.01)
+
+PATIENT MOVEMENT (#405)           ADMISSION MOVEMENT (#.02)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

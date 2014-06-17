@@ -1,0 +1,222 @@
+STANDARD DATA DICTIONARY #42.5 -- WAIT LIST FILE                                                                                                                                                                                  MAY 20,2014@15:41:06  PAGE 1
+STORED IN ^DGWAIT(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                               (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the patients who are placed by the VA Facility on a Waiting list and related data.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: D
+             DEL ACCESS: D
+           LAYGO ACCESS: D
+
+CROSS
+REFERENCED BY: DIVISION(B), PATIENT(C)
+
+42.5,.01      DIVISION               0;1 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUN 03, 1986 
+              DESCRIPTION:
+                                Enter the division for which there is a waiting list established.  
+
+              SCREEN:           S DIC("S")="I '$P(^(0),U,3)"
+              EXPLANATION:      Not Outpatient Divisions
+              CROSS-REFERENCE:  42.5^B 
+                                1)= S ^DGWAIT("B",$E(X,1,30),DA)=""
+                                2)= K ^DGWAIT("B",$E(X,1,30),DA)
+
+
+42.5,10       PATIENT                P;0 POINTER Multiple #42.51 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple contains data about patients on a waiting list for this division.  Information includes the patient's name, the type of waiting list, and when they were entered on the waiting list.  
+
+              IDENTIFIED BY:    DATE/TIME OF APPLICATION(#2)[R]
+
+42.51,.01       PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Required) (Multiply asked)
+
+                LAST EDITED:      JUN 07, 1989 
+                HELP-PROMPT:      Enter the patient name or number you want to put on to this waiting list.  Once entered, the name can not be edited, only deleted.  To delete the entry, use the 'Delete Waiting List Entry' option. 
+                DESCRIPTION:
+                                  Enter the name of the patient who you would like to put on the waiting list.  
+
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  42.5^C 
+                                  1)= S ^DGWAIT("C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^DGWAIT("C",$E(X,1,30),DA(1),DA)
+
+                CROSS-REFERENCE:  42.51^B 
+                                  1)= S ^DGWAIT(DA(1),"P","B",$E(X,1,30),DA)=""
+                                  2)= K ^DGWAIT(DA(1),"P","B",$E(X,1,30),DA)
+
+
+42.51,1         BEDSECTION APPLYING TO 0;5 SET (Required)
+
+                                  '334' FOR PSYCHIATRY; 
+                                  '335' FOR INTERMEDIATE; 
+                                  '336' FOR MEDICINE; 
+                                  '337' FOR NEUROLOGY; 
+                                  '338' FOR REHAB MEDICINE; 
+                                  '339' FOR BLIND REHAB; 
+                                  '340' FOR SPINAL CORD INJURY; 
+                                  '341' FOR SURGERY; 
+                                  '345' FOR NHCU; 
+                LAST EDITED:      OCT 26, 1984 
+                HELP-PROMPT:      Enter the bedsection this patient is applying for care to. 
+                DESCRIPTION:
+                                  This field contains the bed-section the patient is appying to for care.  
+
+
+42.51,1.5       TREATING SPECIALTY     0;10 POINTER TO FACILITY TREATING SPECIALTY FILE (#45.7)
+
+                INPUT TRANSFORM:  S DIC("S")="I $$ACTIVE^DGACT(45.7,Y,$P($G(^DGWAIT(DA(1),""P"",DA,0)),U,2))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 28, 1995 
+                HELP-PROMPT:      Enter treating specialty.  This must be an active treating specialty. 
+                DESCRIPTION:
+                                  Enter the treating specialty for which this patient is waiting to receive care.  
+
+                SCREEN:           S DIC("S")="I $$ACTIVE^DGACT(45.7,Y,$P($G(^DGWAIT(DA(1),""P"",DA,0)),U,2))"
+                EXPLANATION:      Allows only active treating specialties.
+
+42.51,2         DATE/TIME OF APPLICATION 0;2 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 29, 1987 
+                HELP-PROMPT:      Enter the date/time the patient was logged into the wait list. 
+                DESCRIPTION:
+                                  Enter the date/time the patient was entered on the waiting list.  
+
+
+42.51,3         SERVICE CONNECTED      0;3 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                HELP-PROMPT:      Enter 'Y' if the patient is service connected, 'N' if he is not. 
+                DESCRIPTION:
+                                  Is the patient that is being placed on the waiting list service connected? 
+
+
+42.51,3.5       IN ANOTHER HOSPITAL    0;6 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      FEB 12, 1984 
+                HELP-PROMPT:      Enter 'Y' if the patient is in a hospital not under VA authorization, 'N' if not. 
+                DESCRIPTION:
+                                  Is the patient on the waiting list currently at another hospital? 
+
+
+42.51,3.6       VA FACILITY            0;7 SET
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      FEB 27, 1984 
+                HELP-PROMPT:      Enter 'Y' if the facility the patient is in is part of the VA, 'N' if not. 
+                DESCRIPTION:
+                                  Enter yes if the patient is currently at a VA facility.  Otherwise, respond no.  
+
+
+42.51,3.7       HOSPITAL NAME          0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+                LAST EDITED:      FEB 27, 1984 
+                HELP-PROMPT:      Enter the facility name, 3-40 characters. 
+                DESCRIPTION:
+                                  If the patient is currently at another hospital (either VA or non-VA), enter the name of that hospital here.  
+
+
+42.51,4         ACTION                 0;4 SET
+
+                                  '0' FOR PENDING; 
+                                  '1' FOR ACCEPTED; 
+                                  '2' FOR NOT ACCEPTED; 
+                LAST EDITED:      FEB 27, 1984 
+                HELP-PROMPT:      Enter the action taken on this application. 
+                DESCRIPTION:
+                                  Enter the current status of this patient on the waiting list (pending, accepted, or not accepted).  
+
+
+42.51,5         PRIORITY GROUPING      0;9 POINTER TO PRIORITY GROUPING FILE (#42.55) (Required)
+
+                INPUT TRANSFORM:  X ^DD(42.51,5,9.3) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 31, 1987 
+                DESCRIPTION:
+                                  Enter the priority assigned to this patient on the waiting list.  This is based on the patient's service connected status among other factors.  
+
+                SCREEN:           S DIC("S")="S DGZ=+$P(^(0),U,6) I $P(^(0),U,10),$P(^(0),U,5)=$P(^DGWAIT(DA(1),""P"",DA,0),U,12) S DFN=$P(^DGWAIT(DA(1),""P"",DA,0),U,2) I $S('DGZ:1,'$D(^DPT(DFN,.36)):0,+$P(^(0),U,1)+1=DGZ:1,1:0)"
+                EXPLANATION:      Active Grouping for HOSPITAL or NHCU!
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+42.51,10        COMMENTS               C;0   WORD-PROCESSING #42.52
+
+                DESCRIPTION:
+                                  This is a word processing fields where you may enter comments about this patient's status on the waiting list.  
+
+
+42.51,11        DATE ADMITTED          ADM;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 20, 1984 
+                DESCRIPTION:
+                                  If the patient was admitted from the waiting list, enter the date the patient was admitted.  
+
+
+42.51,12        HOSPITAL/NHCU APPLICATION 0;12 SET (Required)
+
+                                  'h' FOR HOSPITAL; 
+                                  'n' FOR NURSING HOME; 
+                LAST EDITED:      JUL 31, 1987 
+                DESCRIPTION:
+                                  If this patient is being placed on the waiting list for hospital care, enter H.  If the patient is being placed on the waiting list for the nursing home, enter N.  
+
+
+42.51,13        CATEGORY OF NEED       0;13 SET
+
+                                  'g' FOR GENERAL; 
+                                  'u' FOR URGENT; 
+                LAST EDITED:      JUL 31, 1987 
+                DESCRIPTION:
+                                  Enter U if this patient requires urgent medical attention and should be admitted from the waiting list as soon as possible.  Otherwise, enter G.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FACILITY TREATING SPECIALTY 
+                   (#45.7)        PATIENT:TREATING SPECIALTY (#1.5)
+
+MEDICAL CENTER DIVISION (#40.8)   DIVISION (#.01)
+
+PATIENT (#2)                      PATIENT:PATIENT (#.01)
+
+PRIORITY GROUPING (#42.55)        PATIENT:PRIORITY GROUPING (#5)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+DGWAIT LIST                   JAN 25, 1989        USER #0                                                                                                                                                                             PATIENTS ON WAITING LIST
+
+SORT TEMPLATE(S):
+DGWAIT LIST                   JAN 19, 1996@13:22  USER #0    
+SORT BY: #DIVISION// (DIVISION not null)
+  WITHIN DIVISION, SORT BY: PATIENT//
+  PATIENT SUB-FIELD: BEDSECTION APPLYING TO// (BEDSECTION APPLYING TO not null)
+    WITHIN BEDSECTION APPLYING TO, SORT BY: PATIENT;"PRIORITY GROUP # "//
+    PATIENT SUB-FIELD: PRIORITY GROUPING:NUMBER// (PRIORITY GROUPING:NUMBER not null)
+      WITHIN PRIORITY GROUPING:NUMBER, SORT BY: PATIENT//
+      PATIENT SUB-FIELD: DATE/TIME OF APPLICATION// (DATE/TIME OF APPLICATION not null)
+     This sort template is used by the Waiting List Output option.
+
+
+FORM(S)/BLOCK(S):

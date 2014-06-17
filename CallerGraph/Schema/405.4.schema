@@ -1,0 +1,237 @@
+STANDARD DATA DICTIONARY #405.4 -- ROOM-BED FILE                                                                                                                                                                                     MAY 20,2014@15:41  PAGE 1
+STORED IN ^DG(405.4,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains all room-beds found at your site as well as data about our-of-service periods for those beds.  This file is maintained by the site.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: D
+             DEL ACCESS: @
+           LAYGO ACCESS: D
+IDENTIFIED BY: 
+      "WRITE": I '$D(DGPMT) D ID^DGPMDDRB
+
+POINTED TO BY: CURRENT ROOM field (#.108) of the PATIENT File (#2) 
+               VISTA ROOM-BED NAME field (#.01) of the RAI MDS ROOM-BED TRANSLATION File (#46.13) 
+               ROOM/BED field (#.18) of the BCMA MISSING DOSE REQUEST File (#53.68) 
+               AUTOLINK field (#.01) of the AUTOLINK sub-field (#100.213) of the OE/RR LIST File (#100.21) 
+               ROOM-BED field (#14) of the ADMISSION sub-field (#115.01) of the NUTRITION PERSON File (#115) 
+               ROOM-BED field (#2.5) of the RECURRING MEALS sub-field (#115.016) of the NUTRITION PERSON File (#115) 
+               ROOM-BED field (#2.5) of the SPECIAL MEALS sub-field (#115.017) of the NUTRITION PERSON File (#115) 
+               ROOM-BED field (#4.5) of the GUEST MEALS sub-field (#115.018) of the NUTRITION PERSON File (#115) 
+               ROOM-BED field (#.01) of the ROOM-BED sub-field (#119.62) of the NUTRITION LOCATION File (#119.6) 
+               AUTOLINK field (#.02) of the TEAM AUTOLINK File (#404.56) 
+               ROOM-BED field (#.07) of the PATIENT MOVEMENT File (#405) 
+               BED field (#.05) of the CP_MOVEMENT_AUDIT File (#704.005) 
+               ENTITY field (#.01) of the PARAMETERS File (#8989.5) 
+               
+
+CROSS
+REFERENCED BY: OUT-OF-SERVICE DATE(AINV), NAME(ARBU), NAME(B), NAME(BD), WARD(S) WHICH CAN ASSIGN(W)
+
+405.4,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>15!($L(X)<3)!'(X?.UN1"-"1UN.UN!(X?.UN1"-".UN1"-"1UN.UN)) X
+              LAST EDITED:      OCT 18, 1999 
+              HELP-PROMPT:      Enter a ROOM-BED designation in 'ROOM-BED' format.  If building must be included in designation it should be appended to the end, i.e., 'D101-A-6'.  [3-15 CHARACTERS ONLY] 
+              DESCRIPTION:
+                                Enter the name of the room-bed you are adding.  Should be in the format ROOM-BED.  
+
+              DELETE TEST:      1,0)= I 1 W !?5,*7,"Deletion of room-beds is not allowed!"
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  405.4^B 
+                                1)= S ^DG(405.4,"B",$E(X,1,30),DA)=""
+                                2)= K ^DG(405.4,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  405.4^BD^MUMPS 
+                                1)= S DGPMDD=$P($P(X,"-",2),"-",1) S:DGPMDD]"" ^DG(405.4,"BD",DGPMDD,DA)="" K DGPMDD
+                                2)= S DGPMDD=$P($P(X,"-",2),"-",1) K ^DG(405.4,"BD",DGPMDD,DA),DGPMDD
+
+              CROSS-REFERENCE:  405.4^ARBU^MUMPS 
+                                1)= Q
+                                2)= N DFN,% S %=$P(^DG(405.4,DA,0),"^",1) F DFN=0:0 S DFN=$O(^DPT("RM",X,DFN)) Q:'DFN  I $G(^DPT(DFN,.108))=DA K ^DPT("RM",X,DFN) S ^DPT("RM",%,DFN)="",^DPT(DFN,.101)=%
+                                3)= This cross-reference should not be deleted.
+                                This cross-reference will reset the RM cross-reference in the PATIENT file any time the name of a ROOM-BED is changed.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^46.11^.02 
+                                1)= Q
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$P($G(^DG(43,1,"HL7")),U,4)=1 I X S X=DIV X ^DD(405.4,.01,1,4,89.2) S Y(101)=$S($D(^DGRU(46.11,D0,0)):^(0),1:"") S X=$P(Y(101),U,2) S D0=I(0,0) S DIU=X K Y S X=DIV S X=X X ^DD
+                                (405.4,.01,1,4,2.4)
+
+                                2.4)= S DIH=$S($D(^DGRU(46.11,DIV(0),0)):^(0),1:""),DIV=X I $D(^(0)) S $P(^(0),U,2)=DIV,DIH=46.11,DIG=.02 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                89.2)= S I(0,0)=$S($D(D0):D0,1:""),Y(1)=$S($D(^DG(405.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,1),X=X S X=X K DIC S DIC="^DGRU(46.11,",DIC(0)="NMFL",X=""""_X_"""" D ^DIC S (D,D0,DIV(0))=+Y
+
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= S X=$P($G(^DG(43,1,"HL7")),U,4)=1
+                                DELETE VALUE)= OLD NAME
+                                DIC)= LOOKUP
+                                FIELD)= NAME:RAI MDS MONITOR:#.02
+                                Trigger the Room-Bed name before it is changed into the RAI MDS MONITOR file.  This is a conditional trigger.  This will only occur if the CREATE MFU FOR RAI MDS field (#391.7014) in the MAS PARAMETER file (#43) is equal
+                                to a "1".  This trigger will force an entry into the RAI MDS MONITOR file.  Entries in that file will be used to create Master File Update HL7 messages to keep certain Vista and vendor files in syncronization.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^46.11^.03 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$P($G(^DG(43,1,"HL7")),U,4)=1 I X S X=DIV X ^DD(405.4,.01,1,5,89.2) S Y(101)=$S($D(^DGRU(46.11,D0,0)):^(0),1:"") S X=$P(Y(101),U,3) S D0=I(0,0) S DIU=X K Y S X=DIV S X=405.4 X
+                                 ^DD(405.4,.01,1,5,1.4)
+
+                                1.4)= S DIH=$S($D(^DGRU(46.11,DIV(0),0)):^(0),1:""),DIV=X I $D(^(0)) S $P(^(0),U,3)=DIV,DIH=46.11,DIG=.03 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                2)= Q
+
+                                89.2)= S I(0,0)=$S($D(D0):D0,1:""),Y(1)=$S($D(^DG(405.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,1),X=X S X=X K DIC S DIC="^DGRU(46.11,",DIC(0)="NMFL" D ^DIC S (D,D0,DIV(0))=+Y
+
+                                CREATE CONDITION)= S X=$P($G(^DG(43,1,"HL7")),U,4)=1
+                                CREATE VALUE)= S X=405.4
+                                DELETE VALUE)= NO EFFECT
+                                DIC)= LOOKUP
+                                FIELD)= NAME:RAI MDS MONITOR:#.03
+                                Trigger the file number (#405.4) of the Room-Bed file into the RAI MDS MONITOR file whenever the Room-Bed name is changed or added.  This is a conditional trigger.  It will only occur if the CREATE MFU FOR RAI MDS field
+                                (#391.7014) in the MAS PARAMETER file (#43) is equal to a "1".  This data in the RAI MDS MONITOR file is used to determine the type of Master File Update to be created.  For example, if the file number is 42 or 405.4, then
+                                a "LOC" type (LOCATION) is created.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^46.11^.04 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=$P($G(^DG(43,1,"HL7")),U,4)=1 I X S X=DIV X ^DD(405.4,.01,1,6,89.2) S Y(101)=$S($D(^DGRU(46.11,D0,0)):^(0),1:"") S X=$P(Y(101),U,4) S D0=I(0,0) S DIU=X K Y S X=DIV S X=DA X ^D
+                                D(405.4,.01,1,6,1.4)
+
+                                1.4)= S DIH=$S($D(^DGRU(46.11,DIV(0),0)):^(0),1:""),DIV=X I $D(^(0)) S $P(^(0),U,4)=DIV,DIH=46.11,DIG=.04 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+
+                                2)= Q
+
+                                89.2)= S I(0,0)=$S($D(D0):D0,1:""),Y(1)=$S($D(^DG(405.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,1),X=X S X=X K DIC S DIC="^DGRU(46.11,",DIC(0)="NMF" D ^DIC S (D,D0,DIV(0))=+Y
+
+                                CREATE CONDITION)= S X=$P($G(^DG(43,1,"HL7")),U,4)=1
+                                CREATE VALUE)= S X=DA
+                                DELETE VALUE)= NO EFFECT
+                                DIC)= LOOKUP
+                                FIELD)= NAME:RAI MDS MONITOR:#.04
+                                Trigger the internal entry number of the Room-Bed entry which was changed or added inti the RAI MDS MONITOR file.  This is a conditional trigger.  it will only occur if the CREATE MFU FOR RAI MDS field (#391.7014) in the
+                                MAS PARAMETER file (#43) is equal to a "1". 
+
+
+
+405.4,.02     DESCRIPTION            0;2 POINTER TO ROOM-BED DESCRIPTION FILE (#405.6) (Required)
+
+              LAST EDITED:      NOV 27, 1989 
+              HELP-PROMPT:      If you wish you may choose, from the available listing, a description which best describes the use of this room-bed. 
+              DESCRIPTION:
+                                Enter a description for this bed.  It will show when entering 2 question marks at the ROOM-BED prompt in bed control or when displaying bed availability.  An example would be PRIVATE ROOM.  
+
+
+405.4,.2      CURRENTLY OUT-OF-SERVICE?  ;  COMPUTED
+
+              MUMPS CODE:       D RIN^DGPMDDCF
+              ALGORITHM:        D RIN^DGPMDDCF
+              DESCRIPTION:
+                                Is this bed currently unavailable?  This field is computed based on data in the OUT-OF-SERVICE DATE multiple.  
+
+
+405.4,100     WARD(S) WHICH CAN ASSIGN W;0 POINTER Multiple #405.41
+
+              DESCRIPTION:
+                                Enter the list of wards which can assign this bed.  
+
+
+405.41,.01      WARD(S) WHICH CAN ASSIGN 0;1 POINTER TO WARD LOCATION FILE (#42) (Multiply asked)
+
+                INPUT TRANSFORM:  I $D(X) S DINUM=X D CK^DGPMDDRB
+                LAST EDITED:      JUL 09, 1990 
+                HELP-PROMPT:      Choose, from the available listing, the ward(s) which are permitted to place a patient in this bed. 
+                DESCRIPTION:
+                                  Enter the ward (a pointer to the WARD LOCATION file) which can utilize this bed.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  405.41^B 
+                                  1)= S ^DG(405.4,DA(1),"W","B",$E(X,1,30),DA)=""
+                                  2)= K ^DG(405.4,DA(1),"W","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  405.4^W 
+                                  1)= S ^DG(405.4,"W",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^DG(405.4,"W",$E(X,1,30),DA(1),DA)
+
+
+
+
+405.4,200     OUT-OF-SERVICE DATE    I;0 DATE Multiple #405.42
+
+              DESCRIPTION:
+                                This multiple contains information on when this bed has been placed out- of-service.  
+
+
+405.42,.01      OUT-OF-SERVICE DATE    0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X I $D(X) D ROOS^DGPMDDOS I $D(X)
+                LAST EDITED:      JUN 29, 1990 
+                HELP-PROMPT:      Enter the DATE (without TIME) that this ROOM-BED was placed OUT-OF-SERVICE making it unavailable for selection. 
+                DESCRIPTION:
+                                  Enter the date/time this bed was placed out-of-service.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  405.42^B 
+                                  1)= S ^DG(405.4,DA(1),"I","B",$E(X,1,30),DA)=""
+                                  2)= K ^DG(405.4,DA(1),"I","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  405.4^AINV^MUMPS 
+                                  1)= S ^DG(405.4,DA(1),"I","AINV",9999999-X,DA)=""
+                                  2)= K ^DG(405.4,DA(1),"I","AINV",9999999-X,DA)
+
+
+405.42,.02      REASON                 0;2 POINTER TO MAS OUT-OF-SERVICE FILE (#405.5) (Required)
+
+                HELP-PROMPT:      Select, from the available listing, the REASON which best described why this bed is OUT-OF-SERVICE. 
+                DESCRIPTION:
+                                  Enter a reason why this bed was placed out-of-service.  These reasons are determined by MAS/CO.  
+
+
+405.42,.03      COMMENT                0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X?1A.E) X
+                HELP-PROMPT:      If you wish you may enter a comment [3-30 characters] which further explains why this room-bed is out-of-service.  For example, for a contruction project you might enter the project number. 
+                DESCRIPTION:
+                                  Enter an optional comment as to why this bed was placed out-of-service.  
+
+
+405.42,.04      RETURN TO SERVICE DATE 0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X) D RRTS^DGPMDDOS
+                LAST EDITED:      JUN 26, 1990 
+                HELP-PROMPT:      Enter the date this room-bed is expected to be returned to service.  If the bed is to be placed out-of-service indefinitely then don't answer this prompt. 
+                DESCRIPTION:
+                                  If it is known when this bed will return to service, enter it here.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MAS OUT-OF-SERVICE (#405.5)       OUT-OF-SERVICE DATE:REASON (#.02)
+
+RAI MDS MONITOR (#46.11)          NAME (#.01)
+
+ROOM-BED DESCRIPTION (#405.6)     DESCRIPTION (#.02)
+
+WARD LOCATION (#42)               WARD(S) WHICH CAN ASSIGN:WARD(S) WHICH CAN ASSIGN (#.01)
+
+
+
+INPUT TEMPLATE(S):
+DGPM BED EDIT                 JUL 18, 1990@09:09  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

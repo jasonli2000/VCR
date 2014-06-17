@@ -1,0 +1,447 @@
+STANDARD DATA DICTIONARY #6001 -- VBECS DATA INTEGRITY/CONVERSION STATISTICS FILE                                                                                                                                                 MAY 20,2014@15:36:41  PAGE 1
+STORED IN ^VBEC(6001,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 5.2)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file tracks Blood Bank data integrity issues for the following files: Patient (#2) and Lab Data (#63).  
+ 
+These issues are checked during the pre-implementation phase of the Blood Bank data conversion.  A record is kept so the Blood Bank ADPACs can resolve those issues logged, so clean data can be moved into SQL tables.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: PROCESS START TIMESTAMP(B)
+
+6001,.01      PROCESS START TIMESTAMP 0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 17, 2002 
+              HELP-PROMPT:      System generated value, it's the process start time. 
+              DESCRIPTION:
+                                This is the date/time the process, either the data integrity check or data conversion, started running on the host system.  
+
+              CROSS-REFERENCE:  6001^B 
+                                1)= S ^VBEC(6001,"B",$E(X,1,30),DA)=""
+                                2)= K ^VBEC(6001,"B",$E(X,1,30),DA)
+
+
+6001,.02      PROCESS                0;2 SET
+
+                                '1' FOR CONVERT DATA; 
+                                '0' FOR VALIDATE DATA; 
+              LAST EDITED:      MAY 14, 2002 
+              HELP-PROMPT:      System generated value, identifies the goal of the process. 
+              DESCRIPTION:
+                                This field identifies the goal of the process.  
+
+
+6001,.03      PROCESS COMPLETION TIMESTAMP 0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX",%DT(0)=$P($G(^VBEC(6001,D0,0)),U) D ^%DT K %DT(0) S X=Y K:Y<1 X
+              LAST EDITED:      MAY 17, 2002 
+              HELP-PROMPT:      System generated value, the timestamp when the process finishes running. Process completion date/time must fall chronologically after the process start timestamp. 
+              DESCRIPTION:
+                                This is the date/time the process, either the data integrity check or data conversion, finished running on the host system.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+6001,.04      USER                   0;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 12, 2002 
+              HELP-PROMPT:      System generated value, identifies the user running this process. 
+              DESCRIPTION:
+                                This field identifies the user running this process.  
+
+
+6001,100      DATA INTEGRITY ISSUES  ERR;0 POINTER Multiple #6001.01 (Add New Entry without Asking)
+
+
+6001.01,.01     FILE                   0;1 POINTER TO FILE FILE (#1) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I Y=2!(Y=63)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      FEB 11, 2004 
+                HELP-PROMPT:      System generated, tracks data integrity issues by file. 
+                DESCRIPTION:      System generated, tracks data integrity issues.  This multiple identifies the data integrity issue as well as the file where the integrity issue exists.  This points to the file where the process originally navigated
+                                  from.  
+                                   
+                                  In the case of data integrity issues between the Patient (#2) and Lab Data (#63) files, this field will store the file number of the Patient (#2) file.  
+
+                TECHNICAL DESCR:
+                                  Will screen for the following files: Patient (#2) and Lab Data (#63) by Application Group.  
+
+                SCREEN:           S DIC("S")="I Y=2!(Y=63)"
+                EXPLANATION:      Only the Patient (#2) and Lab Data (#63) files are being evaluated.
+                CROSS-REFERENCE:  6001.01^B 
+                                  1)= S ^VBEC(6001,DA(1),"ERR","B",$E(X,1,30),DA)=""
+                                  2)= K ^VBEC(6001,DA(1),"ERR","B",$E(X,1,30),DA)
+
+
+6001.01,.02     IEN OF INVALID RECORD  0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<1)!(X?.E1"."1.N) X
+                LAST EDITED:      MAY 09, 2008 
+                HELP-PROMPT:      Type a number between 1 and 999999999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field is system generated and contains the IEN of the record with invalid or questionable data.  
+
+
+6001.01,.03     ASSOCIATED FILE        0;3 POINTER TO FILE FILE (#1)
+
+                INPUT TRANSFORM:  S DIC("S")="I Y=63!(Y=65)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      FEB 25, 2003 
+                HELP-PROMPT:      System generated, file number of associated file. 
+                DESCRIPTION:
+                                  If two files are involved in the data validation problem, this field will contain the associated file number (expected to be the Lab Data (#63) or Blood Inventory (#65) file).  
+
+                SCREEN:           S DIC("S")="I Y=63!(Y=65)"
+                EXPLANATION:      Lab Data (#63) and Blood Inventory (#65) are the only valid files.
+
+6001.01,.04     IEN OF INVALID ASSOC'D REC 0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<1)!(X?.E1"."1.N) X
+                LAST EDITED:      MAY 09, 2008 
+                HELP-PROMPT:      Type a number between 1 and 999999999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field is system generated and tracks the IEN of the record of the associated file.  
+
+
+6001.01,.05     LRDFN ONE              0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<1)!(X?.E1"."1.N) X
+                LAST EDITED:      MAY 09, 2008 
+                HELP-PROMPT:      Type a number between 1 and 999999999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field will store the IEN of a record in the Lab Data (#63) file.  From this information, patient information can be derived.  
+
+                TECHNICAL DESCR:  The intent is to keep a record of which Lab Data (#63) patient or patients, in the TRANSFUSION RECORD sub-file have duplicate Component and Component ID data.  
+                                   
+                                  If duplicate Component/Component ID data exist for a single patient, only the LRDFN ONE (#.05) field will be populated.  If there are two different patients experiencing this problem, then both the LRDFN ONE and LRDFN
+                                  TWO (#.06) fields will be populated.  
+
+
+6001.01,.06     LRDFN TWO              0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<1)!(X?.E1"."1.N) X
+                LAST EDITED:      MAY 09, 2008 
+                HELP-PROMPT:      Type a number between 1 and 999999999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field will store the IEN of a record in the Lab Data (#63) file.  From this information, patient information can be derived.  
+
+                TECHNICAL DESCR:  The intent is to keep a record of which Lab Data (#63) patient or patients, in the TRANSFUSION RECORD sub-file have duplicate Component and Component ID data.  
+                                   
+                                  If duplicate Component/Component ID data exist for a single patient, only the LRDFN ONE (#.05) field will be populated.  If there are two different patients experiencing this problem, then both the LRDFN ONE and LRDFN
+                                  TWO (#.06) fields will be populated.  
+
+
+6001.01,.07     COMPONENT              0;7 POINTER TO BLOOD PRODUCT FILE (#66)
+
+                LAST EDITED:      APR 23, 2002 
+                HELP-PROMPT:      System generated, this is a duplicate Blood Product Component stored for reporting purposes. 
+                DESCRIPTION:
+                                  This field contains the Component that is duplicated along with the Component ID for either a single patient, or, multiple patients.  
+
+                TECHNICAL DESCR:  Part of the invalid data tracking process for duplicate component/component ID data for a single or multiple patients.  
+                                   
+                                  Not screened because data captured is expected to be screened in the TRANSFUSION RECORD (#63.017) sub-file.  
+
+
+6001.01,.08     COMPONENT ID           0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>13!($L(X)<2) X
+                LAST EDITED:      APR 23, 2002 
+                HELP-PROMPT:      System generated, this is a duplicate Blood Product Component ID stored for reporting purposes. 
+                DESCRIPTION:
+                                  This field contains the Component that is duplicated along with the Component ID for either a single patient, or, multiple patients.  
+
+                TECHNICAL DESCR:  Part of the invalid data tracking process for duplicate component/component ID data for a single or multiple patients. Not screened because data captured is expected to be screened in the TRANSFUSION RECORD (#63.017)
+                                  sub-file.  
+
+
+6001.01,.09     DATA INTEGRITY ISSUE   0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<3) X
+                LAST EDITED:      APR 23, 2002 
+                HELP-PROMPT:      System generated, this field tracks the relevant information as to why the data integrity issue exists. 
+                DESCRIPTION:
+                                  This field is system generated and tracks the relevant information as to why the data integrity issue exists.  
+
+
+
+
+6001,200      DATA CONVERSION STATISTICS TOT;0 Multiple #6001.02 (Add New Entry without Asking)
+
+
+6001.02,.01     LRDFN                  0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<1)!(X?.E1"."1N.N) X S:$D(X)#2 DINUM=X
+                LAST EDITED:      APR 19, 2004 
+                HELP-PROMPT:      Non-interactive; format will be a number between 1 and 999999999999999, 0 decimal digits. 
+                DESCRIPTION:
+                                  This field tracks the number of records converted to VBECS from the Lab Data (#63) file.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+6001.02,2       DFN                    0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; format will be a number between 1 and 999999999999999, 0 decimal digits. 
+                DESCRIPTION:
+                                  DFN is the IEN of the patient record from the Patient (#2) file.  
+
+
+6001.02,3       FAMILY NAME            0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'Family Name' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'Family Name' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,4       GIVEN NAME             0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'Given Name' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'Given Name' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,5       MIDDLE NAME            0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'Middle Name' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'Middle Name' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,6       SUFFIX (NAME)          0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'Suffix' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'Suffix' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,7       SEX                    0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'Sex' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'Sex' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,8       DOB                    0;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'DOB' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'DOB' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,9       SSN                    0;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'SSN' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'SSN' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,10      ICN                    0;10 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'ICN' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'ICN' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,11      ABO                    0;11 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'ABO' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'ABO' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,12      RH                     0;12 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences (maximum of one) that the 'RH' data element appears in the Lab Data file record. Will either not exist (0), or exist (1). 
+                DESCRIPTION:
+                                  Tabulates the number of times the 'RH' data element exists for this Lab Data record. Possible values are zero (0) or one (1).  
+
+
+6001.02,13      RBC ANTIGENS PRESENT   0;13 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of 'RBC Antigen Present' records related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of 'RBC Antigen Present' records related to this Lab Data record.  
+
+
+6001.02,14      RBC ANTIGENS PRESENT COMMENTS 0;14 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of 'RBC Antigen Present Comment' records related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of 'RBC Antigen Present Comment' records related to this Lab Data record.  
+
+
+6001.02,15      RBC ANTIGENS PRESENT CHARS 0;15 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of characters of all the 'RBC Antigen Present' data related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of characters of all the 'RBC Antigen Present Comment' data related to this Lab Data record.  
+
+
+6001.02,16      RBC ANTIGENS ABSENT    0;16 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of 'RBC Antigen Present' data related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of 'RBC Antigen Absent' data related to this Lab Data record.  
+
+
+6001.02,17      RBC ANTIGENS ABSENT COMMENTS 0;17 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of 'RBC Antigen Absent' data related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of 'RBC Antigen Absent Comment' data related to this Lab Data record.  
+
+
+6001.02,18      RBC ANTIGENS ABSENT CHARS 0;18 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of characters of all the 'RBC Antigen Absent' data related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of characters of all the 'RBC Antigen Absent Comment' data related to this Lab Data record.  
+
+
+6001.02,19      ANTIBODIES IDENTIFIED  0;19 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of 'Antibodies Identified' data related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of 'Antibodies Identified' data related to this Lab Data record.  
+
+
+6001.02,20      ANTIBODIES IDENTIFIED COMMENTS 0;20 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of 'Antibodies Identified Comment' data related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of 'Antibodies Identified Comment' data related to this Lab Data record.  
+
+
+6001.02,21      ANTIBODIES IDENTIFIED CHARS 0;21 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of characters of all the 'Antibodies Identified Comment' data related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of characters of all the 'Antibodies Identified Comment' data related to this Lab Data record.  
+
+
+6001.02,22      TRANSFUSION REACTION DATE 0;22 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences that 'Transfusion Reaction Date' data appears in this Lab Data file record.  
+                DESCRIPTION:
+                                  Indicates the number of occurrences that 'Transfusion Reaction Date' data appears in this Lab Data file record.  
+
+
+6001.02,23      TRANSFUSION REACTION   0;23 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences that 'Transfusion Reaction' data appears in this Lab Data file record.  
+                DESCRIPTION:
+                                  Indicates the number of occurrences that 'Transfusion Reaction' data appears in this Lab Data file record.  
+
+
+6001.02,24      TRANSFUSION REACTION COMMENTS 0;24 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences that 'Transfusion Reaction Comments' appear for this Lab Data record. 
+                DESCRIPTION:
+                                  Non-interactive; indicates the number of occurrences that 'Transfusion Reaction Comments' appear for this Lab Data record.  
+
+
+6001.02,25      TRANS. REACTION COMMENT CHARS 0;25 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of characters of all the 'Transfusion Reaction Comment' data related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of characters of all the 'Transfusion Reaction Comment' data related to this Lab Data record.  
+
+
+6001.02,26      BLOOD BANK COMMENTS    0;26 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of occurrences that the 'Blood Bank Comment' data element appears in the Lab Data file record. 
+                DESCRIPTION:
+                                  Non-interactive; indicates the number of occurrences that the 'Blood Bank Comment' data element appears in the Lab Data file record.  
+
+
+6001.02,27      BLOOD BANK COMMENT CHARS 0;27 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 10, 2004 
+                HELP-PROMPT:      Non-interactive; indicates the number of characters of all the 'Blood Bank Comments' data related to this Lab Data record. 
+                DESCRIPTION:
+                                  Indicates the number of characters of all the 'Blood Bank Comments' data related to this Lab Data record.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BLOOD PRODUCT (#66)               DATA INTEGRITY ISSUES:COMPONENT (#.07)
+
+FILE (#1)                         DATA INTEGRITY ISSUES:FILE (#.01)
+                                  ASSOCIATED FILE (#.03)
+
+NEW PERSON (#200)                 USER (#.04)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

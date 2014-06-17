@@ -1,0 +1,274 @@
+STANDARD DATA DICTIONARY #798.4 -- ROR PATIENT FILE                                                                                                                                                                               MAY 20,2014@15:31:11  PAGE 1
+STORED IN ^RORDATA(798.4,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                        (VERSION 1.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The ROR PATIENT file contains patient information that is common for all local registries (mostly, demographic information).  
+ 
+Most of the fields in the file have the same numbers and names as the corresponding fields in the PATIENT file.  
+ 
+Demographic data from this file is compared to that from the PATIENT file (#2) to determine if it has been changed since the last registry data extraction. These fields are updated with the values from the PATIENT file and the UPDATE DEMOGRAPHICS flag is
+set to "YES" in all active registry records of the patient.  
+ 
+Records in the file have the same internal entry numbers as the patients' records in the PATIENT file. The records are uniquely identified by the internal value of the PATIENT NAME field.  
+ 
+A permanent screen (the ^DD(798.4,0,"SCR") node) restricts access to the records of this file. Only users with the security key(s) for any defined registry (or those with the ROR VA IRM security key) can access records of the file.  
+ 
+If you want the changes in the security keys allocation to have an effect immediately, you should rebuild the "ACL" cross-reference of the .01 field of the SECURITY KEY multiple of the ROR REGISTRY PARAMETERS file (#798.1). See the description of the
+cross-reference for more details.  
+
+
+FILE SCREEN (SCR-node) : I $$ACCESS^RORDD(798.4)
+              DD ACCESS: @
+              RD ACCESS:  
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS:  
+
+POINTED TO BY: PATIENT NAME field (#.01) of the ROR REGISTRY RECORD File (#798) 
+               ERROR field (#.01) of the ERROR sub-field (#799.641) of the TASK sub-field (#799.64) of the ROR HISTORICAL DATA EXTRACTION File (#799.6) 
+               
+
+CROSS
+REFERENCED BY: PATIENT NAME(B), SOCIAL SECURITY NUMBER(BS), SOCIAL SECURITY NUMBER(BS5), SOCIAL SECURITY NUMBER(SSN)
+
+798.4,.01     PATIENT NAME           0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  S:$D(X) DINUM=X
+              LAST EDITED:      MAY 23, 2000 
+              DESCRIPTION:      You can select an existing patient or add a new one from the PATIENT file (#2).  
+                                 
+                                You can access records of this file only if you have appropriate security key(s) for any registry.  
+
+              TECHNICAL DESCR:
+                                The PATIENT NAME field points to the patient record in the PATIENT file (#2). Internal value of this field is used as internal entry number of the record ("DINUM" feature).  
+
+              DELETE TEST:      1,0)= I $D(^RORDATA(798,"B",+$G(DA)))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  798.4^B 
+                                1)= S ^RORDATA(798.4,"B",$E(X,1,30),DA)=""
+                                2)= K ^RORDATA(798.4,"B",$E(X,1,30),DA)
+                                3)= Do not delete!
+
+
+798.4,.02     SEX                    1;3 SET
+
+                                'M' FOR MALE; 
+                                'F' FOR FEMALE; 
+              LAST EDITED:      NOV 20, 2001 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                See the corresponding field in the PATIENT file (#2).  
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+798.4,.03     DATE OF BIRTH          1;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              OUTPUT TRANSFORM: S Y(0)=Y S X=Y(0) S:X X=$E(X,4,5)_"/"_$E(X,6,7)_"/"_(1700+$E(X,1,3)) S Y=X
+              LAST EDITED:      NOV 20, 2001 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                See the corresponding field in the PATIENT file (#2).  
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+798.4,.09     SOCIAL SECURITY NUMBER 1;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<9) X
+              OUTPUT TRANSFORM: S:$L(Y)=11 Y=$E(Y,10,11)_$E(Y,1,9)
+              LAST EDITED:      APR 03, 2002 
+              HELP-PROMPT:      Answer must be 9-11 characters in length. 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                See the corresponding field in the PATIENT file (#2).  
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+              CROSS-REFERENCE:  798.4^BS^MUMPS 
+                                1)= S ^RORDATA(798.4,"BS",$E(X,6,9),DA)=""
+                                2)= K ^RORDATA(798.4,"BS",$E(X,6,9),DA)
+                                3)= Do not delete!
+                                The cross-reference on the last four digits of the SSN.  
+
+
+              CROSS-REFERENCE:  798.4^BS5^MUMPS 
+                                1)= S ^RORDATA(798.4,"BS5",$E(^DPT(DA,0),1)_$E(X,6,9),DA)=""
+                                2)= K ^RORDATA(798.4,"BS5",$E(^DPT(DA,0),1)_$E(X,6,9),DA)
+                                3)= Do not delete!
+                                This cross-reference contains values combined from the first letter of the last name and last four digits of the SSN.  
+
+
+              CROSS-REFERENCE:  798.4^SSN 
+                                1)= S ^RORDATA(798.4,"SSN",$E(X,1,30),DA)=""
+                                2)= K ^RORDATA(798.4,"SSN",$E(X,1,30),DA)
+                                3)= Do not delete!
+
+
+798.4,.1112   ZIP+4                  1;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<5) X
+              LAST EDITED:      NOV 20, 2001 
+              HELP-PROMPT:      Answer must be 5-9 characters in length. 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                See the corresponding field in the PATIENT file (#2).  
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+798.4,.301    SERVICE CONNECTED?     1;6 SET (Required)
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      NOV 20, 2001 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                See the corresponding field in the PATIENT file (#2).  
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+798.4,.302    SERVICE CONNECTED PERCENTAGE 1;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 20, 2001 
+              HELP-PROMPT:      Type a Number between 0 and 100, 0 Decimal Digits. 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                See the corresponding field in the PATIENT file (#2).  
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+798.4,.323    PERIOD OF SERVICE      1;5 POINTER TO PERIOD OF SERVICE FILE (#21)
+
+              LAST EDITED:      NOV 20, 2001 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                See the corresponding field in the PATIENT file (#2).  
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+798.4,.351    DATE OF DEATH          1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 02, 2002 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                See the corresponding field in the PATIENT file (#2).  
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+798.4,.3721   RATED DISABILITIES DATA 3;E1,245 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      NOV 06, 2002 
+              HELP-PROMPT:      Answer must be 1-245 characters in length. 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:  This field stores the CRC32 value for combined data from the RATED DISABILITIES (VA) multiple (.3721) of the PATIENT file (#2). This data can be used only for comparison (by the RORUPD52 routine) to the data in the PATIENT
+                                file! 
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+798.4,2       RACE AND ETHNICITY DATA 2;E1,245 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      NOV 06, 2002 
+              HELP-PROMPT:      Answer must be 1-245 characters in length. 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:  This field stores the combined data from the RACE INFORMATION (2) and ETHNICITY INFORMATION (6) multiples of the PATIENT file (#2). This data can be used only for comparison (by the RORUPD52 routine) to the data in the
+                                PATIENT file. Do not try to parse values of this field in any way! 
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+798.4,10.1    OLD SSN                10;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<9) X
+              LAST EDITED:      NOV 20, 2001 
+              HELP-PROMPT:      Answer must be 9-11 characters in length. 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                This field contains the previous value of the patient SSN. The registry extraction process transmits both new and old values of the SSN to the national registries.  
+
+              GROUP:            OLD DEMOGRAPHICS
+                                UNEDITABLE
+
+798.4,10.2    OLD ICN                10;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>19!($L(X)<1) X
+              LAST EDITED:      NOV 01, 2002 
+              HELP-PROMPT:      Answer must be 1-19 characters in length. 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                This field contains the previous value of the patient ICN (with the checksum). The registry extraction process transmits both new and old values of the ICN to the national registries.  
+
+              GROUP:            OLD DEMOGRAPHICS
+                                UNEDITABLE
+
+798.4,991     INTEGRATION CONTROL NUMBER 1;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>19!($L(X)<1) X
+              LAST EDITED:      NOV 01, 2002 
+              HELP-PROMPT:      Answer must be 1-19 characters in length. 
+              DESCRIPTION:
+                                Do not edit this field! 
+
+              TECHNICAL DESCR:
+                                This field stores the patient's full Integration Control Number (the ICN and checksum separated by the "V"). See the fields 991.01 and 991.02 of the PATIENT file (#2).  
+
+              GROUP:            DEMOGRAPHIC DATA
+                                UNEDITABLE
+
+
+      FILES POINTED TO                      FIELDS
+
+PATIENT (#2)                      PATIENT NAME (#.01)
+
+PERIOD OF SERVICE (#21)           PERIOD OF SERVICE (#.323)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

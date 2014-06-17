@@ -1,0 +1,464 @@
+STANDARD DATA DICTIONARY #9000010.18 -- V CPT FILE                                                                                                                                                                                MAY 20,2014@15:39:43  PAGE 1
+STORED IN ^AUPNVCPT(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The V CPT file has been defined for joint use by the Indian Health Service and the Department of Veteran Affairs. This is the file used to store CPT related services performed at a visit.  Data must exist for a patient and a visit before data can be
+entered in the V CPT file.  
+ 
+This file is used in the VA to identify procedures that were done to a patient at an encounter or occassion of service.  The procedures may have been performed by a primary or secondary provider of patient care.  Procedures checked off and scanned from
+ambulatory care encounter forms are stored here to record that they were done.  Results of procedures are not included.  
+ 
+This file is restricted to procedures that have a CPT code.  The V Treatment file is used to store procedures without CPT codes that do not fit into any other V-file category.  
+ 
+The Provider Narrative field represents the preferred text for this procedure as defined by the clinician.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: PATIENT NAME (#.02)[R], VISIT (#.03)[R]
+
+CROSS
+REFERENCED BY: VISIT(AA), CPT(AATOO), PATIENT NAME(AATOO2), VISIT(AD), VISIT(AV10), CPT(B), PATIENT NAME(C)
+
+INDEXED BY:    CPT & PATIENT NAME & VISIT & PRINCIPAL PROCEDURE (ACR)
+
+
+9000010.18,.01CPT                    0;1 POINTER TO CPT FILE (#81) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P($$CPT^ICPTCOD(+Y),""^"",7)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 27, 2004 
+              HELP-PROMPT:      Enter a CPT code or the name of the procedure done to the patient. 
+              DESCRIPTION:      This is the entry in the CPT file that most closely represents the clinical procedure done to the patient during the encounter.  The preferred text for the procedure performed may be specified in the Provider Narrative
+                                field.  
+                                  
+                                This field is used for Administrative and Clinical purposes.  If a procedure performed is to be billable, the CPT code must be specified here.  
+
+              SCREEN:           S DIC("S")="I $P($$CPT^ICPTCOD(+Y),""^"",7)"
+              EXPLANATION:      Only active CPTs
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  9000010.18^B 
+                                1)= S ^AUPNVCPT("B",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVCPT("B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000010.18^AATOO^MUMPS 
+                                1)= I $P(^AUPNVCPT(DA,0),U,2)]"",$P(^(0),U,3)]"" S ^AUPNVCPT("AA",$P(^AUPNVCPT(DA,0),U,2),X,(9999999-$P(+^AUPNVSIT($P(^AUPNVCPT(DA,0),U,3),0),".",1)),DA)=""
+                                2)= I $P(^AUPNVCPT(DA,0),U,2)]"",$P(^(0),U,3)]"" K ^AUPNVCPT("AA",$P(^AUPNVCPT(DA,0),U,2),X,(9999999-$P(+^AUPNVSIT($P(^AUPNVCPT(DA,0),U,3),0),".",1)),DA)
+                                This cross reference is used for searches in sequence by Patient, CPT internal entry number, inverted visit date, and internal entry number.  
+                                 
+                                 "AA",PATIENT,CPT,VISIT,DA 
+
+
+              RECORD INDEXES:   ACR (#467)
+
+9000010.18,.02PATIENT NAME           0;2 POINTER TO PATIENT/IHS FILE (#9000001) (Required)
+
+              LAST EDITED:      SEP 01, 1995 
+              HELP-PROMPT:      Enter the Patient to whom the procedure was done. 
+              DESCRIPTION:
+                                This is the patient to whom the procedure was done during the encounter.  
+
+              TECHNICAL DESCR:
+                                This is a pointer to the Patient/IHS file (#9000001) which is dinumed to the Patient File (#2).  This field is always stuffed by the application.  No editing is allowed.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.18^AATOO2^MUMPS 
+                                1)= I $P(^AUPNVCPT(DA,0),U,3)]"" S ^AUPNVCPT("AA",X,+^AUPNVCPT(DA,0),(9999999-$P(+^AUPNVSIT($P(^AUPNVCPT(DA,0),U,3),0),".",1)),DA)=""
+                                2)= I $P(^AUPNVCPT(DA,0),U,3)]"" K ^AUPNVCPT("AA",X,+^AUPNVCPT(DA,0),(9999999-$P(+^AUPNVSIT($P(^AUPNVCPT(DA,0),U,3),0),".",1)),DA)
+                                This cross reference is used for searches in sequence by patient, CPT internal entry number, inverted visit date, and internal entry number.  
+                                 
+                                  "AA",PATIENT,CPT,VISIT,DA 
+
+
+              CROSS-REFERENCE:  9000010.18^C 
+                                1)= S ^AUPNVCPT("C",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVCPT("C",$E(X,1,30),DA)
+                                This field allows look-up on the file by the patient's name.  
+
+
+              RECORD INDEXES:   ACR (#467)
+
+9000010.18,.03VISIT                  0;3 POINTER TO VISIT FILE (#9000010) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVCPT(DA,0),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 11, 1986 
+              HELP-PROMPT:      Enter the visit date/time for the encounter where the procedure was done. 
+              DESCRIPTION:
+                                This is the encounter or occasion of service defined in the Visit file that represents when and where the procedure was done.  
+
+              TECHNICAL DESCR:
+                                This is a pointer to the Visit File (#9000010).  This field is stuffed by the applications.  No editing is allowed.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVCPT(DA,0),U,2)"
+              EXPLANATION:      VISIT MUST BE FOR CURRENT PATIENT
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.18^AD 
+                                1)= S ^AUPNVCPT("AD",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVCPT("AD",$E(X,1,30),DA)
+                                This cross reference is used for searches by the visit pointer and internal entry number.  
+                                 
+                                    "AD",VISIT,DA 
+
+
+              CROSS-REFERENCE:  9000010.18^AA^MUMPS 
+                                1)= Q:$P(^AUPNVCPT(DA,0),U,2)=""  S ^AUPNVCPT("AA",$P(^AUPNVCPT(DA,0),U,2),+^AUPNVCPT(DA,0),(9999999-$P(+^AUPNVSIT(X,0),".",1)),DA)=""
+                                2)= Q:$P(^AUPNVCPT(DA,0),U,2)=""  K ^AUPNVCPT("AA",$P(^AUPNVCPT(DA,0),U,2),+^AUPNVCPT(DA,0),(9999999-$P(+^AUPNVSIT(X,0),".",1)),DA)
+                                This cross reference is used for searches in sequence by paitent, CPT internal entry number, inverted visit date, and internal entry number.  
+                                 
+                                  "AA",PATIENT,CPT,VISIT,DA 
+
+
+              CROSS-REFERENCE:  9000010.18^AV10^MUMPS 
+                                1)= D ADD^AUPNVSIT
+                                2)= D SUB^AUPNVSIT
+                                This cross-reference adds and subtracts from the dependent entry count in the VISIT file.  
+
+
+              RECORD INDEXES:   ACR (#467)
+
+9000010.18,.04PROVIDER NARRATIVE     0;4 POINTER TO PROVIDER NARRATIVE FILE (#9999999.27) (Required)
+
+              INPUT TRANSFORM:  S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 27, 1994 
+              HELP-PROMPT:      Enter the providers preferred text identifying the procedure done. 
+              DESCRIPTION:      This is the narrative the provider uses to represent the procedure that was done.  The text may be different from the CPT file's procedure name text, but should not have a significantly different meaning. The CPT code in
+                                the CPT (.01) field should be the CPT code that "most closely" represents the provider narrative for the procedure done.  
+
+              TECHNICAL DESCR:  This is a pointer to the Provider Narrative file (#9999999.27). Disk space is saved by storing ONE entry in the Provider Narrative file for each unique narrative. The provider narrative is often repetitive, especially if
+                                the data capture mode is automated (e.g., AICS Encounter Forms).  
+
+              SCREEN:           S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO")
+              EXPLANATION:      IHS OLD LOOKUP or VA Exact Match
+
+9000010.18,.05DIAGNOSIS              0;5 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  D ICDEN^PXCECPT1 Q:X=""  S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 07, 2005 
+              HELP-PROMPT:      Enter the ICD Diagnosis related to the procedure done. 
+              DESCRIPTION:
+                                This is the diagnosis, from the ICD Diagnosis file, associated with the procedure performed.  
+
+              SCREEN:           S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2)
+              EXPLANATION:      Dx cannot be an inactive code, and it must be appropriate
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.18,.07PRINCIPAL PROCEDURE    0;7 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      APR 12, 1994 
+              HELP-PROMPT:      Enter 'Y' if this is the principal procedure done at the encounter. 
+              DESCRIPTION:
+                                This field identifies this procedure as the prinicipal procedure done to the patient at the encounter.  
+
+              RECORD INDEXES:   ACR (#467)
+
+9000010.18,.09DIAGNOSIS 2            0;9 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  D ICDEN^PXCECPT1 Q:X=""  S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 07, 2005 
+              HELP-PROMPT:      Enter the ICD Diagnosis related to the procedure done. 
+              DESCRIPTION:
+                                This is the diagnosis, from the ICD Diagnosis file, associated with the procedure performed.  
+
+              SCREEN:           S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2)
+              EXPLANATION:      Dx cannot be an inactive code, and it must be appropriat
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.18,.1 DIAGNOSIS 3            0;10 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  D ICDEN^PXCECPT1 Q:X=""  S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 07, 2005 
+              HELP-PROMPT:      Enter the ICD Diagnosis related to the procedure done. 
+              DESCRIPTION:
+                                This is the diagnosis, from the ICD Diagnosis file, associated with the procedure performed.  
+
+              SCREEN:           S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2)
+              EXPLANATION:      Dx cannot be an inactive code, and it must be appropria
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.18,.11DIAGNOSIS 4            0;11 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  D ICDEN^PXCECPT1 Q:X=""  S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 07, 2005 
+              HELP-PROMPT:      Enter the ICD Diagnosis related to the procedure done. 
+              SCREEN:           S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2)
+              EXPLANATION:      Dx cannot be an inactive code, and it must be appropriat
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.18,.12DIAGNOSIS 5            0;12 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  D ICDEN^PXCECPT1 Q:X=""  S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 07, 2005 
+              HELP-PROMPT:      Enter the ICD Diagnosis related to the procedure done. 
+              SCREEN:           S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2)
+              EXPLANATION:      Dx cannot be an inactive code, and it must be appropriate
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.18,.13DIAGNOSIS 6            0;13 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  D ICDEN^PXCECPT1 Q:X=""  S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 07, 2005 
+              HELP-PROMPT:      Enter the ICD Diagnosis related to the procedure done. 
+              SCREEN:           S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2)
+              EXPLANATION:      Dx cannot be an inactive code, and it must be appropriate
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.18,.14DIAGNOSIS 7            0;14 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  D ICDEN^PXCECPT1 Q:X=""  S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 07, 2005 
+              HELP-PROMPT:      Enter the ICD Diagnosis related to the procedure done. 
+              SCREEN:           S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2)
+              EXPLANATION:      Dx cannot be an inactive code, and it must be appropriate
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.18,.15DIAGNOSIS 8            0;15 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  D ICDEN^PXCECPT1 Q:X=""  S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      SEP 07, 2005 
+              HELP-PROMPT:      Enter the ICD Diagnosis related to the procedure done. 
+              SCREEN:           S DIC("S")="D ^AUPNSICD" S DIC(0)=$P(DIC(0),"E")_$P(DIC(0),"E",2)
+              EXPLANATION:      Dx cannot be an inactive code, and it must be appropriate
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.18,.16QUANTITY               0;16 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 02, 2005 
+              HELP-PROMPT:      Enter a number between 1 and 999 indicating how many times this procedure was done. 
+              DESCRIPTION:
+                                This is the number of times this procedure was done to the patient during the encounter.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.18,.17ORDER REFERENCE        0;17 POINTER TO ORDER FILE (#100)
+
+              LAST EDITED:      MAR 12, 2004 
+              DESCRIPTION:
+                                Pointer to the order in the Order file (#100) that ordered the procedure.  
+
+              TECHNICAL DESCR:
+                                This field is created to provide a place for the surgery package to place the pointer to the entry in the order file (#100) that is associated with this procedure.  
+
+
+9000010.18,.19DEPARTMENT CODE        0;19 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+              LAST EDITED:      APR 25, 2005 
+              HELP-PROMPT:      Answer must be 3 characters in length. 
+              DESCRIPTION:
+                                The 3-digit code that defines the service area associated with the charge by the sending application.  
+
+              TECHNICAL DESCR:  All CPT-based charges coming through PCE, which are not already associated with one of the Department Codes, are assigned a Department Code.  The Department Code assigned is the Stop Code associated (in the HOSPITAL
+                                LOCATION file, #44) with the Hospital Location of the patient visit/encounter.  
+
+
+9000010.18,.2 PFSS CHARGE ID         0;20 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 06, 2005 
+              HELP-PROMPT:      Type a Number between 1 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:      A numeric identifier of not more than 8 digits that uniquely identifies the charge item in the external medical billing system.  This data item is referred to as the "PFSS Charge Identifier" within the PFSS project
+                                documentation.  
+
+              TECHNICAL DESCR:
+                                The application providing the data to the PFSS CHARGE CACHE file uses $$GETCHGID^IBBAPI to obtain a unique identifying number for the original charge.  
+
+
+9000010.18,1  CPT MODIFIER           1;0 POINTER Multiple #9000010.181 (Add New Entry without Asking)
+
+              SCREEN:           S DIC("S")="N PXC,PXM,PXV,PXD S PXC=$P(^AUPNVCPT(D0,0),U),PXV=$P(^AUPNVCPT(D0,0),U,3),PXD=$P($G(^AUPNVSIT(PXV,0)),U) I $$MODP^ICPTMOD(PXC,Y,""I"",PXD)"
+              EXPLANATION:      The selected modifier must go with the CPT code.
+
+9000010.181,.01 CPT MODIFIER           0;1 POINTER TO CPT MODIFIER FILE (#81.3) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $$CPTMOD^PXCPTAPI(D0,Y,0)>0" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      NOV 01, 1999 
+                HELP-PROMPT:      Select a modifier that is valid for this CPT code. 
+                DESCRIPTION:
+                                  This multiple field points to the CPT MODIFIER file (#81.3).  The modifier(s) you select must be valid for the CPT field (#.01).  
+
+                SCREEN:           S DIC("S")="I $$CPTMOD^PXCPTAPI(D0,Y,0)>0"
+                EXPLANATION:      The modifier(s) you select must be valid for the CPT.
+                CROSS-REFERENCE:  9000010.181^B 
+                                  1)= S ^AUPNVCPT(DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^AUPNVCPT(DA(1),1,"B",$E(X,1,30),DA)
+
+
+
+
+9000010.18,1201EVENT DATE AND TIME   12;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 16, 1994 
+              HELP-PROMPT:      Enter the date and time the procedure was done. 
+              DESCRIPTION:      This is the date and time the procedure was performed.  This date and time may be different from the visit data and time.  For example, for clinic appointment visits, the visit date and time is the date and time of the 
+                                appointment, not the time the provder performed the clinical event.  
+                                 
+                                The date may be an imprecise date.  
+                                 
+                                Date and time may be within 30 days before or after the visit date, with the restriction the date cannot be a future date.  
+
+              TECHNICAL DESCR:  The PCE User Interface, which allows manual entry of data, will be the primary source of the event date and time.  The event date prompt defaults to the visit date and the time is entered to reflect the actual time the
+                                service was provided.  The event date does not have to be the visit date, but it must be within 30 days before or after the visit, and not be a future date.  
+                                 
+                                If a user wants to enter a historical procedure, the user should use the Historical Encounter entry action to document the historical measurement. Historical entries will not be eligible for credit.  
+                                 
+                                PCE data sources for automatic (scanning) data capture will be blank unless the event date and time are passed to PCE for filing.  
+
+
+9000010.18,1202ORDERING PROVIDER     12;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 13, 1996 
+              HELP-PROMPT:      Enter the provider who ordered this procedure. 
+              DESCRIPTION:
+                                This field can be used to document the provider who ordered the procedure.  
+
+
+9000010.18,1204ENCOUNTER PROVIDER    12;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 19, 1994 
+              HELP-PROMPT:      Enter the provider who performed the procedure. 
+              DESCRIPTION:
+                                This is the provider who performed the procedure.  
+
+
+9000010.18,80101EDITED FLAG          801;1 SET
+
+                                '1' FOR EDITED; 
+              LAST EDITED:      MAR 14, 1994 
+              HELP-PROMPT:      Answer is automatically entered by PCE filing logic. 
+              DESCRIPTION:
+                                This field is automatically set to 1 if PCE detects that any original procedure data is being edited.  
+
+              TECHNICAL DESCR:
+                                PCE filing logic automatically compares the before and after pictures of the record to determine if the edited flag should be set to "1".  
+
+
+9000010.18,80102AUDIT TRAIL          801;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>85!($L(X)<2) X
+              LAST EDITED:      MAY 09, 1996 
+              HELP-PROMPT:      Answer is automatically entered by the PCE filing logic. 
+              DESCRIPTION:
+                                This field is populated automatically by the PCE filing logic.. The format of the field is as follows:  Pointer to PCE data source file_"-"_A for Add or E for Edit_" "_DUZ of the person who entered the data_";"...  
+
+              TECHNICAL DESCR:  The PCE filing logic requires a pointer to the PCE data source file.  If this is not passed, the PCE filing logic will not process the data.  
+                                 
+                                If the record is a new record, then an "A" is used to specify the source that added the data.  If the record existed previously, PCE filing logic compares the old and new records of information.  An "E" will be
+                                automatically used if the filing logic finds the data has been edited.  If "E" is used, then the Edited Flag field is automatically set to 1.  
+                                 
+                                The DUZ is stored in its internal format to represent the user who performed the adding or editing of data for this record.  
+                                 
+                                Iterations of editing will be concatenated to the previous data source value, up to 85 characters.  
+
+
+9000010.18,80201PROVIDER NARRATIVE CATEGORY 802;1 POINTER TO PROVIDER NARRATIVE FILE (#9999999.27)
+
+              INPUT TRANSFORM:  S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 21, 1994 
+              DESCRIPTION:      This field is the heading or category used to represent the provider narrative on the scanner form.  It may be useful for understanding how providers are grouping data for use on the encounter form, and may help determine
+                                clinical data base definitions in the future.  
+
+              TECHNICAL DESCR:
+                                This field was added for use in the VA.  It is used to identify the common groupings of clinical terminology used by providers.  This field is only captured from automated data capture sources, such as AICS.  
+
+              SCREEN:           S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO")
+              EXPLANATION:      OLD LOOKUP
+
+9000010.18,81101COMMENTS             811;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      JUL 11, 1995 
+              HELP-PROMPT:      Enter a comment 1-245 characters in length. 
+              DESCRIPTION:
+                                This is a commented related to the procedure performed.  The provider may enter this manually via the PCE User Interface.  
+
+
+9000010.18,81201VERIFIED             812;1 SET
+
+                                '1' FOR ELECTRONICALLY SIGNED; 
+                                '2' FOR VERIFIED BY PACKAGE; 
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+9000010.18,81202PACKAGE              812;2 POINTER TO PACKAGE FILE (#9.4)
+
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+9000010.18,81203DATA SOURCE          812;3 POINTER TO PCE DATA SOURCE FILE (#839.7)
+
+              LAST EDITED:      MAY 09, 1996 
+                                UNEDITABLE
+
+
+      FILES POINTED TO                      FIELDS
+
+CPT (#81)                         CPT (#.01)
+
+CPT MODIFIER (#81.3)              CPT MODIFIER:CPT MODIFIER (#.01)
+
+ICD DIAGNOSIS (#80)               DIAGNOSIS (#.05)
+                                  DIAGNOSIS 2 (#.09)
+                                  DIAGNOSIS 3 (#.1)
+                                  DIAGNOSIS 4 (#.11)
+                                  DIAGNOSIS 5 (#.12)
+                                  DIAGNOSIS 6 (#.13)
+                                  DIAGNOSIS 7 (#.14)
+                                  DIAGNOSIS 8 (#.15)
+
+NEW PERSON (#200)                 ORDERING PROVIDER (#1202)
+                                  ENCOUNTER PROVIDER (#1204)
+
+ORDER (#100)                      ORDER REFERENCE (#.17)
+
+PACKAGE (#9.4)                    PACKAGE (#81202)
+
+PATIENT/IHS (#9000001)            PATIENT NAME (#.02)
+
+PCE DATA SOURCE (#839.7)          DATA SOURCE (#81203)
+
+PROVIDER NARRATIVE (#9999999.27)  PROVIDER NARRATIVE (#.04)
+                                  PROVIDER NARRATIVE CATEGORY (#80201)
+
+VISIT (#9000010)                  VISIT (#.03)
+
+
+File #9000010.18
+
+  Record Indexes:
+
+  ACR (#467)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  Clinical Reminders index.
+      Description:  This cross-reference builds two indexes, one for finding all patients with a particular CPT code and one for finding all the CPT codes a patient has.  The indexes are stored in the Clinical Reminders index global as: 
+                     ^PXRMINDX(9000010.18,"IPP",CPT CODE,PP,DFN,VISIT DATE,DAS) and 
+                     ^PXRMINDX(9000010.18,"PPI",DFN,PP,CPT CODE,VISIT DATE,DAS) respectively. PP is the principal procedure code. Possible values are Y (yes), N (no) or U (undefined).  For all the details, see the Clinical Reminders Index Technical
+                    Guide/Programmer's Manual.  
+        Set Logic:  D SVFILEC^PXPXRM(9000010.18,.X,.DA)
+       Kill Logic:  D KVFILEC^PXPXRM(9000010.18,.X,.DA)
+       Whole Kill:  K ^PXRMINDX(9000010.18)
+             X(1):  CPT  (9000010.18,.01)  (Subscr 1)  (forwards)
+             X(2):  PATIENT NAME  (9000010.18,.02)  (Subscr 2)  (forwards)
+             X(3):  VISIT  (9000010.18,.03)  (Subscr 3)  (forwards)
+             X(4):  PRINCIPAL PROCEDURE  (9000010.18,.07)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

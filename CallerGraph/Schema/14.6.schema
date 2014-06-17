@@ -1,0 +1,197 @@
+STANDARD DATA DICTIONARY #14.6 -- UCI ASSOCIATION FILE                                                                                                                                                                            MAY 20,2014@15:36:20  PAGE 1
+STORED IN ^%ZIS(14.6,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 8.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Most TaskMan tasks run in the same uci and volume set in which they were created.  However, tasks that need a device that is only available from a different volume set can not.  Such tasks must run on the volume set from which the device is available, in
+a uci equivalent to their current one.  Equivalent ucis on different volume sets can have different names, so this file indicates which ucis on different volume sets are equivalent.  
+ 
+TaskMan only directly uses the "AT" and "AV" indices.  The "AT" index has this structure:  ^%ZIS("AT",.01,1.5,2.5,3)="", and is used to find equivalent ucis on different volume sets.  The "AV" index has this structure: ^%ZIS("AV",1.5,.01)="", and is used
+to determine whether a certain uci is part of a certain volume set.  
+ 
+Whenever the VOLUME SET field of the VOLUME SET file is changed, a MUMPS cross-reference searches through this file and re-cross-references all pointers to that entry, thereby keeping the two files in synch.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: FROM VOLUME SET (#1)[R], TO VOLUME SET (#2), TO UCI (#3)
+
+CROSS
+REFERENCED BY: FROM UCI(AC), FROM VOLUME SET (FREE TEXT)(AD), TO VOLUME SET (FREE TEXT)(AE), TO UCI(AF), FROM UCI(B)
+
+14.6,.001     NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 18, 1991 
+              HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Answer should be a unique number, used to identify this file entry.  
+
+              TECHNICAL DESCR:
+                                The entries in this file have no unique data elements, so the internal number is used to distinguish them.  
+
+              SOURCE OF DATA:   VA FileMan (arbitrary)
+
+14.6,.01      FROM UCI               0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>32!($L(X)<2)!'(X?2ANP.ANP) X
+              LAST EDITED:      FEB 13, 1991 
+              HELP-PROMPT:      Answer must be 2-32 characters in length. 
+              DESCRIPTION:
+                                Answer should be the name of a uci from which a task is being transferred.  
+
+              SOURCE OF DATA:   System manager (from local system configuration).
+              DATA DESTINATION: System manager (from local system configuration).
+              CROSS-REFERENCE:  14.6^B 
+                                1)= S ^%ZIS(14.6,"B",$E(X,1,30),DA)=""
+                                2)= K ^%ZIS(14.6,"B",$E(X,1,30),DA)
+                                This cross-reference is used directly only by FileMan.  
+
+
+              CROSS-REFERENCE:  14.6^AC^MUMPS 
+                                1)= I $D(^%ZIS(14.6,DA,0))#2,X]"" N ZT S ZT=^(0) D S01^XUTMG146 K ZT
+                                2)= I $D(^%ZIS(14.6,DA,0))#2,X]"" N ZT S ZT=^(0) D K01^XUTMG146 K ZT
+                                This cross-reference updates the "AT" and "AV" indices.  
+
+
+
+14.6,1        FROM VOLUME SET        0;5 POINTER TO VOLUME SET FILE (#14.5) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I Y'=$P(^%ZIS(14.6,DA,0),U,6)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 12, 1991 
+              DESCRIPTION:
+                                Answer should be the name of the volume set from which the task is being transferred.  
+
+              TECHNICAL DESCR:
+                                Altering the pointer value in this field triggers changes to the free text value in field 1.5, which is used to generate the correct cross-references.  
+
+              SCREEN:           S DIC("S")="I Y'=$P(^%ZIS(14.6,DA,0),U,6)"
+              EXPLANATION:      UCIs must be associated with UCIs on different volume sets.
+              SOURCE OF DATA:   System manager (from local system configuration).
+              DATA DESTINATION: System manager (from local system configuration).
+              CROSS-REFERENCE:  ^^TRIGGER^14.6^1.5 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^%ZIS(14.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y X ^DD(14.6,1,1,1,1.1) X ^DD(14.6,1,1,1,1.4)
+                                1.1)= S X=DIV S X=$S('$D(^%ZIS(14.5,+DIV,0)):"",1:$P(^(0),U,1))
+                                1.4)= S DIH=$S($D(^%ZIS(14.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=14.6,DIG=1.5 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^%ZIS(14.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X="" X ^DD(14.6,1,1,1,2.4)
+                                2.4)= S DIH=$S($D(^%ZIS(14.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=14.6,DIG=1.5 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= FROM VOLUME SET
+                                DELETE VALUE)= @
+                                FIELD)= FROM VOLUME SET 
+                                This cross-reference triggers changing the free text value in field 1.5 that corresponds to the pointer value in this field.  
+
+
+
+14.6,1.5      FROM VOLUME SET (FREE TEXT) 0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      FEB 13, 1991 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                This field is write protected and uneditable.  It is triggered by field 1, and holds the resolved pointer values for use in the file's cross- references.  
+
+              TECHNICAL DESCR:
+                                This field is used to generate the correct cross-references for field 1.  This value can only be altered by the trigger on field 1, which ensures that only valid VOLUME SET names are used.  
+
+              WRITE AUTHORITY:  ^
+              SOURCE OF DATA:   System manager (from local system configuration).
+              DATA DESTINATION: System manager (from local system configuration).
+              NOTES:            TRIGGERED by the FROM VOLUME SET field of the UCI ASSOCIATION File 
+
+              CROSS-REFERENCE:  14.6^AD^MUMPS 
+                                1)= I $D(^%ZIS(14.6,DA,0))#2,X]"" N ZT S ZT=^(0) D S15^XUTMG146 K ZT
+                                2)= I $D(^%ZIS(14.6,DA,0))#2,X]"" N ZT S ZT=^(0) D K15^XUTMG146 K ZT
+                                This cross-reference updates the "AT" and "AV" indices.  
+
+
+
+14.6,2        TO VOLUME SET          0;6 POINTER TO VOLUME SET FILE (#14.5)
+
+              INPUT TRANSFORM:  S DIC("S")="I Y'=$P(^%ZIS(14.6,DA,0),U,5)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 12, 1991 
+              DESCRIPTION:
+                                Answer should be the name of the volume set to which the task is being transferred.  
+
+              TECHNICAL DESCR:
+                                The pointer value placed in this field triggers placing the free text value in field 2.5 so that the correct cross-references are made.  
+
+              SCREEN:           S DIC("S")="I Y'=$P(^%ZIS(14.6,DA,0),U,5)"
+              EXPLANATION:      UCIs must be associated with UCIs on different volume sets.
+              SOURCE OF DATA:   System manager (from local system configuration).
+              DATA DESTINATION: System manager (from local system configuration).
+              CROSS-REFERENCE:  ^^TRIGGER^14.6^2.5 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^%ZIS(14.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(14.6,2,1,1,1.1) X ^DD(14.6,2,1,1,1.4)
+                                1.1)= S X=DIV S X=$S('$D(^%ZIS(14.5,+DIV,0)):"",1:$P(^(0),U,1))
+                                1.4)= S DIH=$S($D(^%ZIS(14.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=14.6,DIG=2.5 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^%ZIS(14.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(14.6,2,1,1,2.4)
+                                2.4)= S DIH=$S($D(^%ZIS(14.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=14.6,DIG=2.5 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= TO VOLUME SET
+                                DELETE VALUE)= @
+                                FIELD)= TO VOLUME SET 
+                                This cross-reference triggers changing the free text value in field 2.5 to correspond to the pointer value in this field.  
+
+
+
+14.6,2.5      TO VOLUME SET (FREE TEXT) 0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      FEB 13, 1991 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                This field is write protected and uneditable.  It is triggered by field 2, and holds the resolved pointer values for use in the file's cross- references.  
+
+              TECHNICAL DESCR:
+                                This field holds the free text value associated with the value in field 2, and is triggered by changing that field.  This value is used to set the correct cross-references for field 2.  
+
+              WRITE AUTHORITY:  ^
+              SOURCE OF DATA:   System manager (from local system configuration).
+              DATA DESTINATION: System manager (from local system configuration).
+              NOTES:            TRIGGERED by the TO VOLUME SET field of the UCI ASSOCIATION File 
+
+              CROSS-REFERENCE:  14.6^AE^MUMPS 
+                                1)= I $D(^%ZIS(14.6,DA,0))#2,X]"" N ZT S ZT=^(0) D S25^XUTMG146 K ZT
+                                2)= I $D(^%ZIS(14.6,DA,0))#2,X]"" N ZT S ZT=^(0) D K25^XUTMG146 K ZT
+                                This cross-reference updates the "AT" and "AV" indices.  
+
+
+
+14.6,3        TO UCI                 0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>32!($L(X)<2)!'(X?2ANP.ANP) X
+              LAST EDITED:      FEB 13, 1991 
+              HELP-PROMPT:      Answer must be 2-32 characters in length. 
+              DESCRIPTION:
+                                Answer should be the name of the uci to which the task will be transferred.  
+
+              SOURCE OF DATA:   System manager (from local system configuration).
+              DATA DESTINATION: System manager (from local system configuration).
+              CROSS-REFERENCE:  14.6^AF^MUMPS 
+                                1)= I $D(^%ZIS(14.6,DA,0))#2,X]"" N ZT S ZT=^(0) D S3^XUTMG146 K ZT
+                                2)= I $D(^%ZIS(14.6,DA,0))#2,X]"" N ZT S ZT=^(0) D K3^XUTMG146 K ZT
+                                This cross-reference updates the "AT" and "AV" indices.  
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+VOLUME SET (#14.5)                FROM VOLUME SET (#1)
+                                  TO VOLUME SET (#2)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+XUTM UCI ASSOC                APR 22, 1994        USER #0
+  XUTM UCI ASSOC1               DD #14.6
+

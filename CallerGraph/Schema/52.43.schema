@@ -1,0 +1,165 @@
+STANDARD DATA DICTIONARY #52.43 -- PRESCRIPTION REFILL REQUEST FILE                                                                                                                                                               MAY 20,2014@15:39:19  PAGE 1
+STORED IN ^PS(52.43,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 7.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The purpose of this file is to hold the refill requests that are generated from the web interface in the My HealtheVet package. Requests are filed here, to be processed by pharmacy.  
+
+
+              DD ACCESS: @
+              RD ACCESS: Pp
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: DATE PROCESSED(AD)
+
+INDEXED BY:    PATIENT & RX # (AC), INSTITUTION & PRESCRIPTION IEN (AINST)
+
+
+52.43,.01     PATIENT ICN            0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1.N) X
+              LAST EDITED:      APR 16, 2005 
+              HELP-PROMPT:      Type a number between 1 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is a machine-to-machine identifier for a patient. The number may only be edited by MPI/PD.  
+
+
+52.43,2       PATIENT SSN            0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<1) X
+              LAST EDITED:      APR 16, 2005 
+              HELP-PROMPT:      Answer must be 1-9 characters in length 
+              DESCRIPTION:
+                                This is the social security number associated with this patient. In combination with the Integration Control Number, it is used to validate the patient's identification.  
+
+
+52.43,3       RX #                   0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      APR 16, 2005 
+              HELP-PROMPT:      Answer must be 1-25 characters in length 
+              DESCRIPTION:
+                                This is the external representation of the prescription number for the refill to be processed.  
+
+              RECORD INDEXES:   AC (#619)
+
+52.43,4       INSTITUTION            0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      FEB 07, 2003 
+              HELP-PROMPT:      Answer must be 1-10 characters in length 
+              DESCRIPTION:
+                                The VA facility or institution that will be processing the refill for this prescription.  
+
+              RECORD INDEXES:   AINST (#620)
+
+52.43,5       DATE PROCESSED         0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:3020101>X X
+              LAST EDITED:      JUN 15, 2007 
+              HELP-PROMPT:      TYPE A DATE NOT EARLIER THAN JAN 01, 2002 
+              DESCRIPTION:
+                                This is the date the pharmacy processed the refill request.  
+
+              CROSS-REFERENCE:  52.43^AD^MUMPS 
+                                1)= S ^PS(52.43,"AD",X,DA)=""
+                                2)= K ^PS(52.43,"AD",X,DA)
+
+
+52.43,6       RESULT                 0;6 SET
+
+                                '0' FOR NOT PROCESSED; 
+                                '1' FOR FILLED; 
+                                '2' FOR NOT FILLED; 
+              LAST EDITED:      FEB 07, 2003 
+              DESCRIPTION:
+                                The result of the pharmacy staff processing the refill request. The result may be either FILLED or NOT FILLED.  
+
+
+52.43,7       MHEV UPDATE            0;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 10, 2003 
+              DESCRIPTION:
+                                Indicates whether or not a status update for this refill request has been sent to the My HealtheVet system.  
+
+
+52.43,8       PRESCRIPTION IEN       0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 03, 2005 
+              HELP-PROMPT:      This is the internal entry number from 52. 
+              DESCRIPTION:
+                                This is the internal entry number of the prescription associated with this refill request.  
+
+              RECORD INDEXES:   AINST (#620)
+
+52.43,9       PATIENT                0;9 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      FEB 03, 2005 
+              DESCRIPTION:
+                                The patient receiving treatment.  
+
+              TECHNICAL DESCR:
+                                (Required) Pointer to Patient File (#2).  
+
+              RECORD INDEXES:   AC (#619)
+
+52.43,10      REMARKS                0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 28, 2007 
+              HELP-PROMPT:      Answer must be 1-60 characters in length 
+              DESCRIPTION:
+                                Refill # and suspended date if processed or the reason why it was not processed.  
+
+
+52.43,11      LOGIN DATE             0;11 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 15, 2007 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date MyHealtheVet placed the refill request.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+      FILES POINTED TO                      FIELDS
+
+PATIENT (#2)                      PATIENT (#9)
+
+
+File #52.43
+
+  Record Indexes:
+
+  AC (#619)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  XREF OF REFILL REQUESTS BY PATIENT & RX
+        Set Logic:  S ^PS(52.43,"AC",X(1),X(2),DA)=""
+       Kill Logic:  K ^PS(52.43,"AC",X(1),X(2),DA)
+             X(1):  PATIENT  (52.43,9)  (Subscr 1)  (Len 11)  (forwards)
+             X(2):  RX #  (52.43,3)  (Subscr 2)  (Len 20)  (forwards)
+
+  AINST (#620)    RECORD    MUMPS    IR    ACTION
+      Short Descr:  QUEUE FOR PROCESSING REFILL REQUESTS
+        Set Logic:  S ^PS(52.43,"AINST",X(1),X(2),DA)=""
+       Kill Logic:  K ^PS(52.43,"AINST",X(1),X(2),DA)
+             X(1):  INSTITUTION  (52.43,4)  (Subscr 1)  (forwards)
+             X(2):  PRESCRIPTION IEN  (52.43,8)  (Subscr 2)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

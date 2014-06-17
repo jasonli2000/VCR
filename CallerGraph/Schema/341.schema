@@ -1,0 +1,274 @@
+STANDARD DATA DICTIONARY #341 -- AR EVENT FILE                                                                                                                                                                                    MAY 20,2014@15:30:01  PAGE 1
+STORED IN ^RC(341,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                               (VERSION 4.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains events that occurred to a debtor's account.  This file should NEVER be edited directly.  Eventually all types of events will be stored in this file as the Accounts Receivable package moves to a transaction-based system.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+IDENTIFIED BY: TYPE OF EVENT (#.02)[R], DEBTOR (#.05)[R]
+
+CROSS
+REFERENCED BY: DEBTOR(AC1), STATUS(AC2), DEBTOR(AD1), TYPE OF EVENT(AD2), DATE/TIME CLOSED(AD3), FOLLOW-UP DATE(AE), EVENT IDENTIFIER(B), DATE/TIME CLOSED(C)
+
+341,.01       EVENT IDENTIFIER       0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X I $D(X),$D(^RC(341,"B",X)) W " DUPLICATE AR EVENT ENTRY '"_X_"'!" K X
+              LAST EDITED:      JUN 04, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is a unique identifier of an event logged into the AR Event file.  Usually the first 3 numbers will be the station number followed by a dash.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  341^B 
+                                1)= S ^RC(341,"B",$E(X,1,30),DA)=""
+                                2)= K ^RC(341,"B",$E(X,1,30),DA)
+                                3)= Needed to look-up events by identifier
+                                This cross-reference will allow look-up to the event file by identifier.  
+
+
+
+341,.02       TYPE OF EVENT          0;2 POINTER TO AR EVENT TYPE FILE (#341.1) (Required)
+
+              LAST EDITED:      MAY 31, 1993 
+              DESCRIPTION:      The event type describes the type of event that occurred for a debtor by storing all events that occur for this debtor.  This allows better reporting capabilities, financial integrity, and history recreation.  
+                                 
+                                In version 4.0 of AR, the only types of events that are tracked under this new system are notification type events (letters, UBs, and patient statements) and comments.  Eventually, payments, refunds, etc. will be tracked
+                                in this new file but are currently being tracked in the Accounts Receivable transaction file.  
+
+              CROSS-REFERENCE:  341^AD2^MUMPS 
+                                1)= I $P($G(^RC(341,DA,0)),"^",5),$P(^(0),"^",7) S ^RC(341,"AD",$P(^(0),"^",5),X,9999999.999999-$P(^(0),"^",7),DA)=""
+                                2)= I $P($G(^RC(341,DA,0)),"^",5),$P(^(0),"^",7) K ^RC(341,"AD",$P(^(0),"^",5),X,9999999.999999-$P(^(0),"^",7),DA)
+                                3)= Needed to store events by debtor, event-type, and date/time closed.
+                                This cross-reference is used for account profiles and for printing patient statements, letters, and bills.  It stores the debtor, event-type, and date/time event was closed in reverse order.  
+
+
+
+341,.05       DEBTOR                 0;5 POINTER TO AR DEBTOR FILE (#340) (Required)
+
+              LAST EDITED:      JUN 17, 1993 
+              DESCRIPTION:
+                                This debtor field is used to store what debtor this event belongs to.  By storing events by debtor, this will allow a more efficient system when trying to re-create the activity for a debtor account.  
+
+              CROSS-REFERENCE:  341^AC1^MUMPS 
+                                1)= I $P(^RC(341,DA,0),"^",11)=0 S ^RC(341,"AC",X,0,DA)=""
+                                2)= I $P(^RC(341,DA,0),"^",11)=0 K ^RC(341,"AC",X,0,DA)
+                                3)= Needed to store events that are in OPEN status for debtors.
+                                This cross reference is used to store events that are in an open status.  Since only one event at a time should be in an open status for a debtor, this cross reference makes sure that no two events are in an open status 
+                                for a debtor.  
+
+
+              CROSS-REFERENCE:  341^AD1^MUMPS 
+                                1)= I $P($G(^RC(341,DA,0)),"^",2),$P(^(0),"^",7) S ^RC(341,"AD",X,$P(^(0),"^",2),9999999.999999-$P(^(0),"^",7),DA)=""
+                                2)= I $P($G(^RC(341,DA,0)),"^",2),$P(^(0),"^",7) K ^RC(341,"AD",X,$P(^(0),"^",2),9999999.999999-$P(^(0),"^",7),DA)
+                                3)= Needed to store events by debtor, event-type, and date/time closed.
+                                This-cross reference is used for account profiles and for printing patient statements, letters, and bills.  It stores the debtor, event-type, and date/time event was closed in reverse order.  
+
+
+
+341,.06       DATE/TIME OF EVENT     0;6 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 09, 1993 
+              DESCRIPTION:      The Date/Time of event represents the date the event occurred.  For example, if a user is logging a comment against a debtor account for the previous day, then this field would be dated for that day and not the day it is
+                                being entered.  This allows the user to back-date events that occurred in the past.  
+
+
+341,.07       DATE/TIME CLOSED       0;7 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 31, 1993 
+              DESCRIPTION:      The date/time an event is closed is the time the AR package 'recognizes' the event as being closed and complete.  An event has two status, OPEN and CLOSED.  While a transaction is in a status of 'OPEN' the AR package does
+                                not recognize the transaction.  
+
+              CROSS-REFERENCE:  341^AD3^MUMPS 
+                                1)= I $P($G(^RC(341,DA,0)),"^",5),$P(^(0),"^",2) S ^RC(341,"AD",$P(^(0),"^",5),$P(^(0),"^",2),9999999.999999-X,DA)=""
+                                2)= I $P($G(^RC(341,DA,0)),"^",5),$P(^(0),"^",2) K ^RC(341,"AD",$P(^(0),"^",5),$P(^(0),"^",2),9999999.999999-X,DA)
+                                3)= Needed to store events by debtor, event-type, and date/time closed.
+                                This cross-reference is used for account profiles and for printing patient statements, letters, and bills.  It stores the debtor, event-type, and date/time event was closed in reverse order.  
+
+
+              CROSS-REFERENCE:  341^C 
+                                1)= S ^RC(341,"C",$E(X,1,30),DA)=""
+                                2)= K ^RC(341,"C",$E(X,1,30),DA)
+                                3)= Needed to look-up and search events by Date/Time Closed
+                                This cross reference sorts events by the date/time they are closed and allows a chronological ordering of events.  
+
+
+
+341,.08       CREATED BY             0;8 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 09, 1993 
+              DESCRIPTION:
+                                This is the person that caused the event to be created.  
+
+
+341,.09       SITE                   0;9 POINTER TO INSTITUTION FILE (#4) (Required)
+
+              LAST EDITED:      FEB 19, 1993 
+              DESCRIPTION:
+                                The site field represents the site that the event belongs to.  This field would be used when multiple divisional sites are supported and will allow events to be 'traced' to a particular site.  
+
+
+341,.11       STATUS                 0;11 SET (Required)
+
+                                '0' FOR OPEN; 
+                                '1' FOR CLOSED; 
+              LAST EDITED:      JAN 30, 1993 
+              DESCRIPTION:      The status of an event is either OPEN or CLOSED.  When an event for a debtor is in an 'OPEN' status, this means that activity is occurring and has not completed.  After the activity is completed, the event would be changed
+                                to a status of CLOSED.  
+
+              CROSS-REFERENCE:  341^AC2^MUMPS 
+                                1)= I X=0,$P(^RC(341,DA,0),"^",5) S ^RC(341,"AC",$P(^RC(341,DA,0),"^",5),X,DA)=""
+                                2)= I X=0,$P(^RC(341,DA,0),"^",5) K ^RC(341,"AC",$P(^RC(341,DA,0),"^",5),X,DA)
+                                3)= Needed to store events that are in OPEN status for debtors.
+                                This cross reference is used to store events that are in an open status.  Since only one event at a time should be in an open status for a debtor, this cross reference makes sure that no two events are in an open status 
+                                for a debtor.  
+
+
+
+341,1.01      PRINCIPAL AMOUNT       1;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              OUTPUT TRANSFORM: S Y=$J(Y,0,2)
+              LAST EDITED:      JUL 07, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between -999999.99 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the principal amount of the event if applicable.  Some events, such as comment type events, do not have a dollar amount associated with the event.  
+
+
+341,1.02      INTEREST AMOUNT        1;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              OUTPUT TRANSFORM: S Y=$J(Y,0,2)
+              LAST EDITED:      JUL 07, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between -999999.99 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the interest amount of the event if applicable.  Some events, such as comment type events, do not have a dollar amount associated with the event.  
+
+
+341,1.03      ADMINISTRATIVE         1;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              OUTPUT TRANSFORM: S Y=$J(Y,0,2)
+              LAST EDITED:      JUL 07, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between -999999.99 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the administrative amount of the event if applicable.  Some events, such as comment type events, do not have a dollar amount associated with the event.  
+
+
+341,1.04      COURT AMOUNT           1;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              OUTPUT TRANSFORM: S Y=$J(Y,0,2)
+              LAST EDITED:      JUL 07, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between -999999.99 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the court cost amount of the event if applicable.  Some events, such as comment type events, do not have a dollar amount associated with the event.  
+
+
+341,1.05      MARSHAL AMOUNT         1;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              OUTPUT TRANSFORM: S Y=$J(Y,0,2)
+              LAST EDITED:      JUL 07, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between -999999.99 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the marshal cost amount of the event if applicable.  Some events, such as comment type events, do not have a dollar amount associated with the event.  
+
+
+341,2.01      COMMENT                2;0   WORD-PROCESSING #341.01
+
+              DESCRIPTION:      This field gives the user the ability to give expanded comments for an event or the reason the event occurred or to better describe the event.  
+                                 
+                                For example, if a patient called on the phone, an event could be logged to describe the call and what was discussed with the patient.  
+
+
+341,4.01      BRIEF COMMENT          4;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAR 13, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                A brief comment may exist for certain types of events that can be entered by the user.  A brief comment would consist of a short summary to better describe the reason for the event.  
+
+
+341,4.02      FOLLOW-UP DATE         4;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X D:$D(X) FOL^RCAM
+              LAST EDITED:      OCT 28, 1993 
+              DESCRIPTION:      Comment type transactions that are entered by the user can have an optional follow-up date.  The follow-up date will allow the AR package to remind the user, via a nightly report, to take some action based on the event.  
+                                 
+                                For example, if a patient calls and needs information that is not readily available, a user can enter as a comment with a follow-up date as a 'reminder' to return the information to the patient.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  341^AE 
+                                1)= S ^RC(341,"AE",$E(X,1,30),DA)=""
+                                2)= K ^RC(341,"AE",$E(X,1,30),DA)
+                                3)= Needed to sort events by Follow-up dates
+                                This cross reference is used to sort and print events by their follow-up dates.  
+
+
+
+341,5.01      BILL NUMBER            5;1 POINTER TO ACCOUNTS RECEIVABLE FILE (#430)
+
+              LAST EDITED:      MAY 31, 1993 
+              DESCRIPTION:
+                                If the event type is related to a bill in the Accounts Receivable file, then the bill number will be stored in this field.  For now, the only events that will contain a bill are notification type events.  
+
+
+341,5.02      NOTIFICATION NUMBER    5;2 SET
+
+                                '1' FOR FIRST; 
+                                '2' FOR SECOND; 
+                                '3' FOR THIRD; 
+                                '4' FOR LAST; 
+              LAST EDITED:      MAY 31, 1993 
+              DESCRIPTION:      This field is used when a notification is sent to a debtor.  A notification is either a patient statement, UB bill to insurance company, or follow-up letter to Vendors, Institutions, and persons.  
+                                 
+                                This field will represent the number of times a notification was sent.  If the notification being sent is over three, then this field will be set to four.  
+
+
+341,6.01      CCPC STATEMENT DATE    6;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 07, 1997 
+              DESCRIPTION:
+                                This is the date of the STATEMENT on the sttement from CCPC in Austin.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ACCOUNTS RECEIVABLE (#430)        BILL NUMBER (#5.01)
+
+AR DEBTOR (#340)                  DEBTOR (#.05)
+
+AR EVENT TYPE (#341.1)            TYPE OF EVENT (#.02)
+
+INSTITUTION (#4)                  SITE (#.09)
+
+NEW PERSON (#200)                 CREATED BY (#.08)
+
+
+
+INPUT TEMPLATE(S):
+RCAM COMMENT                  OCT 28, 1993@12:51  USER #0    
+RCEV CLOSE EVENT              MAR 09, 1993@20:10  USER #0    
+RCEV OPEN EVENT               JUN 03, 1993@15:30  USER #0    
+
+PRINT TEMPLATE(S):
+RCAM COMMENT                  AUG 24, 1993@15:41  USER #0                                                                                                                                                                                DEBTOR FOLLOW-UP LIST
+
+SORT TEMPLATE(S):
+RCAM COMMENT                  JUL 14, 1993@14:33  USER #0    
+SORT BY: @FOLLOW-UP DATE//    (User is asked range)
+  WITHIN FOLLOW-UP DATE, SORT BY: @#CREATED BY//
+
+
+FORM(S)/BLOCK(S):

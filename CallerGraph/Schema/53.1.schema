@@ -1,0 +1,1572 @@
+STANDARD DATA DICTIONARY #53.1 -- NON-VERIFIED ORDERS FILE                                                                                                                                                                        MAY 20,2014@15:35:19  PAGE 1
+STORED IN ^PS(53.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Unit Dose Pharmacy orders are initially entered into this file.  
+
+
+COMPILED CROSS-REFERENCE ROUTINE: PSGXR3
+              DD ACCESS: @
+IDENTIFIED BY: MED ROUTE (#3)[R], SCHEDULE TYPE (#7)[R]
+
+POINTED TO BY: LAST N-V ORDER CONVERTED TO V4 field (#20.14) of the PHARMACY SYSTEM File (#59.7) 
+               LAST N-V ORDER CONVERTED TO V4 field (#20.404) of the PHARMACY SYSTEM File (#59.7) 
+               
+
+CROSS
+REFERENCED BY: ADMIN TIMES(AAT), ORDERS FILE PARENT ORDER(ACX), ADMIN TIMES(ADM), PATIENT NAME(AP), *PRIMARY DRUG(APD), PROVIDER(APR), STATUS(AS), VERIFYING NURSE(AV), ORDER NUMBER(B)
+
+INDEXED BY:    CLINIC & PATIENT NAME (AD)
+
+
+53.1,.01      ORDER NUMBER           0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>1000000000)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 16, 1985 
+              HELP-PROMPT:      Type a whole number between 1 and 1000000000. 
+              DESCRIPTION:
+                                  This is a reference number for this order.  
+
+              GROUP:            PSJU
+              CROSS-REFERENCE:  53.1^B 
+                                1)= S ^PS(53.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(53.1,"B",$E(X,1,30),DA)
+
+
+53.1,.24      PRIORITY               .2;4 SET
+
+                                'S' FOR STAT; 
+                                'A' FOR ASAP; 
+                                'R' FOR ROUTINE; 
+                                'P' FOR PREOP; 
+                                'T' FOR TIMING CRITICAL; 
+                                'D' FOR DONE; 
+              LAST EDITED:      MAY 22, 2001 
+              HELP-PROMPT:      Enter a priority for processing the order, if desired. 
+              DESCRIPTION:
+                                This field contains the priority of the order that was received from OERR.  
+
+
+53.1,.25      NUMBER                 0;18 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>1000000000)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 20, 1986 
+              HELP-PROMPT:      Type a whole number between 1 and 1000000000. 
+              DESCRIPTION:
+                                  (Not currently used.) 
+
+              GROUP:            PSJU
+
+53.1,.5       PATIENT NAME           0;15 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      MAY 01, 2004 
+              DESCRIPTION:
+                                  This is the patient for which the medication has been ordered.  
+
+              GROUP:            PSJU
+              CROSS-REFERENCE:  53.1^AP^MUMPS 
+                                1)= S XX=X,X="PSGAXR" X ^%ZOSF("TEST") I  S X=XX D ENNPS^PSGAXR
+                                2)= S XX=X,X="PSGAXR" X ^%ZOSF("TEST") I  S X=XX D ENNPK^PSGAXR
+                                3)= Used by Inpatient Meds to set several cross-references.
+                                  This is used to set and kill the following cross-references: 
+                                 ^PS(53.1,"AC",patient,DA)="" 
+                                 ^PS(53.1,"AOD",patient,primary drug,DA)="" 
+                                 ^PS(53.1,"AS",status,patient,DA)="" 
+                                 ^PS(53.1,"AV",patient,DA)="" 
+                                 ^PS(53.1,"C",patient,DA)="" 
+                                 
+                                  The AC and AOD x-refs are only set if the order has not been verified or discontinued.  
+                                  The AV x-ref is only set if the order has a pending status and was acknowledged by a nurse.  
+
+
+              RECORD INDEXES:   AD (#502)
+
+53.1,1        PROVIDER               0;2 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^(""PS"")),^(""PS""),$S('$P(^(""PS""),""^"",4):1,1:$P(^(""PS""),""^"",4)>DT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 02, 1993 
+              DESCRIPTION:
+                                  This field should contain the prescribing physician's name.  
+
+              SCREEN:           S DIC("S")="I $D(^(""PS"")),^(""PS""),$S('$P(^(""PS""),""^"",4):1,1:$P(^(""PS""),""^"",4)>DT)"
+              EXPLANATION:      Provider must be active and privileged to write medication orders.
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  53.1^APR^MUMPS 
+                                1)= I $P($G(^PS(53.1,DA,0)),"^",15),$D(^PS(55,+$P(^(0),U,15),0)),$P($G(^(5.1)),"^",2)'=X S $P(^(5.1),"^",2)=X
+                                2)= Q
+                                  Updates the UD PROVIDER field of the PHARMACY PATIENT file.  This field is used as a default value for Unit Dose order entry.  S $P(^PS(55,DFN,5.1),"^",2)=PROVIDER 
+
+
+
+53.1,2        DISPENSE DRUG          1;0 POINTER Multiple #53.11
+
+              LAST EDITED:      JUL 17, 1991 
+              DESCRIPTION:
+                                  This is the medication ordered for the patient.  
+
+              GROUP:            PSJU
+
+53.11,.01       DISPENSE DRUG          0;1 POINTER TO DRUG FILE (#50) (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P($G(^PSDRUG(+Y,2)),""^"",6)=+$G(^PS(53.1,DA(1),.1))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      NOV 14, 1991 
+                HELP-PROMPT:      Enter a dispense drug for this order. 
+                DESCRIPTION:
+                                    This is the medication that will actually be dispensed for this order.  An order may have more than one dispense drug.  
+
+                TECHNICAL DESCR:
+                                    This is an entry from the Drug file (50) that will actually be dispensed as part of the order.  An order can have multiple dispense drugs.  
+
+                SCREEN:           S DIC("S")="I $P($G(^PSDRUG(+Y,2)),""^"",6)=+$G(^PS(53.1,DA(1),.1))"
+                EXPLANATION:      Only dispense drugs tied to this order's drug are selectable.
+                EXECUTABLE HELP:  S X(1)=+$G(^PS(53.1,$S($D(DA(1)):DA(1),1:DA),.1)) I $P($G(^PS(50.3,X(1),0)),"^")]"" D EN^DDIOL("     "_$P(^(0),"^")_" is the drug for this order.")
+                LAYGO TEST:       1,0)= S X(1)=$D(^PS(53.1,DA,1,"B",+X)) D:X(1) EN^DDIOL("This dispense drug has already been entered for this order") I 'X(1)
+
+                GROUP:            PSJU
+                CROSS-REFERENCE:  53.11^B 
+                                  1)= S ^PS(53.1,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(53.1,DA(1),1,"B",$E(X,1,30),DA)
+
+
+53.11,.02       UNITS PER DOSE         0;2 NUMBER
+
+                INPUT TRANSFORM:  S:X?1.2N1"/"1.2N X=+$J(+X/$P(X,"/",2),0,2) K:X'?.N.1".".N!(X>30)!(X<0)!(X?.E1"."5.N) X
+                OUTPUT TRANSFORM: S Y=$S(Y=.5:"1/2",Y=.25:"1/4",Y?1".".N:"0"_Y,1:Y)
+                LAST EDITED:      FEB 20, 2003 
+                HELP-PROMPT:      Enter a number between 0 and 30, no more than 4 decimals (will accept fractions). 
+                DESCRIPTION:        This is the number of UNITS (tablets, capsules, etc.) to be dispensed as a DOSE for this order.  The literals '1/2' and '1/4' may be entered.  If there is no entry, it is assumed to be ONE (1).  
+                                                           ** PLEASE NOTE ** 
+                                    If a doctor prescribes 30 ml's of a medication that is usually dispensed and administered as 60 ml's, the correct UNITS PER DOSE would be 1/2 (or .5), NOT 30 ml's.  (30 ml's would be entered into the DOSAGE ORDERED
+                                  field.) 
+                                    If the UNITS PER DOSE ordered is a variable amount (1-2 tab.), it is suggested that the maximum amount be entered into this field and the amount ordered noted either in the DOSAGE ORDERED or SPECIAL INSTRUCTIONS
+                                  fields.  
+
+                EXECUTABLE HELP:  D UNPD^PSJDDUT
+                GROUP:            PSJU
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.11,.03       INACTIVE DATE          0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 26, 1992 
+                HELP-PROMPT:      Enter the date that this drug will no longer be dispense for this order. 
+                DESCRIPTION:
+                                    This is the date that this dispense drug will no longer be dispensed for this order.  Once an order becomes active, dispense drugs cannot be deleted.  
+
+                TECHNICAL DESCR:
+                                    This is used by pharmacy when the dispense drug is no longer to be dispensed for the order.  
+
+                GROUP:            PSJU
+
+
+
+53.1,3        MED ROUTE              0;3 POINTER TO MEDICATION ROUTES FILE (#51.2) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^PS(51.2,+Y,0),""^"",4)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 09, 1987 
+              HELP-PROMPT:      Enter how this medication will be administered to the patient. 
+              DESCRIPTION:
+                                  This is the route of administration for this medication.  (If a corresponding abbreviation is found for this route in the MEDICATION ROUTES file, this package will print that abbreviation on it's reports.) 
+
+              SCREEN:           S DIC("S")="I $P(^PS(51.2,+Y,0),""^"",4)"
+              EXPLANATION:      
+              GROUP:            PSJU
+
+53.1,4        TYPE                   0;4 SET (Required)
+
+                                'U' FOR UNIT DOSE; 
+                                'I' FOR INPATIENT; 
+                                'F' FOR FLUID; 
+                                'H' FOR HYPERAL; 
+              LAST EDITED:      JUN 03, 1991 
+              DESCRIPTION:
+                                  This identifies the type of medication ordered.  
+
+              GROUP:            PSJU
+
+53.1,5        SELF MED               0;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 16, 1986 
+              HELP-PROMPT:      Enter a '1' (or 'YES') if this medication is to be self administered. 
+              DESCRIPTION:
+                                  This should contain a `1' (or `YES') if this medication is to be administered by the patient to himself.  
+
+              GROUP:            PSJU
+              CROSS-REFERENCE:  ^^TRIGGER^53.1^6 
+                                1)= I 'X S DIU=$S($D(^PS(53.1,DA,0)):$P(^(0),"^",6),1:"") I DIU]"" S $P(^(0),"^",6)="" I $O(^DD(53.1,6,1,0)) K DIV S (DIV(0),D0)=DA,DIV="",DIH=53.1,DIG=6 D ^DICR K DIV
+                                2)= S DIU=$S($D(^PS(53.1,DA,0)):$P(^(0),"^",6),1:"") I DIU S $P(^(0),"^",6)="" I $O(^DD(53.1,6,1,0)) K DIV S (DIV(0),D0)=DA,DIV="",DIH=53.1,DIG=6 D ^DICR K DIV
+                                3)= Used by Inpatient Meds.
+                                CREATE CONDITION)= I 'X
+                                CREATE VALUE)= @
+                                DELETE VALUE)= @
+                                FIELD)= HOSPITAL SUPPLIED SELF MED
+                                  Used to update HOSPITAL SUPPLIED SELF MED field to a value of 'NO' when this field is changed from 'YES' to 'NO'.  
+
+
+
+53.1,6        HOSPITAL SUPPLIED SELF MED 0;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      APR 18, 1985 
+              HELP-PROMPT:      Enter 'Yes' (or a '1') if this SELF MED is to be supplied by the medical center's pharmacy. 
+              DESCRIPTION:        This should contain a `1' (or `YES') if this medication is to be a `SELF MED' and this site's pharmacy is to supply the medication.  This is only asked if the user enters `YES' (or `1') to the SELF MED prompt.  If the
+                                SELF MED field is ever edited to show `NO' (or `0'), this is automatically deleted.  
+
+              GROUP:            PSJU
+              NOTES:            TRIGGERED by the SELF MED field of the NON-VERIFIED ORDERS File 
+
+
+53.1,7        SCHEDULE TYPE          0;7 SET (Required)
+
+                                'O' FOR ONE-TIME; 
+                                'P' FOR PRN; 
+                                'C' FOR CONTINUOUS; 
+                                'R' FOR FILL on REQUEST; 
+                                'OC' FOR ON CALL; 
+              LAST EDITED:      FEB 02, 2011 
+              HELP-PROMPT:      Enter the code (C, O, OC, P, or R) corresponding to the scheduling of this order. 
+              DESCRIPTION:        This describes the type of schedule for the dispensing of the medication(s) that make up the order.  
+                                  PRE-OP orders are usually considered to be ON-CALL orders, and orders dispensed as MUTLI-DOSE CONTAINERS are usually considered to be FILL ON REQUEST orders.  
+
+              TECHNICAL DESCR:
+                                  This is used to determine how the order will be dispensed by the pharmacy to the ward.  This is used mainly when the Unit Dose package calculates the number of units or doses to be dispensed for a given date/time range.  
+
+              EXECUTABLE HELP:  D SCHTP^PSJDDUT
+              GROUP:            PSJU
+              CROSS-REFERENCE:  ^^TRIGGER^53.1^25 
+                                1)= I X="O",$D(^PS(53.1,DA,2)),$P(^(2),"^",2),$P(^(2),"^",4),$P(^(2),"^",2)'=$P(^(2),"^",4) S DIU=$P(^(2),"^",4),$P(^(2),"^",4)=$P(^(2),"^",2) I $O(^DD(53.1,25,1,0)) K DIV S DIV=$P(^PS(53.1,DA,2),"^",2) X ^DD(53.1,7,1,2,1.
+                                4)
+
+                                1.4)= S (DIV(0),D0)=DA,DIH=53.1,DIG=25 D ^DICR K DIV W "   ...This changes the STOP DATE/TIME..."
+
+                                2)= Q
+                                3)= Used by Inpatient Meds.
+                                CREATE CONDITION)= I X="O"
+                                CREATE VALUE)= START DATE/TIME
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= STOP DATE/TIME
+                                  If the SCHEDULE TYPE is changed to "ONE-TIME", the STOP DATE/TIME is changed to be the same as the START DATE/TIME.  
+
+
+
+53.1,8        SPECIAL INSTRUCTIONS   6;1 FREE TEXT
+
+              INPUT TRANSFORM:  D CHKSI^PSJDDUT
+              LAST EDITED:      JUN 19, 1997 
+              HELP-PROMPT:      Answer must be 1-180 characters in length. 
+              DESCRIPTION:        This is any special instructions (using abbreviations whenever possible) needed for this order.  This would include the physician's reason for ordering a PRN.  The abbreviations and expansions from the MEDICATION 
+                                INSTRUCTIONS file are utilized.  
+
+              EXECUTABLE HELP:  D SPCIN^PSJDDUT
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.1,9        RENEWAL                4;9 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JAN 24, 1986 
+              DESCRIPTION:
+                                  (Not currently used.) 
+
+              GROUP:            PSJU
+
+53.1,10       START DATE/TIME        2;2 DATE (Required)
+
+              INPUT TRANSFORM:  D:X="P" STRDT^PSJDDUT I $D(X) S %DT="ETX" D ^%DT S X=Y K:Y<1!('$P(X,".",2)) X
+              LAST EDITED:      JUN 19, 1997 
+              HELP-PROMPT:      Enter the date and time that the first dose is to be given.   
+              DESCRIPTION:        This is the date and time the order is to begin.  This package initially 
+                                 assigns the START DATE/TIME to the closest administration time or next 
+                                 admin. time or NOW depends on the value of the DEFAULT START DATE 
+                                 CALCULATION field in the INPATIENT WARD PARAMETERS file.  
+                                 START DATE/TIME may not be entered prior to 7 days from the order's 
+                                 LOGIN DATE.  
+
+              EXECUTABLE HELP:  D EN^DDIOL("  TIME IS REQUIRED.","","!")
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.1,11       DAY LIMIT              0;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 18, 1985 
+              HELP-PROMPT:      Type a whole number between 1 and 99. 
+              DESCRIPTION:
+                                  This is the number of days that this order will last.  
+
+              WRITE AUTHORITY:  ^
+              GROUP:            PSJU
+
+53.1,12       DOSE LIMIT             0;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 18, 1985 
+              HELP-PROMPT:      Type a whole number between 1 and 99. 
+              DESCRIPTION:
+                                  This is the number of times the medication is to be administered.  
+
+              WRITE AUTHORITY:  ^
+              GROUP:            PSJU
+
+53.1,13       *UNITS PER DOSE        0;12 NUMBER
+
+              INPUT TRANSFORM:  S X=$S(X="1/2":.5,X="1/4":.25,1:X) K:+X'=X!(X>30)!(X<0)!(X?.E1"."3.N) X
+              OUTPUT TRANSFORM: S Y=$S(Y=.5:"1/2",Y=.25:"1/4",Y?1".".N:"0"_Y,1:Y)
+              LAST EDITED:      NOV 12, 1992 
+              HELP-PROMPT:      Enter a number between 0 and 30 (will accept '1/2' or '1/4'). 
+              DESCRIPTION:
+                                  This is now for use only by the package.  Units per Dose is now associated with each dispense drug.  
+
+              TECHNICAL DESCR:
+                                  This is now for use only by the package for look-up purposes during order entry.  Units per dose is now associated with each dispense drug.  See Units per Dose (field #.02) within the Dispense Drug multiple (#53.11).  
+
+              EXECUTABLE HELP:  D UNPD^PSJDDUT
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.1,14       *PRE-EXCHANGE UNITS    5;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."3N.N) X
+              LAST EDITED:      NOV 12, 1992 
+              HELP-PROMPT:      Type a Number between 0 and 99, 2 Decimal Digits. 
+              DESCRIPTION:
+                                  This is the number of actual units needed for this order until the next cart exchange.  
+
+              GROUP:            PSJU
+
+53.1,15       RENEWAL USER           4;10 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 08, 1991 
+              DESCRIPTION:
+                                  This is the user who renewed this order, or marked this order to be renewed.  
+
+              GROUP:            PSJU
+
+53.1,16       VERIFYING NURSE        4;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JAN 22, 1996 
+              DESCRIPTION:
+                                  This is the nurse who verifies the order.  
+
+              GROUP:            PSJU
+              CROSS-REFERENCE:  53.1^AV^MUMPS 
+                                1)= S XX=X,X="PSGAXR" X ^%ZOSF("TEST") I  S X=XX D ENNACK^PSGAXR
+                                2)= S XX=X,X="PSGAXR" X ^%ZOSF("TEST") I  S X=XX D ENNACKK^PSGAXR
+                                If the order has a pending status and was acknowledged by a nurse, this x-ref is set: 
+                                 ^PS(53.1,"AV",patient,DA)="" 
+
+
+
+53.1,17       DATE VERIFIED BY NURSE 4;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 18, 1985 
+              DESCRIPTION:
+                                  This is the date the order was verified by the nurse.  
+
+              GROUP:            PSJU
+
+53.1,18       VERIFYING PHARMACIST   4;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 08, 1991 
+              DESCRIPTION:
+                                  This is the pharmacist who verified the order.  
+
+              GROUP:            PSJU
+
+53.1,19       DATE VERIFIED BY PHARMACIST 4;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 18, 1985 
+              DESCRIPTION:
+                                  This is the date the order was verified by the pharmacist.  
+
+              GROUP:            PSJU
+
+53.1,20       PHYSICIAN              4;5 POINTER TO NEW PERSON FILE (#200)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^(""PS""),^(""PS""),$S('$P(^(""PS""),""^"",4):1,1:$P(^(""PS""),""^"",4)>DT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 08, 1991 
+              DESCRIPTION:
+                                  This is the physician who signed off on the order.  
+
+              SCREEN:           S DIC("S")="I $D(^(""PS""),^(""PS""),$S('$P(^(""PS""),""^"",4):1,1:$P(^(""PS""),""^"",4)>DT)"
+              EXPLANATION:      Provider must be active and privileged to write medciation orders.
+              GROUP:            PSJU
+
+53.1,21       DATE VERIFIED BY PHYSICIAN 4;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 18, 1985 
+              DESCRIPTION:
+                                  This is the date the physician signed off on the order.  
+
+              GROUP:            PSJU
+
+53.1,22       CLERK                  4;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 08, 1991 
+              DESCRIPTION:
+                                  This is the user who entered the order.  
+
+              GROUP:            PSJU
+
+53.1,23       DATE ENTERED BY CLERK  4;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 18, 1985 
+              DESCRIPTION:
+                                  This is the date (to the second) that the order was entered.  
+
+              GROUP:            PSJU
+
+53.1,24       SOLUTION               0;17 POINTER TO DRUG FILE (#50) (Required)
+
+              LAST EDITED:      APR 18, 1985 
+              DESCRIPTION:
+                                  (Not currently used.) 
+
+              GROUP:            PSJU
+
+53.1,25       STOP DATE/TIME         2;4 DATE (Required)
+
+              INPUT TRANSFORM:  X:X=+X&X&$D(^PS(53.1,DA,2)) "S PSGDL=X D EN^PSJDDUT" S %DT="ERTX" D ^%DT S X=+Y K:Y'>0 X
+              LAST EDITED:      JUN 19, 1997 
+              HELP-PROMPT:      Enter the date and time that the last dose is to be given (and the order will expire). 
+              DESCRIPTION:
+                                  This is the date and time the order will automatically expire.  This package initially assigns a default STOP DATE/TIME, depending on the SITE PARAMETERS.  
+
+              EXECUTABLE HELP:  D EN^PSJDDUT3("STPDTHLP")
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the SCHEDULE TYPE field of the NON-VERIFIED ORDERS File 
+
+
+53.1,26       SCHEDULE               2;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  D:'$D(PSGOES) SCH^PSJDDUT
+              LAST EDITED:      JUN 19, 1997 
+              HELP-PROMPT:      Answer must be 1-70 characters in length and may contain only two spaces. 
+              DESCRIPTION:        This is the frequency (ONLY) with which the doses are to be administered.  Several forms of entry are acceptable, such as Q6H, 09-12-15, STAT, QOD, and MO-WE-FR@AD (where MO-WE-FR are days of the week, and AD is the
+                                admin times).  The schedule will show on the MAR, labels, etc.  No more than TWO spaces (Q3H 4, TID PC PRN, or Q4H PRN) in the schedule are acceptable.  If the letters PRN are found as part of the schedule, no admin times
+                                will print on the MAR or labels, and the PICK LIST will always show a count of zero (0).  
+                                  Avoid using notation such as W/F (with food) or WM (with meals)in the schedule as it may cause erroneous calculations.  That information should be entered into the SPECIAL INSTRUCTIONS.  
+                                  When using the MO-WE-FR@AD schedule, please remember that this type of schedule will not work properly without the "@" character and at least one admin time, and that at least the first two letters of each weekday
+                                entered is needed.  
+
+              EXECUTABLE HELP:  D SCH3^PSJDDUT
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^53.1^39 
+                                1)= I '$D(DIU(0)),$D(PSGS0Y),PSGS0Y S DIU=$S($D(^PS(53.1,DA,2)):$P(^(2),"^",5),1:"") I DIU'=PSGS0Y S $P(^(2),"^",5)=PSGS0Y I $O(^DD(53.1,39,1,0)) K DIV S (DIV(0),D0)=DA,DIV=PSGS0Y,DIH=53.1,DIG=39 D ^DICR K DIV
+                                2)= I '$D(DIU(0)),$D(PSGS0Y) S DIU=$S($D(^PS(53.1,DA,2)):$P(^(2),"^",5),1:"") I DIU]"" S $P(^(2),"^",5)="" I $O(^DD(53.1,39,1,0)) K DIV S (DIV(0),D0)=DA,DIV="",DIH=53.1,DIG=39 D ^DICR K DIV
+                                CREATE VALUE)= PSGS0Y
+                                DELETE VALUE)= @
+                                FIELD)= ADMIN TIMES
+                                Triggers data into Admin. Times field.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^53.1^41 
+                                1)= I $D(PSGS0XT),PSGS0XT S DIU=$S($D(^PS(53.1,DA,2)):$P(^(2),"^",6),1:"") I DIU'=PSGS0XT S $P(^(2),"^",6)=PSGS0XT I $O(^DD(53.1,41,1,0)) K DIV S (DIV(0),D0)=DA,DIV=PSGS0XT,DIH=53.1,DIG=41 D ^DICR K DIV
+                                2)= I $D(PSGS0XT) S DIU=$S($D(^PS(53.1,DA,2)):$P(^(2),"^",6),1:"") I DIU]"" S $P(^(2),"^",6)="" I $O(^DD(53.1,41,1,0)) K DIV S (DIV(0),D0)=DA,DIV="",DIH=53.1,DIG=41 D ^DICR K DIV
+                                CREATE VALUE)= PSGS0XT
+                                DELETE VALUE)= @
+                                FIELD)= FREQUENCY (in minutes)
+                                Triggers data into Frequency (min.) field.  
+
+
+
+53.1,27       ORDER DATE             0;14 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1!($P(X,".",2)']"") X
+              LAST EDITED:      APR 30, 1985 
+              HELP-PROMPT:      Enter Date/Time that order was written. 
+              DESCRIPTION:
+                                  This is the date the medication was ordered.  
+
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.1,27.1     LOG-IN DATE            0;16 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 24, 1986 
+              DESCRIPTION:
+                                  This is the date (to the second) the ordered was entered.  
+
+              WRITE AUTHORITY:  ^
+              GROUP:            PSJU
+                                UNEDITABLE
+
+53.1,28       STATUS                 0;9 SET (Required)
+
+                                'A' FOR ACTIVE; 
+                                'D' FOR DISCONTINUED; 
+                                'I' FOR INCOMPLETE; 
+                                'N' FOR NON-VERIFIED; 
+                                'U' FOR UNRELEASED; 
+                                'P' FOR PENDING; 
+                                'DE' FOR DISCONTINUED (EDIT); 
+              LAST EDITED:      MAY 27, 1992 
+              DESCRIPTION:
+                                  This is the status of the order.  
+
+              GROUP:            PSJU
+              CROSS-REFERENCE:  53.1^AS^MUMPS 
+                                1)= S XX=X,X="PSGAXR" X ^%ZOSF("TEST") I  S X=XX D ENSS^PSGAXR
+                                2)= S XX=X,X="PSGAXR" X ^%ZOSF("TEST") I  S X=XX D ENSK^PSGAXR
+                                3)= NEEDED BY UNIT DOSE
+                                Sets the following x-refs: ^PS(53.1,"AS",status,patient,DA) 
+                                 
+                                If the status is not ACTIVE or a DISCONTINUED status, the following are also set: ^PS(53.1,"AC",patient,DA) ^PS(53.1,"AOD",patient,primary drug,DA) 
+                                 
+                                If the status is pending and order has been acknowledged by a nurse, the following is also set: ^PS(53.1,"AV",patient,DA) 
+                                 
+                                These are used for certain look-ups.  
+
+
+
+53.1,29       DATE RENEWAL MARKED    4;11 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 24, 1986 
+              DESCRIPTION:
+                                  This is the date the order was marked to be renewed.  
+
+              GROUP:            PSJU
+
+53.1,30       MARKED CANCELLED       4;12 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JAN 24, 1986 
+              DESCRIPTION:
+                                  This is an internal flag showing that the order has been marked to be cancelled.  
+
+              GROUP:            PSJU
+
+53.1,31       MARKED CANCELLED USER  4;13 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 08, 1991 
+              DESCRIPTION:
+                                  This is the user who marked the order to be cancelled.  
+
+              GROUP:            PSJU
+
+53.1,32       INACTIVE DATE/TIME     2;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 06, 1987 
+              DESCRIPTION:
+                                  This is the original stop date of the order, and is updated when the order is cancelled.  
+
+              GROUP:            PSJU
+
+53.1,33       DOSES CALLED FOR       5;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 11, 1985 
+              HELP-PROMPT:      Type a whole number between 0 and 9999. 
+              DESCRIPTION:
+                                  This is the total amount of the medication to be dispensed as calculated by the package.  
+
+              GROUP:            PSJU
+
+53.1,34       DOSES ACTUALLY DISPENSED 5;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 11, 1985 
+              HELP-PROMPT:      Type a whole number between 0 and 9999. 
+              DESCRIPTION:
+                                  This is the amount of the medication actually dispensed as entered by the pharmacist.  
+
+              GROUP:            PSJU
+
+53.1,35       RETURNS                5;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<-100)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 11, 1985 
+              HELP-PROMPT:      Enter a whole number between -100 and 100. 
+              DESCRIPTION:
+                                  This is the number of doses returned of this medication from the patient's cassette upon the termination of this order.  
+
+              EXECUTABLE HELP:  S Y1=$S('$D(^PS(53.1,DA,5)):0,1:$P(^(5),"^",4)) D EN^DDIOL($S(Y1:Y1_"TOTAL",1:"NO")_" DOSE"_$E("S",Y1'=1)_" RETURNED, SO FAR.","","!")
+              GROUP:            PSJU
+
+53.1,36       TOTAL RETURNS          5;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 11, 1985 
+              HELP-PROMPT:      Type a whole number between 0 and 9999. 
+              DESCRIPTION:
+                                  This is the total amount of returns for this order.  
+
+              GROUP:            PSJU
+
+53.1,37       TOTAL UNITS DISPENSED   ;  COMPUTED
+
+              MUMPS CODE:       S Y(53.1,37,2)=$S($D(^PS(53.1,D0,0)):^(0),1:""),Y(53.1,37,1)=$S($D(^(5)):^(5),1:"") S X=$P(Y(53.1,37,1),U,3)+$P(Y(53.1,37,2),U,13)-$P(Y(53.1,37,1),U,4)
+              ALGORITHM:        DOSES ACTUALLY DISPENSED+PRE-EXCHANGE NEEDS-TOTAL RETURNS
+              LAST EDITED:      NOV 11, 1985 
+              DESCRIPTION:
+                                  This is the total amount dispensed for this order, including PRE-EXCHANGE NEEDS and EXTRA UNITS DISPENSED.  
+
+              GROUP:            PSJU
+
+53.1,38       DATE MARKED CANCELLED  4;14 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 24, 1986 
+              DESCRIPTION:
+                                  This is the date that the order was marked for cancellation.  
+
+              GROUP:            PSJU
+
+53.1,39       ADMIN TIMES            2;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) D ENCHK^PSGS0
+              LAST EDITED:      FEB 09, 2009 
+              HELP-PROMPT:      Enter a set of administration times for this order. 
+              DESCRIPTION:
+                                  This is the set of administration times for this order.  
+
+              EXECUTABLE HELP:  D ADTM2^PSJDDUT
+              DELETE TEST:      5,0)= I $D(^PS(53.1,DA,2)),$P(^(2),"^")["@" D EN^DDIOL("YOU CANNOT DELETE THE ADMIN TIMES FOR THIS TYPE OF SCHEDULE. ","","!?2")
+
+                                41,0)= I $D(^PS(53.1,DA,2)),$P(^(2),"^",6)="D" D EN^DDIOL("This is a 'DAY OF THE WEEK' schedule, and must have admin times.","","!")
+
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the SCHEDULE field of the NON-VERIFIED ORDERS File 
+
+              CROSS-REFERENCE:  53.1^AAT^MUMPS 
+                                1)= S PSGS0Y=X
+                                2)= Q
+                                 Used to ensure the variable PSGS0Y contains the admin times for the order when the field is set using VA FileMan.  
+                                 S PSGS0Y=ADMIN TIMES 
+
+
+              CROSS-REFERENCE:  53.1^ADM^MUMPS 
+                                1)= I $D(^PS(53.1,DA,2)),$P(^(2),"^")["@" S $P(^(2),"^")=$P($P(^(2),"^"),"@")_"@"_X
+                                2)= Q
+                                3)= NEEDED BY UNIT DOSE
+                                Used to update a DAY OF THE WEEK type schedule whenever the admin times are changed.  S $P(^PS(53.1,ORDER NUMBER,2),"^")=$P(SCHEDULE,"@",2)_@_ADMIN TIMES 
+
+
+
+53.1,40       COMMENTS               3;0   WORD-PROCESSING #53.12
+
+              DESCRIPTION:
+                                  This is any remarks needed for this order.  
+
+              GROUP:            PSJU
+
+53.1,41       FREQUENCY (in minutes) 2;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<1) X
+              LAST EDITED:      JAN 09, 1990 
+              HELP-PROMPT:      Answer must be 1-6 characters in length. 
+              DESCRIPTION:
+                                  This is either a code or the number of minutes between the administration times for the order.  
+
+              WRITE AUTHORITY:  ^
+              GROUP:            PSJU
+              NOTES:            TRIGGERED by the SCHEDULE field of the NON-VERIFIED ORDERS File 
+
+
+53.1,42       TRANSFER               4;15 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JAN 24, 1986 
+              DESCRIPTION:
+                                  This is an internal flag set if the order was cancelled due to the patient being transferred.  
+
+              GROUP:            PSJU
+
+53.1,43       PV FLAG                4;16 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JAN 27, 1986 
+              DESCRIPTION:
+                                  This is an internal flag set if the order was ever verified by a pharmacist.  
+
+              GROUP:            PSJU
+
+53.1,44       LABEL DATE             7;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 07, 1986 
+              HELP-PROMPT:      Enter the date the latest label was created for this order. 
+              DESCRIPTION:
+                                  This is the date the last label record was created for this order.  
+
+              GROUP:            PSJU
+
+53.1,45       LABEL REASON           7;2 SET
+
+                                'D' FOR DISCONTINUED; 
+                                'E' FOR EDITED; 
+                                'N' FOR NEW; 
+                                'DE' FOR DISCONTINUED (EDIT); 
+              LAST EDITED:      AUG 31, 1992 
+              HELP-PROMPT:      Enter the reason the latest label was created for this order. 
+              DESCRIPTION:
+                                  This is the last activity to take place on the order that created a label record.  
+
+              GROUP:            PSJU
+
+53.1,46       NEW ORDER NO.          0;19 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 22, 1986 
+              HELP-PROMPT:      Enter a whole number between 0 and 999999999 
+              DESCRIPTION:        When an order is first made active, the new order number (from ^PS(55)) is stored in this field.  
+                                  (Not currently used.) 
+
+              GROUP:            PSJU
+
+53.1,47       SIG                    6.5;1 FREE TEXT
+
+              SIG                                                                                                              
+              INPUT TRANSFORM:  K:$L(X)>180!($L(X)<1) X
+              LAST EDITED:      OCT 22, 1987 
+              HELP-PROMPT:      Answer must be 1-180 characters in length. 
+              DESCRIPTION:
+                                  This is the provider's exact instructions for this order's medication and its administration.  
+
+              GROUP:            PSJU
+
+53.1,48       PURGE FLAG             0;20 SET
+
+                                '1' FOR ORDER TO BE PURGED; 
+              LAST EDITED:      JUN 17, 1987 
+              DESCRIPTION:
+                                  This is an internal flag set when the order is due to be purged (deleted).  
+
+              GROUP:            PSJU
+
+53.1,49       ORDERS FILE ENTRY      0;21 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      JAN 29, 1996 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                  This is the pointer value of the corresponding entry in the Orders file (100) when the order is entered through the OE/RR process.  
+
+              GROUP:            PSJU
+
+53.1,50       LAST WARD              0;23 POINTER TO WARD LOCATION FILE (#42)
+
+              LAST EDITED:      AUG 15, 1988 
+              HELP-PROMPT:      SHOULD NOT BE ENTERED THROUGH VA FILEMAN. 
+              DESCRIPTION:        This is the last ward the patient was located when the order expired or was discontinued.  This is automatically updated by the Unit Dose package when the package finds that the patient is first admitted or when the
+                                patient is found to have been transferred.  This allows any returns that are entered to be credited to the correct ward.  
+
+              GROUP:            PSJU
+
+53.1,51       LABEL CREATOR          7;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 08, 1991 
+              DESCRIPTION:
+                                  This is the user who took the action that created the label for this order.  
+
+              GROUP:            PSJU
+
+53.1,52       WARD FOR AUTO-CANCEL LABEL 7;4 POINTER TO WARD LOCATION FILE (#42)
+
+              LAST EDITED:      NOV 01, 1988 
+              DESCRIPTION:
+                                  This is the ward the patient was on before the transfer or discharge that created the label occurred.  
+
+              GROUP:            PSJU
+
+53.1,53       IV TYPE                8;1 SET
+
+                                'A' FOR ADMIXTURE; 
+                                'C' FOR CHEMOTHERAPY; 
+                                'H' FOR HYPERAL; 
+                                'P' FOR PIGGYBACK; 
+                                'S' FOR SYRINGE; 
+              LAST EDITED:      MAY 21, 1991 
+              DESCRIPTION:
+                                  Type of IV - "A" for Admixture, "C" for Chemotherapy, "H" for Hyperal, "P" for Piggyback, and "S" for Syringe.  
+
+
+53.1,54       CHEMOTHERAPY TYPE      8;2 SET (Required)
+
+                                'A' FOR ADMIXTURE; 
+                                'P' FOR PIGGYBACK; 
+                                'S' FOR SYRINGE; 
+              LAST EDITED:      MAY 21, 1991 
+              DESCRIPTION:        A chemotherapy IV order may be one of three type: admixture, piggyback, or syringe.  The type of chemotherapy IV must be identified as one of these types, so the system will know what kinds of questions to ask in order
+                                to properly complete this order.  
+
+
+53.1,55       SYRINGE SIZE           8;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+              LAST EDITED:      MAY 11, 2005 
+              HELP-PROMPT:      Answer must be 1-100 characters in length. Example: 25 cc's ..NOTE.. total volume of order should be less than syringe size. 
+              DESCRIPTION:
+                                  Enter the size of the syringe which is to be used to administer this IV.  
+
+              GROUP:            PSJI
+
+53.1,56       INTERMITTENT SYRINGE   8;4 SET (Required)
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAY 21, 1991 
+              DESCRIPTION:        A syringe IV order may be continuous or intermittent.  If a syringe type is continuous (not intermittent), the same order entry procedure will be followed as if a hyperal or admixture is being entered.  If a syringe
+                                order is to be intermittent, the same order entry method as the piggyback type will be followed.  
+
+              GROUP:            PSJI
+
+53.1,57       ADDITIVE               AD;0 POINTER Multiple #53.157 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                  The additive in the IV.  This looks at the IV ADDITIVES file (52.6).  
+
+              GROUP:            PSJI
+
+53.157,.01      ADDITIVE               0;1 POINTER TO IV ADDITIVES FILE (#52.6) (Multiply asked)
+
+                INPUT TRANSFORM:  S PSIVX=X,DIC("S")="I $S($D(^(""I"")):DT<^(""I"")!'^(""I""),1:1),($S($D(^PSDRUG($P(^(0),U,2),""I"")):DT<^(""I"")!'^(""I""),1:1))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      MAY 21, 1991 
+                DESCRIPTION:
+                                    The additive selected as part of the IV order.  This entry is a pointer to the ADDITIVES file (52.6).  
+
+                SCREEN:           S DIC("S")="I $S($D(^(""I"")):DT<^(""I"")!'^(""I""),1:1),($S($D(^PSDRUG($P(^(0),U,2),""I"")):DT<^(""I"")!'^(""I""),1:1))"
+                EXPLANATION:      Choose an additive, an additive's synonym or an additives quick code.
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  53.157^B 
+                                  1)= S ^PS(53.1,DA(1),"AD","B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(53.1,DA(1),"AD","B",$E(X,1,30),DA)
+
+
+53.157,1        STRENGTH               0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:X'?.6N.".".8N!(X<0) X I $D(X) S X=X_" "_$$ENU^PSIVUTL(DRG(1)) D EN^DDIOL("  "_$P(X," ",2)_" ")
+                LAST EDITED:      JUN 25, 1991 
+                DESCRIPTION:       "STRENGTH" is the amount of an additive to be used in the manufacturing of the IV order. NOTE! You will be expected to use the strength units that were previously defined within the IV ADDITIVE file (52.6) for each 
+                                  additive. For example, if the DRUG UNITS field of the IV ADDITIVES file specifies the units for ampicillin to be in grams, it would be incorrect to enter 500 for a half-gram dose. Enter 0.5 instead.  
+
+                EXECUTABLE HELP:  D:X="??" ENTDRG^PSIVDRG D EN^DDIOL("Enter the strength"_$S($$ENU^PSIVUTL(DRG(1))]"":" in "_$$ENU^PSIVUTL(DRG(1))_"'s",1:"")_". Enter only a number.")
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.157,2        BOTTLE                 0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>20!($L(X)<1) X F PSIV=1:1 Q:'$D(X)  Q:PSIV>$L(X,",")  K:$P(X,",",PSIV)'?1N.N X
+                LAST EDITED:      JUL 26, 2011 
+                HELP-PROMPT:      Enter the bottle #'s that this additive will be in (e.g. '1', '1,3', or   <return> for all bottles).   In case of "See Comments," replace with specific bottle #'s or enter "@" to specify all bottles. 
+                DESCRIPTION:
+                                   This is the bottle number (or numbers, separated by commas) in which this additive will be included for this IV order. If this field is blank, it means that the additive will be included in all bottles.  
+
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+53.1,58       SOLUTION               SOL;0 POINTER Multiple #53.158 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                  Solution in the IV.  Points to the IV SOLUTIONS file (52.7).  
+
+              GROUP:            PSJI
+
+53.158,.01      SOLUTION               0;1 POINTER TO IV SOLUTIONS FILE (#52.7)
+
+                INPUT TRANSFORM:  S DIC("S")="I $S($D(^(""I"")):DT<^(""I"")!'^(""I""),1:1),($S($D(^PSDRUG($P(^(0),U,2),""I"")):DT<^(""I"")!'^(""I""),1:1))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      MAY 23, 1991 
+                HELP-PROMPT:      Answer must be 1-120 characters in length. 
+                DESCRIPTION:
+                                    The solution entered as part of the specified IV order.  
+
+                SCREEN:           S DIC("S")="I $S($D(^(""I"")):DT<^(""I"")!'^(""I""),1:1),($S($D(^PSDRUG($P(^(0),U,2),""I"")):DT<^(""I"")!'^(""I""),1:1))"
+                EXPLANATION:      Choose an active solution.
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  53.158^B 
+                                  1)= S ^PS(53.1,DA(1),"SOL","B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(53.1,DA(1),"SOL","B",$E(X,1,30),DA)
+
+
+53.158,1        VOLUME                 0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45)!(X'=+X)!(X>9999)!(X<.01) X I $D(X) S X=X_" ML" D EN^DDIOL("  "_X)
+                LAST EDITED:      MAY 21, 1991 
+                HELP-PROMPT:      Answer must be a number from .01-9999. 
+                DESCRIPTION:
+                                    The volume of this solution in MLs. Only numeric values may be entered in this field.  The total volume of the IV order is sum of solution's volumes.  
+
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+53.1,59       INFUSION RATE          8;5 FREE TEXT
+
+              INPUT TRANSFORM:  D ENI^PSJDDUT3
+              LAST EDITED:      JUN 19, 1997 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:        The rate at which the IV is to be administered.  This value, in conjunction with the total volume of the hyperal or the admixture type, is used to determine the time covered by one bag; hence the system can predict the
+                                bags needed during a specified time of coverage.  This field is free text for IVPB's.  For LVP's you must enter a number that will represent the infusion rate.  You may also specify the # of bags per day that will be 
+                                needed.  
+                                 
+                                  Example.  125 = 125 ml/hr (IV system will calculate bags needed per day) 
+                                          125@2 = 125 ml/hr with 2 labels per day 
+                                      TITRATE@1 = TITRATE with 1 label per day.  
+                                 The format of this field is either a number only or 
+                                 [FREE TEXT@NUMBER OF LABELS PER DAY].  
+                                 
+                                Note: If an administration time(s) is defined, the number of labels will reflect the administration time(s) for the IVPB type orders.  For example:  One administration time of 12:00 is specified.  The infusion rate is
+                                entered as 125@3.  Only 1 label will print.  
+
+              GROUP:            PSJI
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.1,60       SCHEDULE INTERVAL      8;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 24, 1991 
+              HELP-PROMPT:      Type a Number between 0 and 9999. 
+              DESCRIPTION:
+                                  Interval (in minutes) between administrations of the IV order.  
+
+              GROUP:            PSJI
+
+53.1,61       ATZERO                 8;7 SET
+
+                                '1' FOR PRINT PB'S ON DEMAND; 
+              LAST EDITED:      JUN 03, 1991 
+              DESCRIPTION:        If an IV order is intermittent and a schedule was entered in the form SCHEDULE@0.  Notice there are no spaces in the input.  When a schedule is entered in this form, this field is set to 1.  This causes the order to be 
+                                printed on the Ward and Manufacturing lists with 0 doses due.  Scheduled labels for the order will not be printed unless the Ward list is updated before printing scheduled labels.  This is a "print on demand" function 
+                                similar to entering INFUSION RATE@0 for continuous orders.  
+
+              GROUP:            PSJI
+
+53.1,62       IV ROOM                8;8 POINTER TO IV ROOM FILE (#59.5) (Required)
+
+              LAST EDITED:      JUL 30, 1991 
+              DESCRIPTION:
+                                IV room where IV bag was prepared for administration.  
+
+              GROUP:            PSJI
+
+53.1,63       REMARKS                9;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+              LAST EDITED:      JUN 03, 1991 
+              HELP-PROMPT:      Answer must be 1-100 characters in length. 
+              DESCRIPTION:
+                                 This is not displayed on IV labels, but is printed on some IV reports.  
+
+              GROUP:            PSJI
+
+53.1,64       OTHER PRINT INFO       9;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      SEP 05, 1991 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                  For use by Pharmacy to print additional information on IV labels and reports.  
+
+              GROUP:            PSJI
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+53.1,66       PROVIDER COMMENTS      12;0   WORD-PROCESSING #53.1012
+
+              DESCRIPTION:
+                                 This is used to store any additional information the provider needs to pass along to pharmacy or ward personnel when an order is entered through OE/RR.  
+
+              TECHNICAL DESCR:
+                                  This contains additional information entered for an order through OE/RR.  Provider comments are displayed when the order is displayed using pharmacy or OE/RR options, but may only be entered/edited through OE/RR.  
+
+
+53.1,68       PREVIOUS ORDER NUMBER  0;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 04, 1991 
+              HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                  When an order is created from an active order, the old number (from ^PS(55)) is stored in this field.  
+
+              TECHNICAL DESCR:    This is used to take an action on a previous order when the new order has been completed. For example, if an active order is renewed through OE/RR, the old order remains active until the new one is completed by Pharmacy.
+                                When the new order is completed, the stop date of the old order is changed to the start date of the new order.  
+
+              GROUP:            PSJ
+
+53.1,101      *PRIMARY DRUG          .1;1 POINTER TO PRIMARY DRUG FILE (#50.3)
+
+              LAST EDITED:      FEB 01, 1996 
+              DESCRIPTION:        This is the primary drug associated with the order. If the order is a unit dose order all dispensed drugs entered must be matched to the order's primary drug. If the order is an IV order at least one of the additives or
+                                solutions entered must match the primary drug.  
+
+              CROSS-REFERENCE:  53.1^APD^MUMPS 
+                                1)= D ENNDS^PSGAXR
+                                2)= D ENNDK^PSGAXR
+                                3)= Needed to set up several x-refs.
+                                  The cross reference is used to quickly set (or kill) the following cross- references: 
+                                  ^PS(53.1,"D",Primary Drug,DA)="" 
+                                  ^PS(53.1,"AOD",Patient,Primary Drug,DA)=""  only if the status is not 'A' and not 'D'.  
+
+
+
+53.1,102      *DOSAGE ORDERED        .1;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 01, 1996 
+              HELP-PROMPT:      Enter the amount of the drug the patient is to receive as a dose for this order, using 1-20 characters.  This is an amount, such as '20MG', and NOT the number of tablets. 
+              DESCRIPTION:
+                                  This is the amount of the medication the patient is to receive as one dose for this order.  This should be an amount with a unit of measure, such '500MG' or '50CC'.  THIS SHOULD NOT BE THE NUMBER OF TABLETS, ETC.  
+
+              GROUP:            PSJ
+
+53.1,103      REASON ORDER CREATED   0;24 SET
+
+                                'N' FOR NEW; 
+                                'R' FOR RENEWAL; 
+                                'E' FOR EDIT; 
+              LAST EDITED:      NOV 12, 1991 
+              DESCRIPTION:
+                                  This is used to show the method used to create this order.  
+
+              TECHNICAL DESCR:
+                                  This shows if the order was entered through new order entry, or was created as a result of an edit or renewal of an existing order.  
+
+              GROUP:            PSJ
+
+53.1,104      PREVIOUS ORDER         0;25 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      NOV 12, 1991 
+              DESCRIPTION:
+                                  If an action is taken on an order that causes a new order to be created, this will contain a code identifying the previous order.  
+
+              TECHNICAL DESCR:   If the order was created as a result of an edit or renew, this field will contain the order number of the previous order concatenated with a letter that denotes the status of the order and the file in which it is located.
+                                The letter concatenated to the order number will be one of the following: 
+                                 
+                                        U - Unreleased, in 53.1 
+                                        P - Pending, in 53.1 
+                                        N - Non-verified, in 53.1 
+                                        A - Active UD order, in 55 
+                                        V - Active IV order, in 55 
+
+              GROUP:            PSJ
+
+53.1,105      FOLLOWING ORDER        0;26 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      NOV 12, 1991 
+              DESCRIPTION:
+                                  If an action is taken on an order that causes a new order to be created, this will contain a code identifying the order created.  
+
+              TECHNICAL DESCR:    If an order is created because of an edit or renew, this field will contain the order number of the following order, concatenated with a letter that denotes the status of the order and the file in which it is located.
+                                The letter concatenated to the order number will be one of the following: 
+                                        U - Unreleased, in 53.1 
+                                        P - Pending, in 53.1 
+                                        N - Non-Verified, in 53.1 
+                                        A - Active UD order, in 55 
+                                        V - Active IV order, in 55 
+
+              GROUP:            PSJ
+
+53.1,106      *NATURE OF ORDER       .1;3 SET (Required)
+
+                                'W' FOR WRITTEN; 
+                                'P' FOR TELEPHONED; 
+                                'V' FOR VERBAL; 
+                                'E' FOR PROVIDER ENTERED; 
+              LAST EDITED:      FEB 01, 1996 
+              HELP-PROMPT:      Enter the method the provider used to relate the order to the service. 
+              DESCRIPTION:
+                                  This is the method the provider used to communicate to the user to enter (or take any other action) the order.  
+
+              TECHNICAL DESCR:    This is the method the provider used to communicate the order to the user who entered the order.  This is needed by the Order Entry/Results Reporting package, and is only prompted for if Inpatient Medications has been
+                                turned on for OE/RR by the site.  
+
+              GROUP:            PSJ
+
+53.1,107      REASON FOR FOLLOWING ORDER 0;27 SET
+
+                                'E' FOR EDIT; 
+                                'R' FOR RENEWAL; 
+              LAST EDITED:      JAN 26, 1992 
+              DESCRIPTION:
+                                  If the order has been edited or renewed, this will contain the code corresponding to the action taken.  
+
+              TECHNICAL DESCR:
+                                  This will contain a "E" if the order was created due to and edit, or a "R" if the order was created due to a renew.  
+
+              GROUP:            PSJ
+
+53.1,108      ORDERABLE ITEM         .2;1 POINTER TO PHARMACY ORDERABLE ITEM FILE (#50.7)
+
+              LAST EDITED:      FEB 22, 1995 
+              DESCRIPTION:      This identifies the Orderable Item associated with the order. If the order contains multiple dispense drugs, or a single dispense drug requiring multiple units/dose, the Orderable Item and Dosage Ordered fields will be 
+                                displayed.  
+
+
+53.1,109      DOSAGE ORDERED         .2;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      APR 13, 2001 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This is the amount of the medication the patient is to receive as one dose for this order. This should be an amount with a unit of measure, such as '500mg' or '50CC'. THIS SHOULD NOT BE THE NUMBER OF TABLETS, ETC.  
+
+
+53.1,110      NATURE OF ORDER        .2;3 SET
+
+                                'W' FOR WRITTEN; 
+                                'P' FOR TELEPHONED; 
+                                'V' FOR VERBAL; 
+                                'E' FOR ELECTRONICALLY ENTERED; 
+                                'I' FOR POLICY; 
+                                'S' FOR SERVICE CORRECTION; 
+                                'D' FOR DUPLICATE; 
+              LAST EDITED:      APR 11, 2011 
+              HELP-PROMPT:      Enter the method the provider used to communicate the order to the service. 
+              DESCRIPTION:
+                                This is the method the provider used to communicate the order to the user to enter (or take any other action on) the order.  
+
+              TECHNICAL DESCR:
+                                This is the method the provider used to communicate the order to the user who entered or took action on the order.  
+
+
+53.1,111      INSTRUCTIONS           .3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+              LAST EDITED:      FEB 22, 1995 
+              HELP-PROMPT:      Answer must be 1-200 characters in length. 
+
+53.1,112      ORDER CHECKS           10;0 Multiple #53.1112 (Add New Entry without Asking)
+
+
+53.1112,.01     ORDER CHECK NARRATIVE  0;1 FREE TEXT
+
+                Order Check Narrative                                                                                          
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                LAST EDITED:      APR 04, 1996 
+                HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                DESCRIPTION:
+                                  This field will contain the narrative portion of the OBX segment sent from OE/RR when an order check occurs.  
+
+                CROSS-REFERENCE:  53.1112^B 
+                                  1)= S ^PS(53.1,DA(1),10,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(53.1,DA(1),10,"B",$E(X,1,30),DA)
+
+
+53.1112,1       OVERRIDING PROVIDER    1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                LAST EDITED:      APR 04, 1996 
+                HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                DESCRIPTION:
+                                  This field will contain the name of the provider who over-rode the order check.  It comes as a part of the OBX segment from OE/RR.  
+
+
+53.1112,2       OVERRIDING REASON      2;0   WORD-PROCESSING #53.11122
+
+
+
+
+53.1,113      CLINIC                 DSS;1 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      MAY 01, 2004 
+              HELP-PROMPT:      Enter the name of the clinic where the patient was seen. 
+              DESCRIPTION:
+                                Entry must be a clinic.  Depending on the condition, INACTIVATE and REACTIVATE dates may exist.  
+
+              RECORD INDEXES:   AD (#502)
+
+53.1,114      LAST RENEW             14;0 DATE Multiple #53.1114
+
+              LAST EDITED:      FEB 22, 2000 
+              DESCRIPTION:
+                                This multiple contains the data that relates to the renewal of an order.  
+
+              TECHNICAL DESCR:  Renewing an order will no longer create a new order.  This multiple will be used to track the last time the order was renewed, who renewed the order, the provider of the order prior to this renewal, and the stop date/time
+                                prior to this renewal.  
+
+
+53.1114,.01     LAST RENEW             0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 24, 2000 
+                HELP-PROMPT:      Enter the Date/Time this order was last renewed. 
+                DESCRIPTION:
+                                  This is the date/time the order was renewed.  
+
+                TECHNICAL DESCR:
+                                  This is the date/time the order was renewed.  
+
+                CROSS-REFERENCE:  53.1114^B 
+                                  1)= S ^PS(53.1,DA(1),14,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(53.1,DA(1),14,"B",$E(X,1,30),DA)
+
+
+53.1114,1       RENEWED BY             0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      FEB 24, 2000 
+                HELP-PROMPT:      Enter the name of the person renewing this order. 
+                DESCRIPTION:
+                                  This is the person who renewed the order.  
+
+                TECHNICAL DESCR:
+                                  This is the person who renewed the order.  
+
+
+53.1114,2       PREVIOUS PROVIDER      0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      FEB 24, 2000 
+                HELP-PROMPT:      Enter the name of the provider for the order you renewed. 
+                DESCRIPTION:
+                                  This is the name of the provider responsible for the prior order.  
+
+                TECHNICAL DESCR:
+                                  This is the name of the provider responsible for the prior order.  
+
+
+53.1114,3       PREVIOUS STOP DATE/TIME 0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 24, 2000 
+                HELP-PROMPT:      Enter the Stop Date/Time of the previous order. 
+                DESCRIPTION:
+                                  This is the stop date/time of the prior order.  
+
+                TECHNICAL DESCR:
+                                  This is the stop date/time of the prior order.  
+
+
+
+
+53.1,115      REQUESTED START DATE/TIME 2.5;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 29, 2000 
+              HELP-PROMPT:      Enter the requested Start Date/Time for this order. 
+              DESCRIPTION:
+                                This is the Date/Time the provider is requesting that this order start.  
+
+              TECHNICAL DESCR:
+                                This is the Date/Time the provider is requesting that this order start.  
+
+
+53.1,116      DURATION               2.5;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      APR 19, 2000 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                This is the length of time in days the provider requests that this order last.  
+
+              TECHNICAL DESCR:
+                                This is the length of time in days the provider requests that this order last.  
+
+
+53.1,117      REQUESTED STOP DATE/TIME 2.5;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 24, 2000 
+              HELP-PROMPT:      Enter the Date/Time that the provider requests this order stop. 
+              DESCRIPTION:
+                                This is the Date/Time the provider is requesting that this order stop.  
+
+
+53.1,118      UD/IV PROMPT           0;13 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      APR 24, 2000 
+              HELP-PROMPT:      Enter a 1 if the user should be prompted to finish this order as IV or Unit Dose. 
+              DESCRIPTION:
+                                This field will be used during the finishing process to determine if the user should be prompted whether they wish to finish the order as an IV or Unit Dose order.  
+
+
+53.1,119      ACTIVITY LOG           A;0 DATE Multiple #53.1119 (Add New Entry without Asking)
+
+              DESCRIPTION:      This is a record of the actions that have taken place on the order.Actions include EDIT, RENEWAL, CANCELLATION, and FINISH. Stored with the action is the date and time the action took place and the user who took the
+                                action.  If the action is an edit, the data in the field edited prior to the edit is also stored.  
+
+
+53.1119,.01     DATE                   0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 14, 2000 
+                HELP-PROMPT:      Enter the Date/Time the activity took place. 
+                DESCRIPTION:
+                                  This is the date and time the activity took place.  
+
+
+53.1119,1       USER                   0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      AUG 14, 2000 
+                HELP-PROMPT:      Enter the user taking the action. 
+                DESCRIPTION:
+                                  This is the user taking the action on the order.  
+
+
+53.1119,2       ACTION                 0;3 POINTER TO ACTIVITY LOG REASON FILE (#53.3) (Required)
+
+                LAST EDITED:      AUG 14, 2000 
+                HELP-PROMPT:      Enter the reason for this action being taken. 
+                DESCRIPTION:
+                                  This is the activity that has taken place on the order.  
+
+
+53.1119,3       FIELD                  0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>52!($L(X)<1) X
+                LAST EDITED:      JUL 11, 2002 
+                HELP-PROMPT:      Answer must be 1-52 characters in length. 
+                DESCRIPTION:
+                                  This is the field that was changed due to the activity.  
+
+
+53.1119,4       OLD DATA               0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>170!($L(X)<1) X
+                LAST EDITED:      AUG 14, 2000 
+                HELP-PROMPT:      Answer must be 1-170 characters in length. 
+                DESCRIPTION:
+                                  This is the previous data that was in the field that was changed.  
+
+
+
+
+53.1,120      DOSE                   .2;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<.0001)!(X?.E1"."5N.N) X
+              LAST EDITED:      JUN 08, 2000 
+              HELP-PROMPT:      Type a Number between .0001 and 9999999999, 4 Decimal Digits 
+              DESCRIPTION:
+                                This is the numeric dosage for the order. It will be combined with the UNIT field to show the dosage ordered.  For a dosage of 325MG, 325 would be stored here.  
+
+
+53.1,121      UNIT                   .2;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>75!($L(X)<1) X
+              LAST EDITED:      JUL 27, 2000 
+              HELP-PROMPT:      Answer must be 1-75 characters in length. 
+              DESCRIPTION:
+                                This is the field which contains the unit for the numeric dosage.  The combination of these two fields gives you the dosage ordered for this order.  For a dosage of 325MG, MG would be stored here.  
+
+
+53.1,122      SI FLAG                6;2 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      APR 11, 2002 
+              HELP-PROMPT:       Enter 1 for yes. 
+              DESCRIPTION:
+                                This flag controls whether the user administering this order in BCMA will have the Special Instructions displayed in a pop-up box.  
+
+
+53.1,123      OPI FLAG               9;3 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      APR 11, 2002 
+              HELP-PROMPT:      Enter a 1 for yes. 
+              DESCRIPTION:
+                                This flag controls whether the user administering this order in BCMA will have the Other Print Info displayed in a pop-up box.  
+
+
+53.1,124      FLAGGED                .2;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 02, 2002 
+              HELP-PROMPT:      Enter YES if this order is being flagged for clarification 
+              DESCRIPTION:
+                                This indicates that this order has been flagged for clarification.  
+
+
+53.1,125      ORDERS FILE PARENT ORDER .2;8 POINTER TO ORDER FILE (#100)
+
+              LAST EDITED:      DEC 13, 2004 
+              HELP-PROMPT:      Enter the parent order, if this order is its child order. 
+              DESCRIPTION:
+                                This is the parent of a CPRS order that may have a parent/child relationship in CPRS 
+
+              CROSS-REFERENCE:  53.1^ACX 
+                                1)= S ^PS(53.1,"ACX",$E(X,1,30),DA)=""
+                                2)= K ^PS(53.1,"ACX",$E(X,1,30),DA)
+                                This cross reference is created each time a component of a complex order, or child order, is received from CPRS.  This cross reference will not be created for orders with a schedule of NOW, effectively disassociating the
+                                NOW order from the other child orders in the complex order.  
+
+
+
+53.1,126      APPOINTMENT DATE/TIME  DSS;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      JUL 29, 2003 
+              HELP-PROMPT:      Date and time of the appointment for this clinic location.  
+              DESCRIPTION:
+                                This is the date and time of the appointment this order is being placed for.  
+
+
+53.1,127      REQUESTED IV LIMITATION 2.5;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<1)!'(X?1.2A1.5N) X
+              LAST EDITED:      NOV 15, 2004 
+              HELP-PROMPT:      Answer must be 1-6 characters in length. 
+              DESCRIPTION:
+                                This is the length of time to administer, or the total volume to administer, for IV fluid orders. The value may be in ML or CC for milliliters, L for liters, D for days, or H for hours.  
+
+
+53.1,128      IV TYPE CATEGORY       2.5;5 SET
+
+                                'I' FOR INTERMITTENT; 
+                                'C' FOR CONTINUOUS; 
+              LAST EDITED:      OCT 20, 2007 
+              DESCRIPTION:      This field contains the category of the order's IV TYPE. 
+                                 
+                                The IV TYPE CATEGORY will be "C" (Continuous) for orders with an IV TYPE of Admixture, Hyperal, Non-Intermittent Syringe, or Chemotherapy with a CHEMOTHERAPY TYPE of Admixture, Hyperal, or Non-Intermittent Syringe.  
+                                 
+                                The IV TYPE CATEGORY will be "I" (Intermittent) for orders with an IV TYPE of Piggyback, Intermittent Syringe, or Chemotherapy with a CHEMOTHERAPY TYPE of Piggyback or Intermittent Syringe.  
+
+
+53.1,129      MOST RECENT FLAG COMMENT 13;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      JUL 30, 2007 
+              HELP-PROMPT:      Answer must be 1-80 characters in length 
+
+53.1,130      INTERVENTION           11;0 POINTER Multiple #53.13 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Interventions logged during Inpatient Order Entry in response to drug-drug or drug-allergy order checks. Only interventions associated with a specific Inpatient Order will be stored with that order.  
+
+
+53.13,.01       INTERVENTION           0;1 POINTER TO APSP INTERVENTION FILE (#9009032.4)
+
+                LAST EDITED:      DEC 17, 2010 
+                DESCRIPTION:
+                                  Pharmacy Interventions logged during Inpatient Order Entry in response to or drug-allergy order checks. Only interventions associated with a specific Inpatient Order will be stored with that order.  
+
+                TECHNICAL DESCR:
+                                  Pointer to Pharmacy INTERVENTION (#9009032.4) file.  
+
+                CROSS-REFERENCE:  53.13^B 
+                                  1)= S ^PS(53.1,DA(1),11,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(53.1,DA(1),11,"B",$E(X,1,30),DA)
+
+
+53.13,1         ACCEPTED DATE/TIME     0;2 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JAN 14, 2011 
+                DESCRIPTION:
+                                  The Date/Time the Intervention is logged in Inpatient Order Entry.  
+
+
+
+
+53.1,135      SPECIAL INSTRUCTIONS (LONG) 15;0   WORD-PROCESSING #53.1135   (NOWRAP)   (IGNORE "|")
+
+              DESCRIPTION:
+                                This is any special instructions needed for this order.  This would include the physician's reason for ordering a PRN.  
+
+              TECHNICAL DESCR:
+                                This word processing field may contain an unlimited number of lines of text.  
+
+
+53.1,136      OTHER PRINT INFO (LONG) 16;0   WORD-PROCESSING #53.1136   (NOWRAP)   (IGNORE "|")
+
+              DESCRIPTION:      For use by Pharmacy to print additional information on IV labels and reports. This is very similar to the REMARKS (#.1) field in the IV (#100) multiple of the PHARMACY PATIENT (#55) file, except OTHER PRINT INFO is shown
+                                on the label and the IV REPORTS.  
+
+              TECHNICAL DESCR:
+                                This field is a word processing field and may contain an unlimited number of lines of text.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ACTIVITY LOG REASON (#53.3)       ACTIVITY LOG:ACTION (#2)
+
+APSP INTERVENTION (#9009032.4)    INTERVENTION:INTERVENTION (#.01)
+
+DRUG (#50)                        SOLUTION (#24)
+                                  DISPENSE DRUG:DISPENSE DRUG (#.01)
+
+HOSPITAL LOCATION (#44)           CLINIC (#113)
+
+IV ADDITIVES (#52.6)              ADDITIVE:ADDITIVE (#.01)
+
+IV ROOM (#59.5)                   IV ROOM (#62)
+
+IV SOLUTIONS (#52.7)              SOLUTION:SOLUTION (#.01)
+
+MEDICATION ROUTES (#51.2)         MED ROUTE (#3)
+
+NEW PERSON (#200)                 PROVIDER (#1)
+                                  RENEWAL USER (#15)
+                                  VERIFYING NURSE (#16)
+                                  VERIFYING PHARMACIST (#18)
+                                  PHYSICIAN (#20)
+                                  CLERK (#22)
+                                  MARKED CANCELLED USER (#31)
+                                  LABEL CREATOR (#51)
+                                  LAST RENEW:RENEWED BY (#1)
+                                  PREVIOUS PROVIDER (#2)
+                                  ACTIVITY LOG:USER (#1)
+
+ORDER (#100)                      ORDERS FILE PARENT ORDER (#125)
+
+PATIENT (#2)                      PATIENT NAME (#.5)
+
+PHARMACY ORDERABLE ITEM (#50.7)   ORDERABLE ITEM (#108)
+
+PRIMARY DRUG (#50.3)              *PRIMARY DRUG (#101)
+
+WARD LOCATION (#42)               LAST WARD (#50)
+                                  WARD FOR AUTO-CANCEL LABEL (#52)
+
+
+File #53.1
+
+  Record Indexes:
+
+  AD (#502)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  List of patients by clinic.
+        Set Logic:  S ^PS(53.1,"AD",$E(X(1),1,20),$E(X(2),1,20),DA)=""
+       Kill Logic:  K ^PS(53.1,"AD",$E(X(1),1,20),$E(X(2),1,20),DA)
+       Whole Kill:  K ^PS(53.1,"AD")
+             X(1):  CLINIC  (53.1,113)  (Subscr 1)  (Len 20)  (forwards)
+             X(2):  PATIENT NAME  (53.1,.5)  (Subscr 2)  (Len 20)  (forwards)
+
+
+INPUT TEMPLATE(S):
+PSJIEDT                       JUN 04, 1991@15:19  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

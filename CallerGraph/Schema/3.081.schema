@@ -1,0 +1,321 @@
+STANDARD DATA DICTIONARY #3.081 -- SIGN-ON LOG FILE                                                                                                                                                                               MAY 20,2014@15:36:26  PAGE 1
+STORED IN ^XUSEC(0,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 8.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file records sign-on/sign-off times by user, device, job, UCI, and CPU.  It is cross-referenced by user, device, and sign-off time.  
+
+
+COMPILED CROSS-REFERENCE ROUTINE: XUCT03
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+
+CROSS
+REFERENCED BY: SIGNOFF TIME(AC), SIGNOFF TIME(AC2), SIGNOFF TIME(AC3), DEVICE(ALDEV), IP ADDRESS(AS1), WORKSTATION NAME(AS2), IP ADDRESS(AS3), USER(CUR)
+
+3.081,.001    DATE/TIME                  DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 26, 2003 
+              DESCRIPTION:
+                                This is the date/time that the user signed on.  Two allow more than one sign-on per second the time may have values that show hundredth of a second.  
+
+
+3.081,.01     USER                   0;1 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      JUN 18, 1991 
+              DESCRIPTION:
+                                This is the user that signed on.  
+
+              DELETE AUTHORITY: #
+              WRITE AUTHORITY:  #
+              SOURCE OF DATA:   SIGN-ON SYSTEM
+              CROSS-REFERENCE:  3.081^CUR^MUMPS 
+                                1)= S ^XUSEC(0,"CUR",$E(X,1,30),DA)=""
+                                2)= K ^XUSEC(0,"CUR",$E(X,1,30),DA)
+
+
+3.081,1       DEVICE $I              0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAR 26, 2003 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is the device $I that the user signed on to.  
+
+
+3.081,2       JOB                    0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      $J (PARTITION NUMBER) OF SIGN-ON 
+              DESCRIPTION:
+                                This is the job number of the user's job.  
+
+
+3.081,3       SIGNOFF TIME           0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 21, 2002 
+              DESCRIPTION:
+                                This is the time that the user signed-off through H^XUS.  
+
+              CROSS-REFERENCE:  3.081^AC^MUMPS 
+                                1)= K ^XUSEC(0,"CUR",+^XUSEC(0,DA,0),DA)
+                                2)= Q
+                                3)= The CUR x-ref.
+                                This X-ref clears ^XUSEC(0,'CUR' that keeps a list of user sign-ons that is used by the FIND USER option.  
+
+
+              CROSS-REFERENCE:  3.081^AC2^MUMPS 
+                                1)= N % S %=^XUSEC(0,DA,0) K:$L($P(%,U,11)) ^XUSEC(0,"AS1",$P($P(%,U,11),":"),DA) K:$L($P(%,U,12)) ^XUSEC(0,"AS2",$P($P(%,U,12),":"),DA)
+                                2)= Q
+                                3)= Remove the 'AS1' and 'AS2' x-ref
+                                This cross-reference removes the 'AS1' and 'AS2' indexs when the signoff time is entered.  
+
+
+              CROSS-REFERENCE:  3.081^AC3^MUMPS 
+                                1)= N % S %=^XUSEC(0,DA,0) I $L($P(%,U,11)) K ^XUSEC(0,"AS3",$P(%,U),$P($P(%,U,11),":"),DA)
+                                2)= Q
+                                3)= Remove the AS3 x-ref
+                                The cross reference removes the AS3 entry when the user is signed off.  See field #11 for more info.  
+
+
+
+3.081,4       CPU                    0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>16!($L(X)<1) X
+              LAST EDITED:      OCT 05, 1984 
+              HELP-PROMPT:      ANSWER MUST BE 1-16 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the name of the CPU the user signed on to.  
+
+
+3.081,5       DEVICE                 0;7 POINTER TO DEVICE FILE (#3.5)
+
+              LAST EDITED:      MAR 26, 2003 
+              DESCRIPTION:      This is a pointer to the Device file showing which device the user signed-on to. With network devices this is not a very useful field anymore.  
+                                 
+                                The 'ALDEV' X-ref is used to tell which user last sign-on to this device and the X-ref is not killed.  At the most there would be one entry for each entry in the device file.  
+
+              CROSS-REFERENCE:  3.081^ALDEV^MUMPS 
+                                1)= S ^XUSEC(0,"ALDEV",X)=+^XUSEC(0,DA,0)
+                                2)= Q
+                                3)= ALDEV
+                                The 'ALDEV' X-ref is used to tell which user last sign-on to this device and the X-ref is not killed.  At the most there would be one entry for each entry in the device file.  
+
+
+
+3.081,6       UCI                    0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      JUL 01, 1988 
+              HELP-PROMPT:      Answer with the UCI the user signed into. 
+              DESCRIPTION:
+                                This field records the UCI account area where the user had signed on.  
+
+
+3.081,7       TASK?                  0;6 SET
+
+              Was this entry made by TaskMan?                                                                                  
+                                '1' FOR TASK; 
+              LAST EDITED:      MAR 26, 2003 
+              HELP-PROMPT:      This field should never be filled in by a user. 
+              DESCRIPTION:      This field is set to 1 for entries that are created by TaskMan.  A field in the Kernel Site Parameters file can be used to make TaskMan "log sign-ons" for tasks.  When that feature is active, TaskMan makes an entry in this
+                                file every time it runs a task.  
+
+
+3.081,9       $ZIO (optional)        0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      AUG 01, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 1-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                On a system with terminal servers this may be the port and server that the user is signed-on to.  It can provide information not contained in $I.  
+
+
+3.081,10      NODE NAME              0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<2) X
+              LAST EDITED:      MAR 26, 2003 
+              HELP-PROMPT:      Answer must be 2-15 characters in length. 
+              DESCRIPTION:
+                                The VAX/VMS cluster node name or system name on other systems.  Comes from the GETENV^%ZOSV api.  
+
+              TECHNICAL DESCR:
+                                This is the 4th piece of $ZC(%GETSYI).  
+
+
+3.081,11      IP ADDRESS             0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<7)!'(X?1.3N1P1.3N1P1.3N1P1.3N.E) X
+              LAST EDITED:      OCT 21, 2002 
+              HELP-PROMPT:      IP address, Answer must be 7-20 characters in length. 
+              DESCRIPTION:
+                                This field holds the IP address of the calling system.  Note that under DHCP IP address are dynamically allocated so more that one client could have used the same IP address over some time period.  
+
+              CROSS-REFERENCE:  3.081^AS1^MUMPS 
+                                1)= S:'$P(^XUSEC(0,DA,0),U,4) ^XUSEC(0,"AS1",$P(X,":"),DA)=""
+                                2)= K ^XUSEC(0,"AS1",$P(X,":"),DA)
+                                3)= For Single sign-on
+                                This index builds a list of IP addresses that the user may be at.  
+
+
+              CROSS-REFERENCE:  3.081^AS3^MUMPS 
+                                1)= N % S %=^XUSEC(0,DA,0) I '$P(%,U,4) S ^XUSEC(0,"AS3",$P(%,U),$P(X,":"),DA)=""
+                                2)= N % S %=^XUSEC(0,DA,0) K ^XUSEC(0,"AS3",$P(%,U),$P(X,":"),DA)
+                                3)= Multi sign-on control
+                                This cross reference builds a list of the IP or DNS name used by a device.  This is used to limit users to multiple sign-on from one IP address.  The X-ref in by DUZ,IP,DA.  
+
+
+
+3.081,12      WORKSTATION NAME       0;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      FEB 10, 1997 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                This field holds the workstation name if it has been provide by the underlaying OS or as part of a RPCBroker signon.  
+
+              CROSS-REFERENCE:  3.081^AS2^MUMPS 
+                                1)= S:'$P(^XUSEC(0,DA,0),U,4) ^XUSEC(0,"AS2",$P(X,":"),DA)=""
+                                2)= K ^XUSEC(0,"AS2",$P(X,":"),DA)
+                                3)= For single sign-on
+                                This index builds a list of WORKSTATION names that the user may be at.  
+
+
+
+3.081,13      AUTO SIGNON HANDLE     0;13 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<7) X
+              LAST EDITED:      DEC 13, 1999 
+              HELP-PROMPT:      Answer must be 7-15 characters in length. 
+              DESCRIPTION:
+                                This field is used internally by the Kernel Auto Sign-on code to store the handle returned by the ClientAgent on the users system.  
+
+
+3.081,14      REMOTE STATION ID      0;14 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<3) X
+              LAST EDITED:      FEB 08, 2000 
+              HELP-PROMPT:      Answer must be 3-6 characters in length. 
+              DESCRIPTION:      This field holds the station id (station #) of a remote site that did the user authentication. Having this field filled in implies that the user did not sign-on to the local system but was authenticated at some remote site 
+                                that has requested data or services from this system.  The Enterprise Single Sign-on, and the CPRS remote patient data projects use this field.  
+
+
+3.081,15      REMOTE USER IEN        0;15 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<.5)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 08, 2000 
+              HELP-PROMPT:      Type a Number between .5 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:      This field holds the user IEN of a remote user that was authenticated at a remote site (field #14).  Having this field filled in implies that the user did not sign-on to the local system but was authenticated at some
+                                remote site that has requested data or services from this system.  The Enterprise Single Sign-on, and the CPRS remote patient data projects use this field.  
+
+
+3.081,16      FORCE CLOSE            0;16 SET
+
+                                '0' FOR No; 
+                                '1' FOR Yes; 
+              LAST EDITED:      MAR 26, 2003 
+              DESCRIPTION:
+                                This field is a flag to indicate that the sign-on record was closed by some action other than a normal sign-off. IRM used the 'Release User' option.  The nightly cleanup job closed the record because it was open to long.  
+
+
+3.081,17      DIVISION               0;17 POINTER TO INSTITUTION FILE (#4)
+
+              Division                                                                                                         
+              LAST EDITED:      SEP 19, 2007 
+              DESCRIPTION:
+                                This field holds the division that the user signed into.  It is used to set the division if the user sign-on is thru AUTO SIGN-ON.  
+
+
+3.081,18      REMOTE APP             0;18 POINTER TO REMOTE APPLICATION FILE (#8994.5)
+
+              Remote App                                                                                                       
+              LAST EDITED:      OCT 27, 2009 
+              DESCRIPTION:
+                                If the user came into the system by a remote application like CAPRI or VistAWeb then this will point to the entry in the remote application file they used.  
+
+
+3.081,60      CPU                    0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>16!($L(X)<1) X
+              LAST EDITED:      OCT 05, 1984 
+              HELP-PROMPT:      ANSWER MUST BE 1-16 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the name of the CPU the user signed on to.  
+
+
+3.081,97      ELAPSED TIME (SECONDS)  ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(3.081,97,9.4) S X=$S(Y(3.081,97,5):Y(3.081,97,6),Y(3.081,97,7):X) S Y=X,X=Y(3.081,97,3),X=X_Y
+                                9.2 = S Y(3.081,97,2)=$S($D(^XUSEC(0,D0,0)):^(0),1:"") S X=$S('$D(D0):"",D0<0:"",1:D0),Y(3.081,97,1)=X S X=$P(Y(3.081,97,2),U,4)
+                                9.3 = X ^DD(3.081,97,9.2) S X1=Y(3.081,97,1) S X=$S(X&X1:X,1:"") Q:'X  D H^%DTC S XUS1=%H*86400+%T,X=X1 D H^%DTC S XUS2=%H*86400+%T,X=$S(XUS1>XUS2:XUS1-XUS2,1:XUS2-XUS1) S X=X
+                                9.4 = X ^DD(3.081,97,9.3) S Y(3.081,97,3)=X,Y(3.081,97,4)=X S X=$P(Y(3.081,97,2),U,16),X=X S X=X,Y(3.081,97,5)=X S X="*",Y(3.081,97,6)=X S X=1,Y(3.081,97,7)=X S X=" "
+              ALGORITHM:        XUDELTATIME(#.001,#3)_$S(INTERNAL(#16):"*",1:" ")
+              LAST EDITED:      NOV 14, 2002 
+              DESCRIPTION:
+                                This field calculates the number of seconds between sign-on time and sign-off time.  
+
+
+3.081,98      LOCATION                ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(3.081,98,9.2) S Y(3.081,98,101)=$S($D(^%ZIS(1,D0,1)):^(1),1:"") S X=$P(Y(3.081,98,101),U,1) S D0=Y(3.081,98,80)
+                                9.2 = S Y(3.081,98,80)=$S($D(D0):D0,1:""),Y(3.081,98,1)=$S($D(^XUSEC(0,D0,0)):^(0),1:""),D0=$P(Y(3.081,98,1),U,7) S:'$D(^%ZIS(1,+D0,0)) D0=-1
+              ALGORITHM:        DEVICE:LOCATION
+              LAST EDITED:      DEC 16, 1993 
+              DESCRIPTION:
+                                This is the location of the device which was used to sign on.  
+
+
+3.081,99      ELAPSED TIME (MINUTES)  ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(3.081,99,9.6) S X=$S(Y(3.081,99,9):Y(3.081,99,10),Y(3.081,99,11):X) S Y=X,X=Y(3.081,99,7),X=X_Y
+                                9.2 = S Y(3.081,99,1)=$S($D(^XUSEC(0,D0,0)):^(0),1:"") S X=$P(Y(3.081,99,1),U,4),X=X S X=X,Y(3.081,99,2)=$G(X),Y(3.081,99,3)=$G(X) S X=$P(Y(3.081,99,1),U,4)
+                                9.3 = X ^DD(3.081,99,9.2) S Y(3.081,99,4)=$G(X) S X=$S('$D(D0):"",D0<0:"",1:D0)
+                                9.4 = X ^DD(3.081,99,9.3) S X1=Y(3.081,99,4) S Y=$E(X1_"000",9,10)-$E(X_"000",9,10)*60+$E(X1_"00000",11,12)-$E(X_"00000",11,12),X2=X,X=$P(X,".",1)'=$P(X1,".",1) D ^%DTC:X S X=X*1440+Y S X=X
+                                9.5 = X ^DD(3.081,99,9.4) S Y(3.081,99,5)=$G(X) S X=1,Y(3.081,99,6)=$G(X) S X="on line",X=$S(Y(3.081,99,2):Y(3.081,99,5),Y(3.081,99,6):X),Y(3.081,99,7)=$G(X)
+                                9.6 = X ^DD(3.081,99,9.5) S Y(3.081,99,8)=$G(X) S X=$P(Y(3.081,99,1),U,16),X=X S X=X,Y(3.081,99,9)=$G(X) S X="*",Y(3.081,99,10)=$G(X) S X=1,Y(3.081,99,11)=$G(X) S X=" "
+              ALGORITHM:        $S(INTERNAL(#3):MINUTES(#3,#.001),1:"on line")_$S(INTERNAL(#16):"*",1:" ")
+              LAST EDITED:      MAY 12, 2010 
+              DESCRIPTION:
+                                This is the amount of time the user has been signed on.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DEVICE (#3.5)                     DEVICE (#5)
+
+INSTITUTION (#4)                  DIVISION (#17)
+
+NEW PERSON (#200)                 USER (#.01)
+
+REMOTE APPLICATION (#8994.5)      REMOTE APP (#18)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+CAPTIONED                                         USER #0    
+XUSEC LIST                    NOV 14, 2002@11:47  USER #0                                                                                                                                                              USERS WHO HAVE SIGNED ONTO THE COMPUTER
+XUSEC REMOTE ACCESS           JAN 24, 2000@15:44  USER #0                                                                                                                                                                              Remote Access User List
+
+SORT TEMPLATE(S):
+XU-SIGNON-USER                DEC 13, 1996@15:36  USER #0    
+SORT BY: @TASK?// (TASK? not null)
+  WITHIN TASK?, SORT BY: USER// (USER not null)
+    WITHIN USER, SORT BY: @DATE/TIME// (DATE/TIME not null)
+
+XUSEC REMOTE ACCESS           JAN 26, 2000@11:16  USER #0    
+SORT BY: DATE/TIME// (DATE/TIME not null)
+  WITHIN DATE/TIME, SORT BY: REMOTE STATION ID// (REMOTE STATION ID not null)
+     This SORT template is used to find the entries in the sign-on log created
+     by Remote User Access.  This could be from ESSO or Remote RPC's.
+
+
+FORM(S)/BLOCK(S):

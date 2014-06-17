@@ -1,0 +1,113 @@
+STANDARD DATA DICTIONARY #350.5 -- BASC LOCALITY MODIFIER FILE                                                                                                                                                                    MAY 20,2014@15:35:26  PAGE 1
+STORED IN ^IBE(350.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used in the calculation of the charge for an ambulatory surgery performed on any given date. This file contains time sensitive data with each entry defining a locality modifier and wage percentage for a division. There may be multiple
+entries for each division indicating changes effective on a particular date.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: DIVISION (#.02)[R], STATUS (#.04)[R], LOCALITY RATE MODIFIER (#.07)[R]
+
+CROSS
+REFERENCED BY: EFFECTIVE DATE(AIVDT), DIVISION(AIVDT1), EFFECTIVE DATE(B), DIVISION(C)
+
+350.5,.01     EFFECTIVE DATE         0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 13, 1991 
+              DESCRIPTION:
+                                The date on which this entries data becomes effective.  The data in this entry will override any other entry for this DIVISION that has a previous EFFECTIVE DATE.  
+
+              CROSS-REFERENCE:  350.5^B 
+                                1)= S ^IBE(350.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(350.5,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  350.5^AIVDT^MUMPS 
+                                1)= I $P(^IBE(350.5,DA,0),"^",2) S ^IBE(350.5,"AIVDT",$P(^(0),"^",2),-X,DA)=""
+                                2)= I $P(^IBE(350.5,DA,0),"^",2) K ^IBE(350.5,"AIVDT",$P(^(0),"^",2),-X,DA)
+                                Used to find the appropriate entry for a division on any particular date.  
+
+
+
+350.5,.02     DIVISION               0;2 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8) (Required)
+
+              LAST EDITED:      JAN 21, 1992 
+              DESCRIPTION:
+                                The division that this data applies to.  
+
+              CROSS-REFERENCE:  350.5^C 
+                                1)= S ^IBE(350.5,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBE(350.5,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  350.5^AIVDT1^MUMPS 
+                                1)= I $P(^IBE(350.5,DA,0),"^") S ^IBE(350.5,"AIVDT",X,-$P(^(0),"^"),DA)=""
+                                2)= I $P(^IBE(350.5,DA,0),"^") K ^IBE(350.5,"AIVDT",X,-$P(^(0),"^"),DA)
+                                Used to find the correct entry for a division for a particular date.  
+
+
+
+350.5,.04     STATUS                 0;4 SET (Required)
+
+                                '1' FOR ACTIVE; 
+                                '0' FOR INACTIVE; 
+              LAST EDITED:      JAN 21, 1992 
+              DESCRIPTION:
+                                The status for this DIVISION on/after this EFFECTIVE DATE.  
+
+
+350.5,.05     WAGE PERCENTAGE        0;5 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>1)!(X<0)!(X?.E1"."9N.N) X
+              LAST EDITED:      JUN 10, 2004 
+              HELP-PROMPT:      Type a number between 0 and 1, with up to 8 decimal digits.  This is the wage component fraction of the Ambulatory Surgery charge. 
+              DESCRIPTION:
+                                This is the percentage of the rate group unit charge that is the wage component to be used in calculating the ambulatory surgery charge.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^350.5^.06 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBE(350.5,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X=DIV S X=1-DIV S DIH=$G(^IBE(350.5,DIV(0),0)),DIV=X S $P(^(0),U,6)=DIV,DIH=350.5,DIG=.06 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= 1-WAGE PERCENTAGE
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= NON-WAGE PERCENTAGE
+
+
+350.5,.06     NON-WAGE PERCENTAGE    0;6 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>1)!(X<0)!(X?.E1"."9N.N)!(X'=(1-$P(^IBE(350.5,DA,0),U,5))) X
+              LAST EDITED:      JAN 22, 1992 
+              HELP-PROMPT:      Type a Number between 0 and 1, 8 Decimal Digits.  Wage and non-wage percentage must total 1. 
+              DESCRIPTION:
+                                This is the percentage of the rate group unit charge that is the non-wage component to be used in calculating the ambulatory surgery charge.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the WAGE PERCENTAGE field of the BASC LOCALITY MODIFIER File 
+
+
+350.5,.07     LOCALITY RATE MODIFIER 0;7 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."9N.N) X
+              LAST EDITED:      JAN 21, 1992 
+              HELP-PROMPT:      Type a Number between 0 and 99, 8 Decimal Digits 
+              DESCRIPTION:      This is the Geographic Wage Index that is used to account for wage differences in different localities when calculating the ambulatory surgery charge. It is multiplied by the wage component to get the final geographic wage
+                                component of the charge.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MEDICAL CENTER DIVISION (#40.8)   DIVISION (#.02)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

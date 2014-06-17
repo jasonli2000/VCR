@@ -1,0 +1,156 @@
+STANDARD DATA DICTIONARY #38.1 -- DG SECURITY LOG FILE                                                                                                                                                                            MAY 20,2014@15:40:51  PAGE 1
+STORED IN ^DGSL(38.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains all sensitive patients. Patients are either sensitive or non-sensitive. This file is also used as an audit trail for when a sensitive patient is accessed, who accessed it, the option used to access it and whether or not the patient was 
+an inpatient at the time the record was accessed.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: D
+             DEL ACCESS: @
+           LAYGO ACCESS: D
+IDENTIFIED BY: 
+      "WRITE": W ""
+
+CROSS
+REFERENCED BY: SECURITY LEVEL(ABUL), DATE/TIME RECORD ACCESSED(AD), SECURITY LEVEL(ANS), ACCESSED BY(AU), PATIENT NAME(B)
+
+38.1,.01      PATIENT NAME           0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X
+              LAST EDITED:      MAR 09, 1987 
+              DESCRIPTION:
+                                This field contains a pointer to the PATIENT file representing the patient who is listed as sensitive.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  38.1^B 
+                                1)= S ^DGSL(38.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^DGSL(38.1,"B",$E(X,1,30),DA)
+
+
+38.1,2        SECURITY LEVEL         0;2 SET (Required)
+
+                                '0' FOR NON-SENSITIVE; 
+                                '1' FOR SENSITIVE; 
+              LAST EDITED:      AUG 19, 1987 
+              DESCRIPTION:
+                                This field contains a 1 if the patient record is presently listed as sensitive or a 0 if the patient's record is not currently sensitive.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  38.1^ABUL^MUMPS 
+                                1)= Q
+                                2)= I +X,'+$P(^DGSL(38.1,DA,0),U,2) D BULTIN^DGSEC1
+
+              CROSS-REFERENCE:  38.1^ANS^MUMPS 
+                                1)= I '+$P(^DGSL(38.1,DA,0),U,2) S ^DGSL(38.1,"ANS",DA)=""
+                                2)= K ^DGSL(38.1,"ANS",DA)
+
+
+38.1,3        SECURITY ASSIGNED BY   0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      SEP 28, 1990 
+              DESCRIPTION:
+                                This field contains a pointer to the NEW PERSON file denoting the name of the user who most recently changed this patient's security level.  
+
+
+38.1,4        DATE/TIME SECURITY ASSIGNED 0;4 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 13, 1987 
+              DESCRIPTION:
+                                This field contians the date/time that this patient's security level was most recently changed.  
+
+
+38.1,5        SECURITY SOURCE        0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>65!($L(X)<1) X
+              LAST EDITED:      FEB 26, 1999 
+              HELP-PROMPT:      Answer must be 1-65 characters in length. 
+              DESCRIPTION:
+                                This field contains the remote source that assigned the patient's security level.  
+
+
+38.1,50       DATE/TIME RECORD ACCESSED D;0 DATE Multiple #38.11 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple contains information on when and by whom a patient's record was accessed (if that patient's record was listed as sensitive at the time).  
+
+
+38.11,.01       DATE/TIME RECORD ACCESSED 0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X I $D(X) S DINUM=9999999.9999-X
+                LAST EDITED:      AUG 20, 1987 
+                DESCRIPTION:
+                                  This field contains the date/time the patient's sensitive record was accessed.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  38.1^AD^MUMPS 
+                                  1)= S ^DGSL(38.1,"AD",DA,DA(1))=""
+                                  2)= K ^DGSL(38.1,"AD",DA,DA(1))
+
+
+38.11,2         ACCESSED BY            0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      SEP 28, 1990 
+                DESCRIPTION:
+                                  This field contains the name of the user that accessed this sensitive patient's record.  
+
+                CROSS-REFERENCE:  38.1^AU^MUMPS 
+                                  1)= S ^DGSL(38.1,"AU",DA(1),$E(X,1,30),DA)=""
+                                  2)= K ^DGSL(38.1,"AU",DA(1),$E(X,1,30),DA)
+
+
+38.11,3         OPTION/PROTOCOL USED   0;3 FREE TEXT
+
+                OPTION/PROTOCOL USED WHEN ACCESSED                                                                             
+                INPUT TRANSFORM:  K:$L(X)>65!($L(X)<1) X
+                LAST EDITED:      JUN 07, 1993 
+                HELP-PROMPT:      Answer must be 1-65 characters in length. 
+                DESCRIPTION:
+                                  This field contains the option or protocol the user was utilizing when this sensitive patient's record was accessed.  
+
+
+38.11,4         INPATIENT WHEN ACCESSED? 0;4 SET
+
+                                  'y' FOR YES; 
+                                  'n' FOR NO; 
+                LAST EDITED:      APR 13, 1987 
+                DESCRIPTION:
+                                  If, at the time this patient's sensitive record was accessed, this patient was an inpatient, a YES will appear here.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 SECURITY ASSIGNED BY (#3)
+                                  DATE/TIME RECORD ACCESSED:ACCESSED BY (#2)
+
+PATIENT (#2)                      PATIENT NAME (#.01)
+
+
+
+INPUT TEMPLATE(S):
+DG ENTER/EDIT SECURITY        MAY 03, 1995@08:28  USER #0    
+
+PRINT TEMPLATE(S):
+DG ISO SENSITIVE RCDS PRT     JUL 22, 2005@15:44  USER #0                                                                                                                                                                                                    @
+DG ISO SENSITIVE RCDS PRT1    JUL 07, 2005@14:39  USER #0                                                                                                                                                                           Sensitive Records Accessed
+
+SORT TEMPLATE(S):
+DG ISO SENSITIVE RCDS SORT    AUG 10, 2004@12:48  USER #0    
+SORT BY: ]@@DATE/TIME RECORD ACCESSED//
+DATE/TIME RECORD ACCESSED SUB-FIELD: DATE/TIME RECORD ACCESSED//    (User is asked range)
+  WITHIN DATE/TIME RECORD ACCESSED, SORT BY: @PATIENT NAME// (PATIENT NAME not null)
+     Used with the option AXVISO Sensitive Rcds Rpt-Man
+
+
+FORM(S)/BLOCK(S):

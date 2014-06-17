@@ -1,0 +1,635 @@
+STANDARD DATA DICTIONARY #355.93 -- IB NON/OTHER VA BILLING PROVIDER FILE                                                                                                                                                         MAY 20,2014@15:35:47  PAGE 1
+STORED IN ^IBA(355.93,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains data for non-VA facilities that provide services for VA patients who have reimbursable insurance for these services.  VA pays for these services and in turn submits the charges to the insurance co for reimbursement.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: 
+             DEL ACCESS: 
+           LAYGO ACCESS: 
+           AUDIT ACCESS: @
+IDENTIFIED BY: PROVIDER TYPE (#.02)
+
+POINTED TO BY: IB NON/OTHER PROVIDER field (#.07) of the FEE BASIS PAID TO IB File (#161.9) 
+               PRACTITIONER field (#.01) of the IB BILLING PRACTITIONER ID File (#355.9) 
+               NON-VA FACILITY field (#232) of the BILL/CLAIMS File (#399) 
+               PERFORMED BY field (#.02) of the PROVIDER sub-field (#399.0222) of the BILL/CLAIMS File (#399) 
+               LINE PERFORMED BY field (#.02) of the LINE PROVIDER sub-field (#399.0404) of the PROCEDURES sub-field (#399.0304) of the BILL/CLAIMS File (#399) 
+               
+
+CROSS
+REFERENCED BY: NAME(B), NPI(NPI), NPI(NPIHISTORY), STATUS(TAXSTATUS)
+
+INDEXED BY:    NPI (NPI42)
+
+
+355.93,.01    NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:($L(X)>30)!($L(X)<3) X I $D(X) D PRVFMT^IBCEP8
+              LAST EDITED:      SEP 17, 2010 
+              HELP-PROMPT:      Enter the name of a NON-VA provider/facility or other VA.  Name must start with a letter and can have letters,numbers,comma,space,dash only.  Names aren't valid if they exist in the NEW PERSON file. 
+              DESCRIPTION:      This is the name of either an individual NON-VA provider or a NON-VA or another VA facility that provides services to the V.A. for which the V.A. can in turn bill an insurance company for reimbursement.  
+                                 
+                                For individual type entries: The name should be entered in LAST,FIRST MIDDLE format.  Enter only data that is actually part of the provider's name. Do not include extra titles, identification, flags, local information, 
+                                etc.  All individual provider names will be converted to the 'standardized' format. 'Standardized' for individuals means all punctuation except '-' and space are removed, the name is changed to all uppercase, 2 or more 
+                                successive '-' or spaces are converted to a single '-' or space and any words for birth position (1ST-10TH) are changed to their Roman numeral equivalents. 
+                                 
+                                For facility type entries: The name MUST start with an Alpha character. The name may contain numerals, spaces, commas, periods, and a hyphen or dash.  No other punctuation characters are allowed in the name.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  355.93^B 
+                                1)= S ^IBA(355.93,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.93,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.02 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=IBFLPFLP I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=IBFLPFLP X ^DD(355.93,.01,1,2,1.4)
+                                1.4)= S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,2)=DIV,DIH=355.93,DIG=.02 D ^DICR
+                                2)= Q
+                                3)= Do not delete
+                                CREATE CONDITION)= S X=IBFLPFLP
+                                CREATE VALUE)= S X=IBFLPFLP
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PROVIDER TYPE
+                                Trigger to change provider type based on user input during add/edit of the NAME field (#.01).  Population of this field is based on the value of the IBFLPFLP variable returned by the NAME field input transform.  
+
+
+
+355.93,.02    PROVIDER TYPE          0;2 SET
+
+                                '1' FOR FACILITY/GROUP; 
+                                '2' FOR INDIVIDUAL; 
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+              LAST EDITED:      JUL 22, 2010 
+              HELP-PROMPT:      Enter 1 or 2 to designate this entry as a facility or an individual. 
+              DESCRIPTION:      This field identifies the type of provider being defined.  Facility providers can be used to fill in the name and address of the non-VA facility where services were rendered (box 32 on the CMS-1500).  An individual
+                                provider can be selected as the rendering, attending, referring or operating provider on a bill.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the NAME field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.03 
+                                1)= Q
+                                2)= X ^DD(355.93,.02,1,1,2.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,3)=DIV,DIH=355.93,DIG=.03 D ^DICR
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$P($G(^DD(355.93,.02,0)),U,3) S X=$P($P(Y(1),$C(59)_X_":",2),$C(59))="INDIVIDUAL"
+                                3)= Do not delete
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD PROVIDER TYPE="INDIVIDUAL"
+                                DELETE VALUE)= @
+                                FIELD)= CRE
+                                This trigger deletes the value of the CREDENTIALS field if the type is no longer an individual provider type.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.04 
+                                1)= Q
+                                2)= X ^DD(355.93,.02,1,2,2.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,4)=DIV,DIH=355.93,DIG=.04 D ^DICR
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$P($G(^DD(355.93,.02,0)),U,3) S X=$P($P(Y(1),$C(59)_X_":",2),$C(59))="INDIVIDUAL"
+                                3)= Do not delete
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD PROVIDER TYPE="INDIVIDUAL"
+                                DELETE VALUE)= @
+                                FIELD)= SPE
+                                This trigger deletes the value of the SPECIALTY field if the type is no longer an individual provider type.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.05 
+                                1)= Q
+                                2)= X ^DD(355.93,.02,1,3,2.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,5)=DIV,DIH=355.93,DIG=.05 D ^DICR
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$P($G(^DD(355.93,.02,0)),U,3) S X=$P($P(Y(1),$C(59)_X_":",2),$C(59))="FACILITY/GROUP"
+                                3)= Do not delete
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD PROVIDER TYPE="FACILITY/GROUP"
+                                DELETE VALUE)= @
+                                FIELD)= STREET ADDRESS
+                                This trigger deletes the value of the STREET ADDRESS field if the type is no longer a facility type provider.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.06 
+                                1)= Q
+                                2)= X ^DD(355.93,.02,1,4,2.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,6)=DIV,DIH=355.93,DIG=.06 D ^DICR
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$P($G(^DD(355.93,.02,0)),U,3) S X=$P($P(Y(1),$C(59)_X_":",2),$C(59))="FACILITY/GROUP"
+                                3)= Do not delete
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD PROVIDER TYPE="FACILITY/GROUP"
+                                DELETE VALUE)= @
+                                FIELD)= CITY
+                                This trigger deletes the value of the CITY field if the type is no longer a facility type provider.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.07 
+                                1)= Q
+                                2)= X ^DD(355.93,.02,1,5,2.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,7)=DIV,DIH=355.93,DIG=.07 D ^DICR
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$P($G(^DD(355.93,.02,0)),U,3) S X=$P($P(Y(1),$C(59)_X_":",2),$C(59))="FACILITY/GROUP"
+                                3)= Do not delete
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD PROVIDER TYPE="FACILITY/GROUP"
+                                DELETE VALUE)= @
+                                FIELD)= STATE
+                                This trigger deletes the value of the STATE field if the type is no longer a facility type provider.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.08 
+                                1)= Q
+                                2)= X ^DD(355.93,.02,1,6,2.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,8)=DIV,DIH=355.93,DIG=.08 D ^DICR
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$P($G(^DD(355.93,.02,0)),U,3) S X=$P($P(Y(1),$C(59)_X_":",2),$C(59))="FACILITY/GROUP"
+                                3)= Do not delete
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD PROVIDER TYPE="FACILITY/GROUP"
+                                DELETE VALUE)= @
+                                FIELD)= ZIP 
+                                This trigger deletes the value of the ZIP CODE field if the type is no longer a facility type provider.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.09 
+                                1)= Q
+                                2)= X ^DD(355.93,.02,1,7,2.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,9)=DIV,DIH=355.93,DIG=.09 D ^DICR
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$P($G(^DD(355.93,.02,0)),U,3) S X=$P($P(Y(1),$C(59)_X_":",2),$C(59))="FACILITY/GROUP"
+                                3)= Do not delete
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD PROVIDER TYPE="FACILITY/GROUP"
+                                DELETE VALUE)= @
+                                FIELD)= FACILITY DEFAULT ID NUMBER
+                                This trigger deletes the value of the FACILITY DEFAULT ID NUMBER field if the type is no longer a facility type provider.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.1 
+                                1)= Q
+                                2)= X ^DD(355.93,.02,1,8,2.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,10),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,10)=DIV,DIH=355.93,DIG=.1 D ^DICR
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$P($G(^DD(355.93,.02,0)),U,3) S X=$P($P(Y(1),$C(59)_X_":",2),$C(59))="FACILITY/GROUP"
+                                3)= Do not delete
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= OLD PROVIDER TYPE="FACILITY/GROUP"
+                                DELETE VALUE)= @
+                                FIELD)= STREET ADDRESS LINE 2
+                                This trigger deletes the value of the STREET ADDRESS LINE 2 field if the provider type is no longer a facility type provider.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.13 
+                                1)= X ^DD(355.93,.02,1,9,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,13),X=X S DIU=X K Y S X=DIV S X="16" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,13)=DIV,DIH=355.93,DIG=.13 D ^DICR
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(2)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=Y(0),X=X S X=X="1",Y(1)=$G(X) S X=$P(Y(2),U,9)]"",Y=X,X=Y(1),X=X&Y
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,13),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,13)=DIV,DIH=355.93,DIG=.13 D ^DICR
+                                CREATE CONDITION)= INTERNAL(PROVIDER TYPE)="1"&(FACILITY DEFAULT ID NUMBER]"")
+                                CREATE VALUE)= "16"
+                                DELETE VALUE)= @
+                                FIELD)= PRIMARY ID QUALIFIER
+                                This trigger sets the primary id qualifier to the default value of 16 if the provider type is a facility and the FACILITY DEFAULT ID NUMBER is not null.  
+
+
+
+355.93,.03    CREDENTIALS            0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X I $D(X),$P($G(^IBA(355.93,DA,0)),U,2)'=2 K X
+              LAST EDITED:      OCT 05, 2000 
+              HELP-PROMPT:      Answer must be 1-3 characters in length. 
+              DESCRIPTION:
+                                This is the 1 to 3 digits that represents the credentials for this provider.  This field is only valid for INDIVIDUAL providers.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PROVIDER TYPE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,.04    SPECIALTY              0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2) X I $D(X),$P($G(^IBA(355.93,DA,0)),U,2)'=2 K X
+              LAST EDITED:      OCT 05, 2000 
+              HELP-PROMPT:      Answer must be 2 characters in length. 
+              DESCRIPTION:
+                                This is the 2 digits that represent the specialty for this provider.  This field is only valid for INDIVIDUAL providers.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PROVIDER TYPE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,.05    STREET ADDRESS         0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X I $D(X),$P($G(^IBA(355.93,DA,0)),U,2)'=1 K X
+              LAST EDITED:      OCT 05, 2000 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is the street address of the non-VA facility that rendered the care that is being billed by the VA.  It is only valid for FACILITY providers.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PROVIDER TYPE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,.06    CITY                   0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X I $D(X),$P($G(^IBA(355.93,DA,0)),U,2)'=1 K X
+              LAST EDITED:      OCT 05, 2000 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This is the city of the non-VA facility that rendered the care that is being billed by the VA.  It is only valid for FACILITY providers.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PROVIDER TYPE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,.07    STATE                  0;7 POINTER TO STATE FILE (#5)
+
+              INPUT TRANSFORM:  I $D(X),$P($G(^IBA(355.93,DA,0)),U,2)'=1 K X
+              LAST EDITED:      OCT 05, 2000 
+              HELP-PROMPT:      Enter a valid state where the facility is located 
+              DESCRIPTION:
+                                This is the state of the non-VA facility that rendered the care that is being billed by the VA.  It is only valid for FACILITY providers.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PROVIDER TYPE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,.08    ZIP CODE               0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5)!'((X?5N)!(X?5N1"-"4N)) X I $D(X),$P($G(^IBA(355.93,DA,0)),U,2)'=1 K X
+              LAST EDITED:      OCT 05, 2000 
+              HELP-PROMPT:      Answer must be 5-10 characters in length. 
+              DESCRIPTION:
+                                This is the zip code of the non-VA facility that rendered the care that is being billed by the VA.  It is only valid for FACILITY providers.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PROVIDER TYPE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,.09    FACILITY DEFAULT ID NUMBER 0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X I $D(X),$P($G(^IBA(355.93,DA,0)),U,2)'=1 K X
+              LAST EDITED:      MAR 28, 2006 
+              HELP-PROMPT:      Enter the Federal Tax ID of the outside facility. 
+              DESCRIPTION:
+                                Enter the Federal Tax ID of the outside facility.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PROVIDER TYPE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^.13 
+                                1)= X ^DD(355.93,.09,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,13),X=X S DIU=X K Y S X=DIV S X="16" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,13)=DIV,DIH=355.93,DIG=.13 D ^DICR
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S X=X="1",Y(2)=$G(X) S X=Y(0)]"",Y=X,X=Y(2),X=X&Y
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.93,D0,0)):^(0),1:"") S X=$P(Y(1),U,13),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),0)),DIV=X S $P(^(0),U,13)=DIV,DIH=355.93,DIG=.13 D ^DICR
+                                CREATE CONDITION)= INTERNAL(PROVIDER TYPE)="1"&(FACILITY DEFAULT ID NUMBER]"")
+                                CREATE VALUE)= "16"
+                                DELETE VALUE)= @
+                                FIELD)= PRIMARY ID QUALIFIER
+
+
+355.93,.1     STREET ADDRESS LINE 2  0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X I $D(X),$P($G(^IBA(355.93,DA,0)),U,2)'=1 K X
+              LAST EDITED:      JUL 21, 2010 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is line 2 of the street address of the non-VA facility that rendered the care that is being billed by the VA.  It is only valid for FACILITY providers.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PROVIDER TYPE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,.11    X12 TYPE OF FACILITY   0;11 SET
+
+                                '77' FOR SERVICE LOCATION; 
+                                'FA' FOR FACILITY; 
+                                'LI' FOR INDEPENDENT LAB; 
+                                'TL' FOR TESTING LAB; 
+              LAST EDITED:      JUN 19, 2007 
+              HELP-PROMPT:      Enter a code to describe the type of facility for professional claims. Type Facility (FA) will automatically be sent on institutional claims. 
+              DESCRIPTION:
+                                This is the code for the type of facility as identified in the X12 documents.  It is used  to describe the type of facility for professional claims. Facility (FA) will automatically be sent on institutional claims.  
+
+
+355.93,.12    STATE LICENSE #        0;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      AUG 25, 2003 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:      This is the State license # for the non-VA provider. Note, there can be only 1 state license # on file for non-VA/other VA providers.  Enter multiple entries for the provider if multiple state license numbers are required
+                                (one for each state).  
+
+              NOTES:            TRIGGERED by the STATE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,.13    PRIMARY ID QUALIFIER   0;13 POINTER TO IB PROVIDER ID # TYPE FILE (#355.97)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P($G(^(1)),U,4)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 09, 2006 
+              HELP-PROMPT:      The only Qualifier allowed is the TAX ID. 
+              DESCRIPTION:
+                                This is the Qualifier associated with the FACILITY DEFAULT ID NUMBER. 
+
+              SCREEN:           S DIC("S")="I $P($G(^(1)),U,4)"
+              EXPLANATION:      Only TAX ID allowed
+              NOTES:            TRIGGERED by the FACILITY DEFAULT ID NUMBER field of the IB NON/OTHER VA BILLING PROVIDER File 
+                                TRIGGERED by the PROVIDER TYPE field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,.15    MAMMOGRAPHY CERTIFICATION # 0;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+              LAST EDITED:      MAR 09, 2006 
+              HELP-PROMPT:      Enter the Mammography Certification Number for this facility.   Must be 3-15 characters. 
+              DESCRIPTION:
+                                This is the mammography certification number for the non-VA facility which is used as a default on the claim when mammography services are performed.  It is required by some insurance companies.  
+
+
+355.93,.16    LICENSE STATE          0;16 POINTER TO STATE FILE (#5)
+
+              LAST EDITED:      NOV 08, 2011 
+              HELP-PROMPT:      Enter the state which issued the license of the individual or facility. 
+              DESCRIPTION:
+                                This is the state which issued the STATE LICENSE #(#.12) field of the non-VA individual or facility that rendered the care that is being billed by the VA.  
+
+
+355.93,1.01   CONTACT NAME           1;1 FREE TEXT
+
+              Contact Name                                                                                                     
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      SEP 15, 2010 
+              HELP-PROMPT:      Enter the Contact Person (3-30 characters) at this Lab/Facility (Last Name,First Name). 
+              DESCRIPTION:
+                                This is the name of the contact person at this Lab/Facility (Last Name, First Name).  
+
+
+355.93,1.02   CONTACT PHONE NUMBER   1;2 FREE TEXT
+
+              Contact Phone Number                                                                                             
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+              LAST EDITED:      SEP 15, 2010 
+              HELP-PROMPT:      Enter the area code and phone number (3-15 characters) for the contact person at this Lab/Facility (nnnnnnnnnn or nnn-nnn-nnnn).  Required if Contact Name is present. 
+              DESCRIPTION:      This is the area code and phone number of the contact person at 
+                                 this facility.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.93^1.03 
+                                1)= Q
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.93,D0,1)):^(1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.93,DIV(0),1)),DIV=X S $P(^(1),U,3)=DIV,DIH=355.93,DIG=1.03 D ^DICR
+                                CREATE VALUE)= NO EFFECT
+                                DELETE VALUE)= S X=""
+                                FIELD)= CONTACT PHONE EXTENSION
+                                If Contact Phone is deleted, extension will be deleted also.  
+
+
+
+355.93,1.03   CONTACT PHONE EXTENSION 1;3 NUMBER
+
+              Contact Phone Extension                                                                                          
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 15, 2011 
+              HELP-PROMPT:      Type a number between 0 and 9999999999, 0 decimal digits. 
+              DESCRIPTION:
+                                This is the phone extension of the contact person at this facility, if known.  
+
+              NOTES:            TRIGGERED by the CONTACT PHONE NUMBER field of the IB NON/OTHER VA BILLING PROVIDER File 
+
+
+355.93,40     DATE/TIME OF LAST NPI CHANGE NPISTATUS;0 DATE Multiple #355.9301 (Add New Entry without Asking)
+
+
+355.9301,.01    DATE/TIME OF LAST NPI CHANGE 0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 18, 2006 
+                HELP-PROMPT:      Enter the date/time of the last change to this NPI. 
+                DESCRIPTION:
+                                  This is the date and time of the last change to the NPI value.  
+
+                CROSS-REFERENCE:  355.9301^B 
+                                  1)= S ^IBA(355.93,DA(1),"NPISTATUS","B",$E(X,1,30),DA)=""
+                                  2)= K ^IBA(355.93,DA(1),"NPISTATUS","B",$E(X,1,30),DA)
+
+
+355.9301,.02    STATUS                 0;2 SET
+
+                                  '1' FOR ACTIVE; 
+                                  '0' FOR INACTIVE; 
+                LAST EDITED:      DEC 18, 2006 
+                HELP-PROMPT:      Enter a 1 for 'ACTIVE', 0 for 'INACTIVE' 
+                DESCRIPTION:      The Status of an NPI is either 'ACTIVE' or 'INACTIVE'.  If 'ACTIVE', then the NPI will be accessible by end-users to document a particular provider. If 'INACTIVE', then the NPI will only be accessible by the application
+                                  to display legacy data.  
+
+                CROSS-REFERENCE:  355.9301^NPISTATUS 
+                                  1)= S ^IBA(355.93,DA(1),"NPISTATUS","NPISTATUS",$E(X,1,30),DA)=""
+                                  2)= K ^IBA(355.93,DA(1),"NPISTATUS","NPISTATUS",$E(X,1,30),DA)
+                                  This cross reference is for identifying active, inactive, or deleted NPIs.  
+
+
+
+355.9301,.03    NPI                    0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<10)!('$$CHKDGT^XUSNPI(X)) X
+                LAST EDITED:      DEC 18, 2006 
+                HELP-PROMPT:      Answer must be 10 characters in length. 
+                DESCRIPTION:      Unique National Provider Identifier. A unique integer assigned to providers by CMS. This field contains all of the NPIs associated with this provider. The current NPI will be set as active in the STATUS field of this
+                                  multiple. All others will be set as inactive. There can only be one active NPI.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  355.9301^C 
+                                  1)= S ^IBA(355.93,DA(1),"NPISTATUS","C",$E(X,1,30),DA)=""
+                                  2)= K ^IBA(355.93,DA(1),"NPISTATUS","C",$E(X,1,30),DA)
+                                  This x-ref (along with the NPI42 whole file x-ref) is used by Kernel when checking for existing NPI entries in this file before allowing them to be used in files 200 (NEW PERSON) or 4 (INSTITUTION).  
+
+
+                FIELD INDEX:      NPI42 (#705)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#355.93)
+                    Short Descr:  NPI42 X-REF
+                      Set Logic:  S ^IBA(355.93,"NPI42",$E(X,1,10),DA(1),DA)=""
+                     Kill Logic:  K ^IBA(355.93,"NPI42",$E(X,1,10),DA(1),DA)
+                     Whole Kill:  K ^IBA(355.93,"NPI42")
+                           X(1):  NPI  (355.9301,.03)  (Subscr 1)  (Len 10)  (forwards)
+
+
+355.9301,.04    PERSON AFFECTING LAST CHANGE 0;4 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      DEC 18, 2006 
+                HELP-PROMPT:      Enter the name of the person last changing this NPI. 
+                DESCRIPTION:
+                                  This is the name of the person who last changed the NPI.  
+
+
+
+
+355.93,41.01  NPI                    0;14 FREE TEXT
+
+              INPUT TRANSFORM:  N IBOLDNPI S IBOLDNPI=$P($G(^IBA(355.93,DA,0)),U,14) K:$L(X)>10!($L(X)<10)!'$$CHKDGT^XUSNPI(X)!$$NPIUSED^IBCEP81(X,IBOLDNPI,DA,$S(X=IBOLDNPI:2,1:0),"XUSNPIMTL") X
+              LAST EDITED:      MAY 12, 2008 
+              HELP-PROMPT:      Answer must be 10 characters in length and a valid unique NPI number. 
+              DESCRIPTION:
+                                Unique National Provider Identifier.  A unique integer assigned to a provider by CMS.  This field contains the current NPI for this provider.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  355.93^NPI 
+                                1)= S ^IBA(355.93,"NPI",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.93,"NPI",$E(X,1,30),DA)
+                                This cross reference holds a list of the active NPIs in this file.  
+
+
+              CROSS-REFERENCE:  355.93^NPIHISTORY 
+                                1)= S ^IBA(355.93,"NPIHISTORY",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.93,"NPIHISTORY",$E(X,1,30),DA)
+                                3)= An entry into the NPI History cross reference should not be deleted
+                                This cross reference holds the entire history of the NPIs used in the file.  
+
+
+
+355.93,42     TAXONOMY CODE          TAXONOMY;0 POINTER Multiple #355.9342
+
+              IDENTIFIED BY:    
+
+355.9342,.01    TAXONOMY CODE          0;1 POINTER TO PERSON CLASS FILE (#8932.1) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $TR($P($G(^(90002)),U,2),""IN"",""21"")=$P(^IBA(355.93,DA(1),0),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      AUG 30, 2006 
+                HELP-PROMPT:      Enter the NUCC recognized taxonomy code 
+                DESCRIPTION:
+                                  This multiple field holds the NUCC recognized taxonomy code for an individual or an organization.  
+
+                SCREEN:           S DIC("S")="I $TR($P($G(^(90002)),U,2),""IN"",""21"")=$P(^IBA(355.93,DA(1),0),U,2)"
+                EXPLANATION:      INDIVIDUAL/NON-INDIVIDUAL (FACILITY)
+                DELETE TEST:      1,0)= I 1 W *7,!,"TAXONOMY CODES SHOULD NOT BE DELETED. SET THE STATUS FLAG TO INACTIVE INSTEAD."
+
+                CROSS-REFERENCE:  355.9342^B 
+                                  1)= S ^IBA(355.93,DA(1),"TAXONOMY","B",$E(X,1,30),DA)=""
+                                  2)= K ^IBA(355.93,DA(1),"TAXONOMY","B",$E(X,1,30),DA)
+
+
+355.9342,.02    PRIMARY CODE           0;2 SET (Required)
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      AUG 24, 2006 
+                HELP-PROMPT:      Enter a 1 if this is the provider's primary taxonomy code or a 0 for non-primary. 
+                DESCRIPTION:
+                                  Only one code can be the primary taxonomy code for a provider.  When a specific taxonomy code is identified as the primary code then that code will be the default taxonomy code.  
+
+                CROSS-REFERENCE:  355.9342^D^MUMPS 
+                                  1)= D XR^IBCEP82
+                                  2)= D KXR^IBCEP82
+                                  This x-ref is used to make sure that a maximum of one taxonomy is allowed to be marked as primary.  
+
+
+
+355.9342,.03    STATUS                 0;3 SET (Required)
+
+                                  'A' FOR ACTIVE; 
+                                  'I' FOR INACTIVE; 
+                LAST EDITED:      AUG 24, 2006 
+                HELP-PROMPT:      Enter an 'A' for active code, or an 'I' for an inactive code. 
+                DESCRIPTION:      If a taxonomy code listed for a provider is a currently active code (one they use today), then the status should be marked with an 'A'.  At times a provider will no longer use a taxonomy code.  This code will be marked 
+                                  with an 'I' for inactive.  Codes should not be removed from a provider's list.  They should be either active or inactive.  
+
+                CROSS-REFERENCE:  355.93^TAXSTATUS 
+                                  1)= S ^IBA(355.93,"TAXSTATUS",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBA(355.93,"TAXSTATUS",$E(X,1,30),DA(1),DA)
+
+
+
+
+355.93,50     DATE/TIME LAST FB UPDATE 4;0 DATE Multiple #355.935 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple tracks updates to this file that are made by the FEE BASIS PAID TO IB background job.  
+
+
+355.935,.01     DATE/TIME LAST FB UPDATE 0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      MAY 30, 2012 
+                HELP-PROMPT:      Enter the date this record was modified by Fee Basis interface. 
+                DESCRIPTION:
+                                  This field tracks when updates were made by the Fee Basis Paid to IB interface.  
+
+                CROSS-REFERENCE:  355.935^B 
+                                  1)= S ^IBA(355.93,DA(1),4,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBA(355.93,DA(1),4,"B",$E(X,1,30),DA)
+
+
+355.935,.02     FB SUPERVISOR          0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAY 30, 2012 
+                HELP-PROMPT:      Enter the Fee Basis Supervisor who certified the batch. 
+                DESCRIPTION:
+                                  This field identifies the Fee Basis Supervisor who released the batch that contained provider information added/updated to this record.  
+
+
+355.935,.03     CREATED BY FB PAID TO IB 0;3 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      MAY 30, 2012 
+                HELP-PROMPT:      Enter YES if FB PAID TO IB created this record. 
+                DESCRIPTION:
+                                  This field is set to YES if the FB PAID TO IB background job created this record.  
+
+
+
+
+355.93,51     DATE/TIME ALLOW FB UPDATE 3;0 DATE Multiple #355.9351 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple stores information that the Fee Basis interface uses to control whether updates to this record should be allowed. Historical information is saved, and the most recent entry is used by the interface.  
+
+
+355.9351,.01    DATE/TIME ALLOW FB UPDATE 0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      MAY 30, 2012 
+                HELP-PROMPT:      Enter the date/time the IB user toggled allow/disallow. 
+                DESCRIPTION:
+                                  This field tracks when an IB user chooses to allow/disallow updates to this record by FB PAID TO IB.  
+
+                CROSS-REFERENCE:  355.9351^B 
+                                  1)= S ^IBA(355.93,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBA(355.93,DA(1),3,"B",$E(X,1,30),DA)
+
+
+355.9351,.02    ALLOW UPDATES          0;2 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      MAY 30, 2012 
+                HELP-PROMPT:      Allow updates? 
+                DESCRIPTION:
+                                  This field notes whether the FB PAID TO IB option is allowed to update this record.  
+
+
+355.9351,.03    IB USER WHO CHANGED    0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAY 30, 2012 
+                HELP-PROMPT:      Enter the IB USER who changed the ALLOW UPDATES value. 
+                DESCRIPTION:
+                                  This field identifies the IB USER who changed the ALLOW UPDATES (#.02) value.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+IB PROVIDER ID # TYPE (#355.97)   PRIMARY ID QUALIFIER (#.13)
+
+NEW PERSON (#200)                 DATE/TIME OF LAST NPI CHANGE:PERSON AFFECTING LAST CHANGE (#.04)
+                                  DATE/TIME LAST FB UPDATE:FB SUPERVISOR (#.02)
+                                  DATE/TIME ALLOW FB UPDATE:IB USER WHO CHANGED (#.03)
+
+PERSON CLASS (#8932.1)            TAXONOMY CODE:TAXONOMY CODE (#.01)
+
+STATE (#5)                        STATE (#.07)
+                                  LICENSE STATE (#.16)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+IB PROVIDERS FROM FB          MAY 29, 2012@13:60  USER #0    
+SORT BY: DATE/TIME LAST FB UPDATE;S1//
+DATE/TIME LAST FB UPDATE SUB-FIELD: DATE/TIME LAST FB UPDATE//    (User is asked range)
+  WITHIN DATE/TIME LAST FB UPDATE, SORT BY: PROVIDER TYPE;S1//    (User is asked range)
+    WITHIN PROVIDER TYPE, SORT BY: DATE/TIME LAST FB UPDATE//
+    DATE/TIME LAST FB UPDATE SUB-FIELD: CREATED BY FB PAID TO IB//    (User is asked range)
+     Displays entries created by the FB PAID TO IB task
+
+
+FORM(S)/BLOCK(S):

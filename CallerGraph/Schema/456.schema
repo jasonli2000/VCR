@@ -1,0 +1,149 @@
+STANDARD DATA DICTIONARY #456 -- PAID PARAMETERS FILE                                                                                                                                                                             MAY 20,2014@15:39:32  PAGE 1
+STORED IN ^PRST(456,  (1 ENTRY)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                              (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The PAID PARAMETERS file contains data that is specific to the administration of Nurse Alternate Work Schedules, such as whether to send notification bulletins and how many should be sent.  It also defines the manner in which nurses shall be accessed for
+Nurse POC records.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: INSTITUTION(B)
+
+456,.01       INSTITUTION            0;1 POINTER TO INSTITUTION FILE (#4) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I +$P($$SITE^VASITE(),U,3)=+$G(^DIC(4,+Y,99))&'$P($G(^DIC(4,+Y,99)),U,4)" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      NOV 07, 2011 
+              HELP-PROMPT:      Enter an Institution (Division) name. 
+              DESCRIPTION:
+                                Enter a DIVISION (the same INSTITUTION name in File #4) these parameters apply to.  
+
+              TECHNICAL DESCR:
+                                One entry per division for site parameters to handle multi divisional sites.  
+
+              SCREEN:           S DIC("S")="I +$P($$SITE^VASITE(),U,3)=+$G(^DIC(4,+Y,99))&'$P($G(^DIC(4,+Y,99)),U,4)"
+              EXPLANATION:      Allow only active divisions that are associated with the parent division
+              CROSS-REFERENCE:  456^B 
+                                1)= S ^PRST(456,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRST(456,"B",$E(X,1,30),DA)
+
+
+456,1         SEND AWS BULLETIN      0;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 25, 2007 
+              HELP-PROMPT:      Answer Yes to allow 9mo/3mo AWS bulletin to be sent to developers 
+
+456,2         AWS 9MO BULLETIN COUNT 0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      JUL 30, 2007 
+              HELP-PROMPT:      Type a number between 0 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field counts the number of bulletins that have been sent to the developers notifying them when an employee has been identified as being converted or beginning to work the 9 mo/3 mo AWS.  
+
+              TECHNICAL DESCR:
+                                Counter updated by code when bulletin is sent.  Code may impose a limit on how many bulletins are sent.  Users should not edit this field.  
+
+                                UNEDITABLE
+
+456,3         AWS BULLETIN LIMIT     0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      JUL 25, 2007 
+              HELP-PROMPT:      Type a number between 0 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                Please enter the number of bulletins that should be sent to the developers, once an employee is identified as working the 9 month/3 month alternative work schedule (AWS).  
+
+              TECHNICAL DESCR:
+                                Limit number of bulletins by not sending the bulletin once this limit is reached.  The limit is stored in field 2--AWS BULLETIN COUNTER.  
+
+
+456,4         AWS 36-40 BULLETIN COUNT 0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      JUL 30, 2007 
+              HELP-PROMPT:      Type a number between 0 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field counts the number of bulletins that have been sent to the developers notifying them when an employee has been identified as being converted or beginning to work the 36/40 AWS.  
+
+                                UNEDITABLE
+
+456,5         ACCESS TO NURSES FOR POC DATA 1;0 Multiple #456.05
+
+              DESCRIPTION:      This multiple will identify the manner in which Data Entry Personnel and Data Approval Personnel will access the nurses in a division, either by Nurse Location or T&L Unit, and it will identify the Effective Pay Period for
+                                which the parameter was set.  
+
+
+              INDEXED BY:       EFFECTIVE PAY PERIOD & ACCESS TO NURSES FOR POC DATA (C)
+
+456.05,.01      EFFECTIVE PAY PERIOD   0;1 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>5!($L(X)<5)!'(X?2N1"-"2N) X
+                LAST EDITED:      AUG 05, 2009 
+                HELP-PROMPT:      Answer must be in the form YY-PP. 
+                DESCRIPTION:
+                                  This is the effective pay period for which ACCESS TO NURSES FOR POC DATA is set to either T&L Unit or Nurse Location.  
+
+                CROSS-REFERENCE:  456.05^B 
+                                  1)= S ^PRST(456,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRST(456,DA(1),1,"B",$E(X,1,30),DA)
+
+                RECORD INDEXES:   C (#1017)
+
+456.05,1        ACCESS TO NURSES FOR POC DATA 0;2 SET (Required)
+
+                NURSE ACCESS                                                                                                   
+                                  'T' FOR T&L Unit; 
+                                  'N' FOR Nurse Location; 
+                LAST EDITED:      AUG 05, 2009 
+                HELP-PROMPT:      Select the method for which this Medical Center Division will access VA Nurse for data entry and approval 
+                DESCRIPTION:
+                                  This field describes how Data Entry Personnel and Data Approval Personnel will access VA Nurses for this division.  They can choose between T&L Unit or Nurse Location.  
+
+                RECORD INDEXES:   C (#1017)
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  INSTITUTION (#.01)
+
+
+Subfile #456.05
+
+  Record Indexes:
+
+  C (#1017)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  Index provides a quick lookup of the access parameter for a given pay period
+      Description:  This index provides a lookup to determine what the access parameter was set to for a given pay period.  Using reverse $Order from the pay period of concern one can find the parameter setting that is in effect.  
+        Set Logic:  S ^PRST(456,DA(1),1,"C",$E(X(1),1,30),$E(X(2),1,1),DA)=""
+       Kill Logic:  K ^PRST(456,DA(1),1,"C",$E(X(1),1,30),$E(X(2),1,1),DA)
+       Whole Kill:  K ^PRST(456,DA(1),1,"C")
+             X(1):  EFFECTIVE PAY PERIOD  (456.05,.01)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  ACCESS TO NURSES FOR POC DATA  (456.05,1)  (Subscr 2)  (Len 1)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PRSN POC DIVISION PARAMS      AUG 20, 2009@10:36  USER #0                                                                                                                                                                                 PAID PARAMETERS LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+PRSN EDIT PAID PARAMETERS     JUN 23, 2009@11:10  USER #0
+  PRSN PAID PARAM HDR           DD #456
+  PRSN PAID PARAM EDIT          DD #456
+  PRSN PAID PAY PD EDIT         DD #456.05
+

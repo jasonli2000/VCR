@@ -1,0 +1,240 @@
+STANDARD DATA DICTIONARY #51 -- MEDICATION INSTRUCTION FILE                                                                                                                                                                       MAY 20,2014@15:39:58  PAGE 1
+STORED IN ^PS(51,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  This file holds the abbreviations which are often used when entering the Rx sig.  Each record holds an expansion of the abbreviation which is used to complete the sig as it is printed on the Rx label.  Care should be taken to not delete entries in this
+file after going into production use of the pharmacy package.  If an entry were deleted then any sigs that contain the abbreviation would not find it when printed later and thus could confuse the patient.  
+ 
+The above description indicates that this file is not strictly 'pointed to' in the classical VA FileMan sense, but that logically it is nearly the same thing.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: EXPANSION (#1)[R]
+
+CROSS
+REFERENCED BY: NAME(A), EXPANSION(AB), PLURAL(AC), SYNONYM(AD), SYNONYM(AE), INTENDED USE(AI), NAME(AIN), NAME(B)
+
+51,.01        NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  S X=$$UP^XLFSTR(X) K:$L(X)>9!($L(X)<1)!'(X?.ANP) X
+              LAST EDITED:      APR 03, 2006 
+              HELP-PROMPT:      Answer must be 1-9 characters in length. 
+              DESCRIPTION:
+                                  For inpatient pharmacy use, you may enter one of the following standard times or you may use a non-standard schedule when appropriate.  For example,  Q36H  or Q17H.  
+
+              GROUP:            PS
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  51^B 
+                                1)= S ^PS(51,"B",X,DA)=""
+                                2)= K ^PS(51,"B",X,DA)
+
+              CROSS-REFERENCE:  51^AIN^MUMPS 
+                                1)= I $P(^PS(51,DA,0),"^",4) S ^PS(51,"AI",X,DA)=""
+                                2)= I $P(^PS(51,DA,0),"^",4) K ^PS(51,"AI",X,DA)
+                                Sets intended use cross-ref.  In the form of: ^PS(51,"AI",X,DA) 
+
+
+              CROSS-REFERENCE:  51^A^MUMPS 
+                                1)= S X1=^PS(51,DA,0),%=$P(X1,"^",1) I %'="" S ^PS(51,"A",%)=$P(X1,"^",2)_"^"_$S($D(^PS(51,DA,9)):^(9),1:"")
+                                2)= K ^PS(51,"A",X)
+                                This cross reference uses the drug name to obtain the drug's expanded name and plural.  In the form of: ^PS(51,"A",$P(^PS(51,DA,0),"^",1)) 
+
+
+
+51,.5         SYNONYM                0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<1)!($D(^PS(51,"B",X))) X
+              LAST EDITED:      APR 10, 1995 
+              HELP-PROMPT:      ANSWER MUST BE 1-9 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field is used to indicate the synonym if applicable.  
+
+              TECHNICAL DESCR:
+                                free text 
+
+              GROUP:            PSO
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  51^AE^MUMPS 
+                                1)= S:'$D(^PS(51,"B",$E(X,1,9),DA)) ^(DA)=1
+                                2)= I $D(^PS(51,"B",$E(X,1,9),DA)),^(DA) K ^(DA)
+                                3)= Do not delete.
+                                This xref is used to indicate synonyms In the form of: ^PS(51,"B",$E(X,1,9),DA) 
+
+
+              CROSS-REFERENCE:  51^AD^MUMPS 
+                                1)= S X1=^PS(51,DA,0) I X'="" S ^PS(51,"A",X)=$P(X1,"^",2)_"^"_$S($D(^PS(51,DA,9)):^(9),1:"")
+                                2)= K ^PS(51,"A",X)
+                                This cross reference uses the drug synonym to obtain the drug expanded name and plural.  In the form of: ^PS(51,"A",X) 
+
+
+
+51,1          EXPANSION              0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+              LAST EDITED:      JUL 26, 1986 
+              HELP-PROMPT:      Answer must be 2-50 characters in length. 
+              DESCRIPTION:
+                                  This is the full explanation of the instruction and will print on some reports.  
+
+              TECHNICAL DESCR:
+                                free text 
+
+              GROUP:            PS
+              CROSS-REFERENCE:  51^AB^MUMPS 
+                                1)= S X1=^PS(51,DA,0),%=$P(X1,"^",1) I %'="" S ^PS(51,"A",%)=$P(X1,"^",2)_"^"_$S($D(^PS(51,DA,9)):^(9),1:"")
+                                2)= S X1=^PS(51,DA,0),%=$P(X1,"^",1) I %'="" K ^PS(51,"A",%)
+                                This cross reference uses the drug name to obtain the drug expanded name and plural.  In the form of: ^PS(51,"A",$P(^PS(51,DA,0),"^",1)) 
+
+
+
+51,1.1        OTHER LANGUAGE EXPANSION 4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<2) X
+              LAST EDITED:      SEP 16, 2002 
+              HELP-PROMPT:      Answer must be 2-100 characters in length. 
+              DESCRIPTION:
+                                This field is used to store the expansion in another language.  
+
+              TECHNICAL DESCR:
+                                Free text.  
+
+              GROUP:            PSO
+
+51,2          MED ROUTE              0;5 POINTER TO MEDICATION ROUTES FILE (#51.2)
+
+              LAST EDITED:      JAN 31, 1995 
+
+51,3          SCHEDULE               0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X," ")>3!($L(X)>20)!($L(X)<2) X
+              LAST EDITED:      MAY 01, 2001 
+              HELP-PROMPT:      Enter the appropriate schedule to associate with this Medication Instruction. 
+              DESCRIPTION:      This is the Schedule that is associated with the Medication Instruction.  Prior to the Pharmacy Ordering Enhancements project, this field was used to associate schedules with Outpatient prescriptions, by running each word 
+                                of the Sig through the Medication Instruction file to look for an associated Schedule. The field is currently not being used by the Pharmacy software.  
+
+              EXECUTABLE HELP:  D ENSH^PSSDDUT
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+51,4          INSTRUCTIONS           0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>75!($L(X)<10) X
+              LAST EDITED:      JAN 31, 1995 
+              HELP-PROMPT:      Answer must be 10-75 characters in length. 
+
+51,5          ADDITIONAL INSTRUCTION 3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<10) X
+              LAST EDITED:      JAN 31, 1995 
+              HELP-PROMPT:      Answer must be 10-100 characters in length. 
+
+51,9          PLURAL                 9;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1)!'(X?.A) X
+              LAST EDITED:      JUL 26, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 1-25 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This field is used to indicate if there's a plural name for this instruction.  
+
+              TECHNICAL DESCR:
+                                free text 
+
+              GROUP:            PSO
+              CROSS-REFERENCE:  51^AC^MUMPS 
+                                1)= S X1=^PS(51,DA,0),%=$P(X1,"^",1) I %'="" S ^PS(51,"A",%)=$P(X1,"^",2)_"^"_$S($D(^PS(51,DA,9)):^(9),1:"")
+                                2)= S X1=^PS(51,DA,0),%=$P(X1,"^",1) I %'="" K ^PS(51,"A",%)
+                                This cross reference uses the drug name to obtain the drug expanded name and plural.  In the form of: ^PS(51,"A",$P(^PS(51,DA,0),"^",1)) 
+
+
+
+51,10         DEFAULT ADMIN TIMES    1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X I $D(X) F I=1:1:$L(X) I $E(X,I)'?1N&($E(X,I)'?1"-") K X Q
+              LAST EDITED:      NOV 28, 1983 
+              HELP-PROMPT:      Enter up to 40 character in the form 3-9-15-21.  Be sure to use a 24-hour clock. 
+              DESCRIPTION:
+                                This field is used to indicate a default admin time if applicable.  
+
+              GROUP:            PS
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+51,20         WARD                   2;0 POINTER Multiple #51.01
+
+              DESCRIPTION:
+                                This sub file is used to indicate any wards associated with a medication instruction.  
+
+              GROUP:            PS
+
+51.01,.01       WARD                   0;1 POINTER TO WARD LOCATION FILE (#42) (Multiply asked)
+
+                INPUT TRANSFORM:  I $D(X) S DINUM=X
+                LAST EDITED:      NOV 28, 1983 
+                DESCRIPTION:
+                                  This field is ued to indicate any wards associated with a medication instruction.  
+
+                GROUP:            PS
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+51.01,.02       DEFAULT ADMIN TIMES    0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X I $D(X) F I=1:1:$L(X) I $E(X,1)'?1N&($E(X,1)'?1"-") K X Q
+                LAST EDITED:      NOV 28, 1983 
+                HELP-PROMPT:      ANSWER MUST BE 1-40 CHARACTERS IN LENGTH, E.G., 0300-0900-1500-2100 
+                DESCRIPTION:
+                                  This field is used to indicate a default admin time if applicable.  
+
+                GROUP:            PS
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+51,30         INTENDED USE           0;4 SET (Required)
+
+                                '0' FOR OUTPATIENT ONLY; 
+                                '1' FOR IN & OUTPATIENT; 
+                                '2' FOR INPATIENT ONLY; 
+              LAST EDITED:      JUN 15, 1987 
+              DESCRIPTION:        This controls the users' view of this file.  If the entry is marked as OUTPATIENT ONLY (0), then only the Outpatient package will use it as a valid abbreviation.  If marked INPATIENT ONLY (2), then only the Inpatient 
+                                package will use the entry as a valid abbreviation.  The entry may be marked as Inpatient and Outpatient (1).  
+
+              GROUP:            PS
+              CROSS-REFERENCE:  51^AI^MUMPS 
+                                1)= I X S ^PS(51,"AI",$P(^PS(51,DA,0),"^"),DA)=""
+                                2)= I X K ^PS(51,"AI",$P(^PS(51,DA,0),"^"),DA)
+                                Sets intended use cross-ref for this file.  In the form of: ^PS(51,"AI",$P(^PS(51,DA,0),"^",1)) 
+
+
+
+51,31         FREQUENCY (IN MINUTES) 0;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>129600)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 13, 2000 
+              HELP-PROMPT:      Type a Number between 0 and 129600, 0 Decimal Digits 
+              DESCRIPTION:      This is the number of minutes between each time that the action should take place. This field will be used to calculate defaults for Quantity and Days Supply in the Outpatient Pharmacy Package. It will also be used to 
+                                calculate defaults for the fields in the pharmacy dialog in Computerized Patient Record System (CPRS).  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MEDICATION ROUTES (#51.2)         MED ROUTE (#2)
+
+WARD LOCATION (#42)               WARD:WARD (#.01)
+
+
+
+INPUT TEMPLATE(S):
+PSS SIGED                     JUN 06, 1996@08:24  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

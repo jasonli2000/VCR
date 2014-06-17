@@ -1,0 +1,123 @@
+STANDARD DATA DICTIONARY #362.5 -- IB BILL/CLAIMS PROSTHETICS FILE                                                                                                                                                                MAY 20,2014@15:35:57  PAGE 1
+STORED IN ^IBA(362.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains all prosthetic items for bills in the Bill/Claims file.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: RECORD(AE), DELIVERY DATE(AIFN), BILL NUMBER(AIFN1), DELIVERY DATE(B)
+
+362.5,.01     DELIVERY DATE          0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 29, 1993 
+              HELP-PROMPT:      Enter the date the item was delivered to the patient. 
+              DESCRIPTION:
+                                This is the date the prosthetic item was delivered and accepted by the patient.  
+
+              CROSS-REFERENCE:  362.5^B 
+                                1)= S ^IBA(362.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(362.5,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  362.5^AIFN^MUMPS 
+                                1)= S:+$P(^IBA(362.5,+DA,0),U,2) ^IBA(362.5,"AIFN"_+$P(^(0),U,2),+X,+DA)=""
+                                2)= K:+$P(^IBA(362.5,+DA,0),U,2) ^IBA(362.5,"AIFN"_+$P(^(0),U,2),+X,+DA)
+                                Set-up for quick cross reference of all prosthetic devices on a bill.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^362.5^.04 
+                                1)= Q
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(362.5,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(362.5,.01,1,3,2.4)
+                                2.4)= S DIH=$S($D(^IBA(362.5,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=362.5,DIG=.04 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= NO EFFECT
+                                DELETE VALUE)= @
+                                FIELD)= record
+                                Deletes the Prescription Transaction Record pointer if the Delivery Date is changed.  
+
+
+
+362.5,.02     BILL NUMBER            0;2 POINTER TO BILL/CLAIMS FILE (#399) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,13)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 13, 2008 
+              HELP-PROMPT:      The bill number associated with this prosthetic item. 
+              SCREEN:           S DIC("S")="I $P(^(0),U,13)=1"
+              EXPLANATION:      Only open bills may be modified.
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  362.5^AIFN1^MUMPS 
+                                1)= S ^IBA(362.5,"AIFN"_+X,+^IBA(362.5,+DA,0),DA)=""
+                                2)= K ^IBA(362.5,"AIFN"_+X,+^IBA(362.5,+DA,0),DA)
+                                Set-up for quick cross reference of all prosthetic devices on a bill.  
+
+
+
+362.5,.03     *ITEM                  0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      MAR 07, 2008 
+              HELP-PROMPT:      Enter the prosthetic item to be added to this bill. 
+              DESCRIPTION:
+                                The prosthetic item added to the bill.  
+
+              TECHNICAL DESCR:  This should be automatically set by the system if a prosthetic record is chosen.  
+                                 
+                                This field was marked for deletion 04/01/08.  Field was a pointer to PROS ITEM MASTER (#661) which is out of date.  
+
+
+362.5,.04     RECORD                 0;4 POINTER TO RECORD OF PROS APPLIANCE/REPAIR FILE (#660)
+
+              LAST EDITED:      JUN 01, 2009 
+              HELP-PROMPT:      Enter the record for this prosthetic item transaction. 
+              DESCRIPTION:
+                                This is the Prosthetic record for this item transaction.  
+
+              TECHNICAL DESCR:
+                                This should be automatically set by the system if a prosthetic record is chosen.  This is not required because not all items may be from prosthetics, such as fee basis charges.  
+
+              NOTES:            TRIGGERED by the DELIVERY DATE field of the IB BILL/CLAIMS PROSTHETICS File 
+
+              CROSS-REFERENCE:  362.5^AE^MUMPS 
+                                1)= I X'<1 S ^IBA(362.5,"AE",$E(X,1,30),DA)=""
+                                2)= K ^IBA(362.5,"AE",$E(X,1,30),DA)
+                                Cross reference for Prosthetics record pointer.  
+
+
+
+362.5,.05     ITEM NAME              0;5 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+              LAST EDITED:      FEB 12, 2008 
+              HELP-PROMPT:      Answer must be 3-60 characters in length. 
+              DESCRIPTION:
+                                This is the name or short description of the Prosthetics Item.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILL/CLAIMS (#399)                BILL NUMBER (#.02)
+
+RECORD OF PROS APPLIANCE/REPAI 
+                   (#660)         RECORD (#.04)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

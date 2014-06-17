@@ -1,0 +1,182 @@
+STANDARD DATA DICTIONARY #18.05 -- VISTALINK MESSAGE TYPE FILE                                                                                                                                                                    MAY 20,2014@15:42:38  PAGE 1
+STORED IN ^XOB(18.05,  (3 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                           (VERSION 1.6)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the message type definitions used by the VistALink request manager. Each message type is associated with a request handler.  
+ 
+The request manager uses TCP/IP input stream information to lookup entries by 'message type' or 'proprietary format indicator'.  Once an entry has been found, the request manager can execute the correct request handler methods for the incoming request
+stream.  
+ 
+Information contained in the entries of this file allow the request manager to dynamically determine which request handler to load and execute.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+PRIMARY KEY:        A (#71)
+  Uniqueness Index: NAME (#334)
+       File, Field: 1) NAME (18.05,.01)
+
+SECONDARY KEY:      B (#72)
+  Uniqueness Index: MSGTYPE (#333)
+       File, Field: 1) MESSAGE TYPE (18.05,.02)
+
+CROSS
+REFERENCED BY: CACHE REQUEST HANDLER INFO(AS), NAME(B), MESSAGE TYPE(C), PROPRIETARY INDICATOR(D)
+
+INDEXED BY:    MESSAGE TYPE (MSGTYPE), NAME (NAME)
+
+
+18.05,.01     NAME                   0;1 FREE TEXT (Required) (Key field)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(X?.N)!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      APR 11, 2003 
+              HELP-PROMPT:      Unique name must be 3-30 characters, not numeric or starting with punctuation 
+              DESCRIPTION:      This field contains a unique and keyed human readable name for the message type.  
+                                 
+                                It is also recommended that the name be prefixed with namespace characters.  
+
+              CROSS-REFERENCE:  18.05^B 
+                                1)= S ^XOB(18.05,"B",$E(X,1,30),DA)=""
+                                2)= K ^XOB(18.05,"B",$E(X,1,30),DA)
+
+              FIELD INDEX:      NAME (#334)    REGULAR    IR    LOOKUP & SORTING
+                   Unique for:  Key A (#71), File #18.05
+                  Short Descr:  Name cross reference
+                    Set Logic:  S ^XOB(18.05,"NAME",$E(X,1,30),DA)=""
+                   Kill Logic:  K ^XOB(18.05,"NAME",$E(X,1,30),DA)
+                   Whole Kill:  K ^XOB(18.05,"NAME")
+                         X(1):  NAME  (18.05,.01)  (Subscr 1)  (Len 30)  (forwards)
+
+
+18.05,.02     MESSAGE TYPE           0;2 FREE TEXT (Key field)
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+              LAST EDITED:      APR 10, 2003 
+              HELP-PROMPT:      Answer must be 3-80 characters in length 
+              DESCRIPTION:      This field contains the name of a unique XML message type, e.g.  gov.va.med.foundations.rpc.request.  
+                                 
+                                This field is a keyed field and is used by the VistALink request manager during SAX parsing to look up the correct request handler for an incoming request.  
+
+              CROSS-REFERENCE:  18.05^C^MUMPS 
+                                1)= S ^XOB(18.05,"C",$E(X,1,80),DA)=""
+                                2)= K ^XOB(18.05,"C",$E(X,1,80),DA)
+
+              FIELD INDEX:      MSGTYPE (#333)    REGULAR    IR    LOOKUP & SORTING
+                   Unique for:  Key B (#72), File #18.05
+                  Short Descr:  Message type cross reference
+                    Set Logic:  S ^XOB(18.05,"MSGTYPE",$E(X,1,80),DA)=""
+                   Kill Logic:  K ^XOB(18.05,"MSGTYPE",$E(X,1,80),DA)
+                   Whole Kill:  K ^XOB(18.05,"MSGTYPE")
+                         X(1):  MESSAGE TYPE  (18.05,.02)  (Subscr 1)  (Len 80)  (forwards)
+
+
+18.05,.03     CATEGORY               0;3 SET
+
+                                '1' FOR REQUEST; 
+                                '2' FOR RESPONSE; 
+                                '9' FOR OTHER; 
+              LAST EDITED:      APR 10, 2003 
+              HELP-PROMPT:      Enter whether this is a request or response message type 
+              DESCRIPTION:      This field allows for the categorization of the message type.  
+                                 
+                                The field is not currently used in business logic and exists to allow for filtering and sorting during reporting.  
+                                 
+                                Currently, there are only two categories: request and response.  
+                                 
+                                'Other' is also available but is not used at this time.  
+
+
+18.05,.04     REQUIRE AUTHENTICATION? 0;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      APR 10, 2003 
+              HELP-PROMPT:      Indicate whether this message requires a VistALink security authenticated partition to be processed 
+              DESCRIPTION:      This field indicates whether or not a request of the message type requires the user to be authenticated by VistALink security before the request handler for the type can be executed.  
+                                 
+                                System and security message types do not need authentication since they involve processing at a higher level like heartbeat messages and messages establishing authentication.  
+                                 
+                                On the other hand, RPC-type messages would require authentication before the RPC request handler is executed.  
+
+
+18.05,.05     REQUEST HANDLER        0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<2) X
+              LAST EDITED:      APR 10, 2003 
+              HELP-PROMPT:      Answer must be 2-8 characters in length and the name of a routine 
+              DESCRIPTION:      This field contains the name of the M routine that implements the request handler interface methods (tags).  
+                                 
+                                Currently, those methods are the following: 
+                                 
+                                  CALLBACK(CB)           :: Logic that sets the SAX callbacks for the 
+                                                            message type in CB parameter. These callbacks 
+                                                            are executed during the SAX XML parsing.  
+                                 
+                                                            This method is required.  
+                                 
+                                  READER(XOBUF,XOBDATA)  :: Stream reader logic called when the incoming 
+                                                            request is in proprietary format.  
+                                 
+                                                            XOBUF   :: characters already read from stream 
+                                 
+                                                            XOBDATA :: where to store parsed request 
+                                                                       information or reference to such 
+                                                                       information.  
+                                 
+                                                            This method is optional.  
+                                 
+                                  REQHDLR(XOBDATA)       :: Logic called to process request information 
+                                                            stored in XOBDATA after XML parsing or 
+                                                            proprietary parsing has completed.  
+                                 
+                                                            This method is required.  
+
+
+18.05,.06     CACHE REQUEST HANDLER INFO 0;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      APR 10, 2003 
+              HELP-PROMPT:      Answer YES or NO to cache request handler information upon socket connection 
+              DESCRIPTION:      This field indicates whether runtime information for the message type should be cached as part of the initial connection logic of the request manager.  
+                                 
+                                Caching -- storing in a local array -- only the information needed for request handling can benefit performance for those message types that are executed often, like RPC requests.  
+
+              CROSS-REFERENCE:  18.05^AS 
+                                1)= S ^XOB(18.05,"AS",$E(X,1,30),DA)=""
+                                2)= K ^XOB(18.05,"AS",$E(X,1,30),DA)
+
+
+18.05,.07     PROPRIETARY INDICATOR  0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X IF $DATA(^XOB(18.05,"D",X)) DO EN^DDIOL("Value is not unique") KILL X
+              LAST EDITED:      APR 10, 2003 
+              HELP-PROMPT:      Answer must be 3-20 characters in length and unique 
+              DESCRIPTION:      This unique valued field is used during the processing of the first read of a new request stream. If this proprietary indicator is present then the READER method of the request handler routine is called.  
+                                 
+                                No SAX XML parsing is performed if this READER method is executed.  
+                                 
+                                See also: REQUEST HANDLER field.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  18.05^D 
+                                1)= S ^XOB(18.05,"D",$E(X,1,30),DA)=""
+                                2)= K ^XOB(18.05,"D",$E(X,1,30),DA)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

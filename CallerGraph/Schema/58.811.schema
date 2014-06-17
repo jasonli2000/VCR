@@ -1,0 +1,719 @@
+STANDARD DATA DICTIONARY #58.811 -- DRUG ACCOUNTABILITY ORDER FILE                                                                                                                                                                MAY 20,2014@15:32:21  PAGE 1
+STORED IN ^PSD(58.811,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The DRUG ACCOUNTABILITY ORDER file contains prime vendor pharmacy orders with all adjustments. The prime vendor invoice data is uploaded from the prime vendor. All data is processed and verified before it increments the drug balances in Drug
+Accountability pharmacy locations and master vaults.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: OUTSTANDING CREDIT MEMO(AC), INVOICE DATE(ADATE), INVOICE NUMBER(AINV), ORDER NUMBER(AINV2), INVOICE DATE(AINVDT), PHARMACY LOCATION(ALOC), MASTER VAULT(ALOCMV), INVOICE STATUS(ASTAT), ORDER NUMBER(B)
+
+58.811,.01    ORDER NUMBER           0;1 FREE TEXT (Required)
+
+              Order Number                                                                                                     
+              INPUT TRANSFORM:  K:$L(X)>22!($L(X)<1)!'(X'?1P.E) X
+              LAST EDITED:      OCT 21, 1997 
+              HELP-PROMPT:      Enter the order number. 
+              DESCRIPTION:
+                                The ORDER NUMBER field contains number of the order placed with the prime vendor.  
+
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  58.811^B 
+                                1)= S ^PSD(58.811,"B",$E(X,1,30),DA)=""
+                                2)= K ^PSD(58.811,"B",$E(X,1,30),DA)
+                                3)= DO NOT DELETE!
+                                This cross-reference is used to locate an order number.  
+
+
+              CROSS-REFERENCE:  58.811^AINV2^MUMPS 
+                                1)= D SETAORD^PSAUTL3
+                                2)= D KILLAORD^PSAUTL3
+                                3)= DO NOT DELETE!
+                                This cross-reference is used to determine if an order's invoice has been received. It set the "AORD" cross-reference.  
+                                 
+                                ^PSD(58.811,"AORD",ORDER NUMBER,INVOICE NUMBER,DA,Invoice internal entry#)="" 
+
+
+
+58.811,1      VENDOR NAME            0;2 FREE TEXT
+
+              Vendor Name                                                                                                      
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<3) X
+              LAST EDITED:      OCT 21, 1997 
+              HELP-PROMPT:      Enter the vendor's name. 
+              DESCRIPTION:
+                                The VENDOR NAME field contains the name of the vendor from whom the order was placed.  
+
+              WRITE AUTHORITY:  ^
+
+58.811,2      INVOICE DATA           1;0 Multiple #58.8112 (Add New Entry without Asking)
+
+              LAST EDITED:      SEP 26, 1997 
+              DESCRIPTION:
+                                The INVOICE DATA multiple contains detail invoice data. It contains the line item data and adjustment data.  
+
+              WRITE AUTHORITY:  ^
+              IDENTIFIED BY:    INVOICE DATE(#1)
+
+58.8112,.01     INVOICE NUMBER         0;1 FREE TEXT
+
+                Invoice Number                                                                                                 
+                INPUT TRANSFORM:  K:$L(X)>22!($L(X)<1) X
+                LAST EDITED:      OCT 21, 1997 
+                HELP-PROMPT:      Enter the invoice number from the prime vendor. 
+                DESCRIPTION:
+                                  The INVOICE NUMBER field contains the number of the invoice from the prime vendor.  
+
+                CROSS-REFERENCE:  58.8112^B 
+                                  1)= S ^PSD(58.811,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSD(58.811,DA(1),1,"B",$E(X,1,30),DA)
+                                  3)= DO NOT DELETE!
+                                  This cross-reference is used to locate an invoice number.  
+
+
+                CROSS-REFERENCE:  58.811^AINV^MUMPS 
+                                  1)= S ^PSD(58.811,"AORD",$P($G(^PSD(58.811,DA(1),0)),"^"),X,DA(1),DA)=""
+                                  2)= K ^PSD(58.811,"AORD",$P($G(^PSD(58.811,DA(1),0)),"^"),X,DA(1),DA)
+                                  3)= DO NOT DELETE!
+                                  This cross-reference is used to determine if an order's invoice has been received. It set the "AORD" cross-reference.  
+                                   
+                                  ^PSD(58.811,"AORD",ORDER NUMBER,INVOICE NUMBER,Order internal entry#,DA)="" 
+
+
+
+58.8112,1       INVOICE DATE           0;2 DATE
+
+                Invoice Date                                                                                                   
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 22, 1997 
+                HELP-PROMPT:      Enter the date of the invoice. 
+                DESCRIPTION:
+                                  The INVOICE DATE field contains the date the invoice was issued by the vendor 
+
+                CROSS-REFERENCE:  58.811^ADATE 
+                                  1)= S ^PSD(58.811,"ADATE",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PSD(58.811,"ADATE",$E(X,1,30),DA(1),DA)
+                                  3)= DO NOT DELETE!
+                                  This cross-reference is used to locate an invoice number.  
+
+
+                CROSS-REFERENCE:  58.811^AINVDT^MUMPS 
+                                  1)= D SLOCDT^PSAUTL3
+                                  2)= D KLOCDT^PSAUTL3
+                                  3)= DO NOT DELETE!
+                                  This cross-reference is used to locate invoices within a pharmacy location or master vault for a specific invoice date. It sets the "ALOC" cross-reference.  
+                                   
+                                  If there is data in the PHARMACY LOCATION field (#4), ^PSD(58.811,"ALOC",PHARMACY LOCATION,Order's internal entry#,DA)="" is set.  
+                                   
+                                  If there is data in the MASTER VAULT field (#13), ^PSD(58.811,"ALOC",MASTER VAULT,Order's internal entry#,DA)="" is set.  
+                                   
+                                  If there is data in both the PHARMACY LOCATION and MASTER VAULT fields, both cross-references are set.  
+
+
+
+58.8112,2       INVOICE STATUS         0;3 SET
+
+                Invoice Status                                                                                                 
+                                  'P' FOR PROCESSED; 
+                                  'V' FOR VERIFIED; 
+                                  'C' FOR COMPLETED; 
+                                  'L' FOR LOCKED VERIFYING; 
+                LAST EDITED:      MAR 22, 2006 
+                HELP-PROMPT:      Enter the status of the invoice. 
+                DESCRIPTION:
+                                  The INVOICE STATUS field contains the status of the invoice. When the invoice is completed, the drug balances are incremented with the quantities received on the invoice.  
+
+                CROSS-REFERENCE:  58.811^ASTAT 
+                                  1)= S ^PSD(58.811,"ASTAT",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PSD(58.811,"ASTAT",$E(X,1,30),DA(1),DA)
+                                  3)= DO NOT DELETE!
+                                  This cross-reference is used to locate all invoices with a specific status.  
+
+
+
+58.8112,3       ORDER DATE             0;4 DATE
+
+                Order Date                                                                                                     
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 03, 1996 
+                HELP-PROMPT:      Enter the date the order was placed with the prime vendor. 
+                DESCRIPTION:
+                                  The ORDER DATE field contains the date the order was placed for the invoiced drugs.  
+
+
+58.8112,4       PHARMACY LOCATION      0;5 POINTER TO DRUG ACCOUNTABILITY STATS FILE (#58.8)
+
+                Pharmacy Location                                                                                              
+                INPUT TRANSFORM:  S DIC("S")="I $P($G(^PSD(58.8,+Y,0)),U,2)=""P""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      AUG 29, 1997 
+                HELP-PROMPT:      Enter the Drug Accountability pharmacy location for which the order was placed. 
+                DESCRIPTION:
+                                  The PHARMACY LOCATION field contains the Drug Accountability pharmacy location for which the invoiced order was placed. The pharmacy location received the items not marked as a controlled substance.  
+
+                TECHNICAL DESCR:
+                                  The field points to the DRUG ACCOUNTABILITY STATS file (#58.8). The node pointed to must contain an "P" in the LOCATION TYPE field (#1).  
+
+                SCREEN:           S DIC("S")="I $P($G(^PSD(58.8,+Y,0)),U,2)=""P"""
+                EXPLANATION:      Only pharmacy locations can be selected.
+                CROSS-REFERENCE:  58.811^ALOC^MUMPS 
+                                  1)= D SLOC^PSAUTL3
+                                  2)= D KLOC^PSAUTL3
+                                  3)= DO NOT DELETE!
+                                  This cross-reference is used to locate invoices within a pharmacy location for a specific invoice date. It sets the "ALOC"cross-reference.  
+                                   
+                                  ^PSD(58.811,"ALOC",PHARMACY LOCATION,Order's internal entry#,DA)="" 
+
+
+
+58.8112,5       LINE ITEM DATA         1;0 Multiple #58.81125 (Add New Entry without Asking)
+
+                DESCRIPTION:      The LINE ITEM DATA multiple contains the line item number, drug, quantity invoiced, order unit, price per order unit, date drugs were received, date the line item was processed, processor, date the line item was
+                                  verified, verifier, and adjustment data for each line item.  
+
+                IDENTIFIED BY:    DRUG(#1)
+
+58.81125,.01      LINE ITEM NUMBER       0;1 FREE TEXT
+
+                  Line Item Number                                                                                             
+                  INPUT TRANSFORM:  K:$L(X)>11!($L(X)<1) X
+                  LAST EDITED:      MAY 03, 1996 
+                  HELP-PROMPT:      Enter the number of the item on the invoice. 
+                  DESCRIPTION:
+                                    The LINE ITEM NUMBER field contains the number of the item on the invoice.  
+
+                  CROSS-REFERENCE:  58.81125^B 
+                                    1)= S ^PSD(58.811,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^PSD(58.811,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)
+                                    3)= DO NOT DELETE!
+                                    This cross-reference is used to locate a line item number.  
+
+
+
+58.81125,1        DRUG                   0;2 POINTER TO DRUG FILE (#50)
+
+                  Drug                                                                                                         
+                  LAST EDITED:      MAY 03, 1996 
+                  HELP-PROMPT:      Enter the drug that was invoiced. 
+                  DESCRIPTION:
+                                    The DRUG field contains the drug that was invoiced.  
+
+
+58.81125,2        QUANTITY INVOICED      0;3 NUMBER
+
+                  Quantity Invoiced                                                                                            
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      MAY 03, 1996 
+                  HELP-PROMPT:      Enter the quantity of the drug that was invoiced. 
+                  DESCRIPTION:
+                                    The QUANTITY INVOICED field contains the quantity of the ordered drug that invoiced.  
+
+
+58.81125,3        ORDER UNIT             0;4 POINTER TO ORDER UNIT FILE (#51.5)
+
+                  Order Unit                                                                                                   
+                  LAST EDITED:      MAY 03, 1996 
+                  HELP-PROMPT:      Enter the order unit for which the drug was invoiced. 
+                  DESCRIPTION:
+                                    The ORDER UNIT field contains the packaging unit for which the drug was invoiced.  
+
+
+58.81125,4        PRICE PER ORDER UNIT   0;5 NUMBER
+
+                  Price per Order Unit                                                                                         
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999999999.999)!(X<0)!(X?.E1"."4N.N) X
+                  LAST EDITED:      MAY 03, 1996 
+                  HELP-PROMPT:      Enter the dollar amount invoiced for each unit of order. 
+                  DESCRIPTION:
+                                    The PRICE PER ORDER UNIT field contains the dollar amount for each order unit.  
+
+
+58.81125,5        DATE PROCESSED         0;6 DATE
+
+                  Date Processed                                                                                               
+                  INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      NOV 05, 1996 
+                  HELP-PROMPT:      Enter the date the line item was processed. 
+                  DESCRIPTION:
+                                    The DATE PROCESSED field contains the date the line item was processed.  
+
+
+58.81125,6        PROCESSOR              0;7 POINTER TO NEW PERSON FILE (#200)
+
+                  Processor                                                                                                    
+                  INPUT TRANSFORM:  I $D(^XUSEC("PSA ORDERS",DUZ)) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      DEC 03, 1996 
+                  HELP-PROMPT:      Enter the name of the person who processed the line item. 
+                  DESCRIPTION:
+                                    The PROCESSOR field contains the name of the person who processed the line item.  
+
+                  SCREEN:           I $D(^XUSEC("PSA ORDERS",DUZ))
+                  EXPLANATION:      The user must hold the PSA ORDERS key.
+
+58.81125,7        DATE VERIFIED          0;8 DATE
+
+                  Date Verified                                                                                                
+                  INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      NOV 05, 1996 
+                  HELP-PROMPT:      Enter the date the line item was verified. 
+                  DESCRIPTION:
+                                    The DATE VERIFIED field contains the date the line item was verified.  
+
+
+58.81125,8        VERIFIER               0;9 POINTER TO NEW PERSON FILE (#200)
+
+                  Verifier                                                                                                     
+                  INPUT TRANSFORM:  I $D(^XUSEC("PSA ORDERS",DUZ)) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      DEC 05, 1996 
+                  HELP-PROMPT:      Enter the name of the person who verified the line item. 
+                  DESCRIPTION:
+                                    The VERIFIER field contains the name of the person who verified the line item.  
+
+                  SCREEN:           I $D(^XUSEC("PSA ORDERS",DUZ))
+                  EXPLANATION:      The user must hold the PSA ORDERS key.
+
+58.81125,9        ADJUSTMENTS            1;0 SET Multiple #58.811259 (Add New Entry without Asking)
+
+                  DESCRIPTION:
+                                    The ADJUSTMENTS multiple contains the changes the processor and verifier made to the invoice data.  
+
+
+58.811259,.01       ADJUSTED FIELD         0;1 SET
+
+                    Adjusted Field                                                                                             
+                                      'D' FOR DRUG; 
+                                      'Q' FOR QUANTITY INVOICED; 
+                                      'O' FOR ORDER UNIT; 
+                                      'P' FOR PRICE PER ORDER UNIT; 
+                    LAST EDITED:      NOV 07, 1996 
+                    HELP-PROMPT:      Enter the field that was adjusted. 
+                    DESCRIPTION:
+                                      The ADJUSTED FIELD field contains the name of the field that was adjusted.  
+
+                    CROSS-REFERENCE:  58.811259^B 
+                                      1)= S ^PSD(58.811,DA(3),1,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)=""
+                                      2)= K ^PSD(58.811,DA(3),1,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)
+
+
+58.811259,1         PROCESSOR ADJUSTMENT   0;2 FREE TEXT
+
+                    Processor Adjustment                                                                                       
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      DEC 20, 1996 
+                    HELP-PROMPT:      Enter the adjustment made by the processor. 
+                    DESCRIPTION:      The PROCESSOR ADJUSTMENT field contains the processor's adjustment. If the ADJUSTED FIELD field (.01) is "DRUG", the adjustment is the drug received or a description of supply item. If the ADJUSTED FIELD field is
+                                      "QUANTITY INVOICED", the adjustment is the positive or negative number to be added to the QUANTITY INVOICED field (#2). If the ADJUSTED FIELD field is "ORDER UNIT", the adjustment is the abbreviation of the unit of
+                                      order received.  If the ADJUSTED FIELD field is "PRICE PER ORDER UNIT", the adjustment is the dollar amount charged for each order unit.  
+
+                    TECHNICAL DESCR:  A "DRUG" adjustment is the internal entry number of the drug in the DRUG file (#50) or a description of supply item. A "QUANTITY INVOICED" adjustment is the positive or negative number to be added to the QUANTITY 
+                                      INVOICED field (#2). An "ORDER UNIT" adjustment is the internal entry number of the unit of measure in the ORDER UNIT file (#51.5). A "PRICE PER ORDER UNIT" adjustment is the dollar amount to be paid for one order
+                                      unit.  
+
+
+58.811259,2         PROCESSOR'S REASON     0;3 FREE TEXT
+
+                    Processor's Reason                                                                                         
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      NOV 07, 1996 
+                    HELP-PROMPT:      Enter the reason the processor made the adjustment. 
+                    DESCRIPTION:
+                                      The PROCESSOR'S REASON field contains reason the adjustment was made.  
+
+
+58.811259,3         PROCESS DATE           0;4 DATE
+
+                    Process Date                                                                                               
+                    INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      NOV 07, 1996 
+                    HELP-PROMPT:      Enter the date the processor entered the adjustment. 
+                    DESCRIPTION:
+                                      The PROCESS DATE field contains the date the processor made the adjustment.  
+
+
+58.811259,4         PROCESSOR              0;5 POINTER TO NEW PERSON FILE (#200)
+
+                    Processor                                                                                                  
+                    INPUT TRANSFORM:  I $D(^XUSEC("PSA ORDERS",DUZ)) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                    LAST EDITED:      NOV 07, 1996 
+                    HELP-PROMPT:      Enter the name of the processor who entered the adjustment. 
+                    DESCRIPTION:
+                                      The PROCESSOR field contains the name of the person who entered the adjustment.  
+
+                    SCREEN:           I $D(^XUSEC("PSA ORDERS",DUZ))
+                    EXPLANATION:      The processor must hold the PSA ORDERS key.
+
+58.811259,5         VERIFIER ADJUSTMENT    0;6 FREE TEXT
+
+                    Verifier Adjustment                                                                                        
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      DEC 20, 1996 
+                    HELP-PROMPT:      Enter the adjustment made by the verifier. 
+                    DESCRIPTION:      The VERIFIER ADJUSTMENT field contains the adjustment that the verifier made to the line item. If the ADJUSTED FIELD field (#.01) is "DRUG", the adjustment is the drug received or a description of supply item. If the 
+                                      ADJUSTED FIELD field is "QUANTITY INVOICED", the adjustment is the positive or negative number to be added to the QUANTITY INVOICED field (#2). If the ADJUSTED FIELD field is "ORDER UNIT", the adjustment is the 
+                                      abbreviation of the unit of order received. If the ADJUSTED FIELD field is "PRICE PER ORDER UNIT", the adjustment is the dollar amount charged for each order unit.  
+
+                    TECHNICAL DESCR:  A "DRUG" adjustment is the internal entry number of the drug in the DRUG file (#50) or a description of supply item. A "QUANTITY INVOICED" adjustment is the positive or negative number to be added to the QUANTITY 
+                                      INVOICED field (#2). An "ORDER UNIT" adjustment is the internal entry number of the unit of measure in the ORDER UNIT file (#51.5). A "PRICE PER ORDER UNIT" adjustment is the dollar amount to be paid for one order
+                                      unit.  
+
+
+58.811259,6         VERIFIER'S REASON      0;7 FREE TEXT
+
+                    Verifier's Reason                                                                                          
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      NOV 07, 1996 
+                    HELP-PROMPT:      Enter the reason the verifier made the adjustment. 
+                    DESCRIPTION:
+                                      The VERIFIER'S REASON field contains the reason the verifier made the adjustment.  
+
+
+58.811259,7         VERIFICATION DATE      0;8 DATE
+
+                    Verification Date                                                                                          
+                    INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      NOV 07, 1996 
+                    HELP-PROMPT:      Enter the date the verifier made the adjustment. 
+                    DESCRIPTION:
+                                      The VERIFICATION DATE field contains the date the verifier made the adjustment.  
+
+
+58.811259,8         VERIFIER               0;9 POINTER TO NEW PERSON FILE (#200)
+
+                    Verifier                                                                                                   
+                    INPUT TRANSFORM:  I $D(^XUSEC("PSA ORDERS",DUZ)) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                    LAST EDITED:      NOV 07, 1996 
+                    HELP-PROMPT:      Enter the name of the verifier who made the adjustment. 
+                    DESCRIPTION:
+                                      The VERIFIER field contains the name of the verifier who entered the adjustment.  
+
+                    SCREEN:           I $D(^XUSEC("PSA ORDERS",DUZ))
+                    EXPLANATION:      The verifier must hold the PSA ORDERS key.
+
+
+
+58.81125,10       DISPENSE UNITS PER ORDER UNIT 2;1 NUMBER
+
+                  Dispense Units per Order Unit                                                                                
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."4N.N) X
+                    LAST EDITED:      JAN 10, 1997 
+                    HELP-PROMPT:      Enter the number of dispense units contained in one order unit. 
+                    DESCRIPTION:
+                                      The DISPENSE UNITS PER ORDER UNIT field contains the number of dispense units in one order unit.  
+
+
+58.81125,11       REORDER LEVEL            2;2 NUMBER
+
+                  Reorder Level                                                                                                
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      APR 08, 1997 
+                    HELP-PROMPT:      Enter the minimum number of dispense units you want to have in the pharmacy location. 
+                    DESCRIPTION:
+                                      The REORDER LEVEL field contains the minimum number of dispense units to be retained in the pharmacy location for the line item's drug.  
+
+
+58.81125,12       CONTROLLED SUBSTANCE?    0;10 SET
+
+                  Controlled Substance?                                                                                        
+                                      '1' FOR YES; 
+                                      '0' FOR NO; 
+                    LAST EDITED:      NOV 08, 1996 
+                    HELP-PROMPT:      Enter "YES" if the item is marked as a controlled substance. 
+                    DESCRIPTION:      The CONTROLLED SUBSTANCE? field contains a flag indicating if the drug is marked as a controlled substance in the DRUG file (#50). If there is an adjusted drug, the flag is set for that drug. If there is no adjusted 
+                                      drug, the flag is set for the invoiced drug.  
+
+
+58.81125,13       NDC                      0;11 FREE TEXT
+
+                  National Drug Code                                                                                           
+                    INPUT TRANSFORM:  K:$L(X)>31!($L(X)<1) X
+                    LAST EDITED:      NOV 14, 1996 
+                    HELP-PROMPT:      Enter the National Drug Code (NDC). If there is no NDC, enter "S" concatenated to the Universal Product Code (UPC). 
+                    DESCRIPTION:
+                                      The NDC field contains the National Drug Code (NDC) for the received item.  If the item was adjusted, the NDC is for the adjusted item. If the item was not adjusted, the NDC is for the invoiced item.  
+
+                    TECHNICAL DESCR:
+                                      If the item is a drug, the NDC is twelve numbers. If the item is a supply, the National Drug Code (NDC) is "S" concatenated to the Universal Product Code (UPC).  
+
+
+58.81125,14       VSN                      0;12 FREE TEXT
+
+                  Vendor Stock Number                                                                                          
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      NOV 08, 1996 
+                    HELP-PROMPT:      Enter the vendor's stock number for the item. 
+                    DESCRIPTION:
+                                      The VSN field contains the Vendor Stock Number for the item received.  
+
+
+58.81125,15       UPC                      0;13 FREE TEXT
+
+                  Universal Product Code                                                                                       
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      NOV 08, 1996 
+                    HELP-PROMPT:      Enter the item's Universal Product Code. 
+                    DESCRIPTION:
+                                      The UPC field contains the Universal Product Code for the item received.  
+
+
+58.81125,16       SYNONYM NODE             2;3 NUMBER
+
+                  Synonym Node                                                                                                 
+                    INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      JAN 10, 1997 
+                    HELP-PROMPT:      Enter the DRUG file's SYNONYM multiple's internal entry number that contains the data for the invoiced item. 
+                    DESCRIPTION:
+                                      The SYNONYM NODE field contains the DRUG file's (#50) SYNONYM multiple's internal entry number that contains the data for the invoiced item.  
+
+                    TECHNICAL DESCR:
+                                      This field will contain data until the invoice is verified. The 2 node will be deleted then.  
+
+
+58.81125,17       STOCK LEVEL              2;4 NUMBER
+
+                  Stock Level                                                                                                  
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      FEB 01, 1997 
+                    HELP-PROMPT:      Enter the ideal number of dispense units to keep on the shelf. 
+                    DESCRIPTION:
+                                      The STOCK LEVEL field contains the ideal number of dispense units to keep on the shelf.  
+
+
+58.81125,18       GENERIC DESCRIPTION      3;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+                    LAST EDITED:      NOV 20, 2007 
+                    HELP-PROMPT:      Answer must be 3-40 characters in length. 
+                    DESCRIPTION:
+                                      This is a generic description of the item provided by the vendor.  
+
+
+58.81125,19       ITEM DESCRIPTION         3;2 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+                    LAST EDITED:      NOV 20, 2007 
+                    HELP-PROMPT:      Answer must be 3-40 characters in length. 
+                    DESCRIPTION:
+                                      This is a detailed description of the line item.  
+
+
+58.81125,20       PRIME VENDOR UNITS       3;3 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."3N.N) X
+                    LAST EDITED:      NOV 20, 2007 
+                    HELP-PROMPT:      Type a Number between 0 and 99999, 2 Decimal Digits 
+                    DESCRIPTION:
+                                      This is the number of units in the vendor sell unit (i.e. number of bottles in sell unit.  
+
+
+58.81125,21       INNER PACK               3;4 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."3N.N) X
+                    LAST EDITED:      NOV 20, 2007 
+                    HELP-PROMPT:      Type a Number between 0 and 99999, 2 Decimal Digits 
+                    DESCRIPTION:
+                                      This is the vendor's dispense units per order unit (i.e. number of pills in bottle).  
+
+
+
+
+58.8112,6       CREDITS                    2;0 Multiple #58.81126 (Add New Entry without Asking)
+
+                    DESCRIPTION:
+                                      The CREDITS multiple contains the credit memo data issued against the invoice.  
+
+
+58.81126,.01      CREDIT MEMO                0;1 FREE TEXT
+
+                  Credit Memo                                                                                                  
+                      INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                      LAST EDITED:      NOV 07, 1996 
+                      HELP-PROMPT:      Enter the credit memo number. If there is no credit memo number, enter "None". 
+                      DESCRIPTION:
+                                        The CREDIT MEMO field contains the credit memo number issued against the invoice.  
+
+                      CROSS-REFERENCE:  58.81126^B 
+                                        1)= S ^PSD(58.811,DA(2),1,DA(1),2,"B",$E(X,1,30),DA)=""
+                                        2)= K ^PSD(58.811,DA(2),1,DA(1),2,"B",$E(X,1,30),DA)
+                                        3)= DO NOT DELETE!
+                                        This cross-reference is used to locate a credit memo number.  
+
+
+
+58.81126,1        CREDIT DATE                0;2 DATE
+
+                  Credit Date                                                                                                  
+                      INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      NOV 07, 1996 
+                      HELP-PROMPT:      Enter the date the credit memo was issued. 
+                      DESCRIPTION:
+                                        The CREDIT DATE field contains the date the credit memo was issued.  
+
+
+58.81126,2        AMOUNT                     0;3 NUMBER
+
+                  Amount                                                                                                       
+                      INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999999)!(X<-999999999) X
+                      LAST EDITED:      FEB 26, 1997 
+                      HELP-PROMPT:      Enter the credit memo amount. 
+                      DESCRIPTION:
+                                        The AMOUNT field contains the dollar value of the credit issued.  
+
+
+58.81126,3        REASON                     0;4 FREE TEXT
+
+                  Reason                                                                                                       
+                      INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                      LAST EDITED:      FEB 28, 1997 
+                      HELP-PROMPT:      Enter the reason the credit was issued. Enter 1-40 characters. 
+                      DESCRIPTION:
+                                        The REASON field contains the explanation why the credit memo was issued.  
+
+
+
+
+58.8112,7       DELIVERY DATE                0;6 DATE
+
+                Delivery Date                                                                                                  
+                      INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      NOV 07, 1996 
+                      HELP-PROMPT:      Enter the delivery date on the invoice. 
+                      DESCRIPTION:
+                                        The DELIVERY DATE field contains the date the prime vendor's invoice shows the items were delivered.  
+
+
+58.8112,8       DATE RECEIVED                0;7 DATE
+
+                Date Received                                                                                                  
+                      INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      NOV 07, 1996 
+                      HELP-PROMPT:      Enter the date the items were received. 
+                      DESCRIPTION:
+                                        The DATE RECEIVED field contains the date the drugs were received if it is different than the delivery date on the invoice.  
+
+
+58.8112,9       CONTROLLED SUBSTANCES        0;8 SET
+
+                Controlled Substances                                                                                          
+                                        'A' FOR ALL; 
+                                        'S' FOR SOME; 
+                                        'N' FOR NONE; 
+                      LAST EDITED:      NOV 08, 1996 
+                      HELP-PROMPT:      Enter the invoice's controlled substances category. 
+                      DESCRIPTION:
+                                        The CONTROLLED SUBSTANCES field contains a flag indicating if all, some, or none of the drugs on the invoice are flagged as controlled substances.  
+
+
+58.8112,10      OUTSTANDING CREDIT MEMO      0;9 SET
+
+                Outstanding Credit Memo                                                                                        
+                                        '1' FOR YES; 
+                      LAST EDITED:      DEC 05, 1996 
+                      HELP-PROMPT:      Enter "1" if there is an outstanding credit memo for the invoice. 
+                      DESCRIPTION:
+                                        The CREDIT MEMO REQUIRED? field is a flag used to determine if there is an outstanding credit memo for the invoice. The field is set to "1" if a credit memo is needed and has not been received.  
+
+                      CROSS-REFERENCE:  58.811^AC 
+                                        1)= S ^PSD(58.811,"AC",$E(X,1,30),DA(1),DA)=""
+                                        2)= K ^PSD(58.811,"AC",$E(X,1,30),DA(1),DA)
+                                        3)= DO NOT DELETE!
+                                        The cross-reference is used to determine if there is an outstanding credit memo for the invoice.  
+
+
+
+58.8112,11      PROCESSOR                    0;10 POINTER TO NEW PERSON FILE (#200)
+
+                Processor                                                                                                      
+                      INPUT TRANSFORM:  I $D(^XUSEC("PSA ORDERS",DUZ)) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      LAST EDITED:      DEC 10, 1996 
+                      HELP-PROMPT:      Enter the last person who processed the invoice. 
+                      DESCRIPTION:
+                                        The PROCESSOR field contains the name of the person who last processed the invoice.  
+
+                      SCREEN:           I $D(^XUSEC("PSA ORDERS",DUZ))
+                      EXPLANATION:      The user must hold the PSA ORDERS key.
+
+58.8112,12      VERIFIER                     0;11 POINTER TO NEW PERSON FILE (#200)
+
+                Verifier                                                                                                       
+                      INPUT TRANSFORM:  I $D(^XUSEC("PSA ORDERS",DUZ)) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      LAST EDITED:      DEC 10, 1996 
+                      HELP-PROMPT:      Enter the name of the person who verified the invoice. 
+                      DESCRIPTION:
+                                        The VERIFIER field contains the name of the person who last verified the invoice. The verifier cannot be the processor.  
+
+                      SCREEN:           I $D(^XUSEC("PSA ORDERS",DUZ))
+                      EXPLANATION:      The user must hold the PSA ORDERS key.
+
+58.8112,13      MASTER VAULT                 0;12 POINTER TO DRUG ACCOUNTABILITY STATS FILE (#58.8)
+
+                Master Vault                                                                                                   
+                      INPUT TRANSFORM:  S DIC("S")="I $P($G(^PSD(58.8,+Y,0)),U,2)=""M""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      LAST EDITED:      AUG 29, 1997 
+                      HELP-PROMPT:      Enter the master vault that received the controlled substances. 
+                      DESCRIPTION:
+                                        The MASTER VAULT field contains the master vault that received the controlled substances on the invoice.  
+
+                      TECHNICAL DESCR:
+                                        The field points to the DRUG ACCOUNTABILITY STATS file (#58.8). The master vault pointed to must contain an "M" in the LOCATION TYPE field (#1).  
+
+                      SCREEN:           S DIC("S")="I $P($G(^PSD(58.8,+Y,0)),U,2)=""M"""
+                      EXPLANATION:      Only master vaults can be selected.
+                      CROSS-REFERENCE:  58.811^ALOCMV^MUMPS 
+                                        1)= D SLOC^PSAUTL3
+                                        2)= D KLOC^PSAUTL3
+                                        3)= DO NOT DELETE!
+                                        This cross-reference is used to locate invoices within a master vault for a specific invoice date. It sets the "ALOC"cross-reference.  
+                                         
+                                        ^PSD(58.811,"ALOC",MASTER VAULT,Order's internal entry#,DA)="" 
+
+
+
+58.8112,14      ALL SUPPLY ITEMS?            0;13 SET
+
+                All Supply Items?                                                                                              
+                                        '1' FOR YES; 
+                                        '0' FOR NO; 
+                      LAST EDITED:      JAN 31, 1997 
+                      HELP-PROMPT:      Enter "YES" if all items on the invoice are supply items. 
+                      DESCRIPTION:      The ALL SUPPLY ITEMS? field contains "YES" if all items on the invoice are supply items or will never be matched to drugs in the DRUG file (#50). It contains "NO" if there is at least one item on the invoice that
+                                        is not a supply item or will be matched to a drug in the DRUG file.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DRUG (#50)                        LINE ITEM DATA:DRUG (#1)
+
+DRUG ACCOUNTABILITY STATS 
+                   (#58.8)        INVOICE DATA:PHARMACY LOCATION (#4)
+                                  MASTER VAULT (#13)
+
+NEW PERSON (#200)                 INVOICE DATA:PROCESSOR (#11)
+                                  VERIFIER (#12)
+                                  LINE ITEM DATA:PROCESSOR (#6)
+                                  VERIFIER (#8)
+                                  ADJUSTMENTS:PROCESSOR (#4)
+                                  VERIFIER (#8)
+
+ORDER UNIT (#51.5)                LINE ITEM DATA:ORDER UNIT (#3)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

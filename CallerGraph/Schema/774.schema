@@ -1,0 +1,191 @@
+STANDARD DATA DICTIONARY #774 -- SUBSCRIPTION CONTROL FILE                                                                                                                                                                        MAY 20,2014@15:33:38  PAGE 1
+STORED IN ^HLS(774,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 1.6)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to control the flow of messages from one system to another. It is currently used by CIRN to permit sites to subscribe via HL7 Master File updates to patient information. This subscription 'request' message contains the data necessary to
+update the Subscription Control file via the api: 
+ 
+UPD^HLSUB(HLSCN,HLNN,HLTP,HLAD,HLTD,HLRAP,.HLER) 
+ 
+HLSCN-subscription control number HLNN-Logical Link name HLTP-subscription type 
+       0-patient descriptive only 
+       1-patient clinical and descriptive 
+       2-other (locally defined) HLAD-activation date HLTD-termination date (optional) HLRAP-HL7 receiving application HLER-error messages (pass by reference) 
+ 
+The patient file maintains a pointer to this file. When a clinical event takes place pertaining to a particular patient, the subscription control number is looked up in the patient file, then a call is made to return the current list of subscribers
+using: 
+ 
+GET^HLSUB(HLSCN,HLTP,HLCL,.HLL) 
+ 
+HLSCN-subscription control number HLTP-subscription type (null returns ALL) HLCL-HL7 1.6 client protocol (optional, returned in first piece of return 
+     array.  HLL-return array. Always in format HLL("LINKS",n)=CLIENT^LOGICAL 
+     LINK^remainder of node data 
+ 
+HL7 1.6, Patch 14 provides additional documentation on the HLL array and dynamic addressing in general.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: SUBSCRIPTION CONTROL NUMBER field (#991.05) of the PATIENT File (#2) 
+               RAI SUBSCRIPTION NUMBER field (#900.01) of the MEDICAL CENTER DIVISION File (#40.8) 
+               
+
+CROSS
+REFERENCED BY: NUMBER(B), LOGICAL LINK(C)
+
+774,.01       NUMBER                 0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X S:$D(X) DINUM=X
+              LAST EDITED:      DEC 15, 1997 
+              HELP-PROMPT:      Type a Number between 1 and 99999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                A new entry in this file is created by making a call to $$ACT^HLSUB.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  774^B 
+                                1)= S ^HLS(774,"B",$E(X,1,30),DA)=""
+                                2)= K ^HLS(774,"B",$E(X,1,30),DA)
+
+
+774,.02       PACKAGE                0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      DEC 07, 1999 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                This is the application or package responsible for creating this subscription.  
+
+
+774,.03       DESCRIPTION            1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>75!($L(X)<1) X
+              LAST EDITED:      DEC 07, 1999 
+              HELP-PROMPT:      Answer must be 1-75 characters in length 
+
+774,1         DESTINATION            TO;0 Multiple #774.01
+
+
+774.01,.01      DESTINATION            0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>180!($L(X)<1) X
+                LAST EDITED:      APR 28, 1997 
+                HELP-PROMPT:      Answer must be 1-180 characters in length. 
+                DESCRIPTION:      This is the full network path to the receiving application. It uses a format similar to a mail address: 
+                                   
+                                  RECEIVING APP@DOMAIN 
+                                   (OR) RECEIVING APP@LOGICAL LINK 
+
+                CROSS-REFERENCE:  774.01^B 
+                                  1)= S ^HLS(774,DA(1),"TO","B",$E(X,1,30),DA)=""
+                                  2)= K ^HLS(774,DA(1),"TO","B",$E(X,1,30),DA)
+
+
+774.01,1        RECEIVING APPLICATION  0;2 POINTER TO HL7 APPLICATION PARAMETER FILE (#771)
+
+                LAST EDITED:      APR 28, 1997 
+
+774.01,2        DOMAIN                 0;3 POINTER TO DOMAIN FILE (#4.2)
+
+                LAST EDITED:      APR 28, 1997 
+                DESCRIPTION:
+                                  This field is reserved for future use.  
+
+
+774.01,3        LOGICAL LINK           0;4 POINTER TO HL LOGICAL LINK FILE (#870)
+
+                LAST EDITED:      APR 29, 1998 
+                DESCRIPTION:
+                                  This contains the HL7 1.6 address of the receiving system.  
+
+                CROSS-REFERENCE:  774^C 
+                                  1)= S ^HLS(774,"C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^HLS(774,"C",$E(X,1,30),DA(1),DA)
+
+
+774.01,4        TYPE                   0;5 SET
+
+                                  '0' FOR Patient Descriptive Only; 
+                                  '1' FOR Patient Clinical and Descriptive; 
+                                  '2' FOR Other; 
+                LAST EDITED:      APR 28, 1997 
+
+774.01,5        CREATION DATE/TIME     0;6 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 28, 1997 
+
+774.01,6        ACTIVATION DATE/TIME   0;7 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 28, 1997 
+
+774.01,7        TERMINATION DATE/TIME  0;8 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 28, 1997 
+
+774.01,8        MODIFICATION DATE/TIME HX;0 DATE Multiple #774.18 (Add New Entry without Asking)
+
+
+774.18,.01        MODIFICATION DATE/TIME 0;1 DATE (Multiply asked)
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      APR 28, 1997 
+                  CROSS-REFERENCE:  774.18^B 
+                                    1)= S ^HLS(774,DA(2),"TO",DA(1),"HX","B",$E(X,1,30),DA)=""
+                                    2)= K ^HLS(774,DA(2),"TO",DA(1),"HX","B",$E(X,1,30),DA)
+
+
+774.18,1          LAST CREATION DATE/TIME 0;2 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      APR 28, 1997 
+
+774.18,2          LAST ACTIVATION DATE/TIME 0;3 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      APR 28, 1997 
+
+774.18,3          LAST TERMINATION DATE/TIME 0;4 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      APR 28, 1997 
+
+774.18,4          LAST SUBSCRIPTION TYPE 0;5 SET
+
+                                    '0' FOR Patient Descriptive Only; 
+                                    '1' FOR Patient Clinical and Descriptive; 
+                                    '2' FOR Other; 
+                  LAST EDITED:      APR 28, 1997 
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DOMAIN (#4.2)                     DESTINATION:DOMAIN (#2)
+
+HL LOGICAL LINK (#870)            DESTINATION:LOGICAL LINK (#3)
+
+HL7 APPLICATION PARAMETER 
+                   (#771)         DESTINATION:RECEIVING APPLICATION (#1)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,219 @@
+STANDARD DATA DICTIONARY #351 -- MEANS TEST BILLING CLOCK FILE                                                                                                                                                                    MAY 20,2014@15:35:28  PAGE 1
+STORED IN ^IBE(351,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DO NOT delete entries in this file.  DO NOT edit data in this file with VA File Manager.  
+ 
+This file was introduced with v1.5 of Integrated Billing in conjunction with the automation of bills for Means Test charges.  The file is used to create and maintain billing clocks in which Means Test patients may be charged co-payment and per diem 
+charges for Hospital or Nursing Home Care, as well as outpatient visits.  This file was initially populated by the Means Test data conversion that took place when v1.5 was installed.  Entries are subsequently updated and created by Integrated Billing.  
+ 
+Entries in this file should not be deleted.  Billing clocks which are not correct will be cancelled, and new clocks may be added.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: PATIENT (#.02)[R], CLOCK BEGIN DATE (#.03)[R], STATUS (#.04)
+
+CROSS
+REFERENCED BY: PATIENT(ACT), STATUS(ACT1), PATIENT(AIVDT), CLOCK BEGIN DATE(AIVDT1), REFERENCE NUMBER(B), PATIENT(C)
+
+351,.01       REFERENCE NUMBER       0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1000)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 10, 1991 
+              HELP-PROMPT:      Type a Number between 1000 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field consists of the station number concatenated with the internal number of the entry.  The purpose of this number is to provide a unique reference for each billing clock which has been opened at each station.  
+
+              CROSS-REFERENCE:  351^B 
+                                1)= S ^IBE(351,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(351,"B",$E(X,1,30),DA)
+
+
+351,.02       PATIENT                0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      DEC 26, 1991 
+              HELP-PROMPT:      Please enter the patient for whom this billing clock is being opened. 
+              DESCRIPTION:
+                                This is the patient for whom the billing clock is being opened.  
+
+              CROSS-REFERENCE:  351^AIVDT^MUMPS 
+                                1)= I $D(^IBE(351,DA,0)),$P(^(0),"^",3) S ^IBE(351,"AIVDT",X,-$P(^(0),"^",3),DA)=""
+                                2)= I $D(^IBE(351,DA,0)),$P(^(0),"^",3) K ^IBE(351,"AIVDT",X,-$P(^(0),"^",3),DA)
+                                Cross-reference of all IB MT BILLING CYCLE entries by the patient (#.02) field and the minus (negative or inverse) cycle date (#.03) field.  The most current billing cycle for a patient may be found using this cross- 
+                                reference.  The "AIVDT1" cross-reference on the cycle date (#.03) field is the companion to this cross-reference.  
+
+
+              CROSS-REFERENCE:  351^ACT^MUMPS 
+                                1)= I $D(^IBE(351,DA,0)),$P(^(0),"^",4)=1 S ^IBE(351,"ACT",X,DA)=""
+                                2)= K ^IBE(351,"ACT",X,DA)
+                                Cross-reference of all active IB BILLING CYCLES by patient.  
+                                 
+                                This is a temporary cross-reference which is used to find a patient's active billing cycle record, if one exists.  The cross-reference is set whenever the status (#.04 field) of a billing cycle is changed to 1 (CURRENT),
+                                and killed without condition.  The "ACT1" cross-reference on the status field is the companion to this cross-reference.  
+
+
+              CROSS-REFERENCE:  351^C 
+                                1)= S ^IBE(351,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBE(351,"C",$E(X,1,30),DA)
+
+
+351,.03       CLOCK BEGIN DATE       0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 30, 1991 
+              HELP-PROMPT:      Please enter the date on which the billing clock should begin. 
+              DESCRIPTION:
+                                This is the date on which the billing clock has been opened.  
+
+              CROSS-REFERENCE:  351^AIVDT1^MUMPS 
+                                1)= I $D(^IBE(351,DA,0)),$P(^(0),"^",2) S ^IBE(351,"AIVDT",$P(^(0),"^",2),-X,DA)=""
+                                2)= I $D(^IBE(351,DA,0)),$P(^(0),"^",2) K ^IBE(351,"AIVDT",$P(^(0),"^",2),-X,DA)
+                                Cross-reference of all IB MT BILLING CYCLE entries by the patient (#.02) field and the minus (negative or inverse) cycle date (#.03) field.  The most current billing cycle for a patient may be found using this cross- 
+                                reference.  The "AIVDT" cross-reference on the patient (#.02) field is is the companion to this cross-reference.  
+
+
+
+351,.04       STATUS                 0;4 SET
+
+                                '1' FOR CURRENT; 
+                                '2' FOR CLOSED; 
+                                '3' FOR CANCELLED; 
+              LAST EDITED:      NOV 06, 1991 
+              HELP-PROMPT:      Enter the present status for this billing clock. 
+              DESCRIPTION:      The status of the billing clock will be CURRENT if charges are being created for that clock.  The clock will be CLOSED after 365 days or the date the patient is no longer a Means Test copay patient, whichever is earlier. 
+                                Billing clocks which may have been "left open" due to a lack of billable activity will be closed during the nightly compilation job.  Billing clocks which must be deleted for any reason will have a status of CANCELLED.  
+
+              CROSS-REFERENCE:  351^ACT1^MUMPS 
+                                1)= I X=1,$D(^IBE(351,DA,0)),$P(^(0),"^",2) S ^IBE(351,"ACT",$P(^(0),"^",2),DA)=""
+                                2)= I $D(^IBE(351,DA,0)),$P(^(0),"^",2) K ^IBE(351,"ACT",$P(^(0),"^",2),DA)
+                                Cross-reference of all active IB BILLING CYCLES by patient (#.02 field).  
+                                 
+                                This is a temporary cross-reference which is used to find a patient's active billing cycle record, if one exists.  The cross-reference is set whenever the status of a billing cycle is changed to 1 (CURRENT), and killed
+                                whenever the patient field is defined.  The "ACT" cross-reference on the patient field is the companion to this cross-reference.  
+
+
+
+351,.05       1ST 90 DAY INPATIENT AMOUNT 0;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      OCT 09, 1991 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field represents the total co-payment (not including the per diem charge) amount which has been billed to the patient for his first 90 days of Hospital or Nursing Home care.  
+
+
+351,.06       2ND 90 DAY INPATIENT AMOUNT 0;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      OCT 09, 1991 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field represents the total co-payment (not including the per diem charge) amount which has been billed to the patient for his second 90 days of Hospital or Nursing Home care.  
+
+
+351,.07       3RD 90 DAY INPATIENT AMOUNT 0;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      OCT 09, 1991 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field represents the total co-payment (not including the per diem charge) amount which has been billed to the patient for his third 90 days of Hospital or Nursing Home care.  
+
+
+351,.08       4TH 90 DAY INPATIENT AMOUNT 0;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      OCT 09, 1991 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field represents the total co-payment (not including the per diem charge) amount which has been billed to the patient for his fourth 90 days of Hospital or Nursing Home care.  
+
+
+351,.09       NUMBER INPATIENT DAYS  0;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 09, 1991 
+              HELP-PROMPT:      Type a Number between 0 and 365, 0 Decimal Digits 
+              DESCRIPTION:      This field represents the total number of days that the patient has spent in the Hospital or Nursing Home since the Clock Begin Date.  The field is used to determine the co-payment charges billed to the patient for care
+                                received.  
+
+
+351,.1        CLOCK END DATE         0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 26, 1991 
+              HELP-PROMPT:      Enter the date on which this billing clock must be closed. 
+              DESCRIPTION:
+                                This is the date on which the billing clock was closed.  This date should not be more than 365 days after the Clock Begin Date.  
+
+
+351,11        USER ADDING ENTRY      1;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      OCT 09, 1991 
+              DESCRIPTION:
+                                This is the person performing a transaction in an application that causes the application to create an entry in this file.  This field may be null if the entry was created by an off-line compilation job.  
+
+              WRITE AUTHORITY:  ^
+
+351,12        DATE ENTRY ADDED       1;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 09, 1991 
+              DESCRIPTION:
+                                This the date/time that an entry was added to this file.  
+
+              WRITE AUTHORITY:  ^
+
+351,13        USER LAST UPDATING     1;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      OCT 09, 1991 
+              DESCRIPTION:
+                                This is the person performing a transaction in an application which causes the application to update this entry.  This entry may be null if the entry was last updated in an off-line compilation job.  
+
+
+351,14        DATE LAST UPDATED      1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 09, 1991 
+              DESCRIPTION:
+                                This is the date/time that this entry was last updated.  
+
+
+351,15        UPDATE REASON          0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+              LAST EDITED:      FEB 25, 1992 
+              HELP-PROMPT:       Answer must be 3-40 characters in length. 
+              DESCRIPTION:
+                                Brief description of reason for updating billing clock.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 USER ADDING ENTRY (#11)
+                                  USER LAST UPDATING (#13)
+
+PATIENT (#2)                      PATIENT (#.02)
+
+
+
+INPUT TEMPLATE(S):
+IB BILLING CYCLE ADD          FEB 25, 1992@13:59  USER #0    
+     Patient Billing Clock Maintenance, new entry.
+IB BILLING CYCLE ADJUST       FEB 25, 1992@14:00  USER #0    
+     Patient Billing Clock Maintenance, edit existing entry.
+
+PRINT TEMPLATE(S):
+IB BILLING CLOCK HEADER       JAN 16, 1992@10:55  USER #0    ^IBXBCR2                                                                                                                                                                                        @
+     Displays the header for the Patient Billing Clock Inquiry.
+IB BILLING CLOCK INQ          MAY 20, 1992@09:18  USER #11416^IBXBCR                                                                                                                                                                                         @
+     Displays the Patient Billing Clock Inquiry data.
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

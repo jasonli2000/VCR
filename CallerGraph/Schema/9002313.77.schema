@@ -1,0 +1,877 @@
+STANDARD DATA DICTIONARY #9002313.77 -- BPS REQUESTS FILE                                                                                                                                                                         MAY 20,2014@15:32:28  PAGE 1
+STORED IN ^BPS(9002313.77,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                       (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to store data for queued requests before the ECME engine un-queues them and during their processing. The data stored in this file are used to create a record in BPS TRANSACTION file (#9002313.59) to build a claim request or reversal and
+send it to the insurer (payer).  Generally there should be few or no entries in this file unless there are stranded claims/reversal or requests that need to be un-stranded by the user.  
+ 
+Per VHA Directive 2004-038, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: Pp
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: SUBMIT REQUEST field (#16) of the BPS LOG OF TRANSACTIONS File (#9002313.57) 
+               REVERSAL REQUEST field (#405) of the BPS LOG OF TRANSACTIONS File (#9002313.57) 
+               SUBMIT REQUEST field (#16) of the BPS TRANSACTION File (#9002313.59) 
+               REVERSAL REQUEST field (#405) of the BPS TRANSACTION File (#9002313.59) 
+               NEXT REQUEST field (#.05) of the BPS REQUESTS File (#9002313.77) 
+               
+
+CROSS
+REFERENCED BY: KEY1(B), ECME TRANSACTION RECORD(C), DATE AND TIME UPDATED(E)
+
+INDEXED BY:    PROCESS FLAG & KEY1 & KEY2 & ACTING COB (AC), NEXT REQUEST & PROCESS FLAG & TRANSACTION TYPE & ACTING COB (AN), KEY1 & KEY2 & ACTING COB & PROCESS FLAG (D)
+
+
+9002313.77,.01KEY1                   0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999999)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      OCT 19, 2010 
+              HELP-PROMPT:      Enter the first key of the request (1-9999999999999). 
+              DESCRIPTION:
+                                For claim requests and reversals, this is the prescription IEN that will be processed.  For Eligibility Verification requests, this is the Patient IEN that will be processed.  
+
+              CROSS-REFERENCE:  9002313.77^B 
+                                1)= S ^BPS(9002313.77,"B",$E(X,1,30),DA)=""
+                                2)= K ^BPS(9002313.77,"B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AC (#804), D (#806)
+
+9002313.77,.02KEY2                   0;2 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      OCT 18, 2010 
+              HELP-PROMPT:      Enter the second key of the request (0-9999). 
+              DESCRIPTION:      For billing requests and reversals, this is the fill number where 0 is the original fill and 1-999 are refills.  For eligibility verification requests, this is the policy number plus 9000.  So, for policy number 4, this
+                                would be 9004.  
+
+              RECORD INDEXES:   AC (#804), D (#806)
+
+9002313.77,.03ACTING COB             0;3 SET
+
+                                '1' FOR PRIMARY; 
+                                '2' FOR SECONDARY; 
+                                '3' FOR TERTIARY; 
+              LAST EDITED:      JUN 23, 2008 
+              HELP-PROMPT:      Answer with a Coordination of Benefits indicator 
+              DESCRIPTION:      This field indicates for which insurer (in terms of coordination of benefits) this particular request was created. For example, if the patient has three insurances then three separate requests can be created for the same
+                                prescription/refill in order to bill patient's Primary, Secondary and Tertiary insurers. This field indicates for which insurer this request is for.  
+
+              RECORD INDEXES:   AC (#804), AN (#805), D (#806)
+
+9002313.77,.04PROCESS FLAG           0;4 SET (Required)
+
+                                '0' FOR SCHEDULED; 
+                                '1' FOR ACTIVATED; 
+                                '2' FOR IN PROCESS; 
+                                '3' FOR COMPLETED; 
+                                '4' FOR CANCELLED; 
+                                '5' FOR INACTIVE; 
+              LAST EDITED:      JUN 25, 2008 
+              HELP-PROMPT:      Select a process flag for the request 
+              DESCRIPTION:      State of the request.  
+                                 
+                                SCHEDULED - scheduled for the future (for example : the secondary claim is scheduled to be processed after the primary is completed) 
+                                 
+                                ACTIVATED - ready to be processed 
+                                 
+                                IN PROCESS - currently in process 
+                                 
+                                COMPLETED - has been completed 
+                                 
+                                CANCELLED - cancelled 
+                                 
+                                INACTIVE - the system marks the records with "bad" data as inactive instead of removing them - to keep them  for repair or for investigation 
+
+              RECORD INDEXES:   AC (#804), AN (#805), D (#806)
+
+9002313.77,.05NEXT REQUEST           0;5 POINTER TO BPS REQUESTS FILE (#9002313.77)
+
+              LAST EDITED:      JUN 19, 2008 
+              HELP-PROMPT:      Answer with the request that follows this one 
+              DESCRIPTION:
+                                To store the pointer to the next request which should be processed.  
+
+              RECORD INDEXES:   AN (#805)
+
+9002313.77,.06ECME TRANSACTION RECORD 0;6 POINTER TO BPS TRANSACTION FILE (#9002313.59)
+
+              LAST EDITED:      OCT 19, 2010 
+              HELP-PROMPT:      Enter the transaction record from the BPS Transaction file.  
+              DESCRIPTION:
+                                This is the BPS Transaction.  It is not initially populated but is populated after the request is activated and the BPS Transaction record is created.  
+
+              CROSS-REFERENCE:  9002313.77^C 
+                                1)= S ^BPS(9002313.77,"C",$E(X,1,30),DA)=""
+                                2)= K ^BPS(9002313.77,"C",$E(X,1,30),DA)
+
+
+9002313.77,.07WAITING RESOLUTION?    0;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 23, 2008 
+              HELP-PROMPT:      Is this request awaiting resolution? 
+              DESCRIPTION:
+                                Flag to mark requests with problems.  
+
+
+9002313.77,.08DONT PROCESS UNTIL     0;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      NOV 13, 2008 
+              HELP-PROMPT:      Enter Date/Time 
+              DESCRIPTION:
+                                The request cannot be processed until the date and time specified in this field. If null then it can be processed at any time (immediately).  
+
+
+9002313.77,1.01RX ACTION             1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+              LAST EDITED:      FEB 10, 2011 
+              HELP-PROMPT:      Enter the mnemonic that indicates what type of action should be performed (1-4 characters). 
+              DESCRIPTION:      This is the action that is being performed on this request. It is either the BWHERE parameter passed into BPSNCPDP or 'ELIG' for an eligibility verification request.  The list of BWHERE values are documented at the top of
+                                routine BPSNCPD3.  
+
+              TECHNICAL DESCR:
+                                The RX Actions are documented at the top of routine BPSNCPD3.  
+
+
+9002313.77,1.02OUTPATIENT SITE       1;2 POINTER TO OUTPATIENT SITE FILE (#59)
+
+              LAST EDITED:      OCT 19, 2010 
+              HELP-PROMPT:      Enter the Outpatient Site associated with the request. 
+              DESCRIPTION:
+                                This is the outpatient site that will be used to generate the NPI number for the Service Provider ID (201-B1) field of a NCPDP request.  
+
+
+9002313.77,1.04TRANSACTION TYPE      1;4 SET
+
+                                'C' FOR CLAIM; 
+                                'E' FOR ELIGIBILITY; 
+                                'U' FOR UNCLAIM; 
+              LAST EDITED:      OCT 18, 2010 
+              HELP-PROMPT:      Answer with the type of transaction that will be processed for this NCPDP request. 
+              DESCRIPTION:      This is the type of transaction that is being processed: 
+                                   CLAIM - An NCPDP billing request.  
+                                   UNCLAIM - An NCPDP reversal request.  
+                                   ELIGIBILITY - An eligibility verification request.  
+
+              RECORD INDEXES:   AN (#805)
+
+9002313.77,1.05BILLING DETERMINATION 1;5 SET
+
+                                '0' FOR NOT BILLABLE; 
+                                '1' FOR BILLABLE; 
+              LAST EDITED:      JUN 23, 2008 
+              HELP-PROMPT:      Is this claim billable? 
+              DESCRIPTION:
+                                Billing determination result 
+
+
+9002313.77,1.06ELIGIBILITY           1;6 SET
+
+                                'V' FOR VETERAN; 
+                                'T' FOR TRICARE; 
+                                'C' FOR CHAMPVA; 
+              LAST EDITED:      JUN 24, 2008 
+              HELP-PROMPT:      Enter eligibility of the claim. 
+              DESCRIPTION:
+                                The insurance eligibility type of the claim.  
+
+
+9002313.77,1.07CLAIM STATUS          1;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>99!($L(X)<1) X
+              LAST EDITED:      JUN 19, 2008 
+              HELP-PROMPT:      Type a Number between 0 and 99, 0 Decimal Digits 
+              DESCRIPTION:
+                                The status of the transaction as a percentage of completion.  The text value can be obtained by running $$STATI^BPSOSU(<Status Number>).  Note that 99 indicates complete.  
+
+
+9002313.77,1.08RATE TYPE             1;8 POINTER TO RATE TYPE FILE (#399.3)
+
+              LAST EDITED:      MAR 27, 2009 
+              HELP-PROMPT:      Select Rate Type for billing. 
+              DESCRIPTION:
+                                The Rate Type selected by the user for billing.  
+
+
+9002313.77,1.09PRIMARY PAYER BILL    1;9 POINTER TO BILL/CLAIMS FILE (#399)
+
+              LAST EDITED:      JAN 09, 2009 
+              HELP-PROMPT:      Select Primary bill for secondary billing. 
+              DESCRIPTION:
+                                Primary bill which should be used to create the secondary bill.  This field is used for secondary billing only.  
+
+
+9002313.77,1.1PRIOR PAYMENT          1;10 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+              LAST EDITED:      MAR 27, 2009 
+              HELP-PROMPT:      Enter a Dollar Amount (between 0 and 999999, 2 Decimal Digits) paid by primary insurer. 
+              DESCRIPTION:
+                                Dollar amount paid by the Primary insurer. This field is used for secondary billing only.  
+
+
+9002313.77,1.11COB OTHER PAYMENTS COUNT 1;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      JUN 07, 2010 
+              HELP-PROMPT:      Enter a number between 0 and 9 for a count of other payment occurrences. 
+              DESCRIPTION:      NCPDP field 337-4C - Coordination of Benefits/Other Payments Count 
+                                 
+                                This value corresponds to the number of multiple entries in the #8 multiple field - COB OTHER PAYERS.  
+
+
+9002313.77,1.12OTHER COVERAGE CODE   1;12 SET
+
+                                '00' FOR NOT SPECIFIED; 
+                                '01' FOR NO OTH COVERAGE; 
+                                '02' FOR PYMT COLLECT/OTH PAYER; 
+                                '03' FOR CLAIM NOT COVER/OTH PAYER; 
+                                '04' FOR PYMT NOT COLLECT/OTH PAYER; 
+                                '05' FOR PLAN DENIAL; 
+                                '06' FOR NONPARTICIPAT PROV/OTH PAYER; 
+                                '07' FOR OTH COVER NOT EFFECT ON DOS; 
+                                '08' FOR COPAY BILLING; 
+              LAST EDITED:      JUN 07, 2010 
+              HELP-PROMPT:      Select the Other Coverage Code. 
+              DESCRIPTION:
+                                NCPDP field 308-C8 - code indicating whether or not the patient has other insurance coverage.  
+
+
+9002313.77,1.13RX NUMBER             1;13 POINTER TO PRESCRIPTION FILE (#52)
+
+              LAST EDITED:      OCT 18, 2010 
+              HELP-PROMPT:      Enter the prescription to be processed for this request. 
+              DESCRIPTION:      For billing requests and reversal, this is the prescription that will be processed for the request.  If an eligibility verification request is initiated from the ECME User Screen, this field will also be populated and will
+                                be used to get the Prescriber information from the prescription.  
+
+
+9002313.77,1.14FILL NO               1;14 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      OCT 19, 2010 
+              HELP-PROMPT:      Enter the fill number that will be processed for this request (1-99). 
+              DESCRIPTION:      For billing requests and reversals, this is the fill number to be processed, where 0 is the original fill and 1-99 are refills.  If an eligibility verification request is initiated from the ECME User Screen, this field
+                                will also be populated and will be used to get the Prescriber information from the prescription.  
+
+
+9002313.77,1.15PATIENT               1;15 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      MAY 11, 2011 
+              HELP-PROMPT:      Enter the patient associated with this request. 
+              DESCRIPTION:
+                                For billing requests and reversals, this is the patient associated with the prescription.  For eligibility verification requests, this is the patient for which the insurance is being verified.  
+
+
+9002313.77,1.16POLICY NUMBER         1;16 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      OCT 18, 2010 
+              HELP-PROMPT:      Enter the policy number for the request (0-9999). 
+              DESCRIPTION:
+                                This is the policy number of the patient that is being verified in an eligibility verification request.  
+
+
+9002313.77,2.01DATE OF SERVICE       2;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      JUL 06, 2011 
+              HELP-PROMPT:      Enter the date of service to be used on this NCPDP request. 
+              DESCRIPTION:
+                                This is the date of service that will be used to populate the 401-D1 field of the NCPDP request.  It is generally the fill/refill date of the prescription but may also be the release date.  
+
+
+9002313.77,2.02REVERSAL REASON       2;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      JUN 19, 2008 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                Reversal Reason as a free text. Examples: ECME RESUBMIT, RX EDITED, RX DISCONTINUED 
+
+
+9002313.77,2.03DURREC                2;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      JUN 19, 2008 
+              HELP-PROMPT:      Answer must be 1-80 characters in length 
+              DESCRIPTION:
+                                Drug Utilization Review (DUR) information passed by Outpatient Pharmacy to ECME.  
+
+
+9002313.77,2.04OVERRIDE CODE         2;4 POINTER TO BPS NCPDP OVERRIDE FILE (#9002313.511)
+
+              LAST EDITED:      JUN 24, 2008 
+              HELP-PROMPT:      Select a record of the BPS NCPDP OVERRIDE file 
+              DESCRIPTION:
+                                This is used to store overrides entered by the user via the Resubmit with Edits (RED) option in the ECME User Screen to change certain data elements sent to the payer during resubmission of the claim.  
+
+
+9002313.77,2.05CLARIFICATION CODE    2;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      FEB 22, 2011 
+              HELP-PROMPT:      Enter between 1 and 3 Submission Clarification Codes separated by "~". 
+              DESCRIPTION:      The Submission Clarification Code is entered by the pharmacist and passed by Outpatient Pharmacy to ECME to put into the claim to support/justify the claim request when the payer rejects it. Valid clarification codes are 
+                                selected from BPS NCPDP CLARIFICATION CODES file (#9002313.25).  These codes justify an earlier fill date to the payer.  For example if a patient needed an early refill due to being on vacation when the prescription would
+                                normally be filled, a VACATION SUPPLY clarification code can be used as justification to the payer for filling the prescription thereby mitigating any claims rejections.  
+
+              TECHNICAL DESCR:
+                                Up to 3 Submission Clarification Codes can be submitted, They are stored in this free text field as follows: SCC1~SCC2~SCC3 
+
+
+9002313.77,2.06BILL NDC              2;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<5) X
+              LAST EDITED:      JUN 24, 2008 
+              HELP-PROMPT:      Answer must be 5-11 characters in length. 
+              DESCRIPTION:
+                                Valid NDC# used in the prescription/refill and which is passed to ECME to be used for billing.  
+
+
+9002313.77,2.07PRE AUTH TYPE CODE    2;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<1) X
+              LAST EDITED:      FEB 27, 2008 
+              HELP-PROMPT:      Answer must be 1-2 characters in length. 
+              DESCRIPTION:
+                                PRIOR AUTHORIZATION TYPE CODE - the first piece of the BPSAUTH parameter passed to ECME engine.  
+
+
+9002313.77,2.08PRE AUTH NUM SUB      2;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<1) X
+              LAST EDITED:      FEB 27, 2008 
+              HELP-PROMPT:      Answer must be 1-11 characters in length. 
+              DESCRIPTION:
+                                PRIOR AUTHORIZATION NUM SUB - the second piece of the BPSAUTH parameter passed to ECME engine.  
+
+
+9002313.77,2.09SC AND EI OVERRIDE FLAG 2;9 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      NOV 28, 2008 
+              HELP-PROMPT:      Enter "Yes" if SC/EI answers should be overridden, "No" if not. 
+              DESCRIPTION:      Service Connected and Environmental Indicators override flag.  0 - the system should use the existing answers to SC and EI questions, if there is no answer then SC/EI determination needed and the RX/refill cannot be
+                                billed.                                     1 - the user chose to override all SC and EI related answers with "NO", which means the RX/refill should be billed.  
+
+
+9002313.77,2.1DELAY REASON CODE      2;10 POINTER TO BPS NCPDP DELAY REASON CODE FILE (#9002313.29)
+
+              LAST EDITED:      OCT 19, 2010 
+              HELP-PROMPT:      Enter the delay reason code that will be used for NCPDP request. 
+              DESCRIPTION:      This is the Delay Reason Code that is entered by the user from the IB Back Billing Option of Claims Tracking and passed to ECME.  It will be be put into field 357-NV of the billing request that is created for third-party 
+                                billing.  
+
+
+9002313.77,3  DUR                    3;0 Multiple #9002313.771 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                DUR multiple 
+
+
+9002313.771,.01 DUR REASON CODE        0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      JUN 19, 2008 
+                HELP-PROMPT:      Enter the DUR Reason for the Service Code for the claim 
+                DESCRIPTION:
+                                  Drug Utilization Review (DUR) Reason for the Service Code for the claim.  
+
+                CROSS-REFERENCE:  9002313.771^B 
+                                  1)= S ^BPS(9002313.77,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^BPS(9002313.77,DA(1),3,"B",$E(X,1,30),DA)
+
+
+9002313.771,.02 DUR PROFESSIONAL SERVICE CODE 0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      JUN 19, 2008 
+                HELP-PROMPT:      Enter the DUR Professional Service Code for the claim 
+                DESCRIPTION:
+                                  Drug Utilization Review (DUR) Professional Service Code for the claim.  
+
+
+9002313.771,.03 DUR RESULT OF SERVICE CODE 0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      JUN 19, 2008 
+                HELP-PROMPT:      Enter the DUR Result of Service Code for the claim 
+                DESCRIPTION:
+                                  Drug Utilization Review (DUR) Result of Service Code for the claim.  
+
+
+
+
+9002313.77,4.01QUANTITY              4;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<-1)!(X?.E1"."4.N) X
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Type a number between -1 and 999999, 3 Decimal Digits 
+              DESCRIPTION:      NCPDP quantity (Billing Quantity) - the amount of medication that was dispensed (stored in PRESCRIPTION file (#52)) multiplied by the NCPDP QUANTITY MULTIPLIER (stored in DRUG file (#50)).  The negative  value -1 indicates
+                                an invalid drug.  
+
+
+9002313.77,4.02UNIT PRICE            4;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."7N.N) X
+              LAST EDITED:      OCT 22, 2007 
+              HELP-PROMPT:      Type a Number between 0 and 9999999, 6 Decimal Digits 
+              DESCRIPTION:
+                                Price per unit of prescription.  
+
+
+9002313.77,4.03NDC                   4;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<5) X
+              LAST EDITED:      OCT 22, 2007 
+              HELP-PROMPT:      Answer must be 5-11 characters in length. 
+              DESCRIPTION:
+                                The NDC number of the drug involved in this transaction.  
+
+
+9002313.77,4.04REFILL                4;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 22, 2007 
+              HELP-PROMPT:      Type a Number between 0 and 99, 0 Decimal Digits 
+              DESCRIPTION:
+                                Refill number. 0-original 
+
+
+9002313.77,4.05CERTIFY MODE          4;5 SET
+
+                                '0' FOR OFF; 
+                                '1' FOR ON; 
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Enter null or 0 for certify mode off. Enter 1 for certify mode on. 
+              DESCRIPTION:
+                                Certify mode is used for certifying software when required by switches and claims end processors.  
+
+
+9002313.77,4.06CERTIFICATION IEN     4;6 POINTER TO BPS CERTIFICATION FILE (#9002313.31)
+
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Select the certification record 
+              DESCRIPTION:
+                                This field is used during certification testing, and points to the entry to use to pull certification data.  
+
+
+9002313.77,4.07UNIT OF MEASURE       4;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<1) X
+              LAST EDITED:      OCT 22, 2007 
+              HELP-PROMPT:      Answer must be 1-2 characters in length. 
+              DESCRIPTION:
+                                Enter the Unit of Measure for the drug.  This is usually GR (grams), ML (milliliters), or EA (Each).  
+
+
+9002313.77,4.08BILLING QUANTITY      4;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."4.N) X
+              LAST EDITED:      JUL 06, 2011 
+              HELP-PROMPT:      Type a number between 0 and 99999999, 3 decimal digits. 
+              DESCRIPTION:
+                                This is the quantity from the prescription and is used to calculate the ingredient cost.  It may be different than the quantity used in the actual NCPDP submission.  
+
+
+9002313.77,4.09BILLING UNIT          4;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUN 07, 2011 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is the billing units associated with the billing quantity.  
+
+
+9002313.77,5  INSURER DATA           5;0 SET Multiple #9002313.772 (Add New Entry without Asking)
+
+              LAST EDITED:      NOV 26, 2007 
+              DESCRIPTION:
+                                Contains set of IB determination data for all billable payers - primary, secondary and tertiary. Should contain at least one entry - usually for the primary payer.  
+
+
+9002313.772,.01 COB INDICATOR          0;1 SET
+
+                                  '1' FOR PRIMARY; 
+                                  '2' FOR SECONDARY; 
+                                  '3' FOR TERTIARY; 
+                LAST EDITED:      JUN 24, 2008 
+                HELP-PROMPT:      Is the payer a primary, secondary or tertiary insurer? 
+                DESCRIPTION:
+                                  Coordination Of Benefits (COB) indicator for the payer.  
+
+                CROSS-REFERENCE:  9002313.772^B 
+                                  1)= S ^BPS(9002313.77,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^BPS(9002313.77,DA(1),5,"B",$E(X,1,30),DA)
+
+
+9002313.772,.02 USED FOR THE REQUEST   0;2 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JUN 24, 2008 
+                HELP-PROMPT:      Should this payer be used for billing in this request? 
+                DESCRIPTION:      The INSURER DATA multiple can store up to three entries with details for primary, secondary and tertiary insurers. This field marks the active payer entry, which points to the payer data to be used to process this 
+                                  request.  
+
+                CROSS-REFERENCE:  9002313.772^C 
+                                  1)= S ^BPS(9002313.77,DA(1),5,"C",$E(X,1,30),DA)=""
+                                  2)= K ^BPS(9002313.77,DA(1),5,"C",$E(X,1,30),DA)
+                                  To find an active COB indicator.  
+
+
+
+9002313.772,.03 INSURER DATA           0;3 POINTER TO BPS INSURER DATA FILE (#9002313.78)
+
+                LAST EDITED:      JUN 20, 2008 
+                HELP-PROMPT:      Select insurer for the request 
+                DESCRIPTION:
+                                  Contains IB determination data for the payer (insurer).  
+
+
+
+
+9002313.77,6.01REQUEST DATE AND TIME 6;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Enter date/time 
+              DESCRIPTION:
+                                The Date and Time when the request record was created.  
+
+
+9002313.77,6.02USER WHO MADE THE REQUEST 6;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Enter the user who made the request 
+              DESCRIPTION:
+                                The user who created the request 
+
+
+9002313.77,6.03ACTIVATED DATE TIME   6;3 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Enter the date and time when the request was activated 
+              DESCRIPTION:
+                                The date and time when the request was activated 
+
+
+9002313.77,6.04USER WHO ACTIVATED REQUEST 6;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Enter the user who activated the request 
+              DESCRIPTION:
+                                The user who activated the request.  
+
+
+9002313.77,6.05DATE AND TIME UPDATED 6;5 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Enter the date and time when the request was updated 
+              DESCRIPTION:
+                                The date and time when the request was updated.  
+
+              CROSS-REFERENCE:  9002313.77^E 
+                                1)= S ^BPS(9002313.77,"E",$E(X,1,30),DA)=""
+                                2)= K ^BPS(9002313.77,"E",$E(X,1,30),DA)
+                                The cross-reference to get the select records by the date/time the record was updated 
+
+
+
+9002313.77,6.06USER WHO UPDATED THE REQUEST 6;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Enter the user who updated the request 
+              DESCRIPTION:
+                                The user who updated the request.  
+
+
+9002313.77,7.01CLOSE AFT REV         7;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 24, 2008 
+              HELP-PROMPT:      Should the claim be closed after accepted reversal? 
+              DESCRIPTION:      This field indicates whether the claim should be closed after successful reversal. The ECME engine checks this field when it receives a response from the payer. If the field is set to YES and the reversal was accepted by
+                                the payer then the claim will be closed automatically.  
+
+
+9002313.77,7.02CLOSE AFT REV REASON  7;2 POINTER TO CLAIMS TRACKING NON-BILLABLE REASONS FILE (#356.8)
+
+              LAST EDITED:      JUN 20, 2008 
+              HELP-PROMPT:      Select NON-BILLABLE reason for the claim 
+              DESCRIPTION:
+                                The NON-BILLABLE REASON selected by the user to be used in IB CLAIM TRACKING system.  
+
+
+9002313.77,7.03CLOSE AFT REV COMMENT 7;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      MAY 30, 2008 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                Comment for CLOSE action 
+
+
+9002313.77,8  COB OTHER PAYERS       8;0 Multiple #9002313.778 (Add New Entry without Asking)
+
+              LAST EDITED:      JUN 07, 2010 
+              DESCRIPTION:      This multiple structure stores information about each of the other payers involved in the payment or rejection of the claim.  
+                                 
+                                NCPDP has a maximum of 9 occurrences here with a recommendation of less than or equal to 3 occurrences.  However, VA only stores data for at most 3 insurance policies for any given claim.  So at most there will only be 2
+                                occurrences of this other payer multiple.  
+
+
+9002313.778,.01 OTHER PAYER COUNTER    0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      JUN 14, 2010 
+                HELP-PROMPT:      Type a number between 0 and 9, 0 decimal digits. 
+                DESCRIPTION:
+                                  This is a multiple counter field to store the count of the other payers.  
+
+                CROSS-REFERENCE:  9002313.778^B 
+                                  1)= S ^BPS(9002313.77,DA(1),8,"B",$E(X,1,30),DA)=""
+                                  2)= K ^BPS(9002313.77,DA(1),8,"B",$E(X,1,30),DA)
+
+
+9002313.778,.02 OTHER PAYER COVERAGE TYPE 0;2 SET
+
+                                  '01' FOR PRIMARY; 
+                                  '02' FOR SECONDARY; 
+                                  '03' FOR TERTIARY; 
+                                  '98' FOR COUPON; 
+                                  '99' FOR COMPOSITE; 
+                LAST EDITED:      JUN 09, 2010 
+                HELP-PROMPT:      Select other payer coverage type. 
+                DESCRIPTION:
+                                  NCPDP field 338-5C - Code identifying the type of 'Other Payer ID' 
+
+
+9002313.778,.03 OTHER PAYER ID QUALIFIER 0;3 SET
+
+                                  '01' FOR NATIONAL PAYER ID; 
+                                  '02' FOR HEALTH INDUSTRY NUMBER (HIN); 
+                                  '03' FOR BANK INFORMATION NUMBER (BIN); 
+                                  '04' FOR NAT. ASSOC. OF INS. COM.(NAIC); 
+                                  '09' FOR COUPON; 
+                                  '99' FOR OTHER; 
+                LAST EDITED:      JUN 09, 2010 
+                HELP-PROMPT:      Select Other Payer ID Qualifier. 
+                DESCRIPTION:
+                                  NCPDP field 339-6C - Code qualifying the 'Other Payer ID' (340-7C).  
+
+
+9002313.778,.04 OTHER PAYER ID         0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      JUN 09, 2010 
+                HELP-PROMPT:      Enter Other Payer ID (1-10 characters). 
+                DESCRIPTION:
+                                  NCPDP field 340-7C - ID assigned to the payer.  
+
+
+9002313.778,.05 OTHER PAYER DATE       0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      JUN 09, 2010 
+                HELP-PROMPT:      Enter the payment/denial date of the claim submitted to the other payer. 
+                DESCRIPTION:
+                                  NCPDP field 443-E8 - Payment or denial date of the claim submitted to the other payer. Used for coordination of benefits.  
+
+
+9002313.778,.06 OTHER PAYER AMOUNT PAID COUNT 0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      JUN 14, 2010 
+                HELP-PROMPT:      Enter the count (0-9) of the payer amount paid occurrences. 
+                DESCRIPTION:
+                                  NCPDP field 341-HB - Count of the payer amount paid occurrences.  
+
+
+9002313.778,.07 OTHER PAYER REJECT COUNT 0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      JUN 14, 2010 
+                HELP-PROMPT:      Enter the count (0-20) of the other payer reject code occurrences. 
+                DESCRIPTION:
+                                  NCPDP field 471-5E - Count of 'Other Payer Reject Code' occurrences.  
+
+
+9002313.778,1   OTHER PAYER AMT PAID MULTIPLE 1;0 Multiple #9002313.7781 (Add New Entry without Asking)
+
+                LAST EDITED:      JUN 09, 2010 
+                DESCRIPTION:      This multiple stores the NCPDP fields: 
+                                   
+                                      431-DV - Other Payer Amount Paid 
+                                      342-HC - Other Payer Amount Paid Qualifier 
+                                   
+                                  Up to 9 occurrences are allowed by the NCPDP standard.  This limit is dictated by the NCPDP standard and enforced within the ECME claim building process (i.e. the ECME application software).  There are no such limits
+                                  built into this data dictionary.  
+
+
+9002313.7781,.01  OTHER PAYER AMOUNT PAID 0;1 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      JUN 10, 2010 
+                  HELP-PROMPT:      Type a dollar amount between 0 and 999999, 2 decimal digits. 
+                  DESCRIPTION:
+                                    NCPDP field 431-DV - Amount of any payment known by the pharmacy from other sources (including coupons).  
+
+                  CROSS-REFERENCE:  9002313.7781^B 
+                                    1)= S ^BPS(9002313.77,DA(2),8,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^BPS(9002313.77,DA(2),8,DA(1),1,"B",$E(X,1,30),DA)
+
+
+9002313.7781,.02  OTHER PAYER AMT PAID QUALIFIER 0;2 SET
+
+                                    '01' FOR DELIVERY; 
+                                    '02' FOR SHIPPING; 
+                                    '03' FOR POSTAGE; 
+                                    '04' FOR ADMINISTRATIVE; 
+                                    '05' FOR INCENTIVE; 
+                                    '06' FOR COGNITIVE SERVICE; 
+                                    '07' FOR DRUG BENEFIT; 
+                                    '08' FOR SUM OF ALL REIMBURSEMENT; 
+                                    '98' FOR COUPON; 
+                                    '99' FOR OTHER; 
+                  LAST EDITED:      JUN 10, 2010 
+                  HELP-PROMPT:      Enter the type of Other Payer Amount Paid. 
+                  DESCRIPTION:
+                                    NCPDP field 342-HC - Code qualifying the 'Other Payer Amount Paid' (431-DV).  
+
+
+
+
+9002313.778,2   OTHER PAYER REJECT MULTIPLE 2;0 Multiple #9002313.7782 (Add New Entry without Asking)
+
+                  LAST EDITED:      JUN 09, 2010 
+                  DESCRIPTION:      This multiple stores the NCPDP field: 
+                                     
+                                        NCPDP field 472-6E - Other Payer Reject Code 
+                                     
+                                    Up to 20 occurrences are allowed by the NCPDP standard.  This limit is dictated by the NCPDP standard and enforced within the ECME claim building process (i.e. the ECME application software).  There are no such limits 
+                                    built into this data dictionary.  
+
+
+9002313.7782,.01  OTHER PAYER REJECT CODE  0;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+                    LAST EDITED:      JUN 14, 2010 
+                    HELP-PROMPT:      Enter a reject code returned by the Other Payer. 
+                    DESCRIPTION:
+                                      NCPDP field 472-6E - The error encountered by the previous "Other Payer" in 'Reject Code' (511-FB).  
+
+                    CROSS-REFERENCE:  9002313.7782^B 
+                                      1)= S ^BPS(9002313.77,DA(2),8,DA(1),2,"B",$E(X,1,30),DA)=""
+                                      2)= K ^BPS(9002313.77,DA(2),8,DA(1),2,"B",$E(X,1,30),DA)
+
+
+
+
+
+
+9002313.77,9.01INACTIVATION REASON   9;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
+              LAST EDITED:      OCT 18, 2010 
+              HELP-PROMPT:      Enter the reason the request was inactivated (1-100 characters). 
+              DESCRIPTION:
+                                When a request is inactivated, the reason that it was inactivated will be stored here so that the cause of the inactivation can be investigated.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILL/CLAIMS (#399)                PRIMARY PAYER BILL (#1.09)
+
+BPS CERTIFICATION (#9002313.31)   CERTIFICATION IEN (#4.06)
+
+BPS INSURER DATA (#9002313.78)    INSURER DATA:INSURER DATA (#.03)
+
+BPS NCPDP DELAY REASON CODE 
+                   (#9002313.29)  DELAY REASON CODE (#2.1)
+
+BPS NCPDP OVERRIDE (#9002313.511)  OVERRIDE CODE (#2.04)
+
+BPS REQUESTS (#9002313.77)        NEXT REQUEST (#.05)
+
+BPS TRANSACTION (#9002313.59)     ECME TRANSACTION RECORD (#.06)
+
+CLAIMS TRACKING NON-BILLABLE R 
+                   (#356.8)       CLOSE AFT REV REASON (#7.02)
+
+NEW PERSON (#200)                 USER WHO MADE THE REQUEST (#6.02)
+                                  USER WHO ACTIVATED REQUEST (#6.04)
+                                  USER WHO UPDATED THE REQUEST (#6.06)
+
+OUTPATIENT SITE (#59)             OUTPATIENT SITE (#1.02)
+
+PATIENT (#2)                      PATIENT (#1.15)
+
+PRESCRIPTION (#52)                RX NUMBER (#1.13)
+
+RATE TYPE (#399.3)                RATE TYPE (#1.08)
+
+
+File #9002313.77
+
+  Record Indexes:
+
+  AC (#804)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  By the Process Flag
+      Description:  This index is used to retrieve entries with certain PROCESS FLAG value.  
+        Set Logic:  S ^BPS(9002313.77,"AC",$E(X(1),1,30),$E(X(2),1,30),+$E(X(3),1,30),DA)=X(4)
+       Kill Logic:  K ^BPS(9002313.77,"AC",$E(X(1),1,30),$E(X(2),1,30),+$E(X(3),1,30),DA)
+       Whole Kill:  K ^BPS(9002313.77,"AC")
+             X(1):  PROCESS FLAG  (9002313.77,.04)  (Subscr 1)  (Len 2)  (forwards)
+             X(2):  KEY1  (9002313.77,.01)  (Subscr 2)  (Len 10)  (forwards)
+             X(3):  KEY2  (9002313.77,.02)  (Subscr 3)  (Len 3)  (forwards)
+             X(4):  ACTING COB  (9002313.77,.03)  (forwards)
+
+  AN (#805)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  The Next Request
+      Description:  This index is used to determine the Next Request that needs to be processed after the current is completed.  
+        Set Logic:  I X(3)<3 S ^BPS(9002313.77,"AN",DA,$E(X(2),1,30))=X(3)_"^"_X(4)_"^"_X(5)
+       Kill Logic:  K ^BPS(9002313.77,"AN",DA,$E(X(2),1,30))
+       Whole Kill:  K ^BPS(9002313.77,"AN")
+             X(1):  Computed Code: S X=DA
+                      (Subscr 1)
+             X(2):  NEXT REQUEST  (9002313.77,.05)  (Subscr 2)  (Len 30)  (forwards)
+             X(3):  PROCESS FLAG  (9002313.77,.04)  (Len 2)  (forwards)
+             X(4):  TRANSACTION TYPE  (9002313.77,1.04)  (Len 2)  (forwards)
+             X(5):  ACTING COB  (9002313.77,.03)  (Len 2)  (forwards)
+
+  D (#806)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  By Prescription #, Refill#, COB and Process Flag
+      Description:  This index is used to retrieve all requests by the Prescription #, the refill #, the type of the insurer (Primary/Secondary/Tertiary) and by the PROCESS FLAG value (request status).  
+        Set Logic:  S ^BPS(9002313.77,"D",X(1),X(2),X(3),X(4),DA)=""
+       Kill Logic:  K ^BPS(9002313.77,"D",X(1),X(2),X(3),X(4),DA)
+       Whole Kill:  K ^BPS(9002313.77,"D")
+             X(1):  KEY1  (9002313.77,.01)  (Subscr 1)  (forwards)
+             X(2):  KEY2  (9002313.77,.02)  (Subscr 2)  (forwards)
+             X(3):  ACTING COB  (9002313.77,.03)  (Subscr 3)  (forwards)
+             X(4):  PROCESS FLAG  (9002313.77,.04)  (Subscr 4)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,815 @@
+STANDARD DATA DICTIONARY #810.3 -- REMINDER EXTRACT SUMMARY FILE                                                                                                                                                                  MAY 20,2014@15:31:38  PAGE 1
+STORED IN ^PXRMXT(810.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                         (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file stores compliance totals found for a specific extract.  The extract Entries are read only and may be selected by number or extract name. The extract Summary entries are currently created from two types of processing: 1) Generic EXTRACT tool
+manual runs and automated runs 2) LREPI ENHANCE MANUAL RUN and LREPI NIGHTLY TASK on day 15 of each month 
+ 
+Generic extract summary entries: 
+ 
+The REMINDER EXTRACT SUMMARY NAME is the combination of a unique abbreviation.  When the extract is created from the EXTRACT manual and automated options, the REMINDER EXTRACT SUMMARY NAME will include Q, M, or Y (for quarterly, monthly, or yearly), nn
+for month or quarter, and yyyy for year. The following is an example of extract names: 
+     VA-IHD QUERI 2006 M2     
+     VA-IHD QUERI 2006 M1    
+     VA-IHD QUERI 2005 M12     
+ 
+National extract summary entries created from generic Reminder Extract functionality (not LREPI) are stored with a VA- prefixed name.  Each extract entry contains reminder compliance totals for each unique combination of patient list and reminder.  The
+extract will optionally store finding compliance totals if the TYPE OF TOTALS for the extract is "Compliance and Finding Totals". No patient specific data is stored in the extract summary file for generic extracts.  The patient lists (denominators) used
+to create the extract summary totals, for a particular reporting period, are available from Reminder Patient List options.  
+ 
+Generic extract summary entries will default to be purged after 5 years.  The automated purge status can be changed for a particular extract summary entry to retain the entry indefinitely.  
+ 
+LREPI extract summary entries: 
+ 
+The LREPI extract names use YY/MM representing the ending year and month of the extract date range, and the run date in the format YYMMDD. The date and time of the run is an identifier.  The following is an example of LREPI extract names.  
+    LREPI 00/05 061500     
+    LREPI 00/06 073100     
+    LREPI 00/07 081500   
+ 
+The LREPI extract entries assume all results are for the primary institution, and includes patient specific data with findings.  The LREPI extracts created are based on LREPI reporting criteria which is not available for generic reporting functionality.  
+ This file will maintain up to 36 extract entries for each type of extract.  After 36 entries, when a new entry is added, the oldest entry is deleted from the file.  Sites are asked to run the LREPI ENHANCE MANUAL RUN for months starting from 10/01/98
+through 8/31/00. This will seed the Emerging Pathogens Initiative (EPI) database with risk assessment data.  Subsequent updates to the EPI database will automatically occur monthly via the LREPI NIGHTLY TASK option. Sites will have up to 36 months of
+extracts.  This may be fewer than 36 months if the site runs extracts for the same month more than once.  Multiple extracts for the same month occur when the site runs the LREPI ENHANCE MANUAL RUN for a month to fix errors found by the receiving national
+database.  For LREPI runs, the receiving national database is the Emerging Pathogens Initiative (EPI) at the Austin  Automation Center (AAC).  
+ 
+An LREPI entry in the REMINDER EXTRACT SUMMARY file contains information that identifies the extract entry, the extract findings, and totals by finding item. The extract entry information includes the number, extract name, beginning and ending extract
+dates, person who ran the extract option, task number, total patients evaluated and total patients with findings.  The extract findings include a number (for ease of selecting a finding item), patient, reminder term, value, alternate id, finding date,
+related visit (if PCE data), encounter type (I/O), result, value, drug and DSUP (days supply).  These extract finding fields are returned by the reminder evaluation logic.  The result, value, and drug are all free text fields without specific input and
+output transforms because the data comes from the source VistA data it came from, with read only access on this file.  The alternate id is specific to the LREPI extracts.  A number value in the alternate id field indicates that the finding is for 
+Hepatitis C risk assessment.  The alternate id will be used for statistical purposes in the EPI database.     
+ 
+The flow of LREPI processing is as follows: 1) LREPI gathers Lab Search/Extract patients and findings 2) LREPI gets all patients and findings from a reminder extract evaluation process given the extract date range and reminder list. (The reminder list is
+from a new LREPI file 69.51).  2.1) The reminder extract evaluation logic uses medications mapped to reminder terms in the VA-NATIONAL EPI RX EXTRACT reminder, and the extract date range, to call new inpatient pharmacy and outpatient pharmacy extract
+logic to get patient pharmacy findings.  2.2) The reminder extract evaluation uses the remaining reminder criteria to build a list of patients with findings from the following files in the extract period: 
+  LAB DATA           (#63) 
+  V POV              (#9000010.07) 
+  V HEALTH FACTORS   (#9000010.23) 
+  V PATIENT ED       (#9000010.16) 
+  V EXAM             (#9000010.13) 2.3) The list of patients is used to evaluate the VA-HEP C RISK ASSESSMENT and VA-NATIONAL EPI LAB EXTRACT reminders.  The findings within the extract date range are added as Extract Findings in the REMINDER EXTRACT
+SUMMARY file and then returned to the Lab Search/Extract process.  3) The Lab Search/Extract process uses the final list of patients and findings to create HL7 messages. Each reminder finding for a patient is used to create a DSP segment.  Pharmacy 
+findings contain both a DSP and ZXE segment.  4) When the AAC processes the messages, error messages are returned for each message with the SSN related to the erroneous data. Note: Messages with errors are not added to the EPI database.  When erroneous
+data is  fixed at the site, the LREPI ENHANCE MANUAL RUN is run for the month with the error to transmit the entire month's data again.  The new data for each patient and finding date  replaces the old patient and finding date's data.  5) Two new options
+are available on the REMINDER REPORTS menu that provide total counts by finding item, as well as a detailed list by finding item and SSN.  6) Sites are encouraged to provide FileMan read-only access to the REMINDER EXTRACT SUMMARY file (810.3) for those 
+who validate the extract data, the Hepatitis C implementation team, and Hepatitis C Coordinators responsible for monitoring Hepatitis C activities at each site.  
+ 
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: EXTRACT DATE (#.06)
+
+CROSS
+REFERENCED BY: HL7 MESSAGE ID(AHLID)
+
+INDEXED BY:    VISIT (AV), NAME (B), EXTRACT DEFINITION & EXTRACT DATE (C), EXTRACT DEFINITION & REPORTING YEAR & REPORTING PERIOD (D)
+
+
+810.3,.001    NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 19, 2004 
+              HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the extract summary number.  
+
+
+810.3,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>64!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      MAY 04, 2006 
+              HELP-PROMPT:      Answer must be 3-64 characters in length. 
+              DESCRIPTION:      The NAME is the combination of a unique abbreviations for the type of extract.  The file contains different extract types: 
+                                                                 
+                                1) EPI - Hep C Extract 
+                                                                 
+                                Extracts of this type are prefixed LREPI. The following is an example of EPI lookup information: 
+                                                                 
+                                LREPI 00/05 061500 LREPI 00/06 073100 LREPI 00/07 081500                                      The YY/MM represents the ending year and month of the extract date range, and the run date in the format YYMMDD. The date and
+                                time of the run is an identifier.  
+                                                                 
+                                2) VA- generic entries (IHD and MH QUERI) 
+                                                                 
+                                Extracts of this type are prefixed VA-IHD or VA-MH. The following is an example of IHD Look-up information: 
+                                                                 
+                                VA-IHD QUERI 2003 M2/01 VA-IHD QUERI 2003 M3/01 VA-IHD QUERI 2003 M4/01  
+                                                                 
+                                The reporting period of the extract run is included in the extract name. Since a particular reporting period can be rerun, each entry for the same reporting period is assigned a sequential entry number: /01 represents the
+                                first entry for the reporting period.  
+                                 
+
+              FIELD INDEX:      B (#506)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  "B" cross-reference for .01
+                    Set Logic:  S ^PXRMXT(810.3,"B",$E(X,1,64),DA)=""
+                   Kill Logic:  K ^PXRMXT(810.3,"B",$E(X,1,64),DA)
+                   Whole Kill:  K ^PXRMXT(810.3,"B")
+                         X(1):  NAME  (810.3,.01)  (Subscr 1)  (Len 64)  (forwards)
+
+
+810.3,.02     BEGINNING DATE         0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 08, 2000 
+              HELP-PROMPT:      Enter the extract beginning date range. 
+              DESCRIPTION:
+                                This is the starting date that was used for the extract.  
+
+
+810.3,.03     ENDING DATE            0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 08, 2000 
+              HELP-PROMPT:      Enter the extract ending date range. 
+              DESCRIPTION:
+                                This is the ending date that was used for the extract.  
+
+
+810.3,.04     TASK #                 0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<3) X
+              LAST EDITED:      JUL 08, 2000 
+              HELP-PROMPT:      Enter the task number of the job creating the extract. 
+              DESCRIPTION:
+                                This field identifies the task that was run to create the extract.  
+
+
+810.3,.05     EXTRACT OWNER          0;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 08, 2000 
+              HELP-PROMPT:      Enter the person who ran the extract. 
+              DESCRIPTION:
+                                This is the person who ran the extract job. 
+
+
+810.3,.06     EXTRACT DATE           0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 09, 2002 
+              HELP-PROMPT:      Enter the date/time the extract entry was created. 
+              DESCRIPTION:
+                                This is the date/time that the extract entry was added to this file.  
+
+              RECORD INDEXES:   C (#507)
+
+810.3,.07     PATIENTS EVALUATED     0;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 2000 
+              HELP-PROMPT:      Enter the total count of patients with findings. 
+              DESCRIPTION:
+                                This is the total number of patients who had findings for the reminder and date range criteria selected.  
+
+
+810.3,.08     PATIENTS WITH FINDINGS 0;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 09, 2000 
+              HELP-PROMPT:      Enter the number of findings extracted. 
+              DESCRIPTION:
+                                This is the total count of findings that met the extract criteria in the reminders and date range.  
+
+
+810.3,1       EXTRACT DEFINITION     4;1 POINTER TO REMINDER EXTRACT DEFINITION FILE (#810.2)
+
+              LAST EDITED:      MAY 04, 2006 
+              DESCRIPTION:      This is a pointer to the EXTRACT DEFINITION file. This shows what extract was run to create this extract summary.  
+                                 
+
+              RECORD INDEXES:   C (#507), D (#508)
+
+810.3,2       TYPE OF TOTALS         4;2 SET
+
+                                'CT' FOR COMPLIANCE TOTALS ONLY; 
+                                'CF' FOR COMPLIANCE AND FINDING TOTALS; 
+              LAST EDITED:      MAY 04, 2006 
+              DESCRIPTION:      This is the type of totals requested for the extract parameter that was run to create this extract summary. An extract definition must contain Counting Rules in order for Finding Totals to be accumulated.  
+                                 
+
+
+810.3,3       REPORTING PERIOD       4;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>12)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 04, 2006 
+              HELP-PROMPT:      Type a Number between 0 and 12, 0 Decimal Digits 
+              DESCRIPTION:      This field is used to define the period of time that the extract was run. The period can be for a calendar Month or quarter.  
+                                 
+
+              RECORD INDEXES:   D (#508)
+
+810.3,4       REPORTING YEAR         4;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>2050)!(X<2000)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 20, 2004 
+              HELP-PROMPT:      Type a Number between 2000 and 2050, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is for the year that the extract was run against.  
+
+              RECORD INDEXES:   D (#508)
+
+810.3,5       MANUAL/AUTOSCHEDULED FLAG 4;5 SET
+
+                                'M' FOR MANUAL; 
+                                'A' FOR AUTOSCHEDULED; 
+              LAST EDITED:      JUL 08, 2002 
+              DESCRIPTION:
+                                This field indicates if the extract summary was created from an autoscheduled extract or as the result of a manual run.  
+
+
+810.3,6       HL7 MESSAGE ID         5;0 Multiple #810.36
+
+              DESCRIPTION:
+                                This multiple contains each HL7 ID for every time this extract summary was transmitted to Austin.  
+
+
+810.36,.01      HL7 MESSAGE ID         0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+                LAST EDITED:      JAN 18, 2006 
+                HELP-PROMPT:      Answer must be 3-20 characters in length 
+                DESCRIPTION:
+                                  This is the HL7 id for the HL7 message that was transmitted to Austin.  
+
+                CROSS-REFERENCE:  810.36^B 
+                                  1)= S ^PXRMXT(810.3,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMXT(810.3,DA(1),5,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  810.3^AHLID 
+                                  1)= S ^PXRMXT(810.3,"AHLID",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PXRMXT(810.3,"AHLID",$E(X,1,30),DA(1),DA)
+                                  This crossreference will index the hl7 message id numbers for each extract.  
+                                   
+
+
+
+810.36,.02      DATE CREATED           0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      APR 25, 2002 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  This is the date/time the HL7 message was created. 
+
+
+810.36,.03      MESSAGE STATUS         0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>45!($L(X)<3) X
+                LAST EDITED:      NOV 21, 2005 
+                HELP-PROMPT:      Answer must be 3-45 characters in length 
+                DESCRIPTION:      This field contains the status of the message.  The status is determined by the ACK messages that are returned from the Austin Automation Center. It should state that the message is waiting to be processed or that it has
+                                  been processed.  
+
+
+
+
+810.3,7       REPORT FREQUENCY       4;6 SET
+
+                                'M' FOR MONTHLY; 
+                                'Q' FOR QUARTERLY; 
+                                'Y' FOR YEARLY; 
+              LAST EDITED:      OCT 01, 2002 
+
+810.3,10      EXTRACT FINDINGS       1;0 POINTER Multiple #810.31
+
+              DESCRIPTION:      This is the LREPI patient findings found during reminder extract processing for the specified date range.  Entries can be selected based on the NUMBER on the EXTRACT FINDINGS multiple or the Patient.  
+                                 
+
+
+810.31,.001     NUMBER                   NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 20, 2004 
+                HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the sequence in which the entries are added to the Reminder Extract file.  
+
+
+810.31,.01      PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Required) (Multiply asked)
+
+                LAST EDITED:      JUL 17, 2000 
+                HELP-PROMPT:      Enter the patient who had the finding. 
+                DESCRIPTION:
+                                  This is the patient who had the extract finding.  
+
+                CROSS-REFERENCE:  810.31^B 
+                                  1)= S ^PXRMXT(810.3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMXT(810.3,DA(1),1,"B",$E(X,1,30),DA)
+
+
+810.31,.03      TERM                   0;3 POINTER TO REMINDER TERM FILE (#811.5)
+
+                LAST EDITED:      JUL 08, 2000 
+                HELP-PROMPT:      Enter the term that is related to the finding. 
+                DESCRIPTION:
+                                  This is the reminder term related to the finding.  This field will only be defined if the reminder contained a reminder term.  
+
+
+810.31,.04      FINDING ITEM           0;4        VARIABLE POINTER
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   50   5    DR           n   DRUG 
+          9999999.09    10   ED           n   EDUCATION TOPIC 
+          9999999.15    15   EX           n   EXAM 
+          9999999.64    20   HF           n   HEALTH FACTOR 
+          9999999.14    25   IM           n   IMMUNIZATION 
+                   60   30   LT           n   LABORATORY TEST 
+                   601  35   MH           n   MENTAL HEALTH INSTRUMENT 
+              101.43    40   OI           n   ORDERABLE ITEM 
+                   71   45   RP           n   RADIOLOGY PROCEDURE 
+               811.4    50   CF           n   REMINDER COMPUTED FINDING 
+               811.2    55   TX           n   REMINDER TAXONOMY 
+               811.5    60   RT           n   REMINDER TERM 
+          9999999.28    65   ST           n   SKIN TEST 
+              50.605    70   DC           n   VA DRUG CLASS 
+                   50.6 75   DG           n   VA GENERIC 
+              120.51    80   VM           n   VITAL MEASUREMENT 
+                                         
+                LAST EDITED:      JUL 09, 2000 
+                DESCRIPTION:
+                                  This is a variable pointer that contains the possible findings from a reminder evaluation.  
+
+
+810.31,.05      ALTERNATE ID           0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUL 08, 2000 
+                HELP-PROMPT:      Enter the alternate identifier related to the reminder term. 
+                DESCRIPTION:      This is an alternate identifier related to the finding's reminder term.  The ALTERNATE ID is used by the national database.  For example, all findings found for reminder terms related to risk assessment will have a 
+                                  number from 1-7 as its identifier. 
+
+
+810.31,.06      FINDING DATE           0;6 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 08, 2000 
+                DESCRIPTION:      This is the date related to the finding. For PCE data, this is the date and time of the visit. For laboratory data, this is the accession date.  For Outpatient Pharmacy data, this is the fill date, refill date, or 
+                                  partial fill date.   For Inpatient Pharmacy, this is the order date, or renewal date.  
+
+
+810.31,.07      VISIT                  0;7 POINTER TO VISIT FILE (#9000010)
+
+                LAST EDITED:      FEB 05, 2004 
+                HELP-PROMPT:      Enter the visit related to the finding (optional). 
+                DESCRIPTION:
+                                  This is the visit date from the VISIT File that is related to the finding.  This is only defined when the findings are from PCE.  
+
+                CROSS-REFERENCE:  810.31^AC^MUMPS 
+                                  1)= D ADD^AUPNVSIT
+                                  2)= D SUB^AUPNVSIT
+                                  This cross-reference adds and subtracts from the Dependent Entry Count in the VISIT file.  
+
+
+                FIELD INDEX:      AV (#505)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#810.3)
+                    Short Descr:  VISIT, TOP FILE NUMBER IEN, SUB FILE IEN
+                    Description:  Visit Pointer Indes 
+                      Set Logic:  S ^PXRMXT(810.3,"AV",X,DA(1),DA)=""
+                     Kill Logic:  K ^PXRMXT(810.3,"AV",X,DA(1),DA)
+                     Whole Kill:  K ^PXRMXT(810.3,"AV")
+                           X(1):  VISIT  (810.31,.07)  (Subscr 1)  (forwards)
+
+
+810.31,.08      ENCOUNTER TYPE         0;8 SET
+
+                                  'I' FOR INPATIENT; 
+                                  'O' FOR OUTPATIENT; 
+                LAST EDITED:      AUG 29, 2000 
+                HELP-PROMPT:      Enter I for Inpatient or O for Outpatient encounter type. 
+                DESCRIPTION:      This is an ENCOUNTER TYPE that summarizes the clinical activity as Inpatient or Outpatient activity.  This ENCOUNTER TYPE is based on the Emerging Pathogens Initiative (EPI) definition of ENCOUNTER TYPES. The VADPT call
+                                  to determine inpatient status on a date is used to determine the Inpatient or Outpatient status.  
+
+
+810.31,1        RESULT                 1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      JUL 09, 2000 
+                HELP-PROMPT:      Enter the RESULT for the finding from reminder evaluation. 
+                DESCRIPTION:      This is the RESULT for a finding that is returned by the reminder evaluation "RESULT" node.  See Clinical Reminder documentation for explanations of the RESULT for each type of finding.  The result from the clinical
+                                  reminder evaluation is stored as freetext in this field. No input and output transforms are used on this field.  
+
+
+810.31,2        VALUE                  1;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      JUL 08, 2000 
+                HELP-PROMPT:      Enter the finding's VALUE from reminder evaluation. 
+                DESCRIPTION:      This is the VALUE for a finding that is returned in the reminder evaluation "VALUE" node.  See Clinical Reminder documentation for explanations of the VALUE for each type of finding.  This VALUE is stored as freetext. 
+                                  No input and output transforms are used on this field.  
+
+
+810.31,3        DRUG                   1;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                LAST EDITED:      JUL 08, 2000 
+                HELP-PROMPT:      Enter the local formulary drug name. 
+                DESCRIPTION:
+                                  This is the freetext name from the local formulary file for a drug finding.  
+
+
+810.31,4        DSUP                   1;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 08, 2000 
+                HELP-PROMPT:      Enter the days supply for pharmacy findings. 
+                DESCRIPTION:      This is the days supply that the medication covers if the finding is an outpatient medication. Inpatient pharmacy medications do not normally have a days supply, but since the EPI requires a value in this field, the days 
+                                  supply is calculated by subtracting the start date from the stop date of the order.  
+
+
+
+
+810.3,20      LREPI FINDING TOTALS   2;0          VARIABLE POINTER  Multiple #810.32
+              LAST EDITED:      MAY 04, 2006 
+              DESCRIPTION:      This is the total count for each finding item extracted during LREPI processing..  
+                                 
+
+              TECHNICAL DESCR:
+                                 
+
+
+810.32,.01      FINDING ITEM           0;1        VARIABLE POINTER
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   50   5    DR           n   DRUG 
+          9999999.09    10   ED           n   EDUCATION TOPICS 
+          9999999.15    15   EX           n   EXAM 
+          9999999.64    20   HF           n   HEALTH FACTOR 
+          9999999.14    25   IM           n   IMMUNIZATION 
+                   60   30   LT           n   LABORATORY TEST 
+                   601  35   MH           n   MENTAL HEALTH INSTRUMENT 
+              101.43    40   OI           n   ORDERABLE ITEM 
+                   71   45   RP           n   RADIOLOGY PROCEDURE 
+               811.4    50   CF           n   REMINDER COMPUTED FINDING 
+               811.2    55   TX           n   REMINDER TAXONOMY 
+               811.5    60   RT           n   REMINDER TERM 
+          9999999.28    65   ST           n   SKIN TEST 
+              50.605    70   DC           n   VA DRUG CLASS 
+                   50.6 75   DG           n   VA GENERIC 
+              120.51    80   VM           n   VITAL MEASUREMENT 
+                                         
+                LAST EDITED:      JUL 09, 2000 
+                DESCRIPTION:
+                                  This is the FINDING ITEM returned by reminder evaluation.  
+
+                CROSS-REFERENCE:  810.32^B 
+                                  1)= S ^PXRMXT(810.3,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMXT(810.3,DA(1),2,"B",$E(X,1,30),DA)
+                                  3)= Required Index for Variable Pointer
+
+
+810.32,.02      FINDING COUNT          0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 20, 2004 
+                HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the count of how many times this finding item occurred in the extract.  
+
+
+810.32,.03      UNIQUE PATIENT COUNT   0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 01, 2000 
+                HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the count of patients with unique findings in the extract.  An example of duplicate findings for a patient is multiple fills for a particular medication.  
+
+
+
+
+810.3,30      COMPLIANCE TOTALS      3;0 Multiple #810.33
+
+              LAST EDITED:      JUN 20, 2002 
+              DESCRIPTION:      Used for Generic Extract reporting.  
+                                 
+
+              TECHNICAL DESCR:
+                                 
+
+              IDENTIFIED BY:    REMINDER(#.02), STATION(#.03)
+
+810.33,.01      EXTRACT SEQUENCE       0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)'=3!(+X=0) X I $G(X)]"" K:$D(^PXRM(810.3,DA(1),30,"B",X)) X
+                LAST EDITED:      OCT 11, 2002 
+                HELP-PROMPT:      Enter unique sequence 001 - 999 (length 3 preceded by zeroes) 
+                DESCRIPTION:
+                                  Each reminder, station, patient list combination is allocated a unique sequence number.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  810.33^B 
+                                  1)= S ^PXRMXT(810.3,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMXT(810.3,DA(1),3,"B",$E(X,1,30),DA)
+
+
+810.33,.02      REMINDER               0;2 POINTER TO REMINDER DEFINITION FILE (#811.9)
+
+                LAST EDITED:      OCT 11, 2002 
+                DESCRIPTION:
+                                  This is the reminder definition for which compliance totals are being created.  
+
+
+810.33,.03      STATION                0;3 POINTER TO INSTITUTION FILE (#4)
+
+                LAST EDITED:      OCT 11, 2002 
+                DESCRIPTION:
+                                  Reminder compliance totals are accumulated by the patients' primary station.  
+
+
+810.33,.04      PATIENT LIST           0;4 POINTER TO REMINDER PATIENT LIST FILE (#810.5)
+
+                LAST EDITED:      OCT 17, 2005 
+                DESCRIPTION:      The patient list is a collection of patient who should have the extract run against them, for example all patients seen in the last month that have a diagnosis of IHD. The patient list is built by finding patients who
+                                  meet the list rules defined in file# 810.4.  
+
+
+810.33,2        TOTAL PATIENTS EVALUATED 0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 11, 2002 
+                HELP-PROMPT:      Type a Number between 0 and 99999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the total number of patients in the patient list with this primary station.  
+
+
+810.33,3        TOTAL PATIENTS APPLICABLE 0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 11, 2002 
+                HELP-PROMPT:      Type a Number between 0 and 99999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of patients in the patient list with this primary station for whom the reminder was applicable.  
+
+
+810.33,4        TOTAL PATIENTS NOT APPLICABLE 0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 11, 2002 
+                HELP-PROMPT:      Type a Number between 0 and 99999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of patients in the patient list with this primary station for whom the reminder was not applicable.  
+
+
+810.33,5        TOTAL PATIENTS DUE     0;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      AUG 20, 2004 
+                HELP-PROMPT:      Type a number between 0 and 99999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of patients in the patient list with this primary station for whom the reminder was applicable and due.  
+
+
+810.33,6        TOTAL PATIENTS NOT DUE 0;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 20, 2004 
+                HELP-PROMPT:      Type a Number between 0 and 99999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of patients in the patient list with this primary station for whom the reminder was applicable and not due.  
+
+
+810.33,10       FINDING TOTALS         1;0 Multiple #810.331
+
+                DESCRIPTION:      Used for Generic Extract reporting.  
+                                   
+
+                IDENTIFIED BY:    REMINDER TERM(#.02)
+
+810.331,.01       FINDING SEQUENCE       0;1 FREE TEXT (Multiply asked)
+
+                  INPUT TRANSFORM:  K:$L(X)'=3!(+X=0) X I $G(X)]"" K:$D(^PXRM(810.3,DA(2),30,DA(1),10,"B",X)) X
+                  LAST EDITED:      OCT 11, 2002 
+                  HELP-PROMPT:      Enter unique sequence 001 - 999 (length 3 preceded by zeroes) 
+                  DESCRIPTION:
+                                    Each extracted finding total is allocated a unique sequence number.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  810.331^B 
+                                    1)= S ^PXRMXT(810.3,DA(2),3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^PXRMXT(810.3,DA(2),3,DA(1),1,"B",$E(X,1,30),DA)
+
+
+810.331,.02       REMINDER TERM          0;2 POINTER TO REMINDER TERM FILE (#811.5)
+
+                  LAST EDITED:      OCT 11, 2002 
+                  DESCRIPTION:
+                                    This is the REMINDER TERM for which totals are being accumulated. The Extract Parameters (#810.2,#810.7,#810.8) define which terms should be extracted for each reminder/patient list combination.  
+
+
+810.331,.03       FINDING TOTAL TYPE     0;3 SET
+
+                                    'MRF' FOR MOST RECENT FINDING COUNT; 
+                                    'MRFP' FOR MOST RECENT FINDING PATIENT COUNT; 
+                                    'UR' FOR UTILIZATION IN REPORTING PERIOD FINDING COUNT; 
+                  LAST EDITED:      OCT 11, 2002 
+                  DESCRIPTION:
+                                    This code indicates the type of count.  
+
+
+810.331,.04       GROUP NAME             0;9 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>64!($L(X)<3) X
+                  LAST EDITED:      OCT 11, 2002 
+                  HELP-PROMPT:      Answer must be 3-64 characters in length 
+                  DESCRIPTION:
+                                    This is the finding group name (#810.8).  
+
+
+810.331,.05       REMINDER STATUS        0;10 SET
+
+                                    'T' FOR TOTAL PATIENTS; 
+                                    'A' FOR APPLICABLE PATIENTS; 
+                                    'D' FOR DUE PATIENTS; 
+                                    'N' FOR NOT DUE PATIENTS; 
+                  LAST EDITED:      OCT 11, 2002 
+                  DESCRIPTION:
+                                    This code indicates that totals are only for patients with a specific reminder evaluation status.  
+
+
+810.331,1         TOTAL COUNT            0;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1.N) X
+                  LAST EDITED:      OCT 11, 2002 
+                  HELP-PROMPT:      Type a number between 0 and 99999999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the count of findings for all patients in the patient list with this primary station.  
+
+
+810.331,2         APPLICABLE COUNT       0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1.N) X
+                  LAST EDITED:      OCT 11, 2002 
+                  HELP-PROMPT:      Type a number between 0 and 99999999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the count of findings for all patients in the patient list with this primary station for whom the reminder is applicable.  
+
+
+810.331,3         NOT APPLICABLE COUNT   0;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1.N) X
+                  LAST EDITED:      OCT 11, 2002 
+                  HELP-PROMPT:      Type a number between 0 and 99999999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the count of findings for all patients in the patient list with this primary station for whom the reminder is not applicable.  
+
+
+810.331,4         DUE COUNT              0;7 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1.N) X
+                  LAST EDITED:      OCT 11, 2002 
+                  HELP-PROMPT:      Type a number between 0 and 99999999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the count of findings for all patients in the patient list with this primary station for whom the reminder is applicable and due.  
+
+
+810.331,5         NOT DUE COUNT          0;8 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1.N) X
+                  LAST EDITED:      OCT 11, 2002 
+                  HELP-PROMPT:      Type a number between 0 and 99999999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the count of findings for all patients in the patient list with this primary station for whom the reminder is applicable and not due.  
+
+
+810.331,6         UNIQUE APPLICABLE PATIENT LIST 1;0 POINTER Multiple #810.3316 (Add New Entry without Asking)
+
+                  LAST EDITED:      SEP 30, 2005 
+
+810.3316,.01        UNIQUE APPLICABLE PATIENT 0;1 POINTER TO PATIENT FILE (#2)
+
+                    LAST EDITED:      OCT 17, 2005 
+                    DESCRIPTION:      This multiple stores a list of patients from the patient list who have an applicable status for the extract finding evaluation. The applicable patient list is a subset of the patients on the patient list who have an 
+                                      applicable result to the finding item in the extract, for example from the list of patients in the patients list which patients have a LDL value greater then 120.  
+
+                    CROSS-REFERENCE:  810.3316^B 
+                                      1)= S ^PXRMXT(810.3,DA(3),3,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)=""
+                                      2)= K ^PXRMXT(810.3,DA(3),3,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)
+
+
+
+
+
+
+
+
+810.3,50      AUTOMATICALLY PURGE    50;1 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUL 19, 2005 
+              DESCRIPTION:
+                                This field is use to determine if the Extract Summary should be automatically purge after five years. This field will be check by the Reminder Extract code that runs monthly when running the National Extract.  
+
+
+810.3,100     CLASS                  100;1 SET
+
+                                'N' FOR NATIONAL; 
+                                'V' FOR VISN; 
+                                'L' FOR LOCAL; 
+              LAST EDITED:      SEP 26, 2005 
+              DESCRIPTION:
+                                This is the CLASS of the extract summary. Possible classes are "N" for national, "V" for VISN, and "L" for local. National extract summaries cannot be edited by sites.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  COMPLIANCE TOTALS:STATION (#.03)
+
+NEW PERSON (#200)                 EXTRACT OWNER (#.05)
+
+PATIENT (#2)                      EXTRACT FINDINGS:PATIENT (#.01)
+                                  UNIQUE APPLICABLE PATIENT LIST:UNIQUE APPLICABLE PATIENT (#.01)
+
+REMINDER DEFINITION (#811.9)      COMPLIANCE TOTALS:REMINDER (#.02)
+
+REMINDER EXTRACT DEFINITION 
+                   (#810.2)       EXTRACT DEFINITION (#1)
+
+REMINDER PATIENT LIST (#810.5)    COMPLIANCE TOTALS:PATIENT LIST (#.04)
+
+REMINDER TERM (#811.5)            EXTRACT FINDINGS:TERM (#.03)
+                                  FINDING TOTALS:REMINDER TERM (#.02)
+
+VISIT (#9000010)                  EXTRACT FINDINGS:VISIT (#.07)
+
+
+File #810.3
+
+  Record Indexes:
+
+  C (#507)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  C INDEX
+        Set Logic:  S ^PXRMXT(810.3,"C",X(1),X(2),DA)=""
+       Kill Logic:  K ^PXRMXT(810.3,"C",X(1),X(2),DA)
+       Whole Kill:  K ^PXRMXT(810.3,"C")
+             X(1):  EXTRACT DEFINITION  (810.3,1)  (Subscr 1)  (forwards)
+             X(2):  EXTRACT DATE  (810.3,.06)  (Subscr 2)  (forwards)
+
+  D (#508)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  C INDEX
+        Set Logic:  S ^PXRMXT(810.3,"D",X(1),X(2),X(3),DA)=""
+       Kill Logic:  K ^PXRMXT(810.3,"D",X(1),X(2),X(3),DA)
+       Whole Kill:  K ^PXRMXT(810.3,"D")
+             X(1):  EXTRACT DEFINITION  (810.3,1)  (Subscr 1)  (forwards)
+             X(2):  REPORTING YEAR  (810.3,4)  (Subscr 2)  (forwards)
+             X(3):  REPORTING PERIOD  (810.3,3)  (Subscr 3)  (backwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PXRM EXTRACT EPI FINDING HDR  AUG 01, 2000@01:48  USER #0                                                                                                                                                                                                    @
+     This option is used to print a header describing the extract reporting
+     date range, extract date, task and total patients who had reminders
+     evaluated as well as total patients with findings.
+      
+     The Extract findings are based on reminder terms in the 3 Hepatitis C
+     national reminders. 
+      - The pharmacy medications mapped to reminder terms are used to get
+     inpatient orders and renewals and outpatient fills, refills, and partial
+     fills.
+      - The laboratory tests mapped to reminder terms are used to search the
+     Lab results to identify target patients with data.
+      - The Health Factors mapped to reminder terms are used to identify target
+     patients with data (V HEALTH FACTOR).
+      - The Education Topics mapped to reminder terms are used to identify
+     target patients with data (V PATIENT ED).
+      - The Exams mapped to reminder terms are used to identify target
+     patients with data (V EXAM).
+      - The diagnosis related to taxonomies mapped to reminder terms are
+     used to identify target patients with encounters treating the diagnosis 
+     (V POV).
+PXRM EXTRACT EPI FINDING LIST AUG 01, 2000@00:37  USER #0                                                                                                                                                                       [PXRM EXTRACT EPI FINDING HDR]
+     This template is used to print reminder extract results from the LREPI
+     ENHANCE MANUAL RUN and LREPI NIGHTLY TASK. The template lists finding
+     items and SSNs.
+PXRM EXTRACT EPI FINDING TOT  DEC 06, 2002@14:12  USER #0                                                                                                                                                                              REMINDER EXTRACT TOTALS
+     This print template is used to print totals for finding items found for an
+     extract.
+PXRM EXTRACT QUERI TOTALS     DEC 06, 2002@17:11  USER #0                                                                                                                                                                        REMINDER EXTRACT SUMMARY LIST
+PXRM EXTRACT SUMMARY HDR      JUL 09, 2000@18:22  USER #0                                                                                                                                                                                                    @
+     Not distributed. This is a potential future template for users.
+PXRM EXTRACT SUMMARY PRNT     JUL 18, 2000@09:04  USER #0                                                                                                                                                                           [PXRM EXTRACT SUMMARY HDR]
+     Not distributed. This is a potential future template for users.
+
+SORT TEMPLATE(S):
+PXRM EXTRACT EPI BY FIND_PT   AUG 15, 2000@02:55  USER #0    
+SORT BY: NAME//    (User is asked range)
+  WITHIN NAME, SORT BY: EXTRACT FINDINGS;S1//
+  EXTRACT FINDINGS SUB-FIELD: FINDING ITEM// (FINDING ITEM not null)
+    WITHIN FINDING ITEM, SORT BY: EXTRACT FINDINGS//
+    EXTRACT FINDINGS SUB-FIELD: PATIENT:SSN// (PATIENT:SSN not null)
+     This sort template sorts the reminder extract findings for an extract
+     based on finding item and social security number.  The social security
+     number is what the Austin Automation Center (AAC) returns in error
+     messages if there are problems with the extract data. This report may be
+     useful to help you find problem data based on the social security
+     number in the AAC error messages.
+
+
+FORM(S)/BLOCK(S):

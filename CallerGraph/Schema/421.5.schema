@@ -1,0 +1,1070 @@
+STANDARD DATA DICTIONARY #421.5 -- INVOICE TRACKING FILE                                                                                                                                                                          MAY 20,2014@15:34:13  PAGE 1
+STORED IN ^PRCF(421.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to record payment invoices which require Control Point sign-off.  
+
+
+IDENTIFIED BY: 
+         "ZA": W "   ",$P(^(0),U,3) W:$D(^(2)) "   ",@("$P($P($C(59)_$S($D(^DD(421.5,50,0)):$P(^(0),U,3),1:0)_$E("_DIC_"Y,0),0),$C(59)_$P(^(2),U,1)_"":"",2),$C(59),1)"),"   ",$P(^(2),U,3)
+
+CROSS
+REFERENCED BY: DATE DUE IN FISCAL(AC), ID NUMBER(AD), STATUS(AE), CERTIFIED BY SIG DATE/TIME(AF), ID NUMBER(B), VENDOR(C), EXPANDED PO NUMBER(D), PURCHASE ORDER POINTER(E), FMS PAYMENT VOUCHER #(F)
+
+421.5,.01     ID NUMBER              0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X I $D(X) S DINUM=X
+              LAST EDITED:      SEP 08, 1989 
+              HELP-PROMPT:      Type a Number between 1 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the ID number of certified invoices.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  421.5^B 
+                                1)= S ^PRCF(421.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRCF(421.5,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  421.5^AD^MUMPS 
+                                1)= S $P(^PRCF(421.5,DA,2),"^",4)="FISCAL"
+                                2)= Q
+                                This MUMPS cross-reference to the Transaction Number sets the initial invoice location to Fiscal.  
+
+
+
+421.5,.4      STATION NUMBER         1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<3)!'(X?3.4N) X
+              LAST EDITED:      JUL 06, 1989 
+              HELP-PROMPT:      ANSWER MUST BE 3-4 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the station number of the service generating the invoice.  
+
+
+421.5,.5      DOCUMENT LOCATOR NUMBER 0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>11!($L(X)<11)!'(X?11N) X
+              LAST EDITED:      JUL 24, 1989 
+              DESCRIPTION:
+                                This is the system generated number for tracking purposes at Austin.  
+
+              EXECUTABLE HELP:  D DIS^PRCFDLN
+
+421.5,.6      CERTIFICATION REQUIRED? 0;27 SET (Required)
+
+              Certification Required?                                                                                          
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 05, 1989 
+              DESCRIPTION:
+                                This field indicates whether service certification is required for this invoice.  
+
+
+421.5,1       INVOICE/BILL NUMBER    0;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>16!($L(X)<1) X
+              LAST EDITED:      JUL 24, 1989 
+              HELP-PROMPT:      ANSWER MUST BE 1-16 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the invoice/bill number assigned by the vendor.  
+
+
+421.5,2       DATE OF INVOICE        0;4 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $G(X)>DT D EN^DDIOL("Future date is NOT allowed") K X
+              LAST EDITED:      JUL 21, 1994 
+              DESCRIPTION:
+                                This is the date of the vendor invoice.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+421.5,3       DATE INVOICE RECEIVED  0;5 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $G(X)>DT D EN^DDIOL("Future date is NOT allowed") K X
+              LAST EDITED:      JUL 21, 1994 
+              DESCRIPTION:
+                                This is the date the invoice was received in Fiscal Service.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+421.5,4       PROMPT PAY TYPE        0;6 SET (Required)
+
+                                'A' FOR NORMAL; 
+                                'C' FOR CONTRACT; 
+                                'D' FOR DAIRY; 
+                                'E' FOR EXEMPT; 
+                                'I' FOR FEE WITH INTEREST; 
+                                'M' FOR MEAT; 
+                                'N' FOR FEE WITH NO INTEREST; 
+                                'O' FOR OLDER PAYMENT; 
+                                'P' FOR PRODUCE; 
+                                'R' FOR RECURRING PAYMENTS; 
+                                'V' FOR PRIME VENDORS; 
+                                'X' FOR PAY IMMEDIATE IFCAP; 
+                                'Z' FOR PRE PROMPT PAY ORDERS; 
+              LAST EDITED:      NOV 06, 2007 
+              DESCRIPTION:
+                                This field indicates the prompt pay type of the invoice.  
+
+
+421.5,4.5     PURCHASE ORDER NUMBER  1;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  D PO^PRCFDE1
+              LAST EDITED:      AUG 15, 1989 
+              HELP-PROMPT:      Enter PO number, Vendor, Fund Control Point, Method of Processing, Inventory/Distribution Point or Requisition Number. 
+              DESCRIPTION:
+                                This is the IFCAP PO number in expanded form, i.e. 503-A10001.  
+
+              EXECUTABLE HELP:  S X="?",DIC=442,DIC("S")="I +^(0)=$G(PRC(""SITE""))",DIC(0)="QME" D ^DIC K DIC Q
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the PURCHASE ORDER POINTER field of the INVOICE TRACKING File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^421.5^52 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(421.5,4.5,1,1,1.1) X ^DD(421.5,4.5,1,1,1.4)
+                                1.1)= S X=DIV S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,2)'="",Y(2)=X S X=DIV_"-"_$P(Y(1),U,2),Y(3)=X S X=1,Y(4)=X S X=DIV,X=$S(Y(2):Y(3),Y(4):X)
+                                1.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,2,99))  S DIH=DIH_U" S %=$P(DIH,U,4,999),DIU=$P(DIH,U,3),^(2)=$P(DIH,U,1,2)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=52 D ^DICR:$N(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(421.5,4.5,1,1,2.4)
+
+                                2.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,2,99))  S DIH=DIH_U" S %=$P(DIH,U,4,999),DIU=$P(DIH,U,3),^(2)=$P(DIH,U,1,2)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=52 D ^DICR:$N(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                CREATE VALUE)= $S(PO SUFFIX'="":PURCHASE ORDER NUMBER_"-"_PO SUFFIX,1:PURCHASE ORDER NUMBER)
+                                DELETE VALUE)= @
+                                FIELD)= EXPANDED
+
+
+421.5,5       PURCHASE ORDER POINTER 0;7 POINTER TO PROCUREMENT & ACCOUNTING TRANSACTIONS FILE (#442)
+
+              INPUT TRANSFORM:  S DIC("S")="I +^(0)=$G(PRC(""SITE""))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 11, 1994 
+              DESCRIPTION:
+                                This is the pointer to the Procurement and Accounting Transactions file, #442.  
+
+              SCREEN:           S DIC("S")="I +^(0)=$G(PRC(""SITE""))"
+              EXPLANATION:      Allows selection of only PO's for a particular site
+              CROSS-REFERENCE:  ^^TRIGGER^421.5^4.5 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCF(421.5,D0,1)):^(1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(421.5,5,1,1,1.1) X ^DD(421.5,5,1,1,1.4)
+                                1.1)= S X=DIV S X=$S('$D(^PRC(442,+DIV,0)):"",1:$P(^(0),U,1))
+                                1.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),1)):^(1),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,2,99))  S DIH=DIH_U" S %=$P(DIH,U,4,999),DIU=$P(DIH,U,3),^(1)=$P(DIH,U,1,2)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=4.5 D ^DICR:$N(^DD(DIH,DI
+                                G,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCF(421.5,D0,1)):^(1),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(421.5,5,1,1,2.4)
+
+                                2.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),1)):^(1),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,2,99))  S DIH=DIH_U" S %=$P(DIH,U,4,999),DIU=$P(DIH,U,3),^(1)=$P(DIH,U,1,2)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=4.5 D ^DICR:$N(^DD(DIH,DI
+                                G,1,0))>0
+
+                                CREATE VALUE)= PURCHASE ORDER POINTER
+                                DELETE VALUE)= @
+                                FIELD)= PURCHASE ORDER NUMBER
+                                This cross reference is set on the trigger of the P.O. number field (#4.5).  
+
+
+              CROSS-REFERENCE:  421.5^E 
+                                1)= S ^PRCF(421.5,"E",$E(X,1,30),DA)=""
+                                2)= K ^PRCF(421.5,"E",$E(X,1,30),DA)
+                                This cross reference is set on the pointer to file 442, the Procurement and accounting Transactions file.  
+
+
+
+421.5,6       VENDOR                 0;8 POINTER TO VENDOR FILE (#440)
+
+              LAST EDITED:      MAR 15, 1991 
+              DESCRIPTION:
+                                This is the name of the vendor generating the invoice.  
+
+              CROSS-REFERENCE:  421.5^C 
+                                1)= S ^PRCF(421.5,"C",$E(X,1,30),DA)=""
+                                2)= K ^PRCF(421.5,"C",$E(X,1,30),DA)
+                                This cross-reference is set on the pointer to the vendor name field in the Vendor file, #440.  
+
+
+
+421.5,7       VENDOR STUB NAME       0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+              HELP-PROMPT:      ANSWER MUST BE 3 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the CALM stub name.  
+
+
+421.5,8       VENDOR ID NUMBER       0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<9)!'(X?9UN) X
+              LAST EDITED:      OCT 06, 1989 
+              HELP-PROMPT:      Answer must be 9 characters in length. 
+              DESCRIPTION:
+                                This is the CALM ID number.  
+
+
+421.5,9       DISCOUNT PERCENT       0;11 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>100)!(X<.01) X
+              HELP-PROMPT:      Type a between .01 and 100, 2 Decimal Digits, e.g 5 Percent is to be entered as 5, 2.05% as 2.05. 
+              DESCRIPTION:
+                                This is the percentage to be deducted from the invoice when prompt payment is made.  
+
+
+421.5,10      DISCOUNT DAYS          0;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 06, 1989 
+              HELP-PROMPT:      Type a Number between 0 and 99, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of days in which a discount can be taken.  
+
+
+421.5,11      DISCOUNT TERMS         0;13 SET
+
+                                'E' FOR EOM; 
+                                'P' FOR PROX; 
+                                'X' FOR STANDARD; 
+              LAST EDITED:      JUL 28, 1989 
+              DESCRIPTION:
+                                These are the terms defining the discount amount/days (i.e., net-30).  
+
+
+421.5,11.3    DISCOUNT AMOUNT        0;26 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X
+              OUTPUT TRANSFORM: S:$D(PRCF("VIEW")) Y="$"_$FN(Y/100,",",2)
+              LAST EDITED:      MAY 09, 1994 
+              HELP-PROMPT:      Enter the amount of the Discount, without the decimal point. 
+              DESCRIPTION:
+                                This is the dollar amount of the discount.  
+
+
+421.5,11.5    DATE GOODS/SERVICE RECEIVED 0;21 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $G(X)>DT D EN^DDIOL("Future date is NOT allowed") K X
+              LAST EDITED:      JUL 21, 1994 
+              DESCRIPTION:
+                                This is the date the items were received at the station.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+421.5,12      APPROVED SHIPPING AMOUNT 0;14 NUMBER
+
+              INPUT TRANSFORM:  K:(X>9999999.99)!(X<0)!(X?.E1"."3N.E) X S:$D(X)#2 X=X*100
+              OUTPUT TRANSFORM: S Y=$FN(Y/100,",",2) S:$D(PRCF("VIEW")) Y="$"_Y
+              LAST EDITED:      JUL 07, 1994 
+              HELP-PROMPT:      Enter the approved shipping charges included in the Amount Certified for Payment.  The Decimal Point must be INCLUDED if cents are entered.  Type a Number between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount authorized for shipping charges.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+421.5,13      AMOUNT CERTIFIED FOR PAYMENT 0;15 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:(X>9999999.99)!(X<0)!(X?.E1"."3N.E) X S:$D(X)#2 X=X*100
+              OUTPUT TRANSFORM: S Y=$FN(Y/100,",",2) S:$D(PRCF("VIEW")) Y="$"_Y
+              LAST EDITED:      JUL 06, 1994 
+              HELP-PROMPT:      The decimal point must be used if cents are entered.  Enter the amount that has been certified for payment, INCLUDING shipping charges.  Enter $100.00 as either 100 or 100.00 
+              DESCRIPTION:
+                                This is the amount certified for payment.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+421.5,14      LIQUIDATION CODE       0;16 SET
+
+                                'P' FOR PARTIAL; 
+                                'C' FOR COMPLETE; 
+              DESCRIPTION:
+                                This field indicates the status of liquidation, whether partial or complete.  
+
+
+421.5,15      SUBACCOUNT 1           0;17 POINTER TO BUDGET OBJECT CODE FILE (#420.2)
+
+              DESCRIPTION:
+                                This is the subaccount being charged.  
+
+
+421.5,16      SUBACCOUNT 2           0;18 POINTER TO BUDGET OBJECT CODE FILE (#420.2)
+
+              DESCRIPTION:
+                                This is the second subaccount being charged.  
+
+
+421.5,17      LIQUIDATION AMOUNT 1   0;19 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+              OUTPUT TRANSFORM: S:$D(PRCF("VIEW")) Y="$"_$FN(Y,",",2)
+              LAST EDITED:      MAY 09, 1994 
+              HELP-PROMPT:      Type a Number between 1 and 9999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount liquidated for subaccount 1.  
+
+
+421.5,18      LIQUIDATION AMOUNT 2   0;20 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999)!(X<.01) X
+              OUTPUT TRANSFORM: S:$D(PRCF("VIEW")) Y="$"_$FN(Y,",",2)
+              LAST EDITED:      MAY 09, 1994 
+              HELP-PROMPT:      Type a Dollar Amount between .01 and 9999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount liquidated for subaccount 2.  
+
+
+421.5,19      MONEY MANAGEMENT INDICATOR 0;22 SET (Required)
+
+                                'X' FOR EXEMPT - PAY IMMEDIATELY; 
+                                'B' FOR NOT EXEMPT - DELAY PAYMENT FOR MONEY MANAGEMENT; 
+              LAST EDITED:      JUL 24, 1989 
+              DESCRIPTION:
+                                This field indicates when payment is to be made.  
+
+
+421.5,20      INTEREST INDICATOR     0;23 SET (Required)
+
+                                'X' FOR INTEREST & PAYMENT; 
+                                'I' FOR INTEREST ONLY; 
+                                'P' FOR PAYMENT ONLY; 
+              LAST EDITED:      JUL 24, 1989 
+              DESCRIPTION:
+                                This field indicates the type of payment to be made.  
+
+
+421.5,21      PAYMENT TO BE SENT TO:  0;24 SET
+
+                                '0' FOR CAPPS; 
+                                '1' FOR CALM; 
+              DESCRIPTION:
+                                This field indicates the system in Austin to which payment is to be sent.  
+
+
+421.5,22      DATE PAYMENT RELEASED  0;25 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                This is the date payment is released from CALM.  
+
+
+421.5,23      REASON FOR SUSPENSION  4;0   WORD-PROCESSING #421.523
+
+              DESCRIPTION:
+                                This is the reason for suspending payment.  
+
+
+421.5,24      DATE OF SUSPENSION LETTER 1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 08, 1989 
+              DESCRIPTION:
+                                This is the date when the suspense letter is sent to the vendor.  
+
+
+421.5,25      SUSPENSION LETTER REQUIRED? 1;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 08, 1989 
+              DESCRIPTION:
+                                Indicates whether suspension of payment is required.  
+
+
+421.5,26      PARTIAL NUMBER         1;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:'(X?1.2N!(X?1U1UN)) X
+              LAST EDITED:      SEP 20, 1994 
+              HELP-PROMPT:      Answer must be 1-2 characters in length. 
+              DESCRIPTION:      This is a two-character alphanumeric field which is appended to the Purchase Order number before it is transmitted to FMS.  This expanded number then becomes the Document ID Number for the Payment Voucher (PV) as it is
+                                processed by FMS.  There are 974 valid alphanumeric codes for the Partial Number.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+421.5,27      FMS PAYMENT VOUCHER #  1;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>11!($L(X)<11) X
+              LAST EDITED:      JUN 10, 1994 
+              HELP-PROMPT:      Answer must be 11 characters in length. 
+              DESCRIPTION:      This is the 11-character Document ID Number given to the Payment Voucher (PV) as it is being transmitted to FMS.  This number provides the primary lookup for the local copy of the PV in the Generic Code Sheet Stack File.  
+                                The normal format for the Payment Voucher # is SSSAFNNNNPP where 
+                                 
+                                   SSS is the Station Number 
+                                     A is an alphabetic code identifying the Common Numbering Series 
+                                     F is the last digit of the Fiscal Year 
+                                  NNNN is the document sequence number within the series 
+                                    PP is the alphanumeric Partial Number assigned by IFCAP.  
+
+              CROSS-REFERENCE:  421.5^F 
+                                1)= S ^PRCF(421.5,"F",$E(X,1,30),DA)=""
+                                2)= K ^PRCF(421.5,"F",$E(X,1,30),DA)
+                                This field should be identical to the portion of the .01 field which follows the "PV-" created in the GENERIC CODE SHEET File when the invoice record is sent to FMS.  
+
+
+
+421.5,30      ONE TIME PAYMENT?      1;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              DESCRIPTION:
+                                This field indicates a one time payment.  
+
+
+421.5,31      PROMPT PAYMENT TERMS   6;0 Multiple #421.531 (Add New Entry without Asking)
+
+              LAST EDITED:      APR 26, 1994 
+              DESCRIPTION:
+                                This is a multiple field which contains the payment terms for this invoice.  
+
+
+421.531,.01     PROMPT PAYMENT TERMS # 0;1 NUMBER (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>3)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 26, 1994 
+                DESCRIPTION:
+                                  This is the number used to identify and select sets of payment terms from those contained in the Payment/Invoice Tracking record.  
+
+                EXECUTABLE HELP:  D PAY^PRCFDS
+                CROSS-REFERENCE:  421.531^B 
+                                  1)= S ^PRCF(421.5,DA(1),6,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCF(421.5,DA(1),6,"B",$E(X,1,30),DA)
+
+
+421.531,1       TERMS TYPE CODE        0;2 SET
+
+                                  'X' FOR STANDARD; 
+                                  'P' FOR PROXIMO; 
+                                  'E' FOR END OF MONTH (EOM); 
+                LAST EDITED:      JUN 27, 1994 
+                DESCRIPTION:
+                                  This is a code which governs how the DISCOUNT DAYS field is interpreted by the Payment/Invoice Tracking module.  
+
+
+421.531,2       DISCOUNT PERCENT       0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:+X'=X&(X'="NET") X I $D(X),+X=X K:X?.E1"."4N.N!(X<.001)!(X>99.999) X
+                LAST EDITED:      APR 26, 1994 
+                HELP-PROMPT:      Enter 'NET' or a Number between .001 and 99.999, 3 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the percentage discount associated with this set of Prompt Payment Terms.  (i.e. Enter 5 % as 5 NOT .05) 
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+421.531,3       DISCOUNT AMOUNT        0;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+                OUTPUT TRANSFORM: S:$D(PRCF("VIEW")) Y="$"_$FN(Y,",",2)
+                LAST EDITED:      MAY 09, 1994 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the dollar amount of the discount for this set of payment terms.  The Discount Amount and Discount Percent should not both be entered for a single set of Prompt Payment Terms.  
+
+
+421.531,4       DISCOUNT DAYS          0;5 NUMBER
+
+                INPUT TRANSFORM:  K:X>60!(X<1)!(X?.E1"."1N.N) X I $D(X),+X'=X K:X'?.N2A X Q:'$D(X)  S Z0=$E(X,$L(X)-1,$L(X)),X=$E(X,1,$L(X)-2)_$S("STst"[Z0:"st","NDnd"[Z0:"nd","RDrd"[Z0:"rd","THth"[Z0:"th",1:"ZZZZZ") K:$L(X)>4 X
+                LAST EDITED:      JUL 01, 1994 
+                HELP-PROMPT:      Type a Number between 1 and 60, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the number of days during which the discount may be taken if the invoice is paid.  It is normally measured from the date the invoice or goods/services were received, whichever is later.  
+
+
+
+
+421.5,37      GROSS AMOUNT OF INVOICE 1;8 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:(X>9999999.99)!(X<.01)!(X?.E1"."3N.E) X S:$D(X)#2 X=X*100
+              OUTPUT TRANSFORM: S Y=$FN(Y/100,",",2) S:$D(PRCF("VIEW")) Y="$"_Y
+              LAST EDITED:      JUL 06, 1994 
+              HELP-PROMPT:      Enter the Gross Amount of Invoice, INCLUDING the shipping charges.  The decimal point must be used if cents are entered.  Type a Number between .01 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the total amount of the invoice.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+421.5,38      GROSS SHIPPING         1;9 NUMBER
+
+              INPUT TRANSFORM:  K:(X>9999999.99)!(X<0)!(X?.E1"."3N.E) X S:$D(X)#2 X=X*100
+              OUTPUT TRANSFORM: S Y=$FN(Y/100,",",2) S:$D(PRCF("VIEW")) Y="$"_Y
+              LAST EDITED:      JUL 07, 1994 
+              HELP-PROMPT:      Enter the amount of the shipping charges included in the Gross Amount of Invoice.  The Decimal Point must be used if cents are entered.  Type a Number between 0 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the gross amount of shipping charges.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+421.5,39      NET DAYS               1;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the number of days when net payment is due.  
+
+
+421.5,41      FMS LINE               5;0 POINTER Multiple #421.541 (Add New Entry without Asking)
+
+              LAST EDITED:      MAY 10, 1994 
+              DESCRIPTION:
+                                This is a multiple field which contains a set of accounting data associated with the FMS accounting line.  
+
+
+421.541,.01     BOC                    0;1 POINTER TO BUDGET OBJECT CODE FILE (#420.2) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="D SCREEN^PRCFDT" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      APR 26, 1994 
+                HELP-PROMPT:      Please select one of the BUDGET OBJECT CODEs listed. 
+                DESCRIPTION:
+                                  This is the Budget Object Code (BOC), formerly known as the Subaccount, for this FMS accounting line.  In this context, the selection of BOCs is restricted to those already identified on the obligation document.  
+
+                SCREEN:           S DIC("S")="D SCREEN^PRCFDT"
+                EXPLANATION:      Must be a BOC already in the obligation document.
+                EXECUTABLE HELP:  D SUMM^PRCFDA
+                CROSS-REFERENCE:  421.541^B 
+                                  1)= S ^PRCF(421.5,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCF(421.5,DA(1),5,"B",$E(X,1,30),DA)
+
+
+421.541,1       ACCOUNTING LINE AMOUNT 0;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999999.99)!(X<.01) X
+                OUTPUT TRANSFORM: S:$D(PRCF("VIEW")) Y="$"_$FN(Y,",",2)
+                LAST EDITED:      MAY 09, 1994 
+                HELP-PROMPT:      Type a Dollar Amount between .01 and 999999999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the dollar amount on the invoice which is being charged to the BOC identifed on this FMS accounting line.  
+
+
+421.541,2       LIQUIDATION AMOUNT     0;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999999.99)!(X<0) X
+                OUTPUT TRANSFORM: S:$D(PRCF("VIEW")) Y="$"_$FN(Y,",",2)
+                LAST EDITED:      MAY 09, 1994 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the dollar amount of the liquidation that is being charged against the obligation for this particular BOC and FMS accounting line as a result of the invoice payment.  
+
+
+421.541,3       LIQUIDATION CODE       0;4 SET
+
+                                  'P' FOR PARTIAL; 
+                                  'F' FOR FINAL; 
+                LAST EDITED:      APR 07, 1994 
+                DESCRIPTION:
+                                  This is a single-character alphabetic code which indicates whether the liquidation of the obligation for the FMS accounting line and BOC associated with this payment is partial or final.  
+
+
+421.541,4       FMS LINE #             0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1994 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is a three-digit line number which associates the payment amount for a BOC with the same line number and BOC on the obligation document.  
+
+
+
+
+421.5,45      MEMO 1                 1;16 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+              HELP-PROMPT:      ANSWER MUST BE 1-3 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Reserved for use by Austin.  
+
+
+421.5,46      MEMO 2                 1;17 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+              HELP-PROMPT:      ANSWER MUST BE 1-3 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Reserved for use by Austin.  
+
+
+421.5,47      MEMO 3                 1;18 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+              HELP-PROMPT:      ANSWER MUST BE 1-3 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Reserved for use by Austin.  
+
+
+421.5,50      STATUS                 2;1 SET
+
+                                '0' FOR Incomplete; 
+                                '3' FOR Invoice Returned to Vendor; 
+                                '5' FOR Pending Service Certification; 
+                                '10' FOR Awaiting Voucher Audit Review; 
+                                '11' FOR Vendor ID Incomplete; 
+                                '15' FOR In Accounting; 
+                                '20' FOR Transaction Complete; 
+              LAST EDITED:      NOV 30, 1993 
+              DESCRIPTION:
+                                This is the status indicator of invoice for processing.  
+
+              CROSS-REFERENCE:  421.5^AE 
+                                1)= S ^PRCF(421.5,"AE",$E(X,1,30),DA)=""
+                                2)= K ^PRCF(421.5,"AE",$E(X,1,30),DA)
+                                This cross reference is set on the Status field.  
+
+
+
+421.5,51      PO SUFFIX              2;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1)!'(X?1.4N) X
+              LAST EDITED:      JUL 06, 1989 
+              HELP-PROMPT:      ANSWER MUST BE 1-4 NUMBERS 
+              DESCRIPTION:
+                                This is the suffix number assigned by Fiscal for tracking purposes.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^421.5^52 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(421.5,51,1,1,1.1) X ^DD(421.5,51,1,1,1.4)
+                                1.1)= S X=DIV S Y(1)=$S($D(^PRCF(421.5,D0,1)):^(1),1:"") S X=$P(Y(1),U,3)'="",Y(2)=X S X=$P(Y(1),U,3)_"-"_DIV,Y(3)=X S X=1,Y(4)=X S X="",X=$S(Y(2):Y(3),Y(4):X)
+                                1.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,2,99))  S DIH=DIH_U" S %=$P(DIH,U,4,999),DIU=$P(DIH,U,3),^(2)=$P(DIH,U,1,2)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=52 D ^DICR:$N(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(421.5,51,1,1,2.1) X ^DD(421.5,51,1,1,2.4)
+
+                                2.1)= S X=DIV S Y(1)=$S($D(^PRCF(421.5,D0,1)):^(1),1:"") S X=$P(Y(1),U,3)
+
+                                2.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,2,99))  S DIH=DIH_U" S %=$P(DIH,U,4,999),DIU=$P(DIH,U,3),^(2)=$P(DIH,U,1,2)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=52 D ^DICR:$N(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                CREATE VALUE)= $S(PURCHASE ORDER NUMBER'="":PURCHASE ORDER NUMBER_"-"_PO SUFFIX,1:"")
+                                DELETE VALUE)= PURCHASE ORDER NUMBER
+                                FIELD)= EXPANDED
+
+
+421.5,52      EXPANDED PO NUMBER     2;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>16!($L(X)<10) X
+              LAST EDITED:      APR 26, 1989 
+              HELP-PROMPT:      ANSWER MUST BE 10-16 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                IFCAP PO number to include suffix, i.e.  503-A10001-0001.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the PURCHASE ORDER NUMBER field of the INVOICE TRACKING File 
+                                TRIGGERED by the PO SUFFIX field of the INVOICE TRACKING File 
+
+              CROSS-REFERENCE:  421.5^D 
+                                1)= S ^PRCF(421.5,"D",$E(X,1,30),DA)=""
+                                2)= K ^PRCF(421.5,"D",$E(X,1,30),DA)
+                                This cross reference is set on the expanded P.O. number in field #52.  
+
+
+
+421.5,53      CURRENT INVOICE LOCATION 2;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      SEP 08, 1989 
+              HELP-PROMPT:      ANSWER MUST BE 1-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Indicates service which currently has invoice for certification.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the CERTIFYING SERVICE field of the CERTIFYING SERVICE sub-field of the INVOICE TRACKING File 
+
+
+421.5,54      D/T CHARGED TO CURRENT LOC 2;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                This is the date/time the invoice was sent to the service.  
+
+              NOTES:            TRIGGERED by the DATE/TIME CHARGED OUT field of the CERTIFYING SERVICE sub-field of the INVOICE TRACKING File 
+
+
+421.5,54.5    CHARGED TO CURRENT LOCATION BY 2;17 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 21, 1992 
+              DESCRIPTION:
+                                This is the person charging the invoice to the service.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the CHARGED BY field of the CERTIFYING SERVICE sub-field of the INVOICE TRACKING File 
+
+
+421.5,55      DISCOUNT PAYMENT DATE  2;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                Date payment is to be made by in order to receive payment.  
+
+
+421.5,56      NET PAYMENT DATE       2;7 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                Date payment is to be made to avoid penalties.  
+
+
+421.5,57      DATE DUE IN FISCAL     2;8 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 26, 1989 
+              DESCRIPTION:
+                                Date invoice is due in Fiscal.  
+
+              CROSS-REFERENCE:  421.5^AC 
+                                1)= S ^PRCF(421.5,"AC",$E(X,1,30),DA)=""
+                                2)= K ^PRCF(421.5,"AC",$E(X,1,30),DA)
+                                This cross reference is set on the Date Due in Fiscal (#57) an is used for tracking purposes by the bulletin generators.  
+
+
+
+421.5,58      DATE RETURNED TO FISCAL 2;9 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                Date invoice was returned to Fiscal.  
+
+
+421.5,59      CERTIFIED FOR PAYMENT BY 2;10 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 18, 1992 
+              DESCRIPTION:
+                                Person certifying invoice is true and correct for payment.  
+
+
+421.5,60      COMPLETED IN ACCOUNTING BY 2;11 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 18, 1992 
+              DESCRIPTION:
+                                This is the Accounting technician completing the invoice.  
+
+
+421.5,61      CERTIFIED BY VALIDATION CODE 2;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              OUTPUT TRANSFORM: S Y(0)=Y S Y="/ES/"_$$DECODE^PRCFDES1(D0)
+              LAST EDITED:      MAR 17, 1993 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                Electronic signature of certifying official.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+
+421.5,61.5    CERTIFIED BY VALIDATION VER 2.1;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 27, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the version number of the algorithms used for encoding and decoding the Validation Code created for the Payment/Invoice Tracking record at the time that the certification of the invoice is entered into the system.  
+
+
+421.5,61.7    CERTIFIED BY ESIG CODE 2.1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      APR 10, 1993 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                Encoded value used by IFCAP security utilities when confirming the integrity of this record.  
+
+
+421.5,61.9    CERTIFIED BY SIG DATE/TIME 2.1;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 28, 2010 
+              DESCRIPTION:
+                                This is the date and time that a valid electronic signature was entered certifying an invoice for payment.  
+
+              CROSS-REFERENCE:  421.5^AF 
+                                1)= S ^PRCF(421.5,"AF",$E(X,1,30),DA)=""
+                                2)= K ^PRCF(421.5,"AF",$E(X,1,30),DA)
+                                This cross reference on date/time invoice was certified for payment is used in selecting entries for Segregation of Duties report.  
+
+
+
+421.5,62      COMPLETED BY VALIDATION CODE 2;13 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              OUTPUT TRANSFORM: S Y(0)=Y S Y="/ES/"_$$DECODE^PRCFDES2(D0)
+              LAST EDITED:      MAR 17, 1993 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                Electronic signature of completing technician.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+
+421.5,62.5    COMPLETED BY VALIDATION VER 2.1;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."6N.N) X
+              OUTPUT TRANSFORM: S Y="<HIDDEN>" Q
+              LAST EDITED:      JAN 25, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 99, 5 Decimal Digits 
+              DESCRIPTION:      This is the version number of the algorithms used to encode and decode the Validation Code for the Payment/Invoice Tracking record at the time that the technician who completes the record enters their valid electronic
+                                signature into the system.  
+
+
+421.5,62.7    COMPLETED BY ESIG CODE 2.1;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      APR 10, 1993 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                Encoded value used by IFCAP security utilities when confirming the integrity of this record.  
+
+
+421.5,62.9    COMPLETED BY SIG DATE/TIME 2.1;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 29, 1992 
+              DESCRIPTION:
+                                This is the date and time that the person completing the details of a Payment/Invoice Tracking record entered a valid electronic signature.  
+
+
+421.5,63      BULLETIN SENT TO SERVICE 2;14 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 03, 1992 
+              DESCRIPTION:
+                                Indicates if overdue bulletin sent to certifying service.  
+
+
+421.5,64      DATE BULLETIN SENT     2;15 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              DESCRIPTION:
+                                Date bulletin sent to certifying service.  
+
+
+421.5,65      MESSAGE NUMBER         2;16 POINTER TO MESSAGE FILE (#3.9)
+
+              LAST EDITED:      JUL 08, 1989 
+              DESCRIPTION:
+                                This is the MailMan message number of overdue bulletin.  
+
+
+421.5,66      CONTROL POINT CERTIFIED BY 2;18 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 14, 1994 
+              DESCRIPTION:
+                                This field identifies the control point officer or clerk who certifies that the invoice is true and correct for payment.  
+
+
+421.5,67      CONTROL POINT VALIDATION CODE 2;19 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      JUL 14, 1994 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                Electronic signature of certifying control point officer or clerk.  
+
+
+421.5,67.5    CONTROL POINT VALIDATION VER 2.1;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 14, 1994 
+              HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+              DESCRIPTION:      This is the version number of the algorithms used to encode and decode the Validation Code for the Payment/Invoice Tracking record at the time that the control point officer or clerk who certifies the record enters their
+                                valid electronic signature into the system.  
+
+
+421.5,67.7    CONTROL POINT ESIG CODE 2.1;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUL 14, 1994 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                Encoded value used by IFCAP security utilities when confirming the integrity of this record.  
+
+
+421.5,67.9    CONTROL POINT SIG DATE/TIME 2.1;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 14, 1994 
+              DESCRIPTION:
+                                This is the date and time that a valid electronic signature was entered by a control point officer or clerk certifying an invoice for payment.  
+
+
+421.5,68      CERTIFYING CONTROL POINT 1;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      JUL 14, 1994 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is the control point to which the invoice is referred for certification, as indicated by the obligation document.  
+
+
+421.5,70      CERTIFYING SERVICE     3;0 POINTER Multiple #421.51 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Services which are required to certify invoice as true and correct.  
+
+
+421.51,.01      CERTIFYING SERVICE     0;1 POINTER TO SERVICE/SECTION FILE (#49)
+
+                LAST EDITED:      SEP 08, 1989 
+                DESCRIPTION:
+                                  This is a pointer to the Service/Section file, #49.  
+
+                CROSS-REFERENCE:  421.51^B 
+                                  1)= S ^PRCF(421.5,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCF(421.5,DA(1),3,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  ^^TRIGGER^421.5^53 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(421.51,.01,1,2,1.1) X ^DD(421.51,.01,1,2,1.4)
+                                  1.1)= S X=DIV S X=$S('$D(^DIC(49,+DIV,0)):"",1:$P(^(0),U,1))
+                                1.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,3,99))  S DIH=DIH_U" S %=$P(DIH,U,5,999),DIU=$P(DIH,U,4),^(2)=$P(DIH,U,1,3)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=53 D ^DICR:$N(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y X ^DD(421.51,.01,1,2,2.1) X ^DD(421.51,.01,1,2,2.4)
+
+                                2.1)= S X=DIV S Y(1)=$S($D(^PRCF(421.5,D0,3,D1,0)):^(0),1:"") S X=$S('$D(^DIC(49,+$P(Y(1),U,1),0)):"",1:$P(^(0),U,1))
+
+                                2.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,3,99))  S DIH=DIH_U" S %=$P(DIH,U,5,999),DIU=$P(DIH,U,4),^(2)=$P(DIH,U,1,3)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=53 D ^DICR:$N(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                CREATE VALUE)= CERTIFYING SERVICE
+                                DELETE VALUE)= CERTIFYING SERVICE
+                                FIELD)= CURRENT INVOICE LOCATION
+                                This cross-reference is set from the Current Invoice Location field (#53).  
+
+
+
+421.51,1        DATE/TIME CHARGED OUT 0;2 DATE
+
+                INPUT TRANSFORM:S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:    APR 26, 1989 
+                DESCRIPTION:
+                                Used when multiple services are required for certification.  Indicates date changed.  
+
+                CROSS-REFERENCE:^^TRIGGER^421.5^54 
+                                1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X=DIV X ^DD(421.51,1,1,1,1.4)
+                                1.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,4,99))  S DIH=DIH_U" S %=$P(DIH,U,6,999),DIU=$P(DIH,U,5),^(2)=$P(DIH,U,1,4)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=54 D ^DICR:$N(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y X ^DD(421.51,1,1,1,2.1) X ^DD(421.51,1,1,1,2.4)
+
+                                2.1)= S X=DIV X ^DD(421.51,1,1,1,59.2) X "F D1=0:0 S D1=$N(^PRCF(421.5,D0,3,D1)) Q:D1'>0  S Y=$S($D(^(D1,0)):$P(^(0),U,2),1:"""") S:Y'?."" "" Y(102)=Y" S D(1)=D1 S X=Y(102) S D0=I(0,0) S D1=I(1,0)
+
+                                2.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,4,99))  S DIH=DIH_U" S %=$P(DIH,U,6,999),DIU=$P(DIH,U,5),^(2)=$P(DIH,U,1,4)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=54 D ^DICR:$N(^DD(DIH,DIG
+                                ,1,0))>0
+
+                                59.2)= S I(0,0)=$S($D(D0):D0,1:""),I(1,0)=$S($D(D1):D1,1:""),Y(102)=""
+
+                                CREATE VALUE)= DATE/TIME CHARGED OUT
+                                DELETE VALUE)= LAST(BORROWER:DATE/TIME CHARGED OUT)
+                                FIELD)= D/T CHARGED TO CURRENT LOC
+                                This cross reference is set up from the Date/Time Charged to the current location.  
+
+
+
+421.51,2        CHARGED BY           0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:    DEC 21, 1992 
+                DESCRIPTION:
+                                For multiple services, indicates who charged the invoice out.  
+
+                CROSS-REFERENCE:^^TRIGGER^421.5^54.5 
+                                1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X=DIV S X=DIV,X=X X ^DD(421.51,2,1,1,1.4)
+                                1.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,16,99))  S DIH=DIH_U" S %=$P(DIH,U,18,999),DIU=$P(DIH,U,17),^(2)=$P(DIH,U,1,16)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=54.5 D ^DICR:$N(^DD(D
+                                IH,DIG,1,0))>0
+
+                                2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^PRCF(421.5,D0,2)):^(2),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y S X="" X ^DD(421.51,2,1,1,2.4)
+
+                                2.4)= S DIH=$S($D(^PRCF(421.5,DIV(0),2)):^(2),1:""),DIV=X X "F %=0:0 Q:$L($P(DIH,U,16,99))  S DIH=DIH_U" S %=$P(DIH,U,18,999),DIU=$P(DIH,U,17),^(2)=$P(DIH,U,1,16)_U_DIV_$S(%]"":U_%,1:""),DIH=421.5,DIG=54.5 D ^DICR:$N(^DD(D
+                                IH,DIG,1,0))>0
+
+                                CREATE VALUE)= INTERNAL(CHARGED BY)
+                                DELETE VALUE)= @
+                                FIELD)= CHARGED
+                                This cross reference is set up from the pointer to the New Person file of the person who charged the invoice to its current location.  
+
+
+
+
+
+421.5,71      FMS TRANSACTION DATE   1;19 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:3201231<X!(2950101>X) X
+              LAST EDITED:      AUG 11, 1995 
+              HELP-PROMPT:      Enter the date that Payment Voucher should be transmitted to FMS (1995-2020) 
+              DESCRIPTION:      The value in the FMS Transaction Date field determines when the Payment Voucher will be transmitted to FMS by the Generic Code Sheet module.  With the new Hold Code Sheet functionality, Obligations may be entered to take 
+                                effect in the future.  This field will enable the user to ensure that the Payment Voucher does not arrive at FMS before its Obligation documents.  
+
+
+421.5,72      ACCOUNTING PERIOD MONTH/YEAR 1;20 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:3201200<X!(2940100>X) X I $D(X) K:$E(X,4,5)<1 X S:$D(X) X=$E(X,1,5)_"00"
+              LAST EDITED:      AUG 08, 1995 
+              HELP-PROMPT:      Enter Calendar Month and Year of Accounting Period (i.e. 10/94 for Oct 1994) 
+              DESCRIPTION:      Enter the calendar month and year of the accounting period you would like this Payment Voucher (PV) transaction to affect in FMS.  Note:  For the PV to be accepted by FMS, the value must be an Accounting Period, which is 
+                                open at the time of receipt.  
+                                 
+                                For ease of data entry, this field stores Calendar Month and Calendar Year.  During transmission to FMS, this value is converted to Fiscal Year and the Sequence number of that month within that Fiscal Year before being
+                                placed in the transmission record.  (i.e. Oct 1994 is converted to fiscal year 95 and month 01.) 
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BUDGET OBJECT CODE (#420.2)       SUBACCOUNT 1 (#15)
+                                  SUBACCOUNT 2 (#16)
+                                  FMS LINE:BOC (#.01)
+
+INVOICE TRACKING (#421.5)         CERTIFYING SERVICE:CERTIFYING SERVICE (#.01)
+                                  DATE/TIME CHARGED OUT (#1)
+                                  CHARGED BY (#2)
+
+MESSAGE (#3.9)                    MESSAGE NUMBER (#65)
+
+NEW PERSON (#200)                 CHARGED TO CURRENT LOCATION BY (#54.5)
+                                  CERTIFIED FOR PAYMENT BY (#59)
+                                  COMPLETED IN ACCOUNTING BY (#60)
+                                  CONTROL POINT CERTIFIED BY (#66)
+                                  CERTIFYING SERVICE:CHARGED BY (#2)
+
+PROCUREMENT & ACCOUNTING TRANS 
+                   (#442)         PURCHASE ORDER POINTER (#5)
+
+SERVICE/SECTION (#49)             CERTIFYING SERVICE:CERTIFYING SERVICE (#.01)
+
+VENDOR (#440)                     VENDOR (#6)
+
+
+
+INPUT TEMPLATE(S):
+PRCF CI BORROWER              JAN 28, 1993@13:34  USER #0    
+PRCF CI CHECK-IN              OCT 13, 1994@08:55  USER #0    
+PRCF CI FMS ACCOUNTING        NOV 09, 1994@09:52  USER #0    
+PRCF CI VOUCHER AUDIT         AUG 15, 1995@17:13  USER #0    
+
+PRINT TEMPLATE(S):
+PRCF CI DISCOUNT DUE PRINT    JUL 07, 1989        USER #0                                                                                                                                                         CERTIFIED INVOICES DUE FOR DISCOUNT  PAYMENT
+PRCF CI NET DUE DATE PRINT    JUL 07, 1989        USER #0                                                                                                                                                               CERTIFIED INVOICES DUE FOR NET PAYMENT
+PRCFD DUE IN FISCAL PRINT     JUL 07, 1989        USER #0                                                                                                                                                                               INVOICES DUE IN FISCAL
+PRCHLO421-5_CERTIFYING_SVC_VALDEC 28, 2010@11:54  USER #0                                                                                                                                                             INVOICE TRACKING CERTIFYING SERVICE DATA
+PRCHLO421-5_FMS_LINE_VALIDATE DEC 29, 2010@17:59  USER #0                                                                                                                                                                       INVOICE TRACKING FMS LINE DATA
+PRCHLO421-5_HDR_VALIDATE      DEC 29, 2010@17:27  USER #0                                                                                                                                                                         INVOICE TRACKING HEADER DATA
+PRCHLO421-5_PROMPT_PAY_VAL    DEC 28, 2010@12:00  USER #0                                                                                                                                                           INVOICE TRACKING PROMPT PAYMENT TERMS DATA
+
+SORT TEMPLATE(S):
+PRCF CI DISCOUNT DUE SORT     SEP 08, 1989        USER #0    
+SORT BY: ]DISCOUNT PAYMENT DATE//    (User is asked range)
+  WITHIN DISCOUNT PAYMENT DATE, SORT BY: CURRENT INVOICE LOCATION;S2// (All CURRENT INVOICE LOCATION (includes nulls))
+    WITHIN CURRENT INVOICE LOCATION, SORT BY: @'INTERNAL(STATUS)<20;L1// (INTERNAL(STATUS)<20)
+
+PRCF CI NET DUE DATE SORT     SEP 08, 1989        USER #0    
+SORT BY: ]NET PAYMENT DATE//    (User is asked range)
+  WITHIN NET PAYMENT DATE, SORT BY: CURRENT INVOICE LOCATION;S2// (All CURRENT INVOICE LOCATION (includes nulls))
+    WITHIN CURRENT INVOICE LOCATION, SORT BY: @'INTERNAL(STATUS)<20;L1// (INTERNAL(STATUS)<20)
+
+PRCF CI OUT SORT              JUL 07, 1989        USER #0    
+SORT BY: DATE DUE IN FISCAL//    (User is asked range)
+  WITHIN DATE DUE IN FISCAL, SORT BY: CURRENT INVOICE LOCATION;S2//
+
+
+FORM(S)/BLOCK(S):

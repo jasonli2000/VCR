@@ -1,0 +1,912 @@
+STANDARD DATA DICTIONARY #433 -- AR TRANSACTION FILE                                                                                                                                                                              MAY 20,2014@15:30:13  PAGE 1
+STORED IN ^PRCA(433,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 4.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds the Accounts Receivable transactions and all related information.  DO NOT USE FILEMAN TO EDIT THIS FILE DIRECTLY! Using Fileman will compromise system integrity. Use the AR menu options.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+IDENTIFIED BY: BILL NUMBER (#.03)[R], TRANSACTION DATE (#11)[R], TRANSACTION TYPE (#12)[R]
+        "WR1": I +$P(^(0),U,4)<2 D EN^DDIOL("  TRANSACTION STATUS: INCOMPLETE","","?0")
+
+POINTED TO BY: AR TRANSACTION field (#.08) of the AR FMS DOCUMENT File (#347) 
+               PAYMENT DATA field (#4) of the REPAYMENT DUE DATES sub-field (#430.051) of the ACCOUNTS RECEIVABLE File (#430) 
+               PREPAYMT TRANS. field (#20) of the AR TRANSACTION File (#433) 
+               
+
+CROSS
+REFERENCED BY: DATE ENTERED(AC), CO-PAY EXEMPTION TRANSACTION?(ACE), TRANSACTION DATE(AD), CALM CODE DONE(AE), EOB CODE(AEOB), TRANSACTION TYPE(AEOB1), RECEIPT #(AF), FOLLOW-UP DATE(AG), TERMINATION REASON(AH), TRANSACTION TYPE(AI), 
+               PREPAYMT TRANS.(AP), DATE ENTERED(AT1), TRANSACTION TYPE(AT2), DATE ENTERED(ATD), TRANSACTION TYPE(AW), TRANSACTION NUMBER(B), BILL NUMBER(C), CONTRACTUAL ADJUSTMENT(CA)
+
+433,.01       TRANSACTION NUMBER     0;1 NUMBER (Required)
+
+              ACCOUNTS RECEIVABLE TRANSACTION NUMBER                                                                           
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X'>0)!(X?.E1"."1N.N) X I $D(X) S DINUM=+X
+              LAST EDITED:      JAN 17, 1997 
+              HELP-PROMPT:      Enter an existing Transaction Number, type '??' for a listing. 
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  433^B 
+                                1)= S ^PRCA(433,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(433,"B",$E(X,1,30),DA)
+                                3)= This is the transaction number cross-reference.
+                                This cross-reference is used for sorting and file look-up by Transaction Number.  
+
+
+
+433,.02       FISCAL YEAR            4;0 Multiple #433.01
+
+              IDENTIFIED BY:    PAT REF #(#2)
+
+433.01,.01      FISCAL YEAR            0;1 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:X'?2N X I $D(X) S DINUM=$S(X<70:"3"_X,1:"2"_X) K:'$D(^PRCA(430,+$P(^PRCA(433,DA(1),0),U,2),2,DINUM,0)) DINUM,X
+                LAST EDITED:      JUL 08, 1993 
+                HELP-PROMPT:      Enter two digits for the Fiscal Year. 
+                CROSS-REFERENCE:  433.01^B 
+                                  1)= S ^PRCA(433,DA(1),4,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCA(433,DA(1),4,"B",$E(X,1,30),DA)
+                                  This cross-reference is used for sorting by Fiscal Year.  
+
+
+
+433.01,1        PRIN.AMOUNT            0;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999.99)!(X<-999999.99) X
+                LAST EDITED:      AUG 17, 1987 
+                HELP-PROMPT:      Enter a Dollar Amount between -999999.99 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the principal balance of the account after this transaction has been applied.  
+
+
+433.01,2        PAT REF #              0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      AUG 15, 1997 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                DESCRIPTION:
+                                  ***This field is obsolete with version 4.5 and will be deleted with an upcoming cleanup patch.  This is the PAT Reference number used to track this transaction.  
+
+                TECHNICAL DESCR:   
+                                   
+
+
+433.01,3        CALM CODE              0;4 SET
+
+                                  '1' FOR NOT DONE; 
+                                  '2' FOR DONE; 
+                LAST EDITED:      SEP 01, 1988 
+                DESCRIPTION:
+                                  This flag indicates whether or not a CALM code sheet has been completed for this PAT Reference Number.  
+
+
+433.01,4        TRANS.AMOUNT           0;5 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-99999.99) X
+                LAST EDITED:      OCT 21, 1991 
+                HELP-PROMPT:      Type a Dollar Amount between -99999.99 and 999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the amount of the transaction.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+433,.03       BILL NUMBER            0;2 POINTER TO ACCOUNTS RECEIVABLE FILE (#430) (Required)
+
+              LAST EDITED:      JUN 03, 1993 
+              HELP-PROMPT:      Enter the bill number from the Accounts Receivable File (430). 
+              DESCRIPTION:
+                                This is the bill number from File 430.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  433^C 
+                                1)= S ^PRCA(433,"C",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(433,"C",$E(X,1,30),DA)
+                                3)= This is the bill number cross-reference.
+                                This cross-reference is used to determine the transaction entries associated with each internal bill number (from file 430).  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^433^19 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^PRCA(433,D0,1)):^(1),1:"") S X=$P(Y(1),U,9)="" I X S X=DIV S Y(1)=$S($D(^PRCA(433,D0,1)):^(1),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X=DIV D NOW^%DTC S X=% X ^DD(4
+                                33,.03,1,2,1.4)
+
+                                1.4)= S DIH=$S($D(^PRCA(433,DIV(0),1)):^(1),1:""),DIV=X S $P(^(1),U,9)=DIV,DIH=433,DIG=19 D ^DICR:$O(^DD(DIH,DIG,1,0))
+
+                                2)= Q
+                                3)= This is the cross-reference for the debtor and date entered.
+                                CREATE CONDITION)= DATE ENTERED=""
+                                CREATE VALUE)= D NOW^%DTC S X=%
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= DATE ENTERED
+                                This cross-reference is needed to log an 'activity' to the patient account for printing patient statements and various reports.  
+
+
+
+433,3         CALM CODE DONE         0;3 SET (Required)
+
+                                '1' FOR NOT DONE; 
+                                '0' FOR DONE; 
+              LAST EDITED:      SEP 01, 1988 
+              DESCRIPTION:
+                                This flag indicates whether or not a CALM code sheet has been completed for this transaction.  
+
+              CROSS-REFERENCE:  433^AE^MUMPS 
+                                1)= I +X=1 S ^PRCA(433,"AE",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(433,"AE",$E(X,1,30),DA)
+                                3)= This is the calm code done cross-reference.
+                                This cross-reference is used for sorting by Calm Code status.  
+
+
+
+433,4         TRANSACTION STATUS     0;4 SET
+
+                                '1' FOR INCOMPLETE; 
+                                '2' FOR COMPLETE; 
+              LAST EDITED:      NOV 16, 1987 
+              DESCRIPTION:
+                                This flag indicates whether or not this transaction is complete.  
+
+
+433,5         DATE CALM DONE         0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 19, 1988 
+              HELP-PROMPT:      Enter date the CALM Code sheet was done. 
+              DESCRIPTION:
+                                This is the date that the CALM code sheet was completed.  
+
+
+433,5.02      BRIEF COMMENT          5;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAR 12, 1993 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field contains a brief description of the reason for the transaction.  This description is displayed on the profile option as a single line item.  
+
+
+433,5.03      FOLLOW-UP DATE         5;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 12, 1993 
+              DESCRIPTION:      This date represents the date that an action or follow-up should take place by MCCR.  For example, if an insurance company estimates that a payment should be received by the VA in two weeks, then the follow-up date should
+                                be set to two weeks.  A report will be generated in two weeks displaying this transaction as a reminder to follow-up on the payment.  
+
+              CROSS-REFERENCE:  433^AG 
+                                1)= S ^PRCA(433,"AG",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(433,"AG",$E(X,1,30),DA)
+                                3)= This is the follow-up date cross-reference.
+                                    This cross-reference is used for the Follow-up List.  
+
+
+
+433,6         SEGMENT                0;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>500)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 18, 1988 
+              HELP-PROMPT:      Type a Number between 0 and 500, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the AMIS segment for this transaction.  
+
+
+433,7         RC DOJ CODE            0;7 SET
+
+                                'DC' FOR REGIONAL COUNSEL; 
+                                'DOJ' FOR DEPARTMENT OF JUSTICE; 
+                                'IRS' FOR INTERNAL REVENUE SERVICE; 
+                                'RC' FOR REGIONAL COUNSEL; 
+                                'TOP' FOR TREASURY OFFSET PROGRAM; 
+              LAST EDITED:      NOV 09, 1999 
+              HELP-PROMPT:      Enter the Referral Code that is in File 430 when this transaction was created. 
+              DESCRIPTION:
+                                This indicates a referral to the Regional Counsel, IRS or the Department of Justice.  
+
+
+433,8         APPROPRIATION SYMBOL   0;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<7) X
+              LAST EDITED:      MAR 30, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 7-10 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is the appropriation symbol for this transaction.  
+
+
+433,10        INCOMPLETE TRANSACTION FLAG 0;10 SET
+
+                                '1' FOR INCOMPLETE TRANSACTION; 
+              LAST EDITED:      MAR 09, 1992 
+              DESCRIPTION:
+                                This field marks a transaction as being "invalid" for printing on the patient statement.  This will also exclude the transaction from being counted on the balance discrepancy report.  
+
+
+433,11        TRANSACTION DATE       1;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT(0)=-DT,%DT="E" D ^%DT S X=Y K:Y<1 X K %DT
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      Type the Date of Transaction.  Transaction date cannot be for future date. 
+              DESCRIPTION:
+                                This is the date of this transaction.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  433^AD^MUMPS 
+                                1)= D AT^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+
+433,12        TRANSACTION TYPE       1;2 POINTER TO ACCOUNTS RECEIVABLE TRANS.TYPE FILE (#430.3) (Required)
+
+              INPUT TRANSFORM:  K:$P(^PRCA(433,DA,0),U,2)="" X Q
+              LAST EDITED:      JUL 20, 2005 
+              HELP-PROMPT:      This field is internally populated by AR.  This field contains the transaction type for the entry. 
+              DESCRIPTION:
+                                This points to the AR transaction file (#430.3). The input would be accepted only if the transaction has a bill number.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  433^AW^MUMPS 
+                                1)= I X>7,X<12 S ^PRCA(433,"AW",X,DA)=""
+                                2)= K ^PRCA(433,"AW",X,DA)
+                                This cross-reference is set if the transaction is a 'write-off' transaction (i.e., waivers and compromises).  It is used to calculate the summary write-off documents for FMS.  
+
+
+              CROSS-REFERENCE:  433^AT2^MUMPS 
+                                1)= I $P($G(^PRCA(433,DA,1)),U,9) S ^PRCA(433,"AT",X,+$P($P(^PRCA(433,DA,1),U,9),"."),DA)=""
+                                2)= I $P($G(^PRCA(433,DA,1)),U,9) K ^PRCA(433,"AT",X,+$P($P(^PRCA(433,DA,1),U,9),"."),DA)
+                                This cross reference is used by the National Database collector and by AR reports to look up transactions by transacation type and by date entered (processed).  
+
+
+              CROSS-REFERENCE:  433^AEOB1^MUMPS 
+                                1)= I X=2 D AEOB^RCRCUTL
+                                2)= I X'=2 K ^PRCA(433,"AEOB",+$P(^PRCA(433,DA,0),"^",2),DA)
+                                The AEOB cross-ref will be set if the Transaction Type is Payment in Part, for a TP bill referred to RC that does not have the EOB Code field populated.  
+
+
+              CROSS-REFERENCE:  433^AI^MUMPS 
+                                1)= D AT^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Date Queue file for transmission to the ARC.  
+
+
+
+433,13        RECEIPT #              1;3 FREE TEXT
+
+              RECEIPT NUMBER                                                                                                   
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>10!($L(X)<7) X
+              LAST EDITED:      JAN 12, 1994 
+              HELP-PROMPT:      Answer must be 7-10 characters in length. 
+              DESCRIPTION:
+                                This is a number assigned to the receipt when the payment was received.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  433^AF 
+                                1)= S ^PRCA(433,"AF",$E(X,1,30),DA)=""
+                                2)= K ^PRCA(433,"AF",$E(X,1,30),DA)
+                                3)= This is the receipt number cross-reference.
+                                     This cross-reference is used for sorting on receipt number.  
+
+
+
+433,14        ADJUSTMENT NUMBER      1;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<1) X
+              LAST EDITED:      OCT 15, 1993 
+              HELP-PROMPT:      This number is ordered automatically and sequentially. The length of this number would be 1-5 numbers/characters. 
+              DESCRIPTION:
+                                This is a number assigned automatically and sequentially.  
+
+
+433,15        TRANS. AMOUNT          1;5 NUMBER (Required)
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              LAST EDITED:      OCT 22, 1991 
+              HELP-PROMPT:      Type a dollar amount for this transaction with 2 decimal digits. Ex. 9999.99 or -9999.99 
+              DESCRIPTION:
+                                This is the amount of the transaction.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+433,16        SENT RECEIPT           1;6 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      OCT 22, 1987 
+              HELP-PROMPT:      Enter 'Y' for Yes or 'N' for No. 
+              DESCRIPTION:
+                                This flag indicates whether or not a receipt was sent to the debtor.  
+
+
+433,17        TERMINATION REASON     1;7 SET
+
+                                '1' FOR DEBTOR'S DEATH; 
+                                '2' FOR BANKRUPTCY; 
+                                '3' FOR INABILITY TO LOCATE; 
+                                '4' FOR WAIVED; 
+                                '5' FOR COMPROMISED; 
+                                '6' FOR A DEBT UNDER $25; 
+                                '7' FOR INABILITY TO COLLECT; 
+                                '8' FOR INCORRECT BILLING; 
+                                '9' FOR OTHERS; 
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      Enter code for termination reason. 
+              DESCRIPTION:
+                                This is the reason for terminating an account.  
+
+              CROSS-REFERENCE:  433^AH^MUMPS 
+                                1)= D AT^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+
+433,18        AMENDMENT TYPE         1;8 POINTER TO ACCOUNTS RECEIVABLE TRANS.TYPE FILE (#430.3)
+
+              LAST EDITED:      JUL 14, 1988 
+              HELP-PROMPT:      ENTER THE AMENDMENT TYPE. 
+              DESCRIPTION:
+                                This is the type of transaction from File 430.3 for an amendment.  
+
+
+433,19        DATE ENTERED           1;9 DATE
+
+              INPUT TRANSFORM:  S %DT="T",X="NOW" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 12, 2003 
+              HELP-PROMPT:      This sets in the original date that the transaction was processed 
+              WRITE AUTHORITY:  ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the BILL NUMBER field of the AR TRANSACTION File 
+
+              CROSS-REFERENCE:  433^ATD^MUMPS 
+                                1)= I $P($G(^RCD(340,+$P($G(^PRCA(430,+$P(^PRCA(433,DA,0),"^",2),0)),"^",9),0)),"^")[(";DPT(") S ^PRCA(433,"ATD",$P(^PRCA(430,+$P(^PRCA(433,DA,0),"^",2),0),"^",9),$E(X,1,30),DA)=""
+                                2)= I $P($G(^RCD(340,+$P($G(^PRCA(430,+$P(^PRCA(433,DA,0),"^",2),0)),"^",9),0)),"^")[(";DPT(") K ^PRCA(433,"ATD",$P(^PRCA(430,+$P(^PRCA(433,DA,0),"^",2),0),"^",9),$E(X,1,30),DA)
+                                3)= This is the debtor and date entered cross-reference.
+                                This cross-reference is used for the patient statement. It is sorted by the DEBTOR (field 9, file 430) and DATE ENTERED (field 19, file 433).  We loop through the Debtors transactions (Date Entered) to display his 
+                                transactions for a specified time period.  
+
+
+              CROSS-REFERENCE:  433^AT1^MUMPS 
+                                1)= I $P($G(^PRCA(433,DA,1)),U,2) S ^PRCA(433,"AT",+$P(^PRCA(433,DA,1),U,2),$P(X,"."),DA)=""
+                                2)= I $P($G(^PRCA(433,DA,1)),U,2) K ^PRCA(433,"AT",+$P(^PRCA(433,DA,1),U,2),$P(X,"."),DA)
+                                This cross reference is used by the National Database collector and by AR reports to look up transactions by transacation type and by date entered (processed).  
+
+
+              CROSS-REFERENCE:  433^AC^MUMPS 
+                                1)= D AT^RCXVDEQ
+                                2)= Q
+                                This cross-reference will file the entry into the AR Data Queue file for transmission to the ARC.  
+
+
+
+433,20        PREPAYMT TRANS.        5;1 POINTER TO AR TRANSACTION FILE (#433)
+
+              LAST EDITED:      APR 09, 1992 
+              DESCRIPTION:
+                                This field holds the corresponding transaction that caused this transaction to be set. This field should be set when a payment is posted from a prepayment bill.  
+
+              CROSS-REFERENCE:  433^AP^MUMPS 
+                                1)= S:$D(^PRCA(433,DA,1)) ^PRCA(433,"AP",+^(1),X,DA)=""
+                                2)= K ^PRCA(433,"AP",+^PRCA(433,DA,1),X,DA)
+                                3)= This is the prepayment transaction cross-reference.
+                                This cross-reference is used for sorting by the Prepayment Trans. Date.  
+
+
+
+433,21        IRS LOC.COST           2;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<$S($D(PRCASUP):-9999.99,1:0)) X
+              LAST EDITED:      NOV 27, 1987 
+              HELP-PROMPT:      Enter the cost paid to IRS for locating this debtor. 
+              DESCRIPTION:
+                                This is the cost charged to an account for an IRS locator search.  
+
+              EXECUTABLE HELP:  W "Enter a Dollar Amount between ",$S($D(PRCASUP):"-9999.99",1:"0")," and 9999.99, 2 Decimal Digits."
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+433,22        CREDIT REP.COST        2;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<$S($D(PRCASUP):-9999.99,1:0)) X
+              LAST EDITED:      NOV 27, 1987 
+              HELP-PROMPT:      Enter the cost paid for the credit report requests. 
+              DESCRIPTION:
+                                This is the cost charged to an account for a Credit Rep. locator search.  
+
+              EXECUTABLE HELP:  W "Enter a dollar amount between ",$S($D(PRCASUP):"-9999.99",1:"0")," and 9999.99,2 decimal digits."
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+433,23        DMV LOC.COST           2;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<$S($D(PRCASUP):-9999.99,1:0)) X
+              LAST EDITED:      NOV 27, 1987 
+              HELP-PROMPT:      Enter the cost paid for the State Agency/DMV locator actions. 
+              DESCRIPTION:
+                                This is the cost charged to an account for a State Agency/Department of Motor Vehicles locator search.  
+
+              EXECUTABLE HELP:  W "Enter a dollar amount between ",$S($D(PRCASUP):"-9999.99",1:"0")," and 9999.99, 2 decimal digits"
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+433,24        CONSUMER REP.AGENCY COST 2;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999.99)!(X<$S($D(PRCASUP):-9999.99,1:0)) X
+              LAST EDITED:      NOV 27, 1987 
+              HELP-PROMPT:      Enter the cost paid for the consumer reporting agency referrals. 
+              DESCRIPTION:
+                                This is the cost paid for the consumer reporting agency referral.  
+
+              EXECUTABLE HELP:  W "Enter a dollar amount between ",$S($D(PRCASUP):"-9999.99",1:"0")," and 9999.99, 2 decimal digits"
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+433,25        MARSHAL FEE            2;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999)!(X<$S($D(PRCASUP):-9999.99,1:0)) X
+              LAST EDITED:      NOV 27, 1987 
+              HELP-PROMPT:      Enter the amount of the Marshal Fee. 
+              DESCRIPTION:
+                                This is the cost of a Marshal's Fee charged to an account.  
+
+              EXECUTABLE HELP:  W "Enter a dollar amount between ",$S($D(PRCASUP):"-9999.99",1:"0")," and 9999.99, 2 decimal digits."
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+433,26        COURT COST             2;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999)!(X<$S($D(PRCASUP):-9999.99,1:0)) X
+              LAST EDITED:      NOV 27, 1987 
+              DESCRIPTION:
+                                This is the court cost charged to an account.  
+
+              EXECUTABLE HELP:  W "Enter a dollar amount between ",$S($D(PRCASUP):"-9999.99",1:"0")," and 9999.99, 2 decimal digits."
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+433,27        INT.CHARGE             2;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<$S($D(PRCASUP):-99999.99,1:0)) X
+              LAST EDITED:      JUL 22, 1992 
+              HELP-PROMPT:      Enter the amount of interest to be charged. 
+              DESCRIPTION:
+                                This is an interest charge added to an account.  
+
+              EXECUTABLE HELP:  W "Enter a dollar amount between 0 and 99999.99, 2 decimal digits."
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+433,28        ADM.CHARGE             2;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<$S($D(PRCASUP):-99999.99,1:0)) X
+              LAST EDITED:      JUL 22, 1992 
+              HELP-PROMPT:      Enter amount of admin. charges to be made. 
+              DESCRIPTION:
+                                This is the cost of administrative charges added to an account.  
+
+              EXECUTABLE HELP:  W "Enter a dollar amount between 0 and 99999.99, 2 decimal digits."
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+433,29        PENALTY CHARGE         2;9 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>99999.99)!(X<-9999.99) X
+              LAST EDITED:      JUN 19, 2000 
+              HELP-PROMPT:      Type a Dollar Amount between -9999.99 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This field is used to track the penalty charge dollars added or exempted from a bill.  
+
+
+433,31        PRIN.COLLECTED         3;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+              LAST EDITED:      OCT 11, 1988 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount received that has been applied to the principal balance.  
+
+
+433,32        INTEREST COLLECTED     3;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      OCT 11, 1988 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount received that has been applied to the interest charges.  
+
+
+433,33        ADMIN.COLLECTED        3;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      OCT 11, 1988 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount received that has been applied to the administrative charges.  
+
+
+433,34        MARSHAL FEE COLLECTED  3;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+              LAST EDITED:      OCT 28, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount received that has been applied to the Marshal's Fees.  
+
+
+433,35        COURT COST COLLECTED   3;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+              LAST EDITED:      OCT 28, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount received that has been applied to the Court Cost charges.  
+
+
+433,41        COMMENTS               7;0   WORD-PROCESSING #433.041
+
+              DESCRIPTION:
+                                This is an optional comments field for this transaction.  
+
+
+433,42        PROCESSED BY           0;9 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 11, 1992 
+              HELP-PROMPT:      Enter processing person's name. 
+              DESCRIPTION:
+                                This is the person who processed this transaction.  
+
+
+433,54        EOB CODE               5;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      OCT 04, 1997 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:      This is the EOB Code that is on the EOB from the Insurance Company.  This field should be populated for all payment transactions on TP bills that are Referred to RC.  If a payment was posted to a bill and this field is not
+                                populated, notification will be made. 
+                                 
+                                 
+
+              CROSS-REFERENCE:  433^AEOB^MUMPS 
+                                1)= K ^PRCA(433,"AEOB",+$P(^PRCA(433,DA,0),"^",2),DA)
+                                2)= Q
+                                This cross-ref is used to alert AR staff that EOB Processing should be done for a payment transaction. These payments are from Insurance Companies whose bill is referred to RC for collection action.  Once the EOB Code is
+                                entered, this cross-ref can be deleted.  
+
+
+
+433,61        DESCRIPTION            6;0 DATE Multiple #433.061 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is a description of the individual charges.  
+
+
+433.061,.01     DATE OF CHARGES        0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 18, 1988 
+                HELP-PROMPT:      Enter the date the charges were incurred. 
+                DESCRIPTION:
+                                  This is the date the charges were incurred.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  433.061^B 
+                                  1)= S ^PRCA(433,DA(1),6,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCA(433,DA(1),6,"B",$E(X,1,30),DA)
+                                  This cross-reference is used for sorting by Date of Charges.  
+
+
+
+433.061,1       TYPE OF CARE           0;2 POINTER TO ACCOUNTS RECEIVABLE CATEGORY FILE (#430.2)
+
+                LAST EDITED:      JUL 19, 1988 
+                HELP-PROMPT:      Enter Type of Care. 
+                DESCRIPTION:
+                                  This is the type of medical care provided, a pointer to File 430.2.  
+
+
+433.061,3       QUANTITY (UNITS)       0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 19, 1988 
+                HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of units being billed.  
+
+
+433.061,4       UNIT COST              0;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999)!(X<0) X
+                LAST EDITED:      JUL 19, 1988 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 99999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the cost of a single unit.  
+
+
+433.061,5       UNIT                   0;5 POINTER TO UNIT OF ISSUE FILE (#420.5)
+
+                LAST EDITED:      JUL 19, 1988 
+                HELP-PROMPT:      Enter Unit code. 
+                DESCRIPTION:
+                                  This is the unit used on the bill, a pointer to File 420.5 
+
+
+433.061,6       TOTAL AMOUNT           0;6 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999)!(X<0) X
+                LAST EDITED:      JUL 19, 1988 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the total cost of the units billed.  
+
+
+433.061,8       TRANS. AMOUNT          0;8 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999)!(X<-999999) X
+                LAST EDITED:      JUL 19, 1988 
+                HELP-PROMPT:      Type a Dollar Amount between -999999 and 999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the total amount of the transaction.  
+
+
+
+
+433,81        PRINCIPAL BALANCE      8;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+              LAST EDITED:      MAR 31, 1988 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the principal balance after payment has been applied.  
+
+
+433,82        INTEREST BALANCE       8;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      MAR 31, 1988 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the balance of interest charges after payment has been applied.  
+
+
+433,83        ADMIN. BALANCE         8;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      MAR 31, 1988 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the balance of the administrative charges after payment has been applied.  
+
+
+433,84        MARSHAL FEE            8;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      MAR 31, 1988 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the balance of the Marshal Fee after payment has been applied.  
+
+
+433,85        COURT COST             8;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      MAR 31, 1988 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the court cost that has been applied.  
+
+
+433,86        TRANS. COMMENTS        8;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>75!($L(X)<3) X
+              LAST EDITED:      JUL 18, 1988 
+              HELP-PROMPT:      ANSWER MUST BE 3-75 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                This is an optional short comment for this transaction.  
+
+
+433,87        EXCESS PAYMENT         8;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999.99)!(X<-999999.99) X
+              LAST EDITED:      FEB 16, 1989 
+              HELP-PROMPT:      Enter the amount of the overpayment. 
+              DESCRIPTION:
+                                This field stores the amount of an overpayment that needs to be liquidated.  
+
+
+433,88        CONTRACTUAL ADJUSTMENT 8;8 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      OCT 13, 1995 
+              DESCRIPTION:
+                                Enter a 1 for Yes if this decrease is for a reimbursable bill.  
+
+              CROSS-REFERENCE:  433^CA^MUMPS 
+                                1)= I X=1 S ^PRCA(433,"CA",DA)=""
+                                2)= K ^PRCA(433,"CA",DA)
+                                This x-ref identifies Contract Adjustment Transactions.  It is used by the FMS data collector to compile the WR 06 document for transmission to FMS.  
+
+
+
+433,89        CO-PAY EXEMPTION TRANSACTION? 1;10 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JUN 03, 1993 
+              DESCRIPTION:      This field is set to a '1' whenever a decrease adjustment or an interest exemption is applied automatically due to exemption from medication co-pays.  It is also set for increases to prepayment bills due to co-pay
+                                exemption.  
+
+              TECHNICAL DESCR:
+                                This field is set to a '1' whenever routine PRCAX sets up an automatic decrease or increase adjustment or an interest exemption.  
+
+              CROSS-REFERENCE:  433^ACE^MUMPS 
+                                1)= Q:'X  S ^PRCA(433,"ACE",+$P($G(^PRCA(433,+DA,1)),U),+DA)=""
+                                2)= K ^PRCA(433,"ACE",$P($G(^PRCA(433,+DA,1)),U),+DA)
+                                This cross-reference is set to aid in printing the medication co-pay exemption report. It is set whenever the decrease transaction or interest exemption transaction is applied as a result of an exemption from medication
+                                co-pays. It is also set for the increase transaction if a refund bill is set up as a result of medication co-pays.  
+
+
+
+433,90        SUSPENSION TYPE        1;11 SET
+
+                                '0' FOR NON-COPAY SUSPENSION; 
+                                '1' FOR INITIAL CO-PAY WAIVER; 
+                                '2' FOR APPEAL CO-PAY WAIVER; 
+              LAST EDITED:      FEB 25, 1994 
+              DESCRIPTION:      This field documents the reason for the type of suspension for copay waiver request by veterans.  Two types of waiver can be documented, one for the initial copay waiver and the second is when the original copay waiver was
+                                denied and the veteran is appealing the decision.  
+
+
+433,91        AMOUNT PAID TO MCCF    9;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999.99)!(X<0) X
+              LAST EDITED:      JUN 25, 2001 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                For a payment transaction, this field stores the amount of the payment that is paid to the MCCF fund.  
+
+
+433,92        AMOUNT PAID TO HSIF    9;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999.99)!(X<0) X
+              LAST EDITED:      JUN 25, 2001 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                For a payment transaction, this field stores the amount of the payment that is paid to the HSIF fund.  
+
+
+433,93        HARTFORD/USAA SETTLEMENT 9;3 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 28, 2002 
+              HELP-PROMPT:      Is this transaction related to the Hartford/USAA settlement. 
+              DESCRIPTION:
+                                This is a flag indicating that this transaction relates to the Hartford/USAA settlement.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ACCOUNTS RECEIVABLE (#430)        BILL NUMBER (#.03)
+
+ACCOUNTS RECEIVABLE CATEGORY 
+                   (#430.2)       DESCRIPTION:TYPE OF CARE (#1)
+
+ACCOUNTS RECEIVABLE TRANS.TYPE 
+                   (#430.3)       TRANSACTION TYPE (#12)
+                                  AMENDMENT TYPE (#18)
+
+AR TRANSACTION (#433)             PREPAYMT TRANS. (#20)
+
+NEW PERSON (#200)                 PROCESSED BY (#42)
+
+UNIT OF ISSUE (#420.5)            DESCRIPTION:UNIT (#5)
+
+
+
+INPUT TEMPLATE(S):
+PRCA COMMENT                  DEC 01, 1997@11:31  USER #0    
+     This templates records AR Comment Transaction data.
+PRCA CREATE TRANS STUB        JAN 29, 1997@15:40  USER #0    
+PRCA FY ADJ2 BATCH            MAR 26, 1992@11:09  USER #0    
+PRCA PAYMENT                  FEB 18, 1992@14:46  USER #0    
+     This template enters a payment transaction.
+     OPTION: PRCAC TR PAYMENT
+PRCA RE-ESTABLISH WRITE-OFF   JUL 08, 1993@10:30  USER #0    
+PRCAC DCDOJ REFER             DEC 03, 1997@10:55  USER #0    
+     This template records an account referral to the Regional Counsel
+     or the Department of Justice.
+     OPTION: PRCAC DCDOJ REFER
+PRCAC DCDOJ REREFER           DEC 03, 1997@14:29  USER #0    
+     This template records an account re-referral to the Regional Counsel
+     or the Department of Justice.
+     OPTION: PRCAC DCDOJ REREFER
+PRCAC DCDOJ RETN              DEC 03, 1997@14:27  USER #0    
+     This template records an account that has been returned by the
+     Regional Counsel or the Department of Justice.
+     OPTION: PRCAC DCDOJ RETURNED
+PRCAC RC REFER                DEC 01, 1997@11:23  USER #0    
+     This template records referral information for TP bills.
+PRCAC RC TRAN                 JAN 16, 1998@16:02  USER #0    
+     This template records information for TP referral Transactions.
+PRCAE ADMIN                   MAY 17, 2000@13:22  USER #0    
+     This template adds an administrative charge to an account.
+     OPTION: PRCAC TR ADM
+
+PRINT TEMPLATE(S):
+PRCA DISP ADJ                 AUG 31, 1999@13:15  USER #0    ^PRCATO4                                                                                                                                                                                        @
+     This template displays a transaction prior to editing. Multiple
+     appropriations are shown.
+     COMPILED: ^PRCATO4
+     OPTION:    PRCAC TR ADJUSTMENT
+PRCA DISP CARE                AUG 31, 1999@13:17  USER #0    ^PRCATO5                                                                                                                                                                            AR TRANS LIST
+     This template displays a transaction prior to editing. Multiple
+     units of care are shown.
+     COMPILED: ^PRCATO5
+     OPTION:    PRCAC TR ADJUSTMENT
+PRCA FOLLOW-UP                DEC 03, 1997@09:37  USER #0                                                                                                                                                                           TRANSACTION FOLLOW-UP LIST
+     This template is used to print the Comment Transactions pending
+     follow-up actions.
+PRCA TRANS PROFILE            OCT 05, 2011@13:54  USER #0    ^PRCATR3                                                                                                                                                                                        @
+     This template displays/prints a profile for transaction of an AR.
+PRCAC TR LIST                 JAN 13, 1988        USER #0    ^PRCATW1                                                                                                                                                                                        @
+     This template lists accounts that have been written-off.
+     COMPILED: ^PRCATW1
+     OPTION:    PRCAL L WRITTEN OFF
+PRCAP AMIS                    JAN 26, 1989        USER #0                                                                                                                                                                            AR TRANSACTION STATISTICS
+PRCAP CARE WV                 AUG 31, 1999@13:24  USER #0    ^PRCATW3                                                                                                                                                                                        @
+     This template displays a transaction prior to editing a waiver.
+     Multiple appropriations are shown.
+     COMPILED: ^PRCATW3
+     OPTION:    PRCAC TR WAIVED
+PRCAP COST                    NOV 27, 1987        USER #0    ^PRCATO3                                                                                                                                                                                        @
+     This template displays the administrative/Interest costs prior
+     to editing.
+     COMPILED: ^PRCATO3
+     OPTION:    PRCAC TR ADM
+PRCAP WAIVED                  AUG 31, 1999@13:27  USER #0    ^PRCATW2                                                                                                                                                                                        @
+     This template displays waiver information prior to editing. Multiple
+     appropriations are shown.
+     COMPILED: ^PRCATW2
+     OPTION:    PRCAC TR WAIVED
+PRCAS DC                      MAR 03, 1998@12:20  USER #0                                                                                                                                                                            AR TRANSACTION STATISTICS
+     This option prints referred bill transactions to Regional Counsel.
+PRCAT NEW TRANS               AUG 31, 1999@13:29  USER #0    ^PRCATP9                                                                                                                                                                                        @
+     This template prints a list of new transactions that are pending
+     CALM code sheets.
+     COMPILED: ^PRCATP9
+     OPTION:    PRCAT LIST NEW TRANSACTIONS
+
+SORT TEMPLATE(S):
+PRCA FOLLOW-UP                JUL 14, 1993@14:33  USER #0    
+SORT BY: @FOLLOW-UP DATE//    (User is asked range)
+  WITHIN FOLLOW-UP DATE, SORT BY: @#PROCESSED BY//
+
+PRCAS AMIS SORT               JUN 16, 1988        USER #0    
+SORT BY: #SEGMENT//    (User is asked range)
+  WITHIN SEGMENT, SORT BY: +TRANSACTION TYPE//
+    WITHIN TRANSACTION TYPE, SORT BY: DATE CALM DONE//    (User is asked range)
+      WITHIN DATE CALM DONE, SORT BY: BILL NUMBER//
+     This template sorts transactions by AMIS reporting segments.
+     OPTION: PRCAD AMIS REPORT
+
+PRCAT NEW TRANS               MAR 31, 1988        USER #0    
+SORT BY: @TRANSACTION NUMBER//
+  WITHIN TRANSACTION NUMBER, SORT BY: @TRANSACTION TYPE:CALM CODE TYPE//     From 'YES'  To 'YES'
+    WITHIN TRANSACTION TYPE:CALM CODE TYPE, SORT BY: CALM CODE DONE//     From '1'  To '1'
+     This template sorts transactions fro the 'New Bills Pending
+     CALM Transaction' listing.
+     OPTION: PRCAT LIST PENDING CALM
+
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,318 @@
+STANDARD DATA DICTIONARY #355.9 -- IB BILLING PRACTITIONER ID FILE                                                                                                                                                                MAY 20,2014@15:35:46  PAGE 1
+STORED IN ^IBA(355.9,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains one record for each unique billing provider id number that an individual provider (practitioner) is assigned by an insurance company or by a licensing or government entity.  Entries without an insurance company indicate the number is
+assigned to the practitioner by a licensing or government entity and will apply to all insurance companies.  
+ 
+ This file contains the id numbers for the following ids: 
+  o  Assigned by gov't or licensing agency to a practitioner 
+         for all ins co 
+  o  Assigned by an insurance co to an individual practitioner 
+  o  Assigned by an insurance co to an individual practitioner, 
+         but a new number assigned for each care unit entry 
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: 
+IDENTIFIED BY: INSURANCE CO (#.02), FORM TYPE APPLIED TO (#.04)[R], BILL CARE TYPE (#.05)[R], PROVIDER ID TYPE (#.06)[R]
+
+CROSS
+REFERENCED BY: PROVIDER ID CARE UNIT(ACARE), PRACTITIONER(B), PROVIDER ID(C)
+
+INDEXED BY:    PROVIDER ID TYPE & INDEX VALUE INSURANCE CO & PRACTITIONER (AC), PROVIDER ID TYPE & PRACTITIONER & INDEX VALUE INSURANCE CO (AD), INSURANCE CO & PRACTITIONER (AE), PRACTITIONER & INSURANCE CO & PROVIDER ID CARE UNIT (AG), PRACTITIONER &
+               BILL CARE TYPE & INDEX VALUE INSURANCE CO & INDEX VALUE CARE UNIT & PROVIDER ID TYPE & FORM TYPE APPLIED TO (AUNIQ)
+
+
+355.9,.01     PRACTITIONER           0;1          VARIABLE POINTER (Required)
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 200  1    VA           n   VA PROVIDER 
+            355.93    2    NVA          y   NON-VA PROVIDER 
+              SCREEN ON FILE 355.93: S DIC("S")="I $P(^(0),U,2)=2"
+                                         
+              INPUT TRANSFORM:  I $G(DA) K:$$DUP^IBCEP1(.01,DA) X
+              LAST EDITED:      DEC 20, 2000 
+              HELP-PROMPT:      Enter the name of the individual provider (practitioner).  This cannot be a duplicate of any entry in the NEW PERSON file. 
+              DESCRIPTION:      This is the practitioner (individual provider) for whom the id number is being defined. This practitioner can either be a VA provider and reside in the NEW PERSON file or can be a NON-VA provider and will reside in the IB
+                                NON-VA BILLING PROVIDER file as an individual provider (not as a facility).  
+
+              TECHNICAL DESCR:
+                                DBIA #3272 was secured to allow this file's .01 field to point to file 200.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  355.9^B 
+                                1)= S ^IBA(355.9,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.9,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.9^.15 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBA(355.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,15)="" I X S X=DIV S Y(1)=$S($D(^IBA(355.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,15),X=X S DIU=X K Y S X=DIV S X="*ALL*" X ^DD(35
+                                5.9,.01,1,2,1.4)
+
+                                1.4)= S DIH=$G(^IBA(355.9,DIV(0),0)),DIV=X S $P(^(0),U,15)=DIV,DIH=355.9,DIG=.15 D ^DICR
+
+                                2)= Q
+                                3)= Do not delete
+                                CREATE CONDITION)= INDEX VALUE INSURANCE CO=""
+                                CREATE VALUE)= "*ALL*"
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= INDEX VALUE INSURANCE CO
+                                This trigger 'seeds' a value into the key field for insurance company so the value of the key is never null, even if the insurance company is not entered.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.9^.16 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^IBA(355.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,16)="" I X S X=DIV S Y(1)=$S($D(^IBA(355.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y S X=DIV S X="*N/A*" X ^DD(35
+                                5.9,.01,1,3,1.4)
+
+                                1.4)= S DIH=$G(^IBA(355.9,DIV(0),0)),DIV=X S $P(^(0),U,16)=DIV,DIH=355.9,DIG=.16 D ^DICR
+
+                                2)= Q
+                                3)= Do not delete
+                                CREATE CONDITION)= INDEX VALUE CARE UNIT=""
+                                CREATE VALUE)= "*N/A*"
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= INDEX VALUE CARE UNIT
+                                This trigger 'seeds' a value into the key field for care unit so the value of the key is never null, even if the care unit is not entered.  
+
+
+              RECORD INDEXES:   AC (#116), AD (#117), AE (#118), AG (#119), AUNIQ (#120)
+
+355.9,.02     INSURANCE CO           0;2 POINTER TO INSURANCE COMPANY FILE (#36)
+
+              INPUT TRANSFORM:  I $G(DA) K:$$DUP^IBCEP1(.02,DA) X
+              LAST EDITED:      DEC 07, 2000 
+              HELP-PROMPT:      Enter the insurance company who has specific id's for the provider 
+              DESCRIPTION:
+                                This is the insurance company that has assigned a specific id to the provider.  If this data is not entered, the id number will be assumed to apply to all insurance companies for the provider.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.9^.03 
+                                1)= Q
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" S DIH=$G(^IBA(355.9,DIV(0),0)),DIV=X S $P(^(0),U,3)=DIV,DIH=355.9,DIG=.03 D ^DICR
+                                CREATE VALUE)= NO EFFECT
+                                DELETE VALUE)= @
+                                FIELD)= PROVIDER ID CARE UNIT
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.9^.15 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,15),X=X S DIU=X K Y S X=DIV S X=DIV,X=X S DIH=$G(^IBA(355.9,DIV(0),0)),DIV=X S $P(^(0),U,15)=DIV,DIH=355.9,DIG=.15 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,15),X=X S DIU=X K Y S X=DIV S X="*ALL*" S DIH=$G(^IBA(355.9,DIV(0),0)),DIV=X S $P(^(0),U,15)=DIV,DIH=355.9,DIG=.15 D ^DICR
+                                3)= Do not delete
+                                CREATE VALUE)= INTERNAL(INSURANCE CO)
+                                DELETE VALUE)= "*ALL*"
+                                FIELD)= INDEX VALUE INSURANCE CO
+                                When the insurance company is entered or changed, trigger the same value into the field.  When insurance company is deleted, re-seed it with *ALL* 
+
+
+              RECORD INDEXES:   AE (#118), AG (#119)
+
+355.9,.03     PROVIDER ID CARE UNIT  0;3 POINTER TO IB INS CO PROVIDER ID CARE UNIT FILE (#355.96)
+
+              INPUT TRANSFORM:  S:$D(DA) DIC("S")="I +$G(^IBA(355.96,+Y,0))=+$P($G(^IBA(355.9,DA,0)),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X),$G(DA) K:$$DUP^IBCEP1(.03,DA) X
+              LAST EDITED:      JUN 02, 2004 
+              HELP-PROMPT:      Enter the specific care unit value needed to get the provider id. 
+              DESCRIPTION:
+                                This is the actual data value of the care unit to use to assign this provider id to the insurance company and provider.  *** NOT CURRENTLY USED *** 
+
+              SCREEN:           S DIC("S")="I +$G(^IBA(355.96,+Y,0))=+$P($G(^IBA(355.9,DA,0)),U,2)"
+              EXPLANATION:      Value must be defined as valid for the insurance co
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the INSURANCE CO field of the IB BILLING PRACTITIONER ID File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.9^.16 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=Y(0),X=X I X S X=DIV S Y(1)=$S($D(^IBA(355.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y S X=DIV S X=DIV,X=X X ^DD(355.9,.03,1,1,1.4)
+                                1.4)= S DIH=$G(^IBA(355.9,DIV(0),0)),DIV=X S $P(^(0),U,16)=DIV,DIH=355.9,DIG=.16 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.9,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y S X=DIV S X="*N/A*" S DIH=$G(^IBA(355.9,DIV(0),0)),DIV=X S $P(^(0),U,16)=DIV,DIH=355.9,DIG=.16 D ^DICR
+                                CREATE CONDITION)= INTERNAL(PROVIDER ID CARE UNIT)
+                                CREATE VALUE)= INTERNAL(PROVIDER ID CARE UNIT)
+                                DELETE VALUE)= "*N/A*"
+                                FIELD)= INDEX VALUE CARE UNIT
+
+              CROSS-REFERENCE:  355.9^ACARE 
+                                1)= S ^IBA(355.9,"ACARE",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.9,"ACARE",$E(X,1,30),DA)
+                                3)= Do not delete
+                                This xref allows quick access to the file by care unit.  
+
+
+              RECORD INDEXES:   AG (#119)
+
+355.9,.04     FORM TYPE APPLIED TO   0;4 SET (Required)
+
+                                '0' FOR BOTH UB-04 AND CMS-1500 FORMS; 
+                                '1' FOR UB-04 FORMS ONLY; 
+                                '2' FOR CMS-1500 FORMS ONLY; 
+              LAST EDITED:      JAN 16, 2007 
+              HELP-PROMPT:      Enter the form types that this id # will apply to. 
+              DESCRIPTION:
+                                This designates whether the id number is to be used for just UB-04 form types, just CMS-1500 form types or both form types.  
+
+              RECORD INDEXES:   AUNIQ (#120)
+
+355.9,.05     BILL CARE TYPE         0;5 SET (Required)
+
+                                '0' FOR BOTH INPATIENT AND OUTPATIENT; 
+                                '1' FOR INPATIENT ONLY; 
+                                '2' FOR OUTPATIENT ONLY; 
+                                '3' FOR PRESCRIPTION ONLY; 
+              INPUT TRANSFORM:  I $G(DA) K:$$DUP^IBCEP1(.05,DA) X
+              LAST EDITED:      SEP 07, 2000 
+              HELP-PROMPT:      Enter the bill care type (inpatient/outpatient/Rx) that this id # will apply to. 
+              DESCRIPTION:
+                                This designates whether the id number is to be used for just inpatient episodes, just outpatient episodes, both inpatient and outpatient episodes, or for just prescriptions.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              RECORD INDEXES:   AUNIQ (#120)
+
+355.9,.06     PROVIDER ID TYPE       0;6 POINTER TO IB PROVIDER ID # TYPE FILE (#355.97) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)'=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X I $D(X),$G(DA) K:$$DUP^IBCEP1(.06,DA) X
+              LAST EDITED:      SEP 06, 2000 
+              HELP-PROMPT:      Enter the type of id # being recorded. 
+              DESCRIPTION:
+                                This is the indicator of what type of id is being recorded.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,2)'=1"
+              EXPLANATION:      ID types that are limited to facility level cannot be selected.
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              RECORD INDEXES:   AC (#116), AD (#117), AUNIQ (#120)
+
+355.9,.07     PROVIDER ID            0;7 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1)!'(X?1N.E!(X?1A.E)) X
+              LAST EDITED:      MAY 07, 2001 
+              HELP-PROMPT:      Answer must be 1-15 characters in length and must begin with a number or letter. 
+              DESCRIPTION:
+                                This is the provider id that will be used for a claim when all criteria defined on this record have been met.  
+
+              CROSS-REFERENCE:  355.9^C 
+                                1)= S ^IBA(355.9,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.9,"C",$E(X,1,30),DA)
+                                3)= Do not delete
+                                This allows a lookup on this file by provider id # 
+
+
+
+355.9,.15     INDEX VALUE INSURANCE CO 0;15 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      SEP 07, 2000 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field contains the key value for the insurance company or '*ALL*' if no insurance company is selected.  This is to assure uniqueness in the records in the file even if the insurance company is blank.  
+
+              TECHNICAL DESCR:
+                                Triggered on entry of the record by the .01 field to *ALL* 
+
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the PRACTITIONER field of the IB BILLING PRACTITIONER ID File 
+                                TRIGGERED by the INSURANCE CO field of the IB BILLING PRACTITIONER ID File 
+
+              RECORD INDEXES:   AC (#116), AD (#117), AUNIQ (#120)
+
+355.9,.16     INDEX VALUE CARE UNIT  0;16 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      SEP 07, 2000 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field contains the key value for the care unit or '*N/A*' if no care unit is selected.  This is to assure uniqueness in the records in the file even if the care unit is blank.  
+
+              TECHNICAL DESCR:
+                                Triggered on entry of the record by the .01 field to *N/A* 
+
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the PRACTITIONER field of the IB BILLING PRACTITIONER ID File 
+                                TRIGGERED by the PROVIDER ID CARE UNIT field of the IB BILLING PRACTITIONER ID File 
+
+              RECORD INDEXES:   AUNIQ (#120)
+
+
+      FILES POINTED TO                      FIELDS
+
+IB INS CO PROVIDER ID CARE UNI 
+                   (#355.96)      PROVIDER ID CARE UNIT (#.03)
+
+IB NON/OTHER VA BILLING PROVID 
+                   (#355.93)      PRACTITIONER (#.01)
+
+IB PROVIDER ID # TYPE (#355.97)   PROVIDER ID TYPE (#.06)
+
+INSURANCE COMPANY (#36)           INSURANCE CO (#.02)
+
+NEW PERSON (#200)                 PRACTITIONER (#.01)
+
+
+File #355.9
+
+  Record Indexes:
+
+  AC (#116)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  SORT BY PROVIDER TYPE,INS CO,PROVIDER
+      Description:  This cross reference groups all of one type of provider for an insurance company.  This can be used to get all provider ids for an insurance co (or for ALL insurance companies) 
+        Set Logic:  S ^IBA(355.9,"AC",X(1),$E(X(2),1,30),X(3),DA)=""
+       Kill Logic:  K ^IBA(355.9,"AC",X(1),$E(X(2),1,30),X(3),DA)
+       Whole Kill:  K ^IBA(355.9,"AC")
+             X(1):  PROVIDER ID TYPE  (355.9,.06)  (Subscr 1)  (forwards)
+             X(2):  INDEX VALUE INSURANCE CO  (355.9,.15)  (Subscr 2)  (Len 30)  (forwards)
+             X(3):  PRACTITIONER  (355.9,.01)  (Subscr 3)  (forwards)
+
+  AD (#117)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Sequence by provider type,provider,insurance co
+      Description:  This cross reference provides a sequencing of all the insurance company (or ALL) id's for a provider by provider type.  It can be used to get all insurance co id's for a provider, by provider type 
+        Set Logic:  S ^IBA(355.9,"AD",X(1),X(2),$E(X(3),1,30),DA)=""
+       Kill Logic:  K ^IBA(355.9,"AD",X(1),X(2),$E(X(3),1,30),DA)
+       Whole Kill:  K ^IBA(355.9,"AD")
+             X(1):  PROVIDER ID TYPE  (355.9,.06)  (Subscr 1)  (forwards)
+             X(2):  PRACTITIONER  (355.9,.01)  (Subscr 2)  (forwards)
+             X(3):  INDEX VALUE INSURANCE CO  (355.9,.15)  (Subscr 3)  (Len 30)  (forwards)
+
+  AE (#118)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  XREF BY INSURANCE CO AND PROVIDER
+        Set Logic:  S ^IBA(355.9,"AE",X(1),X(2),DA)=""
+       Kill Logic:  K ^IBA(355.9,"AE",X(1),X(2),DA)
+       Whole Kill:  K ^IBA(355.9,"AE")
+             X(1):  INSURANCE CO  (355.9,.02)  (Subscr 1)  (forwards)
+             X(2):  PRACTITIONER  (355.9,.01)  (Subscr 2)  (forwards)
+
+  AG (#119)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  WEFRWQ
+        Set Logic:  S ^IBA(355.9,"AG",$S(X2(2)="":"ALL",1:X2(2)),$S(X2(3)="":"TBD",1:X2(3)),DA)=""
+         Set Cond:  I X2(1)="" S X=0
+       Kill Logic:  K ^IBA(355.9,"AG",$S(X1(2)="":"ALL",1:X1(2)),$S(X1(3)="":"TBD",1:X1(3)),DA)
+             X(1):  PRACTITIONER  (355.9,.01)  (forwards)
+             X(2):  INSURANCE CO  (355.9,.02)  (forwards)
+             X(3):  PROVIDER ID CARE UNIT  (355.9,.03)  (forwards)
+
+  AUNIQ (#120)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  Xref by provider,ins co(or ALL),care unit,form type,pt stat,prov type
+      Description:  This cross reference provides an index to insure that each record in this file has a unique combination of provider,insurance company, form type, patient status and provider id type.  
+        Set Logic:  S ^IBA(355.9,"AUNIQ",X(1),$E(X(2),1,30),$E(X(3),1,30),X(4),X(5),X(6),DA)=""
+       Kill Logic:  K ^IBA(355.9,"AUNIQ",X(1),$E(X(2),1,30),$E(X(3),1,30),X(4),X(5),X(6),DA)
+       Whole Kill:  K ^IBA(355.9,"AUNIQ")
+             X(1):  PRACTITIONER  (355.9,.01)  (Subscr 1)  (forwards)
+             X(2):  INDEX VALUE INSURANCE CO  (355.9,.15)  (Subscr 2)  (Len 30)  (forwards)
+             X(3):  INDEX VALUE CARE UNIT  (355.9,.16)  (Subscr 3)  (Len 30)  (forwards)
+             X(4):  FORM TYPE APPLIED TO  (355.9,.04)  (Subscr 4)  (forwards)
+             X(5):  BILL CARE TYPE  (355.9,.05)  (Subscr 5)  (forwards)
+             X(6):  PROVIDER ID TYPE  (355.9,.06)  (Subscr 6)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

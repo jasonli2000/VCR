@@ -1,0 +1,3342 @@
+STANDARD DATA DICTIONARY #115 -- NUTRITION PERSON FILE                                                                                                                                                                            MAY 20,2014@15:32:10  PAGE 1
+STORED IN ^FHPT(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                 (VERSION 5.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains all dietetic orders for each admission of a patient. It includes diet orders, consult requests, supplemental feedings, early/late tray requests, and tubefeedings. It also contains any food allergies entered for the patient.  
+ 
+This file will also be used to store outpatient data for individuals served in the outpatient meals functionality.  
+
+
+              DD ACCESS: #
+              RD ACCESS: #F
+              WR ACCESS: #F
+             DEL ACCESS: #F
+           LAYGO ACCESS: #F
+
+POINTED TO BY: PATIENT field (#2) of the NUTRITION EVENTS File (#119.8) 
+               
+
+CROSS
+REFERENCED BY: EARLY/LATE TRAY(ADLT), DATE/TIME ENTERED(ADR), CLINICIAN(ADRU), STATUS(ADRV), CURRENT TF ORDER(ADTF), ISOLATION/PRECAUTION(AIS), STATUS(AOO), ORDER(ASP), DATE/TIME CANCELLED(ASP1), DIETETIC WARD(AW), NAME(B), OUTPATIENT LOCATION(C), 
+               ISOLATION/PRECAUTION (OUTPT)(D), ASSESSMENT FOLLOW-UP DATE(E), GUEST MEAL DATE/TIME(GM), ISOLATION/PRECAUTION (OUTPT)(IP), RECURRING MEAL DATE/TIME(OP), RECURRING MEAL DATE/TIME(RM), SPECIAL MEAL DATE/TIME(SM)
+
+INDEXED BY:    ORDER & DATE/TIME CANCELLED (ASPO)
+
+
+115,.01       NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<2)!'(X?1"P"1.11N!(X?1"N"1.11N)) X
+              LAST EDITED:      APR 12, 2006 
+              HELP-PROMPT:      Answer must be 2-15 characters in length. 
+              DESCRIPTION:      Beginning with the Outpatient Meals release this field will simply be a free text field.  This file will need to point to either File #2 or File #200 and those pointer values will be stored in fields #14 & #15
+                                respectively.  Those 2 fields will be mutually exclusive, ie, each entry in this file must have a pointer value in EITHER field #14 OR field #15, BUT NOT BOTH.  
+                                 
+                                Previously, this field was a pointer to the main ^DPT file and had the same internal number as that file. Thus, the patient's name was the ^DPT name.  This was no longer feasible since it was necessary to point to file
+                                #200 also.  
+                                 
+                                This field will now store either "P" followed by a pointer value to file #2 or an "N" followed by a pointer value to #200.  For example, this field might store P27 for IEN #27 in file #2.  Or this field might store N1866
+                                for IEN #1866 in file #200.  
+
+              CROSS-REFERENCE:  115^B 
+                                1)= S ^FHPT("B",$E(X,1,30),DA)=""
+                                2)= K ^FHPT("B",$E(X,1,30),DA)
+                                A standard "B" cross-reference on the .01 field for file 115.  Added 2/19/2003.  
+
+
+
+115,1         ADMISSION              A;0 DATE Multiple #115.01
+
+              LAST EDITED:      JAN 03, 1992 
+              DESCRIPTION:
+                                This multiple contains all dietetic information pertaining to this particular admission.  
+
+
+115.01,.01      ADMISSION              0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ETS" D ^%DT S X=Y K:Y<1 X
+                DESCRIPTION:
+                                  This is the date/time of admission. The admission has the same date/time and internal number as the corresponding MAS admission stored in ^DPT.  
+
+
+115.01,1.1      CURRENT DIET ORDER     0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAY 15, 1988 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 99999 
+                DESCRIPTION:
+                                  This field is actually a pointer to the current diet order stored in Field 3.  
+
+                WRITE AUTHORITY:  ^
+                                  UNEDITABLE
+
+115.01,1.2      DIET ORDER EXPIRATION  0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 15, 1988 
+                DESCRIPTION:
+                                  This field contains the date/time of expiration of the current diet pointed to by Field 1.1. If null, the current diet has no expiration date/time.  
+
+                WRITE AUTHORITY:  ^
+                                  UNEDITABLE
+
+115.01,1.3      CURRENT TF ORDER       0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 18, 1985 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 99999 
+                DESCRIPTION:
+                                  This field is actually a pointer to the current Tubefeeding Order stored in Field 40. If null, no current tubefeeding order exists.  
+
+                WRITE AUTHORITY:  ^
+                                  UNEDITABLE
+                CROSS-REFERENCE:  115^ADTF^MUMPS 
+                                  1)= S ^FHPT("ADTF",DA(1),DA)=""
+                                  2)= K ^FHPT("ADTF",DA(1),DA)
+                                  This is a list of Patients by Admission who have a current Tubefeeding Order.  
+
+
+
+115.01,2.1      CURRENT SERVICE        0;5 SET
+
+                                  'C' FOR CAFETERIA; 
+                                  'T' FOR TRAY; 
+                                  'D' FOR DINING ROOM; 
+                LAST EDITED:      MAY 15, 1988 
+                DESCRIPTION:
+                                  This field contains the most recent type of service (tray, cafeteria or dining room) selected for the patient. It is used as a default for future orders.  
+
+                                  UNEDITABLE
+
+115.01,3        DIET                   DI;0 Multiple #115.02 (Add New Entry without Asking)
+
+                DESCRIPTION:
+                                  This multiple contains the individual diet orders which have been entered during this admission.  
+
+
+115.02,.01        ORDER NUMBER           0;1 NUMBER
+
+                  INPUT TRANSFORM:  K:X'?1N.N X I $D(X) S DINUM=X
+                  LAST EDITED:      MAY 15, 1988 
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 99999 
+                  DESCRIPTION:
+                                    This field is merely the sequence order in which the diets were ordered and has no further meaning.  
+
+                                    UNEDITABLE
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+115.02,1          DIET1                  0;2 POINTER TO DIETS FILE (#111)
+
+                  LAST EDITED:      MAY 14, 1988 
+                  DESCRIPTION:
+                                    This is the first diet modification selected from the Diets (111) file.  
+
+                                    UNEDITABLE
+
+115.02,2          DIET2                  0;3 POINTER TO DIETS FILE (#111)
+
+                  LAST EDITED:      MAY 14, 1988 
+                  DESCRIPTION:
+                                    This is the second diet modification selected from the Diets (111) file.  
+
+                                    UNEDITABLE
+
+115.02,3          DIET3                  0;4 POINTER TO DIETS FILE (#111)
+
+                  LAST EDITED:      MAY 14, 1988 
+                  DESCRIPTION:
+                                    This is the third diet modification selected from the Diets (111) file.  
+
+                                    UNEDITABLE
+
+115.02,4          DIET4                  0;5 POINTER TO DIETS FILE (#111)
+
+                  LAST EDITED:      MAY 14, 1988 
+                  DESCRIPTION:
+                                    This is the fourth diet modification selected from the Diets (111) file.  
+
+                                    UNEDITABLE
+
+115.02,5          DIET5                  0;6 POINTER TO DIETS FILE (#111)
+
+                  LAST EDITED:      MAY 14, 1988 
+                  DESCRIPTION:
+                                    This is the fifth diet modification selected from the Diets (111) file.  
+
+                                    UNEDITABLE
+
+115.02,6          WITHHOLD               0;7 SET
+
+                                    'N' FOR NPO; 
+                                    'X' FOR NO ORDER; 
+                                    'P' FOR PASS; 
+                  LAST EDITED:      MAY 14, 1988 
+                  DESCRIPTION:
+                                    This field, if not null, indicates that an NPO type of order was entered.  
+
+                                    UNEDITABLE
+
+115.02,7          TYPE OF SERVICE        0;8 SET
+
+                                    'T' FOR TRAY; 
+                                    'C' FOR CAFETERIA; 
+                                    'D' FOR DINING ROOM; 
+                  LAST EDITED:      MAY 14, 1988 
+                  DESCRIPTION:      This field indicates the type of service requested for this diet order. It is not present for NPO orders. When this order becomes effective, this type of service will become the current type of service and will be the
+                                    default for future orders.  
+
+                                    UNEDITABLE
+
+115.02,8          DATE/TIME EFFECTIVE    0;9 DATE
+
+                  INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      MAY 14, 1988 
+                  DESCRIPTION:
+                                    This is the date/time when this diet order takes effect.  
+
+                                    UNEDITABLE
+
+115.02,9          DATE/TIME EXPIRES      0;10 DATE
+
+                  INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      MAY 14, 1988 
+                  DESCRIPTION:
+                                    This field indicates the date/time when this order is to expire.  If null, the order is 'open-ended' and will not expire until superceded by another order.  
+
+                                    UNEDITABLE
+
+115.02,10         CLERK                  0;11 POINTER TO NEW PERSON FILE (#200)
+
+                  DESCRIPTION:
+                                    This field is the person actually entering the order.  
+
+
+115.02,10.5       DATE/TIME ORDERED      0;12 DATE
+
+                  INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                  DESCRIPTION:
+                                    This is the date/time the order was actually entered and may bear little relationship the effective and/or expiration date/times of the actual order.  
+
+
+115.02,11         COMMENT                1;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+                  LAST EDITED:      JUN 28, 1996 
+                  HELP-PROMPT:      Answer must be 1-80 characters in length. 
+                  DESCRIPTION:
+                                    This is a comment field for any specialized comments concerning this diet order.  
+
+
+115.02,12         PRODUCTION DIET        0;13 POINTER TO PRODUCTION DIET FILE (#116.2) (Required)
+
+                  LAST EDITED:      JUL 13, 1987 
+                  DESCRIPTION:
+                                    This is a pointer to the Production Diet (116.2) file and is the outcome of the 'diet recoding' algorithm which is based upon the diet modifications selected. It is not present for NPO types of orders.  
+
+
+115.02,13         OE/RR ORDER            0;14 POINTER TO ORDER FILE (#100)
+
+                  LAST EDITED:      SEP 18, 1989 
+                  DESCRIPTION:
+                                    This field contains a pointer the the OE/RR file order corresponding to this order.  
+
+
+115.02,14         CURRENT OE/RR STATUS   0;15 POINTER TO ORDER STATUS FILE (#100.01)
+
+                  INPUT TRANSFORM:  S DIC("S")="I '$$SCREEN^XTID(100.01,,Y_"","")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      MAR 29, 2006 
+                  DESCRIPTION:
+                                    This field contains the current OE/RR status as passed to OE/RR.  It is a pointer to the OE/RR Status file (100.01).  
+
+                  SCREEN:           S DIC("S")="I '$$SCREEN^XTID(100.01,,Y_"","")"
+                  EXPLANATION:      Data Standardization of Order Status file #100.01
+
+115.02,15         LAST REVIEW DATE/TIME  0;16 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      APR 30, 1991 
+                  DESCRIPTION:
+                                    This is the date/time that the diet order was last reviewed if necessary.  (Reviews are based upon the coded Production Diet). Further reviews are based upon this last review date/time.  
+
+
+115.02,16         REVIEW CLERK           0;17 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      APR 30, 1991 
+                  DESCRIPTION:
+                                    This is a pointer to File 200 of the person entering the review.  
+
+
+115.02,17         CANCELLED DATE/TIME    0;18 DATE
+
+                  INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      MAR 18, 1992 
+                  DESCRIPTION:
+                                    This field contains the Date/Time when the NPO was cancelled.  
+
+
+115.02,18         CANCELLING CLERK       0;19 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      MAR 18, 1992 
+                  DESCRIPTION:
+                                    This field contains the user who cancelled the NPO and is captured automatically at the time of cancellation.  
+
+
+115.02,19         INDIVIDUAL PATTERN     2;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>200!($L(X)<2) X
+                  LAST EDITED:      NOV 10, 1994 
+                  HELP-PROMPT:      Answer must be 2-200 characters in length. 
+                  DESCRIPTION:      This field is the individual meal pattern for the patient which contains three strings of codes, each code separated by a space contains the internal number of the recipe category and the quantity separated by a comma
+                                    for the three meals, breakfast, noon, and evening, each separated by a semicolon.  The meal pattern will take precedence over the diet pattern entered in the Diet Pattern file (111.1).  
+
+                                    UNEDITABLE
+
+115.02,20         PATTERN CLERK          3;1 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      NOV 10, 1994 
+                  DESCRIPTION:
+                                    This is a pointer to File 200 of the person entering the patient's individual Diet Pattern.  
+
+
+115.02,21         DATE/TIME PATTERN ENTERED 3;2 DATE
+
+                  INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      NOV 10, 1994 
+                  DESCRIPTION:
+                                    This field contains the Date/Time when the Diet Pattern was entered.  
+
+
+
+
+115.01,4        DIET SEQUENCE            AC;0 DATE Multiple #115.14 (Add New Entry without Asking)
+
+                  DESCRIPTION:      This multiple indicates the sequence in which the diet orders actually become effective. Since orders entered later supercede earlier orders, the sequence times may not be the same as those of the original order. This
+                                    multiple is the outcome of a recursive templating schemata.  
+
+
+115.14,.01        DIET SEQUENCE DATE/TIME  0;1 DATE
+
+                    INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X I $D(X) S DINUM=X
+                    LAST EDITED:      MAY 21, 1988 
+                    DESCRIPTION:
+                                      This field is the date/time that a diet order is to take effect; the order will remain in effect until the following date/time sequence entry.  
+
+                                      UNEDITABLE
+                    NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+115.14,1          DIET ORDER #             0;2 NUMBER (Required)
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                    LAST EDITED:      MAY 21, 1988 
+                    HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                    DESCRIPTION:
+                                      This is the order number, in Field 3, of the diet order that is to become effective at the indicated date/time.  
+
+                                      UNEDITABLE
+
+
+
+115.01,6        CURRENT SF ORDER           0;7 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      MAY 15, 1988 
+                    HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+                    DESCRIPTION:      This field is actually a pointer to the Supplemental Feeding multiple (Field 20) and, if present, indicates which order is presently in effect. It is updated any time any diet activity involving supplemental feedings
+                                      takes place.  
+
+                                      UNEDITABLE
+
+115.01,9        ISOLATION/PRECAUTION       0;10 POINTER TO ISOLATION/PRECAUTION TYPE FILE (#119.4)
+
+                    LAST EDITED:      OCT 10, 1987 
+                    DESCRIPTION:
+                                      This field, if present, indicates that the patient is presently on isolation or special precautions.  
+
+                    CROSS-REFERENCE:  115^AIS^MUMPS 
+                                      1)= S ^FHPT("AIS",DA(1),DA)=""
+                                      2)= K ^FHPT("AIS",DA(1),DA)
+                                      This cross-reference is a list of patients on isolation/precautions.  
+
+
+
+115.01,10       OE/RR ISOLATION ORDER      0;13 POINTER TO ORDER FILE (#100)
+
+                    LAST EDITED:      SEP 19, 1989 
+                    DESCRIPTION:
+                                      This field contains the OE/RR file order pointer corresponding to the current Isolation/Precautions.  
+
+
+115.01,11       LAST LABEL WARD            0;11 POINTER TO NUTRITION LOCATION FILE (#119.6)
+
+                    LAST EDITED:      JUL 02, 1986 
+                    DESCRIPTION:      This field contains the internal number of the ward (from File 42) for which the last diet card label was prepared. Whenever a label run is made, this field is compared with the current ward and, if different, a new
+                                      label is prepared.  
+
+                                      UNEDITABLE
+
+115.01,12       LAST LABEL ROOM            0;12 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                    LAST EDITED:      AUG 26, 1985 
+                    HELP-PROMPT:      ANSWER MUST BE 1-10 CHARACTERS IN LENGTH 
+                    DESCRIPTION:
+                                      This field contains the room-bed for which the last diet card label was prepared. Whenever a label run is made, this field is compared with the current room-bed and, if different, a new label is prepared.  
+
+                                      UNEDITABLE
+
+115.01,13       DIETETIC WARD              0;8 POINTER TO NUTRITION LOCATION FILE (#119.6)
+
+                    LAST EDITED:      APR 08, 1993 
+                    DESCRIPTION:
+                                      This field indicates the Dietetic Ward on which the patient is currently residing.  
+
+                    CROSS-REFERENCE:  115^AW^MUMPS 
+                                      1)= S ^FHPT("AW",X,DA(1))=DA
+                                      2)= K ^FHPT("AW",X,DA(1))
+                                      This is a cross-reference of Dietetic Ward by Patient. The cross-reference is set to the admission number.  
+
+
+
+115.01,14       ROOM-BED                   0;9 POINTER TO ROOM-BED FILE (#405.4)
+
+                    LAST EDITED:      OCT 23, 1991 
+                    DESCRIPTION:
+                                      This field contains the free-text room-bed in which the patient is currently residing.  
+
+
+115.01,18       DISCHARGE DATE/TIME        0;14 DATE
+
+                    INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      NOV 29, 1991 
+                    DESCRIPTION:
+                                      This is the date/time a discharge was processed. It may differ from the date/time selected by the MAS clerk. It is used if the discharge is deleted.  
+
+
+115.01,20       SUPPLEMENTAL FEEDING       SF;0 Multiple #115.07
+
+                    LAST EDITED:      JUN 04, 1985 
+                    DESCRIPTION:
+                                      This multiple contains the various supplemental feeding orders which have been entered for the patient.  
+
+
+115.07,.01        SUPPLEMENTAL FEEDING       0;1 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                      LAST EDITED:      OCT 18, 1987 
+                      HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This field is merely the sequence in which the various orders were entered and has no meaning beyond that.  
+
+
+115.07,1          DATE/TIME ORDERED          0;2 DATE (Required)
+
+                      INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      OCT 18, 1987 
+                      DESCRIPTION:
+                                        This is the date/time at which the order was entered and is captured automatically.  
+
+
+115.07,2          ENTERING CLERK             0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                      LAST EDITED:      OCT 18, 1987 
+                      DESCRIPTION:
+                                        This is the person actually entering the order and is captured automatically at time of entry.  
+
+
+115.07,3          SF MENU                    0;4 POINTER TO SUPPLEMENTAL FEEDING MENU FILE (#118.1) (Required)
+
+                      LAST EDITED:      OCT 18, 1987 
+                      DESCRIPTION:
+                                        This is the supplemental feeding menu of the Supplemental Feeding Menu file (118.1) that was selected. If other than 'Individualized', the items from the selected menu were moved into this order.  
+
+
+115.07,10         10AM FEEDING #1            0;5 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      LAST EDITED:      OCT 18, 1987 
+                      DESCRIPTION:
+                                        This is the first supplemental feeding ordered for the 10am feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,11         10AM #1 QTY                0;6 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      OCT 18, 1987 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the first 10am feeding.  
+
+
+115.07,12         10AM FEEDING #2            0;7 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the second supplemental feeding ordered for the 10am feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,13         10AM #2 QTY                0;8 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity for the second 10am feeding.  
+
+
+115.07,14         10AM FEEDING #3            0;9 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the third supplemental feeding ordered for the 10am feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,15         10AM #3 QTY                0;10 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity for the third 10am feeding.  
+
+
+115.07,16         10AM FEEDING #4            0;11 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the fourth supplemental feeding ordered for the 10am feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,17         10AM #4 QTY                0;12 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the fourth 10am feeding.  
+
+
+115.07,18         2PM FEEDING #1             0;13 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the first supplemental feeding ordered for the 2pm feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,19         2PM #1 QTY                 0;14 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the first 2pm feeding.  
+
+
+115.07,20         2PM FEEDING #2             0;15 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the second supplemental feeding ordered for the 2pm feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,21         2PM #2 QTY                 0;16 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the second 2pm feeding.  
+
+
+115.07,22         2PM FEEDING #3             0;17 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the third supplemental feeding ordered for the 2pm feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,23         2PM #3 QTY                 0;18 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the third 2pm feeding.  
+
+
+115.07,24         2PM FEEDING #4             0;19 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the fourth supplemental feeding ordered for the 2pm feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,25         2PM #4 QTY                 0;20 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the fourth 2pm feeding.  
+
+
+115.07,26         8PM FEEDING #1             0;21 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the first supplemental feeding ordered for the 8pm feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,27         8PM #1 QTY                 0;22 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the first 8pm feeding.  
+
+
+115.07,28         8PM FEEDING #2             0;23 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the second supplemental feeding ordered for the 8pm feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,29         8PM #2 QTY                 0;24 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the second 8pm feeding.  
+
+
+115.07,30         8PM FEEDING #3             0;25 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the third supplemental feeding ordered for the 8pm feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,31         8PM #3 QTY                 0;26 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the third 8pm feeding.  
+
+
+115.07,32         8PM FEEDING #4             0;27 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)'=""Y""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                      DESCRIPTION:
+                                        This is the fourth supplemental feeding ordered for the 8pm feeding.  
+
+                      SCREEN:           S DIC("S")="I $P(^(0),U,3)'=""Y"""
+                      EXPLANATION:      Cannot select bulk nourishments
+
+115.07,33         8PM #4 QTY                 0;28 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 20 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the fourth 8pm feeding.  
+
+
+115.07,34         DIETARY OR THERAPEUTIC     0;29 SET (Required)
+
+                                        'D' FOR DIETARY; 
+                                        'T' FOR THERAPEUTIC; 
+                      LAST EDITED:      SEP 28, 1985 
+                      DESCRIPTION:
+                                        This field indicates whether the supplemental feeding was ordered for dietary or therapeutic reasons.  
+
+
+115.07,40         DATE/TIME LAST REVIEW      0;30 DATE
+
+                      INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      OCT 18, 1987 
+                      DESCRIPTION:
+                                        This is the date/time this supplemental feeding order was last reviewed for appropriateness.  
+
+
+115.07,41         REVIEW CLERK               0;31 POINTER TO NEW PERSON FILE (#200)
+
+                      LAST EDITED:      OCT 18, 1987 
+                      DESCRIPTION:
+                                        This is the person conducting the last review and is captured automatically at time of review.  
+
+
+115.07,42         DATE/TIME CANCELLED        0;32 DATE
+
+                      INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      OCT 18, 1987 
+                      DESCRIPTION:
+                                        This is the date/time this order was cancelled.  
+
+
+115.07,43         CANCELLING CLERK           0;33 POINTER TO NEW PERSON FILE (#200)
+
+                      LAST EDITED:      OCT 18, 1987 
+                      DESCRIPTION:
+                                        This is the person cancelling the order and is captured automatically at time of cancellation.  
+
+
+115.07,44         DIET ASSOCIATED?           0;34 SET
+
+                                        'Y' FOR YES; 
+                                        'N' FOR NO; 
+                      LAST EDITED:      JUL 22, 1994 
+                      DESCRIPTION:
+                                        This field, if answered Yes, means this Supplemental Feeding Menu is associated with a diet order else if answered No, means it is not.  
+
+
+
+
+115.01,30       STANDING ORDERS              SP;0 Multiple #115.08
+
+                      DESCRIPTION:
+                                        This field contains standing orders entered for the patient during this admission.  
+
+
+115.08,.01        STANDING ORDERS              0;1 NUMBER
+
+                        INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                        LAST EDITED:      NOV 08, 1987 
+                        HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                        DESCRIPTION:
+                                          This field contains the sequence number of the standing order and has no meaning beyond that.  
+
+
+115.08,1          ORDER                        0;2 POINTER TO STANDING ORDERS FILE (#118.3) (Required)
+
+                        LAST EDITED:      NOV 11, 1987 
+                        DESCRIPTION:
+                                          This field contains the standing order (from the Standing Orders file, 118.3).  
+
+                        CROSS-REFERENCE:  115^ASP^MUMPS 
+                                          1)= S ^FHPT("ASP",DA(2),DA(1),DA)=""
+                                          2)= K ^FHPT("ASP",DA(2),DA(1),DA)
+                                          This creates an "ASP" cross-reference for active orders. It is killed when the order is cancelled.  
+
+
+
+115.08,2          MEALS                        0;3 FREE TEXT (Required)
+
+                        INPUT TRANSFORM:  S:$P("ALL",X,1)="" X="BNE" S %=X,X="" S:%["B" X="B" S:%["N" X=X_"N" S:%["E" X=X_"E" K:$L(%)'=$L(X) X K %
+                        LAST EDITED:      SEP 01, 1988 
+                        HELP-PROMPT:      Answer should be a string of meals (e.g., B  or BN or BNE) or A for all meals 
+                        DESCRIPTION:
+                                          This field contains the meals to which this standing order is applicable.  
+
+                        NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+115.08,3          DATE/TIME ORDERED            0;4 DATE (Required)
+
+                        INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                        LAST EDITED:      NOV 11, 1987 
+                        DESCRIPTION:
+                                          This field contains the date/time at which the standing order was entered.  
+
+
+115.08,4          ENTERING CLERK               0;5 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                        LAST EDITED:      NOV 11, 1987 
+                        DESCRIPTION:
+                                          This field contains the user who entered the order and is automatically captured at the time of entry.  
+
+
+115.08,5          DATE/TIME CANCELLED          0;6 DATE
+
+                        INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                        LAST EDITED:      NOV 11, 1987 
+                        DESCRIPTION:
+                                          This field contains the date/time the standing order was cancelled and is automatically captured at time of cancellation.  
+
+                        CROSS-REFERENCE:  115^ASP1^MUMPS 
+                                          1)= K ^FHPT("ASP",DA(2),DA(1),DA)
+                                          2)= S ^FHPT("ASP",DA(2),DA(1),DA)=""
+                                          This cross-reference will delete the "ASP" standing order entry if the order is cancelled.  
+
+
+
+115.08,6          CANCELLING CLERK             0;7 POINTER TO NEW PERSON FILE (#200)
+
+                        LAST EDITED:      NOV 11, 1987 
+                        DESCRIPTION:
+                                          This field contains the user who entered the cancellation and is automatically captured at time of cancellation.  
+
+
+115.08,7          QUANTITY                     0;8 NUMBER
+
+                        INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<1)!(X?.E1"."1N.N) X
+                        LAST EDITED:      JAN 03, 1992 
+                        HELP-PROMPT:      Type a Number between 1 and 9, 0 Decimal Digits 
+                        DESCRIPTION:
+                                          This is the quantity of the Standing Order.  
+
+
+115.08,8          DIET ASSOCIATED?             0;9 SET
+
+                                          'Y' FOR YES; 
+                                          'N' FOR NO; 
+                        LAST EDITED:      JUL 22, 1994 
+                        DESCRIPTION:
+                                          This field, if answered Yes, means this Standing Order is associated with a diet order else if answered No, means it is not.  
+
+
+
+
+115.01,40       TUBEFEEDING                    TF;0 DATE Multiple #115.04
+
+                        DESCRIPTION:
+                                          This multiple contains all tubefeeding orders entered during this admission.  
+
+
+115.04,.01        TUBEFEEDING                    0;1 DATE
+
+                          INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                          LAST EDITED:      MAY 17, 1985 
+                          DESCRIPTION:
+                                            This field contains the date/time the tubefeeding was ordered and will be effective.  
+
+
+115.04,3          TF PRODUCT                     P;0 POINTER Multiple #115.1
+
+                          LAST EDITED:      JUL 14, 1985 
+                          HELP-PROMPT:      ANSWER MUST BE 3-15 CHARACTERS IN LENGTH 
+                          DESCRIPTION:
+                                            This multiple contains the tubefeeding products selected.  
+
+
+115.1,.01           TF PRODUCT                     0;1 POINTER TO TUBEFEEDING FILE (#118.2) (Required) (Multiply asked)
+
+                            LAST EDITED:      MAR 07, 1991 
+                            DESCRIPTION:
+                                              This field contains the tubefeeding product to be administered.  
+
+                            CROSS-REFERENCE:  115.1^B 
+                                              1)= S ^FHPT(DA(3),"A",DA(2),"TF",DA(1),"P","B",$E(X,1,30),DA)=""
+                                              2)= K ^FHPT(DA(3),"A",DA(2),"TF",DA(1),"P","B",$E(X,1,30),DA)
+                                              This is the normal B cross-reference of the TF PRODUCT field.  
+
+
+
+115.1,1             STRENGTH                       0;2 SET (Required)
+
+                                              '1' FOR 1/4; 
+                                              '2' FOR 1/2; 
+                                              '3' FOR 3/4; 
+                                              '4' FOR FULL; 
+                            LAST EDITED:      APR 22, 2005 
+                            DESCRIPTION:
+                                              This field contains the quantity of the tubefeeding and may be expressed in Kilocalories per day, ml's per hour, or similar rates.  
+
+
+115.1,2             QUANTITY                       0;3 FREE TEXT (Required)
+
+                            INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+                            LAST EDITED:      SEP 26, 1995 
+                            HELP-PROMPT:      Answer must be 3-50 characters in length. 
+                            DESCRIPTION:
+                                              This field contains the strength of the tubefeeding product and the degree, if any, of dilution.  
+
+
+115.1,3             PRODUCT ML'S/DAY               0;4 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 22, 2005 
+                            HELP-PROMPT:      Type a Number between 0 and 10000, 0 Decimal Digits 
+                            DESCRIPTION:
+                                              This is the number of ml's of the TF product which are contained in the order for a day (or less than a day if so indicated).  
+
+
+115.1,4             WATER ML'S/DAY                 0;5 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 22, 2005 
+                            HELP-PROMPT:      Type a Number between 0 and 10000, 0 Decimal Digits 
+                            DESCRIPTION:
+                                              This is the number of ml's of water to be used to dilute the TF product if indicated.  
+
+
+115.1,5             KCALS/DAY                      0;6 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 01, 1991 
+                            HELP-PROMPT:      Type a Number between 0 and 10000, 0 Decimal Digits 
+                            DESCRIPTION:
+                                              This is the number of Kcal's contained in this TF product as prepared.  
+
+
+
+
+115.04,4          COMMENT                          0;5 FREE TEXT
+
+                            INPUT TRANSFORM:  K:$L(X)>160!($L(X)<1) X
+                            LAST EDITED:      OCT 29, 2002 
+                            HELP-PROMPT:      Answer must be 1-160 characters in length. 
+                            DESCRIPTION:
+                                              This field contains any free-text comment entered at time of order entry.  
+
+
+115.04,6          TOTAL ML'S                       0;6 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 22, 2005 
+                            HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 10000 
+                            DESCRIPTION:
+                                              This field contains the total daily ml's administered of the prepared (diluted) product.  
+
+
+115.04,7          TOTAL KCALS/DAY                  0;7 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JUL 14, 1985 
+                            HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 10000 
+                            DESCRIPTION:
+                                              This field contains the total Kilocalories per day provided by the tubefeeding.  
+
+
+115.04,10         ENTERING CLERK                   0;10 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                            LAST EDITED:      JUL 14, 1985 
+                            DESCRIPTION:
+                                              This field contains the user entering the tubefeeding order and is automatically captured at time of entry.  
+
+
+115.04,11         CANCELLATION DATE/TIME           0;11 DATE
+
+                            INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                            LAST EDITED:      JUL 14, 1985 
+                            DESCRIPTION:
+                                              This field contains the date/time the tubefeeding order was cancelled.  
+
+
+115.04,12         CANCELLING CLERK                 0;12 POINTER TO NEW PERSON FILE (#200)
+
+                            LAST EDITED:      JUL 14, 1985 
+                            DESCRIPTION:
+                                              This field contains the user who cancelled the order and is captured automatically at time of cancellation.  
+
+
+115.04,13         OE/RR ORDER                      0;14 POINTER TO ORDER FILE (#100)
+
+                            LAST EDITED:      SEP 18, 1989 
+                            DESCRIPTION:
+                                              This field contains a pointer to the OE/RR file order corresponding to this order.  
+
+
+115.04,14         LAST REVIEW DATE/TIME            0;15 DATE
+
+                            INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                            LAST EDITED:      APR 30, 1991 
+                            DESCRIPTION:
+                                              This is the date/time that the Tubefeeding order was last reviewed.  Further reviews are based upon this last review date/time.  
+
+
+115.04,15         REVIEW CLERK                     0;16 POINTER TO NEW PERSON FILE (#200)
+
+                            LAST EDITED:      APR 30, 1991 
+                            DESCRIPTION:
+                                              This is a pointer to File 200 of the person entering the review.  
+
+
+
+
+115.01,50       EARLY/LATE TRAY                    EL;0 DATE Multiple #115.05
+
+                            DESCRIPTION:
+                                              This multiple contains all early/late tray requests ordered for this patient.  
+
+
+115.05,.01        EARLY/LATE TRAY                    0;1 DATE
+
+                              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X I $D(X) S DINUM=X
+                              LAST EDITED:      MAY 25, 1985 
+                              DESCRIPTION:
+                                                This field contains the date/time at which the early/late tray is to be delivered.  
+
+                              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                              CROSS-REFERENCE:  115^ADLT 
+                                                1)= S ^FHPT("ADLT",$E(X,1,30),DA(2),DA(1),DA)=""
+                                                2)= K ^FHPT("ADLT",$E(X,1,30),DA(2),DA(1),DA)
+
+
+115.05,1          MEAL                               0;2 SET (Required)
+
+                                                'B' FOR BREAKFAST; 
+                                                'N' FOR NOON; 
+                                                'E' FOR EVENING; 
+                              LAST EDITED:      JUN 08, 1985 
+                              DESCRIPTION:
+                                                This field indicates for which meal the early or late tray is ordered.  
+
+
+115.05,2          TIME                               0;3 FREE TEXT
+
+                              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                              LAST EDITED:      MAY 25, 1985 
+                              HELP-PROMPT:      ANSWER MUST BE 1-10 CHARACTERS IN LENGTH 
+                              DESCRIPTION:
+                                                This field contains a printable time for which the meal is to delivered.  
+
+
+115.05,3          BAGGED MEAL?                       0;4 SET
+
+                                                'Y' FOR YES; 
+                                                'N' FOR NO; 
+                              LAST EDITED:      MAY 26, 1985 
+                              DESCRIPTION:
+                                                If answered YES, this field indicates that a bagged meal is desired.  
+
+
+115.05,4          CLERK                              0;5 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                              LAST EDITED:      MAY 26, 1985 
+                              DESCRIPTION:
+                                                This field is automatically updated with the user entering the order.  
+
+
+115.05,5          ENTRY DATE/TIME                    0;6 DATE (Required)
+
+                              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                              LAST EDITED:      MAY 26, 1985 
+                              DESCRIPTION:
+                                                This field contains the date/time the order was actually entered.  
+
+
+115.05,6          OE/RR ORDER                        0;7 POINTER TO ORDER FILE (#100)
+
+                              LAST EDITED:      SEP 18, 1989 
+                              DESCRIPTION:
+                                                This field contains a pointer to the OE/RR file order corresponding to this order.  
+
+
+
+
+115.01,80       CONSULTATION                         DR;0 DATE Multiple #115.03 (Add New Entry without Asking)
+
+                              DESCRIPTION:
+                                                This multiple contains all of the dietetic consults ordered during this admission.  
+
+                              IDENTIFIED BY:    CONSULT REQUEST(#1)[R]
+
+115.03,.01        DATE/TIME ENTERED                    0;1 DATE (Required)
+
+                                INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                                LAST EDITED:      MAY 12, 1985 
+                                DESCRIPTION:
+                                                  This field contains the date/time the consult request was entered.  
+
+                                CROSS-REFERENCE:  115^ADR 
+                                                  1)= S ^FHPT("ADR",$E(X,1,30),DA(2),DA(1),DA)=""
+                                                  2)= K ^FHPT("ADR",$E(X,1,30),DA(2),DA(1),DA)
+
+
+115.03,1          CONSULT REQUEST                      0;2 POINTER TO DIETETIC CONSULTS FILE (#119.5) (Required)
+
+                                LAST EDITED:      MAY 12, 1985 
+                                DESCRIPTION:
+                                                  This field contains the specific consult request drawn from the Dietetic Consults file (119.5).  
+
+
+115.03,2          COMMENT                              0;3 FREE TEXT
+
+                                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+                                LAST EDITED:      APR 18, 1985 
+                                HELP-PROMPT:      ANSWER MUST BE 1-80 CHARACTERS IN LENGTH 
+                                DESCRIPTION:
+                                                  This field allows the user to enter a comment as to the consult.  
+
+
+115.03,4          CLINICIAN                            0;5 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                                LAST EDITED:      MAY 06, 1985 
+                                DESCRIPTION:      This field indicates the clinician currently assigned to the consult. Initially, it will contain the clinician assigned to the consult type, if one has been specified, otherwise, the clinician assigned to
+                                                  the ward on which the patient resides.  
+
+                                CROSS-REFERENCE:  115^ADRU^MUMPS 
+                                                  1)= S X9=$P(^FHPT(DA(2),"A",DA(1),"DR",DA,0),U,8) K:X9'="A" ^FHPT("ADRU",X,DA(2),DA(1),DA) S:X9="A" ^FHPT("ADRU",X,DA(2),DA(1),DA)=""
+                                                  2)= K:X ^FHPT("ADRU",X,DA(2),DA(1),DA)
+                                                  This is a cross-reference by Clinician of all consultations with an Active status.  
+
+
+
+115.03,6          CLERK                                0;7 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                                LAST EDITED:      APR 18, 1985 
+                                DESCRIPTION:
+                                                  This field contains the user entering the request and is automatically captured at time of entry.  
+
+
+115.03,7          STATUS                               0;8 SET (Required)
+
+                                                  'A' FOR ACTIVE; 
+                                                  'C' FOR COMPLETE; 
+                                                  'X' FOR CANCELLED; 
+                                LAST EDITED:      MAY 06, 1985 
+                                DESCRIPTION:
+                                                  This is the current status of the request.  
+
+                                CROSS-REFERENCE:  115^ADRV^MUMPS 
+                                                  1)= S X9=$P(^FHPT(DA(2),"A",DA(1),"DR",DA,0),U,5) S:X9&(X="A") ^FHPT("ADRU",X9,DA(2),DA(1),DA)="" K:X9&(X'="A") ^FHPT("ADRU",X9,DA(2),DA(1),DA)
+                                                  2)= S X9=$P(^FHPT(DA(2),"A",DA(1),"DR",DA,0),U,5) K:X9 ^FHPT("ADRU",X9,DA(2),DA(1),DA)
+                                                  This is a cross-reference by Clinician (Field 4) of all consults with an Active status.  
+
+
+
+115.03,8          DATE/TIME CLEARED                    0;9 DATE
+
+                                INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                                LAST EDITED:      MAY 06, 1985 
+                                DESCRIPTION:
+                                                  This is the date/time the consult was cleared, either by completion or cancellation.  
+
+
+115.03,9          CLERK CLEARING                       0;10 POINTER TO NEW PERSON FILE (#200)
+
+                                LAST EDITED:      MAY 06, 1985 
+                                DESCRIPTION:
+                                                  This is the dietetic person who indicated that the consult had been cleared.  
+
+
+115.03,10         INITIAL/FOLLOW-UP                    0;11 SET
+
+                                                  'I' FOR INITIAL; 
+                                                  'F' FOR FOLLOW-UP; 
+                                LAST EDITED:      JUN 06, 1985 
+                                DESCRIPTION:
+                                                  If follow-ups are associated with this consult type, then this field will indicate whether the consult was an initial one or a follow-up to a prior consult.  
+
+
+115.03,11         OE/RR ORDER                          0;13 POINTER TO ORDER FILE (#100)
+
+                                LAST EDITED:      SEP 18, 1989 
+                                DESCRIPTION:
+                                                  This field contains a pointer to the OE/RR file order corresponding to this order.  
+
+
+115.03,12         OE/RR ENTRY                          0;13 POINTER TO ORDER FILE (#100)
+
+                                LAST EDITED:      MAR 25, 1988 
+
+
+
+115.01,85       ADDITIONAL ORDERS                      OO;0 Multiple #115.06 (Add New Entry without Asking)
+
+                                DESCRIPTION:
+                                                  This multiple contains all Additional Orders entered during this admission.  
+
+
+115.06,.01        ORDER NUMBER                           0;1 NUMBER (Required)
+
+                                  INPUT TRANSFORM:  K:'X!(X'?1N.N) X I $D(X) S DINUM=X
+                                  LAST EDITED:      NOV 26, 1985 
+                                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 99999 
+                                  DESCRIPTION:
+                                                    This field is merely the sequence number of the Additional Orders entered and has no meaning beyond that.  
+
+                                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+115.06,1          DATE/TIME ENTERED                      0;2 DATE (Required)
+
+                                  INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                                  LAST EDITED:      NOV 26, 1985 
+                                  DESCRIPTION:
+                                                    This is the date/time the Additional Order was entered.  
+
+
+115.06,2          ORDER                                  0;3 FREE TEXT
+
+                                  INPUT TRANSFORM:  K:$L(X)>160!($L(X)<1) X
+                                  LAST EDITED:      OCT 30, 2002 
+                                  HELP-PROMPT:      Answer must be 1-160 characters in length. 
+                                  DESCRIPTION:
+                                                    This is the text of the order.  
+
+
+115.06,3          CLERK                                  0;4 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                                  LAST EDITED:      NOV 26, 1985 
+                                  DESCRIPTION:
+                                                    This is the clerk entering the order and is automatically captured at time of entry.  
+
+
+115.06,4          STATUS                                 0;5 SET (Required)
+
+                                                    'A' FOR ACTIVE; 
+                                                    'C' FOR COMPLETE; 
+                                                    'S' FOR SAVED; 
+                                                    'X' FOR CANCELLED; 
+                                  LAST EDITED:      MAY 14, 1989 
+                                  DESCRIPTION:
+                                                    This is the status of the order. A saved order is one that has been responded to but continues to display as it may require further or on-going action.  
+
+                                  CROSS-REFERENCE:  115^AOO^MUMPS 
+                                                    1)= S:X="A" ^FHPT("AOO",DA(2),DA(1),DA)="" K:X'="A" ^FHPT("AOO",DA(2),DA(1),DA)
+                                                    2)= K ^FHPT("AOO",DA(2),DA(1),DA)
+                                                    This cross-reference is a list of active orders only.  
+
+
+
+115.06,5          DATE/TIME CLEARED                      0;6 DATE
+
+                                  INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                                  LAST EDITED:      NOV 26, 1985 
+                                  DESCRIPTION:
+                                                    This is the date/time that the order was completed or saved.  
+
+
+115.06,6          CLERK CLEARING                         0;7 POINTER TO NEW PERSON FILE (#200)
+
+                                  LAST EDITED:      NOV 26, 1985 
+                                  DESCRIPTION:
+                                                    This is the dietetic person clearing the order and is automatically captured at time of entry.  
+
+
+115.06,7          OE/RR ORDER                            0;8 POINTER TO ORDER FILE (#100)
+
+                                  LAST EDITED:      SEP 18, 1989 
+                                  DESCRIPTION:
+                                                    This field contains a pointer to the OE/RR file order corresponding to this order.  
+
+
+
+
+115.01,90       Monitors                                 MO;0 Multiple #115.11
+
+
+115.11,.01        Monitors                                 0;1 FREE TEXT
+
+                                    INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                                    LAST EDITED:      JAN 19, 2001 
+                                    HELP-PROMPT:      Answer must be 3-60 characters in length. 
+                                    DESCRIPTION:
+                                                      This field contains Performance Monitors occurring during this admission.  
+
+                                    CROSS-REFERENCE:  115.11^B 
+                                                      1)= S ^FHPT(DA(2),"A",DA(1),"MO","B",$E(X,1,30),DA)=""
+                                                      2)= K ^FHPT(DA(2),"A",DA(1),"MO","B",$E(X,1,30),DA)
+
+
+115.11,1          DATE/TIME                                0;2 DATE (Required)
+
+                                    INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                                    LAST EDITED:      MAR 13, 2001 
+                                    DESCRIPTION:          This is the date/time the monitor was entered.
+
+                                    CROSS-REFERENCE:  115.11^AC 
+                                                      1)= S ^FHPT(DA(2),"A",DA(1),"MO","AC",$E(X,1,30),DA)=""
+                                                      2)= K ^FHPT(DA(2),"A",DA(1),"MO","AC",$E(X,1,30),DA)
+                                                      This cross-reference allows monitors to be retrieved in date/time order.  
+
+
+
+115.11,2          COMMENT                                  0;3 FREE TEXT
+
+                                    INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                                    LAST EDITED:      JAN 19, 2001 
+                                    HELP-PROMPT:      Answer must be 3-60 characters in length. 
+                                    DESCRIPTION:
+                                                      This is a comment entered by the person clearing the monitor.  It should reflect the action taken.  
+
+
+115.11,3          CLEARED BY                               0;4 POINTER TO NEW PERSON FILE (#200)
+
+                                    LAST EDITED:      JAN 19, 2001 
+                                    DESCRIPTION:
+                                                      This is a pointer to the person clearing the monitor.  
+
+
+115.11,5          DATE/TIME CLEARED                        0;5 DATE
+
+                                    INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                                    LAST EDITED:      JAN 19, 2001 
+                                    DESCRIPTION:
+                                                      This is the date/time the monitor was cleared.  
+
+
+115.11,6          MONITOR VALUE                            0;6 NUMBER
+
+                                    INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."4.N) X
+                                    LAST EDITED:      JUL 11, 2006 
+                                    HELP-PROMPT:      Type a number between 0 and 99999, 3 Decimal Digits 
+                                    DESCRIPTION:
+                                                      This is a value of a specific monitor.  
+
+
+
+
+115.01,99       DATE/TIME TICKET LAST PRINTED              0;15 DATE
+
+                                    INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                                    LAST EDITED:      SEP 26, 1994 
+                                    DESCRIPTION:      This is the date/time of the last Tray Ticket generated for this patient.  It is used, when the user only want to print the ticket for the patient when there is a diet order, supplemental feeding, 
+                                                      food preference, isolation, standing order, or location change after this date/time.  
+
+
+115.01,100      DATE/TIME CARD LAST PRINTED                0;16 DATE
+
+                                    INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                                    LAST EDITED:      SEP 26, 1994 
+                                    DESCRIPTION:      This is the date/time of the last diet card generated for this patient.  It is used, when the user only want to print the card for the patient when there is a diet order, supplemental feeding, food
+                                                      preference, isolation, standing order, or location change after this date/time.  
+
+
+
+
+115,10        FOOD PREFERENCES       P;0 POINTER Multiple #115.09 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple contains the food preferences selected by the patient.  
+
+
+115.09,.01      FOOD PREFERENCES       0;1 POINTER TO FOOD PREFERENCES FILE (#115.2) (Multiply asked)
+
+                LAST EDITED:      AUG 31, 1988 
+                DESCRIPTION:
+                                  This field contains the food preference selected from the Food Preferences file (115.2).  
+
+                CROSS-REFERENCE:  115.09^B 
+                                  1)= S ^FHPT(DA(1),"P","B",$E(X,1,30),DA)=""
+                                  2)= K ^FHPT(DA(1),"P","B",$E(X,1,30),DA)
+                                  This is the normal B cross-reference of the FOOD PREFERENCES field.  
+
+
+
+115.09,1        MEALS                  0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  S:$P("ALL",X,1)="" X="BNE" S %=X,X="" S:%["B" X="B" S:%["N" X=X_"N" S:%["E" X=X_"E" K:$L(%)'=$L(X) X K %
+                LAST EDITED:      JUN 23, 2003 
+                HELP-PROMPT:      Answer should be a string of meals (e.g., B  or BN or BNE) or A for all meals 
+                DESCRIPTION:
+                                  This field contains the meals (B N and E) for which this food preference is applicable.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  115.09^C 
+                                  1)= S ^FHPT(DA(1),"P","C",$E(X,1,30),DA)=""
+                                  2)= K ^FHPT(DA(1),"P","C",$E(X,1,30),DA)
+                                  Cross reference by meals so that they can be displayed by meal.  
+
+
+
+115.09,2        QUANTITY               0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 03, 1992 
+                HELP-PROMPT:      Type a Number between 1 and 9, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the quantity of the Food Preference applicable to this patient.  
+
+
+115.09,3        DIET ASSOCIATED?       0;4 SET
+
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      APR 07, 1995 
+                DESCRIPTION:
+                                  This field, if answered Yes, means this Food Preference is a Diet restriction that is associated with a diet order else if answered No, means it is not.  
+
+
+
+
+115,11        NUTRITION ASSESSMENT   N;0 DATE Multiple #115.011
+
+              DESCRIPTION:
+                                This field contains Nutrition Assessments performed for this patient.  
+
+              IDENTIFIED BY:    ASSESSMENT STATUS(#65)
+
+115.011,.01     NUTRITION ASSESSMENT   0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 07, 1989 
+                DESCRIPTION:
+                                  This field contains the date the nutrition assessment was performed.  
+
+                CROSS-REFERENCE:  115.011^B 
+                                  1)= S ^FHPT(DA(1),"N","B",$E(X,1,30),DA)=""
+                                  2)= K ^FHPT(DA(1),"N","B",$E(X,1,30),DA)
+                                  This is the normal B cross-reference of the NUTRITION ASSESSMENT field.  
+
+
+
+115.011,1       SEX                    0;2 SET (Required)
+
+                                  'M' FOR MALE; 
+                                  'F' FOR FEMALE; 
+                LAST EDITED:      JUL 02, 1989 
+                DESCRIPTION:
+                                  This field contains a M or F corresponding to the sex of the subject.  
+
+
+115.011,2       AGE                    0;3 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>140)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      JUL 02, 1989 
+                HELP-PROMPT:      Type a Number between 0 and 140, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the age, in years, of the subject at the time of the assessment.  
+
+
+115.011,3       HEIGHT                 0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>96)!(X<12)!(X?.E1"."2N.N) X
+                LAST EDITED:      JUL 05, 1989 
+                HELP-PROMPT:      Type a Number between 12 and 96, 1 Decimal Digit 
+                DESCRIPTION:
+                                  This field contains the height, in inches, of the subject.  
+
+
+115.011,4       HEIGHT PARAMETERS      0;5 SET
+
+                                  'S' FOR STATED; 
+                                  'K' FOR KNEE HEIGHT; 
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Answer must be 1-2 characters in length. 
+                DESCRIPTION:
+                                  This field contains parameters relating to height; in particular, an S would mean stated rather than measured.  
+
+                WRITE AUTHORITY:  @
+
+115.011,5       WEIGHT                 0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>750)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 0 and 750, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the weight, in pounds, of the subject.  
+
+
+115.011,6       WEIGHT PARAMETERS      0;7 SET
+
+                                  'A' FOR ANTHROPOMETRIC; 
+                                  'S' FOR STATED; 
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:
+                                  This field contains parameters relating to weight; in particular, an S would mean stated rather than measured.  
+
+
+115.011,7       DATE WEIGHT TAKEN      0;8 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 05, 1989 
+                DESCRIPTION:
+                                  This is the date the weight was determined.  
+
+
+115.011,8       USUAL WEIGHT           0;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>750)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 0 and 750, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the usual weight, in pounds, of the subject.  
+
+
+115.011,9       IDEAL BODY WEIGHT      0;10 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>750)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 0 and 750, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the ideal body weight, in pounds, of the subject.  
+
+
+115.011,10      FRAME SIZE             0;11 SET
+
+                                  'S' FOR SMALL; 
+                                  'M' FOR MEDIUM; 
+                                  'L' FOR LARGE; 
+                LAST EDITED:      JUL 05, 1989 
+                DESCRIPTION:
+                                  This is the frame size of the individual, expressed as Small, Medium or Large.  
+
+
+115.011,11      AMPUTATION %           0;12 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>50)!(X<0)!(X?.E1"."2N.N) X
+                LAST EDITED:      JUL 05, 1989 
+                HELP-PROMPT:      Type a Number between 0 and 50, 1 Decimal Digit 
+                DESCRIPTION:
+                                  This is the percentage of total body weight missing due to amputations.  
+
+
+115.011,15      KCAL REQUIRED          0;16 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 05, 1989 
+                HELP-PROMPT:      Type a Number between 0 and 10000, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the total energy needs of the patient expressed in calories.  
+
+
+115.011,16      PROTEIN (GM) REQUIRED  0;17 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>400)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 05, 1989 
+                HELP-PROMPT:      Type a Number between 0 and 400, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the protein requirements of the person.  
+
+
+115.011,17      FLUID (ML/DAY) REQUIRED 0;18 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 05, 1989 
+                HELP-PROMPT:      Type a Number between 0 and 10000, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the fluid requirements, in ml/day, of the person.  
+
+
+115.011,18      RISK CATEGORY          0;19 POINTER TO NUTRITION STATUS FILE (#115.4)
+
+                LAST EDITED:      JUL 05, 1989 
+                DESCRIPTION:
+                                  This is a pointer to the Nutrition Status file (115.4) indicating the current status of the patient for this assessment.  
+
+
+115.011,19      NUTRITION PROBLEM      0;20 POINTER TO NUTRITION CLASSIFICATION FILE (#115.3)
+
+                LAST EDITED:      JUL 05, 1989 
+                DESCRIPTION:
+                                  This is a pointer to the Nutrition Classification file (115.3) indicating the current classification of the patient for this assessment.  
+
+
+115.011,20      APPEARANCE             2;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                DESCRIPTION:
+                                  This field is used to store the a free-text description of the appearance of the patient when such notation may be of importance in understanding or treating the patient.  
+
+
+115.011,21      BODY MASS INDEX        0;21 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>50)!(X<10)!(X?.E1"."2N.N) X
+                LAST EDITED:      APR 04, 1990 
+                HELP-PROMPT:      Type a Number between 10 and 50, 1 Decimal Digit 
+                DESCRIPTION:
+                                  This field contains the Body Mass Index calculated from the height and weight.  
+
+
+115.011,22      BODY MASS INDEX %      0;22 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 04, 1990 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the percentile rank of the Body Mass Index value.  
+
+
+115.011,23      NITROGEN BALANCE       0;25 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<-99)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 22, 1990 
+                HELP-PROMPT:      Type a Number between -99 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains the value of the Nitrogen Balance calculated during the assessment.  
+
+
+115.011,40      TRICEPS SKIN FOLD (MM) 1;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 1 and 100, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the triceps skin fold measurement in mm.  
+
+
+115.011,41      TRICEPS %              1;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the percentile rank of the triceps skin fold measurement.  
+
+
+115.011,42      SUBSCAPULAR SKINFOLD (MM) 1;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 1 and 100, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the subscapular skin fold measurement in mm.  
+
+
+115.011,43      SUBSCAPULAR %          1;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the percentile rank of the subscapular skin fold measurement.  
+
+
+115.011,44      ARM CIRCUMFERENCE (CM) 1;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<5)!(X?.E1"."2N.N) X
+                LAST EDITED:      NOV 07, 1989 
+                HELP-PROMPT:      Type a Number between 5 and 100, 1 Decimal Digit 
+                DESCRIPTION:
+                                  This is the arm circumference in cm.  
+
+
+115.011,45      ARM CIRCUMFERENCE %    1;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the percentile rank of the arm circumference.  
+
+
+115.011,46      CALF CIRCUMFERENCE (CM) 1;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>250)!(X<10)!(X?.E1"."2N.N) X
+                LAST EDITED:      NOV 07, 1989 
+                HELP-PROMPT:      Type a Number between 10 and 250, 1 Decimal Digit 
+                DESCRIPTION:
+                                  This is the calf circumference in cm.  
+
+
+115.011,47      CALF CIRCUMFERENCE %   1;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the percentile rank of the calf circumference.  
+
+
+115.011,48      BONE-FREE AMA  (CM2)   1;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<5)!(X?.E1"."2N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 5 and 100, 1 Decimal Digit 
+                DESCRIPTION:
+                                  This is the calculated bone-free arm muscle area in sq. cm.  
+
+
+115.011,49      BONE-FREE AMA %        1;10 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 11, 1990 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the percentile rank of the bone-free AMA.  
+
+
+115.011,50      WCCM                   1;11 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      FEB 15, 2007 
+                HELP-PROMPT:      Type a number between 0 and 999, 0 Decimal Digits 
+
+115.011,51      CIBW                   1;12 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                LAST EDITED:      FEB 15, 2007 
+                HELP-PROMPT:      Answer must be 1 character in length 
+
+115.011,52      CERBO                  1;13 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>2)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      FEB 15, 2007 
+                HELP-PROMPT:      Type a number between 0 and 2, 0 Decimal Digits 
+
+115.011,53      CENB                   1;14 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>2)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      FEB 15, 2007 
+                HELP-PROMPT:      Type a number between 0 and 2, 0 Decimal Digits 
+
+115.011,54      PCTB                   1;15 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>3)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      FEB 15, 2007 
+                HELP-PROMPT:      Type a number between 0 and 3, 0 Decimal Digits 
+
+115.011,55      SEF                    1;16 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>2.5)!(X<.7)!(X?.E1"."3.N) X
+                LAST EDITED:      FEB 15, 2007 
+                HELP-PROMPT:      Type a number between .7 and 2.5, 2 Decimal Digits 
+
+115.011,56      CFRB                   1;17 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>7)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      FEB 15, 2007 
+                HELP-PROMPT:      Type a number between 0 and 7, 0 Decimal Digits 
+
+115.011,57      CFRBO                  1;18 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>2)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      FEB 15, 2007 
+                HELP-PROMPT:      Type a number between 0 and 2, 0 Decimal Digits 
+
+115.011,58      CPRBO                  1;19 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>2)!(X<0)!(X?.E1"."1.N) X
+                LAST EDITED:      FEB 15, 2007 
+                HELP-PROMPT:      Type a number between 0 and 2, 0 Decimal Digits 
+
+115.011,59      EKKG                   1;20 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>110)!(X<10)!(X?.E1"."1.N) X
+                LAST EDITED:      MAR 20, 2007 
+                HELP-PROMPT:      Type a number between 10 and 110, 0 Decimal Digits 
+
+115.011,60      DIAGNOSIS FROM PROBLEM LIST DI;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>45!($L(X)<3) X
+                LAST EDITED:      JAN 10, 2007 
+                HELP-PROMPT:      Answer must be 3-45 characters in length 
+                DESCRIPTION:
+                                  This is a diagnosis selected from the Problem List package for a patient.  
+
+
+115.011,61      DATE ENTERED IN PROBLEM LIST DI;2 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      JAN 16, 2007 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  This is the date when a diagnosis from Problem List was entered.  
+
+
+115.011,62      DIAGNOSIS ENTERED BY NFS DI;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>45!($L(X)<3) X
+                LAST EDITED:      JAN 10, 2007 
+                HELP-PROMPT:      Answer must be 3-45 characters in length 
+                DESCRIPTION:
+                                  This is a diagnosis entered by NFS personnel.  
+
+
+115.011,63      NFS DIAGNOSIS DATE     DI;4 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      JAN 10, 2007 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  This is the date when a NFS diagnosis was entered by NFS personnel.  
+
+
+115.011,64      ASSESSMENT FOLLOW-UP DATE DI;5 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 08, 2007 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  This is a date that a patient's assessment needs to be checked by a dietitian or other provider.  
+
+                CROSS-REFERENCE:  115^E 
+                                  1)= S ^FHPT("E",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FHPT("E",$E(X,1,30),DA(1),DA)
+                                  This cross-reference is being used in the processing of an Assessment Alert for clinicians in a particular Nutrition Location.  
+
+
+
+115.011,65      ASSESSMENT STATUS      DI;6 SET
+
+                                  'C' FOR COMPLETED; 
+                                  'S' FOR SIGNED; 
+                                  'W' FOR WORK IN PROGRESS; 
+                LAST EDITED:      FEB 16, 2007 
+                DESCRIPTION:      This is a status field for nutrition assessment.  When the status is completed, a progress note will be created in TIU and eventually visible in CPRS. Once it is signed in CPRS, the assessment status will be updated to
+                                  SIGNED.  
+
+
+115.011,66      ASSESSMENT DIET        DI;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      FEB 08, 2007 
+                HELP-PROMPT:      Answer must be 1-15 characters in length 
+                DESCRIPTION:
+                                  Patient diet at the time the Nutrition Assessment was created.  
+
+
+115.011,67      ASSESSMENT TF DATE     DI;8 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 12, 2007 
+                DESCRIPTION:
+                                  Patient's Tubefeeding Order Date/Time at the time the Nutrition Assessment was created.  
+
+
+115.011,67.1    ASSESSMENT TF PRODUCT  TF;0 POINTER Multiple #115.031
+
+
+115.031,.01       ASSESSMENT TF PRODUCT  0;1 POINTER TO TUBEFEEDING FILE (#118.2)
+
+                  LAST EDITED:      JUL 12, 2007 
+                  DESCRIPTION:
+                                    Patient's Tubefeeding Product(s) at the time the Nutrition Assessment was created.  
+
+                  CROSS-REFERENCE:  115.031^B 
+                                    1)= S ^FHPT(DA(2),"N",DA(1),"TF","B",$E(X,1,30),DA)=""
+                                    2)= K ^FHPT(DA(2),"N",DA(1),"TF","B",$E(X,1,30),DA)
+
+
+115.031,1         ASSESSMENT TF STRENGTH 0;2 SET (Required)
+
+                                    '1' FOR 1/4; 
+                                    '2' FOR 1/2; 
+                                    '3' FOR 3/4; 
+                                    '4' FOR FULL; 
+                  LAST EDITED:      JUL 12, 2007 
+                  DESCRIPTION:
+                                    Patient's Tubefeeding Product Strength at the time the Nutrition Assessment was created.  
+
+
+115.031,2         ASSESSMENT TF QUANTITY 0;3 FREE TEXT (Required)
+
+                  INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+                  LAST EDITED:      JUL 12, 2007 
+                  HELP-PROMPT:      Answer must be 3-50 characters in length. 
+                  DESCRIPTION:
+                                    Patient's Tubefeeding Product Quantity at the time the Nutrition Assessment was created.  
+
+
+
+
+115.011,67.2    ASSESSMENT TF COMMENT    4;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>160!($L(X)<1) X
+                  LAST EDITED:      JUL 12, 2007 
+                  HELP-PROMPT:      Answer must be 1-160 characters in length. 
+                  DESCRIPTION:
+                                    Patient's Tubefeeding Comment at the time the Nutrition Assessment was created.  
+
+
+115.011,67.3    ASSESSMENT TF TOTAL ML'S DI;10 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUL 12, 2007 
+                  HELP-PROMPT:      Type a Number between 0 and 10000, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    Patient's Tubefeeding Total ML's at the time the Nutrition Assessment was created.  
+
+
+115.011,67.4    ASSESSMENT TF TOTAL KCALS/DAY DI;11 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>10000)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUL 12, 2007 
+                  HELP-PROMPT:      Type a Number between 0 and 10000, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    Patient's Tubefeeding Total KCALS/Day at the time the Nutrition Assessment was created.  
+
+
+115.011,68      ALERT DATE               DI;9 DATE
+
+                  INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+                  LAST EDITED:      MAR 14, 2007 
+                  HELP-PROMPT:      (No range limit on date) 
+                  DESCRIPTION:
+                                    This is the last date an assessment alert was created.  
+
+
+115.011,70      LAB DATA                 L;0 Multiple #115.021
+
+                  DESCRIPTION:
+                                    This multiple contains laboratory data available for the nutrition assessment.  
+
+
+115.021,.01       TEST NAME                0;1 FREE TEXT (Multiply asked)
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      JUL 05, 1989 
+                    HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                    DESCRIPTION:
+                                      This field contains the name of the lab test.  
+
+                    CROSS-REFERENCE:  115.021^B 
+                                      1)= S ^FHPT(DA(2),"N",DA(1),"L","B",$E(X,1,30),DA)=""
+                                      2)= K ^FHPT(DA(2),"N",DA(1),"L","B",$E(X,1,30),DA)
+                                      This is the normal B cross-reference of the TEST NAME field.  
+
+
+
+115.021,1         LAB TEST                 0;2 POINTER TO LABORATORY TEST FILE (#60)
+
+                    LAST EDITED:      JUL 05, 1989 
+                    DESCRIPTION:
+                                      This field contains a pointer to the Lab Test file (60) corresponding to this lab test.  
+
+
+115.021,2         SPECIMEN                 0;3 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                    LAST EDITED:      JUL 05, 1989 
+                    HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                    DESCRIPTION:
+                                      This field contains a pointer to the specimen type used for the lab test.  
+
+
+115.021,3         UNITS                    0;4 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                    LAST EDITED:      JUL 05, 1989 
+                    HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                    DESCRIPTION:
+                                      This field indicates the units in which the result is expressed.  
+
+
+115.021,4         REF. RANGE               0;5 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>11!($L(X)<4) X
+                    LAST EDITED:      JUL 05, 1989 
+                    HELP-PROMPT:      Answer must be 4-11 characters in length. 
+                    DESCRIPTION:
+                                      This field provides the low-high reference (or normal) range for the lab test.  
+
+
+115.021,5         RESULT                   0;6 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                    LAST EDITED:      JUL 05, 1989 
+                    HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                    DESCRIPTION:
+                                      This field contains the lab test result.  
+
+
+115.021,6         DATE PERFORMED           0;7 DATE
+
+                    INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      JUL 05, 1989 
+                    DESCRIPTION:
+                                      This field contains the date the lab test was performed.  
+
+
+
+
+115.011,71      COMMENTS                   X;0   WORD-PROCESSING #115.1171
+
+                    DESCRIPTION:
+                                      This multiple contains comments relating to the assessment.  
+
+
+115.011,80      PT CONFINED IN BED         3;1 SET
+
+                                      'Y' FOR YES; 
+                                      'N' FOR NO; 
+                    LAST EDITED:      FEB 16, 2007 
+
+115.011,81      ENERGY CAL                 3;2 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      FEB 27, 2007 
+                    HELP-PROMPT:      Answer must be 1-30 characters in length 
+
+115.011,82      PROTEIN CAL                3;3 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      FEB 27, 2007 
+                    HELP-PROMPT:      Answer must be 1-30 characters in length 
+
+115.011,83      NFS PROBLEM                3;4 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                    LAST EDITED:      FEB 16, 2007 
+                    HELP-PROMPT:      Answer must be 1-30 characters in length 
+
+115.011,84      FOOD/DRUG INTERACTION      3;5 SET
+
+                                      'Y' FOR YES; 
+                                      'N' FOR NO; 
+                    LAST EDITED:      FEB 16, 2007 
+
+115.011,85      FOOD/DRUG COMMENT          3;6 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+                    LAST EDITED:      JUL 26, 2007 
+                    HELP-PROMPT:      Answer must be 3-40 characters in length 
+
+115.011,86      PROTEIN LEVEL              3;7 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<0)!(X?.E1"."3.N) X
+                    LAST EDITED:      JUL 26, 2007 
+                    HELP-PROMPT:      Type a number between 0 and 4, 2 Decimal Digits 
+                    DESCRIPTION:
+                                      This is a protein level used in calculation of protein requirements.  
+
+
+115.011,87      SPINAL CORD                3;8 SET
+
+                                      'P' FOR Paraplegic; 
+                                      'Q' FOR Quadriplegic; 
+                    LAST EDITED:      JUL 26, 2007 
+                    DESCRIPTION:
+                                      This is a spinal cord code for Paraplegic and Quadriplegic.  
+
+
+115.011,101     ENTERING CLINICIAN         0;23 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                    LAST EDITED:      NOV 08, 1989 
+                    DESCRIPTION:
+                                      This field points to the person entering the nutrition assessment.  
+
+
+115.011,102     DATE/TIME ENTERED          0;24 DATE (Required)
+
+                    INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      NOV 08, 1989 
+                    DESCRIPTION:
+                                      This field contains the date/time the assessment was actually entered.  
+
+
+
+
+115,12        NUTRITION STATUS       S;0 DATE Multiple #115.012
+
+              DESCRIPTION:
+                                This multiple contains the nutrition assessment statuses that have been entered for this patient.  
+
+
+115.012,.01     STATUS DATE/TIME       0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X I $D(X) S DINUM=9999999-X
+                LAST EDITED:      NOV 13, 1989 
+                DESCRIPTION:
+                                  This field contains the date/time that a nutrition status assessment was entered.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  115.012^B 
+                                  1)= S ^FHPT(DA(1),"S","B",$E(X,1,30),DA)=""
+                                  2)= K ^FHPT(DA(1),"S","B",$E(X,1,30),DA)
+                                  This is the normal B cross-reference of the STATUS DATE/TIME field.  
+
+
+
+115.012,1       STATUS                 0;2 POINTER TO NUTRITION STATUS FILE (#115.4) (Required)
+
+                LAST EDITED:      NOV 13, 1989 
+                DESCRIPTION:
+                                  This is a pointer to the Nutrition Status file (115.4) indicating the current status of this patient.  
+
+
+115.012,2       ENTRY CLERK            0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      NOV 13, 1989 
+                DESCRIPTION:
+                                  This is a pointer indicating the person actually making the entry of the status.  
+
+
+115.012,3       LAST REVIEW DATE/TIME  0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 30, 1991 
+                DESCRIPTION:
+                                  This is the date/time that this Nutrition Status was last reviewed.  Further reviews are based upon this last review date/time.  
+
+
+115.012,4       REVIEW CLERK           0;5 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      APR 30, 1991 
+                DESCRIPTION:
+                                  This is a pointer to File 200 of the person entering the review.  
+
+
+115.012,5       DIETETIC WARD          0;6 POINTER TO NUTRITION LOCATION FILE (#119.6)
+
+                LAST EDITED:      AUG 26, 1992 
+                DESCRIPTION:
+                                  This field is a pointer to the Dietetic Ward on which the patient resided when the Nutrition Status was entered.  
+
+
+
+
+115,14        PATIENT                0;3 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      FEB 10, 2003 
+              DESCRIPTION:      This field, if populated, will contain a pointer to the Patient (#2) file, if the Nutrition Person is a patient.  This field and field #15 are mutually exclusive, in other words each entry in this file should have a value
+                                in either this field or field #15.  
+
+
+115,15        NEW PERSON             0;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 10, 2003 
+              DESCRIPTION:      This field, if populated, will contain a pointer to the New Person (#200) file, if the Nutrition Person is a NOT a patient.  This field and field #14 are mutually exclusive, in other words each entry in this file should
+                                have a value in either this field or field #14.  
+
+
+115,16        RECURRING MEALS        OP;0 DATE Multiple #115.016
+
+              LAST EDITED:      APR 17, 2003 
+              DESCRIPTION:
+                                This multiple stores the recurring meals data.  
+
+
+115.016,.01     RECURRING MEAL DATE/TIME 0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 29, 2004 
+                DESCRIPTION:
+                                  This field will contain the date of the recurring meal.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  115.016^B 
+                                  1)= S ^FHPT(DA(1),"OP","B",$E(X,1,30),DA)=""
+                                  2)= K ^FHPT(DA(1),"OP","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  115^OP^MUMPS 
+                                  1)= S ^FHPT("OP",DA(1),DA)=""
+                                  2)= K ^FHPT("OP",DA(1),DA)
+
+                CROSS-REFERENCE:  115^RM 
+                                  1)= S ^FHPT("RM",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FHPT("RM",$E(X,1,30),DA(1),DA)
+                                  Cross reference the whole file by recurring meals date.  
+
+
+
+115.016,.05     RECURRING OE/RR ORDER  0;12 POINTER TO ORDER FILE (#100)
+
+                LAST EDITED:      DEC 02, 2003 
+                DESCRIPTION:
+                                  This field contains a pointer to the OE/RR file order corresponding to this order.  
+
+
+115.016,1       DIET                   0;2 POINTER TO DIETS FILE (#111)
+
+                LAST EDITED:      FEB 24, 2003 
+                DESCRIPTION:
+                                  This is the DIET ordered for this meal plan.  It contains a pointer to the DIETS (#111) file.  It may contain any one of the 5 diets selected in the Recurring Meals Diet Selection (1-5) site parameter.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+115.016,2       OUTPATIENT LOCATION    0;3 POINTER TO NUTRITION LOCATION FILE (#119.6)
+
+                LAST EDITED:      MAR 27, 2003 
+                DESCRIPTION:
+                                  Pointer to file #119.6 to store the location for this meal.  
+
+                CROSS-REFERENCE:  115^C 
+                                  1)= S ^FHPT("C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FHPT("C",$E(X,1,30),DA(1),DA)
+
+
+115.016,2.5     ROOM-BED               0;18 POINTER TO ROOM-BED FILE (#405.4)
+
+                LAST EDITED:      JUL 20, 2006 
+                DESCRIPTION:
+                                  This field will store the ROOM and BED # for the outpatient recurring meal being ordered.  
+
+
+115.016,3       MEAL                   0;4 SET
+
+                                  'B' FOR Breakfast; 
+                                  'N' FOR Noon; 
+                                  'E' FOR Evening; 
+                LAST EDITED:      MAY 27, 2003 
+                DESCRIPTION:
+                                  This field indicated which meal(s) the recurring meal is ordered for.  
+
+
+115.016,4       ZZZDELETE -> BAGGED MEAL 0;5 SET
+
+                                  'Y' FOR Yes; 
+                                  'N' FOR No; 
+                LAST EDITED:      APR 07, 2005 
+                DESCRIPTION:
+                                  This field indicates whether or not a bagged meal is desired.  
+
+
+115.016,5       MEAL PLAN ORDER NUMBER 0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 16, 2003 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field will be used to tie a meal plan together and distinguish it from other meal plans the person may have.  
+
+                CROSS-REFERENCE:  115.016^C 
+                                  1)= S ^FHPT(DA(1),"OP","C",$E(X,1,30),DA)=""
+                                  2)= K ^FHPT(DA(1),"OP","C",$E(X,1,30),DA)
+                                  This cross-reference will group together the meal plan dates for each meal plan order if the patient has more than one meal plan.  
+
+
+
+115.016,6       DIET1                  0;7 POINTER TO DIETS FILE (#111)
+
+                LAST EDITED:      MAR 24, 2003 
+                DESCRIPTION:
+                                  This field will store the first of the diet selections for outpatients who are allowed to have up to 5 diets.  
+
+
+115.016,7       DIET2                  0;8 POINTER TO DIETS FILE (#111)
+
+                LAST EDITED:      MAR 24, 2003 
+                DESCRIPTION:
+                                  This field will store the second of the diet selections for outpatients who are allowed to have up to 5 diets.  
+
+
+115.016,8       DIET3                  0;9 POINTER TO DIETS FILE (#111)
+
+                LAST EDITED:      MAR 24, 2003 
+                DESCRIPTION:
+                                  This field will store the third of the diet selections for outpatients who are allowed to have up to 5 diets.  
+
+
+115.016,9       DIET4                  0;10 POINTER TO DIETS FILE (#111)
+
+                LAST EDITED:      MAR 24, 2003 
+                DESCRIPTION:
+                                  This field will store the fourth of the diet selections for outpatients who are allowed to have up to 5 diets.  
+
+
+115.016,10      DIET5                  0;11 POINTER TO DIETS FILE (#111)
+
+                LAST EDITED:      MAR 24, 2003 
+                DESCRIPTION:
+                                  This field will store the fifth of the diet selections for outpatients who are allowed to have up to 5 diets.  
+
+
+115.016,11      ADDITIONAL ORDERS TEXT 1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>160!($L(X)<1) X
+                LAST EDITED:      MAY 20, 2003 
+                HELP-PROMPT:      Answer must be 1-160 characters in length. 
+                DESCRIPTION:
+                                  This field stores the text of the additional order.  
+
+
+115.016,12      ADDITIONAL ORDERS CLERK 1;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAY 20, 2003 
+                DESCRIPTION:
+                                  This field stores the clerk who entered the additional order.  
+
+
+115.016,13      ADDITIONAL ORDERS DATE/TIME 1;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 20, 2003 
+                DESCRIPTION:
+                                  This field stores the date/time the additional order was entered.  
+
+
+115.016,13.5    ADDITIONAL ORDERS OE/RR ORDER 1;4 POINTER TO ORDER FILE (#100)
+
+                LAST EDITED:      DEC 02, 2003 
+                DESCRIPTION:
+                                  This field contains a pointer to the OE/RR file order corresponding to this order.  
+
+
+115.016,13.6    ADDITIONAL ORDERS STATUS 1;5 SET
+
+                                  'C' FOR Cancelled; 
+                                  'O' FOR Ordered; 
+                LAST EDITED:      APR 29, 2004 
+                DESCRIPTION:
+                                  Additional orders which are cancelled will be flagged by setting this field to C rather than deleting entries from the file.  
+
+
+115.016,14      EARLY/LATE TRAY TIME   2;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      MAY 22, 2003 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                DESCRIPTION:
+                                  This field will store the time for the early/late tray.  
+
+
+115.016,15      EARLY/LATE TRAY BAGGED MEAL 2;2 SET
+
+                                  'N' FOR NO; 
+                                  'Y' FOR YES; 
+                LAST EDITED:      MAY 22, 2003 
+                DESCRIPTION:
+                                  This field will store whether or not the early/late tray is a bagged meal.  
+
+
+115.016,16      EARLY/LATE TRAY CLERK  2;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAY 22, 2003 
+                DESCRIPTION:
+                                  This field will store the person who entered the early/late tray.  
+
+
+115.016,17      EARLY/LATE TRAY ENTRY DATE 2;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 22, 2003 
+                DESCRIPTION:
+                                  This field will store the date/time the early/late tray was entered.  
+
+
+115.016,17.5    EARLY/LATE TRAY OE/RR ORDER 2;5 POINTER TO ORDER FILE (#100)
+
+                LAST EDITED:      DEC 02, 2003 
+                DESCRIPTION:
+                                  This field contains a pointer to the OE/RR file order corresponding to this order.  
+
+
+115.016,17.6    EARLY/LATE TRAY STATUS 2;6 SET
+
+                                  'C' FOR Cancelled; 
+                                  'O' FOR Ordered; 
+                LAST EDITED:      APR 29, 2004 
+                DESCRIPTION:
+                                  Early/Late trays which are cancelled will be flagged by setting this field to C rather than deleting entries from the file.  
+
+
+115.016,18      TUBEFEEDING COMMENT    3;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>160!($L(X)<1) X
+                LAST EDITED:      JUN 06, 2003 
+                HELP-PROMPT:      Answer must be 1-160 characters in length. 
+                DESCRIPTION:
+                                  This field stores the tubefeeding comment(s) for the recurring meal.  
+
+
+115.016,19      TUBEFEEDING PRODUCT    TF;0 POINTER Multiple #115.1619
+
+                DESCRIPTION:
+                                  This multiple stores the tubefeeding product data for the recurring meal.  
+
+
+115.1619,.01      TUBEFEEDING PRODUCT    0;1 POINTER TO TUBEFEEDING FILE (#118.2) (Multiply asked)
+
+                  LAST EDITED:      JUN 06, 2003 
+                  DESCRIPTION:
+                                    This multiple stores the tubefeeding product(s) for the recurring meal.  
+
+                  CROSS-REFERENCE:  115.1619^B 
+                                    1)= S ^FHPT(DA(2),"OP",DA(1),"TF","B",$E(X,1,30),DA)=""
+                                    2)= K ^FHPT(DA(2),"OP",DA(1),"TF","B",$E(X,1,30),DA)
+
+
+115.1619,1        STRENGTH               0;2 SET
+
+                                    '1' FOR 1/4; 
+                                    '2' FOR 1/2; 
+                                    '3' FOR 3/4; 
+                                    '4' FOR FULL; 
+                  LAST EDITED:      JUN 06, 2003 
+                  DESCRIPTION:
+                                    This field stores the strength of the tubefeeding for the recurring meal.  
+
+
+115.1619,2        QUANTITY               0;3 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+                  LAST EDITED:      JUN 06, 2003 
+                  HELP-PROMPT:      Answer must be 3-20 characters in length. 
+                  DESCRIPTION:
+                                    This field stores the quantity of the tubefeeding for the recurring meal.  
+
+
+115.1619,3        PRODUCT ML'S/DAY       0;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      APR 22, 2005 
+                  HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field stores the product ml's per day of this tubefeeding product for the recurring meal.  
+
+
+115.1619,4        WATER ML'S/DAY         0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      APR 22, 2005 
+                  HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field stores the water ml's per day of this tubefeeding product for the recurring meal.  
+
+
+115.1619,5        KCALS/DAY              0;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 06, 2003 
+                  HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field stores the kcals per day of this tubefeeding product for the recurring meal.  
+
+
+
+
+115.016,20      TUBEFEEDING TOTAL ML'S   3;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      APR 22, 2005 
+                  HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field stores the total ml's of the tubefeeding for the recurring meal.  
+
+
+115.016,21      TUBEFEEDING TOTAL KCALS/DAY 3;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 06, 2003 
+                  HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This field stores the total kcals/day of the tubefeeding for the recurring meal.  
+
+
+115.016,21.5    TUBEFEEDING OE/RR ORDER  3;4 POINTER TO ORDER FILE (#100)
+
+                  LAST EDITED:      DEC 02, 2003 
+                  DESCRIPTION:
+                                    This field contains a pointer to the OE/RR file order corresponding to this order.  
+
+
+115.016,21.6    TUBEFEEDING STATUS       3;5 SET
+
+                                    'C' FOR Cancelled; 
+                                    'O' FOR Ordered; 
+                  LAST EDITED:      APR 29, 2004 
+                  DESCRIPTION:
+                                    Tubefeedings which are cancelled will be flagged by setting this field to C rather than deleting entries from the file.  
+
+
+115.016,21.7    TUBEFEEDING CLERK        3;6 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      JUN 30, 2005 
+                  DESCRIPTION:
+                                    This field stores the clerk who entered the tubefeeding order.  
+
+
+115.016,22      DATE/TIME TICKET LAST PRINTED 0;13 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      FEB 24, 2004 
+                  DESCRIPTION:
+                                    Stores the last date and time a tray ticket was printed for this outpatient meal.  
+
+
+115.016,23      DATE/TIME CARD LAST PRINTED 0;14 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      FEB 24, 2004 
+                  DESCRIPTION:
+                                    Stores the last date and time a diet card was printed for this outpatient meal.  
+
+
+115.016,24      RECURRING MEAL STATUS    0;15 SET
+
+                                    'C' FOR Cancelled; 
+                                    'O' FOR Ordered; 
+                  LAST EDITED:      JUN 30, 2005 
+                  DESCRIPTION:
+                                    Recurring meals which are cancelled will be flagged by setting this field to C rather than deleting entries from the file.  
+
+
+115.016,24.5    RECURRING MEAL CLERK     0;17 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      JUN 30, 2005 
+                  DESCRIPTION:
+                                    This field stores the clerk who entered the recurring meal order.  
+
+
+115.016,25      DATE/TIME RM LAST EDITED 0;16 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      DEC 06, 2004 
+                  DESCRIPTION:
+                                    This field stores the last date/time the recurring meal was edited for use with printing the tray tickets.  
+
+
+115.016,26      STANDING ORDERS          SP;0 Multiple #115.1626
+
+                  LAST EDITED:      NOV 08, 2005 
+
+115.1626,.01      STANDING ORDERS          0;1 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                    LAST EDITED:      NOV 03, 2005 
+                    HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                    DESCRIPTION:
+                                      This field contains the sequence number of the outpatient standing order and has no meaning beyond that.  
+
+
+115.1626,1        ORDER                    0;2 POINTER TO STANDING ORDERS FILE (#118.3) (Required)
+
+                    LAST EDITED:      SEP 27, 2006 
+                    DESCRIPTION:
+                                      This field contains the outpatient standing order from Standing Orders file (#118.3).  
+
+                    RECORD INDEXES:   ASPO (#298) (WHOLE FILE #115)
+
+115.1626,2        MEALS                    0;3 FREE TEXT (Required)
+
+                    INPUT TRANSFORM:  S:$P("ALL",X,1)="" X="BNE" S %=X,X="" S:%["B" X="B" S:%["N" X=X_"N" S:%["E" X=X_"E" K:$L(%)'=$L(X) X K %
+                    LAST EDITED:      NOV 03, 2005 
+                    HELP-PROMPT:      Answer should be a string of meals (e.g., B  or BN or BNE) or A for all meals 
+                    DESCRIPTION:
+                                      This field contains the meals to which this outpatient standing order is applicable.  
+
+                    NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+115.1626,3        DATE/TIME ORDERED        0;4 DATE (Required)
+
+                    INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      NOV 03, 2005 
+                    DESCRIPTION:
+                                      This field contains the date/time at which the outpatient standing order was entered.  
+
+
+115.1626,4        ENTERING CLERK           0;5 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                    LAST EDITED:      NOV 03, 2005 
+                    DESCRIPTION:
+                                      This field contains the user who entered the outpatient standing order and is automatically captured at the time of entry.  
+
+
+115.1626,5        DATE/TIME CANCELLED      0;6 DATE
+
+                    INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      SEP 27, 2006 
+                    DESCRIPTION:
+                                      This field contains the date/time the outpatient standing order was cancelled and is automatically captured at time of cancellation.  
+
+                    RECORD INDEXES:   ASPO (#298) (WHOLE FILE #115)
+
+115.1626,6        CANCELLING CLERK         0;7 POINTER TO NEW PERSON FILE (#200)
+
+                    LAST EDITED:      NOV 03, 2005 
+                    DESCRIPTION:
+                                      This field contains the user who entered the cancellation and is automatically captured at time of cancellation.  
+
+
+115.1626,7        QUANTITY                 0;8 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<1)!(X?.E1"."1N.N) X
+                    LAST EDITED:      NOV 03, 2005 
+                    HELP-PROMPT:      Type a Number between 1 and 9, 0 Decimal Digits 
+                    DESCRIPTION:
+                                      This is the quantity of the outpatient Standing Order.  
+
+
+115.1626,8        DIET ASSOCIATED?         0;9 SET
+
+                                      'Y' FOR YES; 
+                                      'N' FOR NO; 
+                    LAST EDITED:      NOV 03, 2005 
+                    DESCRIPTION:
+                                      This field, if answered Yes, means this Standing Order is associated with a diet order else if answered No, means it is not.  
+
+
+
+
+115.016,27      SUPPLEMENTAL FEEDING       SF;0 Multiple #115.1627
+
+
+115.1627,.01      SUPPLEMENTAL FEEDING       0;1 NUMBER (Multiply asked)
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                      LAST EDITED:      MAR 15, 2006 
+                      HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This field is merely the sequence in which various orders for outpatient SFs were entered and has no meaning beyond that.  
+
+
+115.1627,1        DATE/TIME ORDERED          0;2 DATE
+
+                      INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      MAR 06, 2006 
+                      DESCRIPTION:
+                                        This is the date/time at which the order was entered and is captured automatically.  
+
+
+115.1627,2        ENTERING CLERK             0;3 POINTER TO NEW PERSON FILE (#200)
+
+                      LAST EDITED:      MAR 06, 2006 
+                      DESCRIPTION:
+                                        This is the person actually entering the order and is captured automatically at time of entry.  
+
+
+115.1627,3        SF MENU                    0;4 POINTER TO SUPPLEMENTAL FEEDING MENU FILE (#118.1)
+
+                      LAST EDITED:      MAR 06, 2006 
+                      DESCRIPTION:
+                                        This is the supplemental feeding menu of the Supplemental Feeding Menu file (118.1) that was selected.  If other than "Individualized', the items from the selected menu were moved into this order.  
+
+
+115.1627,4        10AM FEEDING #1            0;5 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      MAR 06, 2006 
+                      DESCRIPTION:
+                                        This is the first supplemental feeding ordered for the 10am feeding time.  
+
+
+115.1627,5        10AM #1 QTY                0;6 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 09, 2005 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the first 10am feeding.  
+
+
+115.1627,6        10AM FEEDING #2            0;7 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the second supplemental feeding ordered for the 10am feeding.  
+
+
+115.1627,7        10AM #2 QTY                0;8 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      MAR 06, 2006 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the outpatient Supplemental Feeding ordered quantity for the second 10am feeding.  
+
+
+115.1627,8        10AM FEEDING #3            0;9 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      MAR 06, 2006 
+                      DESCRIPTION:
+                                        This is the third supplemental feeding ordered for the 10am feeding. 
+
+
+115.1627,9        10AM #3 QTY                0;10 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      MAR 06, 2006 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity for the third 10am feeding. 
+
+
+115.1627,10       10AM FEEDING #4            0;11 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      MAR 06, 2006 
+                      DESCRIPTION:
+                                        This is the fourth supplemental feeding ordered for the 10am feeding. 
+
+
+115.1627,11       10AM #4 QTY                0;12 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      MAR 06, 2006 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the fourth 10am feeding. 
+
+
+115.1627,12       2PM FEEDING #1             0;13 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the first supplemental feeding ordered for the 2pm feeding.  
+
+
+115.1627,13       2PM #1 QTY                 0;14 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 09, 2005 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the first 2pm feeding.  
+
+
+115.1627,14       2PM FEEDING #2             0;15 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the second supplemental feeding ordered for the 2pm feeding.  
+
+
+115.1627,15       2PM #2 QTY                 0;16 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 09, 2005 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the second 2pm feeding.  
+
+
+115.1627,16       2PM FEEDING #3             0;17 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the third supplemental feeding ordered for the 2pm feeding.  
+
+
+115.1627,17       2PM #3 QTY                 0;18 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 09, 2005 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the third 2pm feeding.  
+
+
+115.1627,18       2PM FEEDING #4             0;19 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the fourth supplemental feeding ordered for the 2pm feeding.  
+
+
+115.1627,19       2PM #4 QTY                 0;20 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 09, 2005 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the fourth 2pm feeding.  
+
+
+115.1627,20       8PM FEEDING #1             0;21 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the first supplemental feeding ordered for the 8pm feeding.  
+
+
+115.1627,21       8PM #1 QTY                 0;22 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 09, 2005 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the first 8pm feeding.  
+
+
+115.1627,22       8PM FEEDING #2             0;23 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the second supplemental feeding ordered for the 8pm feeding.  
+
+
+115.1627,23       8PM #2 QTY                 0;24 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 09, 2005 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the second 8pm feeding.  
+
+
+115.1627,24       8PM FEEDING #3             0;25 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the third supplemental feeding ordered for the 8pm feeding.  
+
+
+115.1627,25       8PM #3 QTY                 0;26 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 09, 2005 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the third 8pm feeding.  
+
+
+115.1627,26       8PM FEEDING #4             0;27 POINTER TO SUPPLEMENTAL FEEDINGS FILE (#118)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the fourth supplemental feeding ordered for the 8pm feeding.  
+
+
+115.1627,27       8PM #4 QTY                 0;28 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+                      LAST EDITED:      NOV 09, 2005 
+                      HELP-PROMPT:      Type a Number between 1 and 20, 0 Decimal Digits 
+                      DESCRIPTION:
+                                        This is the ordered quantity of the fourth 8pm feeding.  
+
+
+115.1627,28       DIETARY OR THERAPEUTIC     0;29 SET
+
+                                        'D' FOR DIETARY; 
+                                        'T' FOR THERAPEUTIC; 
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This field indicates whether the supplemental feeding was ordered for dietary or therapeutic reasons.  
+
+
+115.1627,29       DATE/TIME LAST REVIEW      0;30 DATE
+
+                      INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the date/time this supplemental feeding order was last reviewed for appropriateness.  
+
+
+115.1627,30       REVIEW CLERK               0;31 POINTER TO NEW PERSON FILE (#200)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the person conducting the last review and is captured automatically at time of review.  
+
+
+115.1627,31       DATE/TIME CANCELLED        0;32 DATE
+
+                      INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the date/time this order was cancelled.  
+
+
+115.1627,32       CANCELLING CLERK           0;33 POINTER TO NEW PERSON FILE (#200)
+
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This is the person cancelling the order and is captured automatically at time of cancellation.  
+
+
+115.1627,33       DIET ASSOCIATED?           0;34 SET
+
+                                        'Y' FOR YES; 
+                                        'N' FOR NO; 
+                      LAST EDITED:      NOV 09, 2005 
+                      DESCRIPTION:
+                                        This field, if answered Yes, means this Supplemental Feeding Menu is associated with a diet order else if answered No, means it is not.  
+
+
+
+
+
+
+115,17        SPECIAL MEALS          SM;0 DATE Multiple #115.017
+
+              DESCRIPTION:
+                                This multiple stores special meals data.  
+
+
+115.017,.01     SPECIAL MEAL DATE/TIME 0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X I D(X) S DINUM=X
+                LAST EDITED:      MAY 14, 2003 
+                DESCRIPTION:
+                                  This field will contain the date/time of the special meal.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  115.017^B 
+                                  1)= S ^FHPT(DA(1),"SM","B",$E(X,1,30),DA)=""
+                                  2)= K ^FHPT(DA(1),"SM","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  115^SM 
+                                  1)= S ^FHPT("SM",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FHPT("SM",$E(X,1,30),DA(1),DA)
+                                  Cross reference the whole file by special meals.  
+
+
+
+115.017,1       STATUS                 0;2 SET
+
+                                  'P' FOR PENDING; 
+                                  'C' FOR CANCELLED; 
+                                  'A' FOR AUTHORIZED; 
+                                  'D' FOR DENIED; 
+                LAST EDITED:      APR 29, 2003 
+                DESCRIPTION:
+                                  This field will store the status of the special meal request.  The allowable statuses are PENDING, CANCELLED, AUTHORIZED or DENIED.  
+
+
+115.017,2       LOCATION               0;3 POINTER TO NUTRITION LOCATION FILE (#119.6)
+
+                LAST EDITED:      APR 29, 2003 
+                DESCRIPTION:
+                                  This field will store the location for a patient who has requested a special "one-time" meal.  
+
+
+115.017,2.5     ROOM-BED               0;13 POINTER TO ROOM-BED FILE (#405.4)
+
+                LAST EDITED:      JUL 20, 2006 
+                DESCRIPTION:
+                                  This field will store the ROOM and BED # for the outpatient special meal being ordered.  
+
+
+115.017,3       DIET                   0;4 POINTER TO DIETS FILE (#111)
+
+                LAST EDITED:      APR 29, 2003 
+                DESCRIPTION:
+                                  This field will store the diet entered for a patient who has requested a special "one-time" meal.  
+
+
+115.017,3.5     MEAL                   0;9 SET
+
+                                  'B' FOR Breakfast; 
+                                  'N' FOR Noon; 
+                                  'E' FOR Evening; 
+                LAST EDITED:      AUG 27, 2003 
+                DESCRIPTION:
+                                  This field will store the meal (breakfast/noon/evening) for the special meal.  
+
+
+115.017,4       REQUESTOR              0;5 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      APR 29, 2003 
+                DESCRIPTION:
+                                  This field will store the name of the person who has requested the special meal.  This field is a pointer to the NEW PERSON (#200) file.  
+
+
+115.017,5       AUTHORIZOR             0;6 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      APR 29, 2003 
+                DESCRIPTION:
+                                  This field will store the name of the person who has authorized the special meal.  This field is a pointer to the NEW PERSON (#200) file.  
+
+
+115.017,6       AUTHORIZE/DENY DATE/TIME 0;7 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 29, 2003 
+                DESCRIPTION:
+                                  This field stores the date/time that the special meal was authorized or denied.  
+
+
+115.017,7       COMMENT                0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+                LAST EDITED:      MAY 08, 2003 
+                HELP-PROMPT:      Answer must be 1-80 characters in length. 
+                DESCRIPTION:
+                                  If the special meal request is denied the authorizor may enter the reason why it was denied in this comment field.  
+
+
+115.017,8       EARLY/LATE TRAY TIME   1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      SEP 15, 2003 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                DESCRIPTION:
+                                  This field will store the time for the early/late tray.  
+
+
+115.017,9       EARLY/LATE TRAY BAGGED MEAL 1;2 SET
+
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      SEP 15, 2003 
+                DESCRIPTION:
+                                  This field will store whether or not the early/late tray is a bagged meal.  
+
+
+115.017,10      EARLY/LATE TRAY CLERK  1;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      SEP 15, 2003 
+                DESCRIPTION:
+                                  This field will store the person who entered the early/late tray.  
+
+
+115.017,11      EARLY/LATE TRAY OE/RR ORDER 1;4 POINTER TO ORDER FILE (#100)
+
+                LAST EDITED:      AUG 22, 2005 
+                DESCRIPTION:
+                                  This field is a pointer to the corresponding entry in the ORDERS (#100) file.  
+
+
+115.017,11.5    EARLY/LATE TRAY STATUS 1;5 SET
+
+                                  'A' FOR ACTIVE; 
+                                  'C' FOR CANCELLED; 
+                LAST EDITED:      AUG 22, 2005 
+                DESCRIPTION:
+                                  This field will be "A" for Active or "C" for cancelled.  
+
+
+115.017,12      DATE/TIME TICKET LAST PRINTED 0;10 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 24, 2004 
+                DESCRIPTION:
+                                  Stores the last date and time a tray ticket was printed for this outpatient meal.  
+
+
+115.017,13      DATE/TIME CARD LAST PRINTED 0;11 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 24, 2004 
+                DESCRIPTION:
+                                  Stores the last date and time a diet card was printed for this outpatient meal.  
+
+
+115.017,14      SPECIAL OE/RR ORDER    0;12 POINTER TO ORDER FILE (#100)
+
+                LAST EDITED:      JUN 08, 2004 
+                DESCRIPTION:
+                                  Pointer to File #100 for Special Meals entered via OE/RR.  
+
+
+
+
+115,18        GUEST MEALS            GM;0 DATE Multiple #115.018
+
+              DESCRIPTION:
+                                This multiple stores the guest meals data.  
+
+
+115.018,.01     GUEST MEAL DATE/TIME   0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X I D(X) S DINUM=X
+                LAST EDITED:      JUL 01, 2003 
+                DESCRIPTION:
+                                  This field will contain the date/time of the guest meal.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  115.018^B 
+                                  1)= S ^FHPT(DA(1),"GM","B",$E(X,1,30),DA)=""
+                                  2)= K ^FHPT(DA(1),"GM","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  115^GM 
+                                  1)= S ^FHPT("GM",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^FHPT("GM",$E(X,1,30),DA(1),DA)
+                                  Cross reference the whole file by the guest meals date 
+
+
+
+115.018,1       CLASSIFICATION         0;2 SET
+
+                                  'E' FOR EMPLOYEE; 
+                                  'G' FOR GRATUITOUS; 
+                                  'O' FOR OOD; 
+                                  'P' FOR PAID; 
+                                  'V' FOR VOLUNTEER; 
+                LAST EDITED:      APR 17, 2003 
+                DESCRIPTION:
+                                  This field will contain the classification type for the guest meal.  
+
+
+115.018,2       MEAL                   0;3 SET
+
+                                  'B' FOR Breakfast; 
+                                  'N' FOR Noon; 
+                                  'E' FOR Evening; 
+                LAST EDITED:      AUG 27, 2003 
+                DESCRIPTION:
+                                  This field will store the meal (breakfast/noon/evening) for the guest meal.  
+
+
+115.018,3       CHARGE                 0;4 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>100)!(X<0) X
+                LAST EDITED:      JUN 30, 2003 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 100, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This field stores the charge amount for the guest meal.  
+
+
+115.018,4       LOCATION               0;5 POINTER TO NUTRITION LOCATION FILE (#119.6)
+
+                LAST EDITED:      FEB 18, 2004 
+                DESCRIPTION:
+                                  This field indicates the location for this guest meal request.  
+
+
+115.018,4.5     ROOM-BED               0;11 POINTER TO ROOM-BED FILE (#405.4)
+
+                LAST EDITED:      JUL 20, 2006 
+                DESCRIPTION:
+                                  This field will store the ROOM and BED # for the outpatient recurring meal being ordered.  
+
+
+115.018,5       DIET                   0;6 POINTER TO DIETS FILE (#111)
+
+                LAST EDITED:      FEB 19, 2004 
+                DESCRIPTION:
+                                  This is the Diet for the guest meal.  The diet will be stuffed from the value set in the OUTPATIENT DIET1 site parameter in file #119.9.  
+
+
+115.018,6       DATE/TIME TICKET LAST PRINTED 0;7 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 24, 2004 
+                DESCRIPTION:
+                                  Stores the last date and time a diet card was printed for this outpatient meal.  
+
+
+115.018,7       DATE/TIME CARD LAST PRINTED 0;8 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 24, 2004 
+                DESCRIPTION:
+                                  Stores the last date and time a diet card was printed for this outpatient meal.  
+
+
+115.018,8       STATUS                 0;9 SET
+
+                                  'C' FOR CANCELLED; 
+                                  'O' FOR ORDERED; 
+                LAST EDITED:      NOV 21, 2005 
+                DESCRIPTION:
+                                  This field stores the status of the guest meal, which is either "ordered" or "cancelled".  
+
+
+115.018,9       GUEST MEAL CLERK       0;10 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      NOV 21, 2005 
+                DESCRIPTION:
+                                  This field stores the person who has entered the guest meal.  
+
+
+
+
+115,19        ISOLATION/PRECAUTION (OUTPT) 0;5 POINTER TO ISOLATION/PRECAUTION TYPE FILE (#119.4)
+
+              LAST EDITED:      MAY 05, 2005 
+              DESCRIPTION:      This field, if present, indicates that the outpatient is presently on isolation or special precautions.  Note: this field is for outpatients and is different from the isolation/precautions field for inpatients which is
+                                associated with a specific admission.  
+
+              CROSS-REFERENCE:  115^IP^MUMPS 
+                                1)= S ^FHPT("IP",DA)=""
+                                2)= K ^FHPT("IP",DA)
+                                Cross reference for outpatient isolations/precautions.  
+
+
+              CROSS-REFERENCE:  115^D^MUMPS 
+                                1)= Q
+                                2)= D CNIP100^FHOMRC2
+                                If OUTPATIENT ISOLATION/PRECAUTION is canceled/deleted send an update/backdoor message to OERR/CPRS.  
+
+
+
+115,20        IP OE/RR ORDER (OUTPT) 0;6 POINTER TO ORDER FILE (#100)
+
+              LAST EDITED:      JAN 22, 2004 
+              DESCRIPTION:
+                                Pointer to File #100 for I/P's entered thru OE/RR.  
+
+
+115,21        ALERT                  D;0 DATE Multiple #115.12
+
+              DESCRIPTION:
+                                This is a multiple for food/drug alert for a patient.  
+
+
+115.12,.01      DATE ALERT CREATED     0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      APR 16, 2007 
+                HELP-PROMPT:      (No range limit on date) 
+                DESCRIPTION:
+                                  This is the date when this alert was created.  
+
+                CROSS-REFERENCE:  115.12^B 
+                                  1)= S ^FHPT(DA(1),"D","B",$E(X,1,30),DA)=""
+                                  2)= K ^FHPT(DA(1),"D","B",$E(X,1,30),DA)
+
+
+115.12,1        TYPE OF ALERT          0;2 SET
+
+                                  'D' FOR DRUG; 
+                LAST EDITED:      APR 16, 2007 
+                DESCRIPTION:
+                                  This is a type of alert. For now, it is only available for Food/Drug Classification.  
+
+
+115.12,2        PATIENT LOCATION       0;3 POINTER TO NUTRITION LOCATION FILE (#119.6)
+
+                LAST EDITED:      APR 16, 2007 
+                DESCRIPTION:
+                                  This is the location where a patient belong when the alert was created.  
+
+
+115.12,3        DRUG NAME              0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                LAST EDITED:      APR 16, 2007 
+                HELP-PROMPT:      Answer must be 1-40 characters in length 
+                DESCRIPTION:
+                                  This is a drug name in file #50.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DIETETIC CONSULTS (#119.5)        CONSULTATION:CONSULT REQUEST (#1)
+
+DIETS (#111)                      RECURRING MEALS:DIET (#1)
+                                  DIET1 (#6)
+                                  DIET2 (#7)
+                                  DIET3 (#8)
+                                  DIET4 (#9)
+                                  DIET5 (#10)
+                                  SPECIAL MEALS:DIET (#3)
+                                  GUEST MEALS:DIET (#5)
+                                  DIET:DIET1 (#1)
+                                  DIET2 (#2)
+                                  DIET3 (#3)
+                                  DIET4 (#4)
+                                  DIET5 (#5)
+
+FOOD PREFERENCES (#115.2)         FOOD PREFERENCES:FOOD PREFERENCES (#.01)
+
+ISOLATION/PRECAUTION TYPE 
+                   (#119.4)       ISOLATION/PRECAUTION (OUTPT) (#19)
+                                  ADMISSION:ISOLATION/PRECAUTION (#9)
+
+LABORATORY TEST (#60)             LAB DATA:LAB TEST (#1)
+
+NEW PERSON (#200)                 NEW PERSON (#15)
+                                  NUTRITION ASSESSMENT:ENTERING CLINICIAN (#101)
+                                  NUTRITION STATUS:ENTRY CLERK (#2)
+                                  REVIEW CLERK (#4)
+                                  RECURRING MEALS:ADDITIONAL ORDERS CLERK (#12)
+                                  EARLY/LATE TRAY CLERK (#16)
+                                  TUBEFEEDING CLERK (#21.7)
+                                  RECURRING MEAL CLERK (#24.5)
+                                  SPECIAL MEALS:REQUESTOR (#4)
+                                  AUTHORIZOR (#5)
+                                  EARLY/LATE TRAY CLERK (#10)
+                                  GUEST MEALS:GUEST MEAL CLERK (#9)
+                                  DIET:CLERK (#10)
+                                  REVIEW CLERK (#16)
+                                  CANCELLING CLERK (#18)
+                                  PATTERN CLERK (#20)
+                                  CONSULTATION:CLINICIAN (#4)
+                                  CLERK (#6)
+                                  CLERK CLEARING (#9)
+                                  TUBEFEEDING:ENTERING CLERK (#10)
+                                  CANCELLING CLERK (#12)
+                                  REVIEW CLERK (#15)
+                                  EARLY/LATE TRAY:CLERK (#4)
+                                  ADDITIONAL ORDERS:CLERK (#3)
+                                  CLERK CLEARING (#6)
+                                  SUPPLEMENTAL FEEDING:ENTERING CLERK (#2)
+                                  REVIEW CLERK (#41)
+                                  CANCELLING CLERK (#43)
+                                  STANDING ORDERS:ENTERING CLERK (#4)
+                                  CANCELLING CLERK (#6)
+                                  Monitors:CLEARED BY (#3)
+                                  STANDING ORDERS:ENTERING CLERK (#4)
+                                  CANCELLING CLERK (#6)
+                                  SUPPLEMENTAL FEEDING:ENTERING CLERK (#2)
+                                  REVIEW CLERK (#30)
+                                  CANCELLING CLERK (#32)
+
+NUTRITION CLASSIFICATION 
+                   (#115.3)       NUTRITION ASSESSMENT:NUTRITION PROBLEM (#19)
+
+NUTRITION LOCATION (#119.6)       ADMISSION:LAST LABEL WARD (#11)
+                                  DIETETIC WARD (#13)
+                                  NUTRITION STATUS:DIETETIC WARD (#5)
+                                  RECURRING MEALS:OUTPATIENT LOCATION (#2)
+                                  SPECIAL MEALS:LOCATION (#2)
+                                  GUEST MEALS:LOCATION (#4)
+                                  ALERT:PATIENT LOCATION (#2)
+
+NUTRITION STATUS (#115.4)         NUTRITION ASSESSMENT:RISK CATEGORY (#18)
+                                  NUTRITION STATUS:STATUS (#1)
+
+ORDER (#100)                      IP OE/RR ORDER (OUTPT) (#20)
+                                  ADMISSION:OE/RR ISOLATION ORDER (#10)
+                                  RECURRING MEALS:RECURRING OE/RR ORDER (#.05)
+                                  ADDITIONAL ORDERS OE/RR ORDER (#13.5)
+                                  EARLY/LATE TRAY OE/RR ORDER (#17.5)
+                                  TUBEFEEDING OE/RR ORDER (#21.5)
+                                  SPECIAL MEALS:EARLY/LATE TRAY OE/RR ORDER (#11)
+                                  SPECIAL OE/RR ORDER (#14)
+                                  DIET:OE/RR ORDER (#13)
+                                  CONSULTATION:OE/RR ORDER (#11)
+                                  OE/RR ENTRY (#12)
+                                  TUBEFEEDING:OE/RR ORDER (#13)
+                                  EARLY/LATE TRAY:OE/RR ORDER (#6)
+                                  ADDITIONAL ORDERS:OE/RR ORDER (#7)
+
+ORDER STATUS (#100.01)            DIET:CURRENT OE/RR STATUS (#14)
+
+PATIENT (#2)                      PATIENT (#14)
+
+PRODUCTION DIET (#116.2)          DIET:PRODUCTION DIET (#12)
+
+ROOM-BED (#405.4)                 ADMISSION:ROOM-BED (#14)
+                                  RECURRING MEALS:ROOM-BED (#2.5)
+                                  SPECIAL MEALS:ROOM-BED (#2.5)
+                                  GUEST MEALS:ROOM-BED (#4.5)
+
+STANDING ORDERS (#118.3)          STANDING ORDERS:ORDER (#1)
+                                  STANDING ORDERS:ORDER (#1)
+
+SUPPLEMENTAL FEEDING MENU 
+                   (#118.1)       SUPPLEMENTAL FEEDING:SF MENU (#3)
+                                  SUPPLEMENTAL FEEDING:SF MENU (#3)
+
+SUPPLEMENTAL FEEDINGS (#118)      SUPPLEMENTAL FEEDING:10AM FEEDING #1 (#10)
+                                  10AM FEEDING #2 (#12)
+                                  10AM FEEDING #3 (#14)
+                                  10AM FEEDING #4 (#16)
+                                  2PM FEEDING #1 (#18)
+                                  2PM FEEDING #2 (#20)
+                                  2PM FEEDING #3 (#22)
+                                  2PM FEEDING #4 (#24)
+                                  8PM FEEDING #1 (#26)
+                                  8PM FEEDING #2 (#28)
+                                  8PM FEEDING #3 (#30)
+                                  8PM FEEDING #4 (#32)
+                                  SUPPLEMENTAL FEEDING:10AM FEEDING #1 (#4)
+                                  10AM FEEDING #2 (#6)
+                                  10AM FEEDING #3 (#8)
+                                  10AM FEEDING #4 (#10)
+                                  2PM FEEDING #1 (#12)
+                                  2PM FEEDING #2 (#14)
+                                  2PM FEEDING #3 (#16)
+                                  2PM FEEDING #4 (#18)
+                                  8PM FEEDING #1 (#20)
+                                  8PM FEEDING #2 (#22)
+                                  8PM FEEDING #3 (#24)
+                                  8PM FEEDING #4 (#26)
+
+TUBEFEEDING (#118.2)              ASSESSMENT TF PRODUCT:ASSESSMENT TF PRODUCT (#.01)
+                                  TF PRODUCT:TF PRODUCT (#.01)
+                                  TUBEFEEDING PRODUCT:TUBEFEEDING PRODUCT (#.01)
+
+
+Subfile #115.1626
+
+  Record Indexes:
+
+  ASPO (#298)    RECORD    MUMPS    IR    ACTION    WHOLE FILE (#115)
+      Short Descr:  Creates an "ASPO" index for NFS outpatient standing order.
+      Description:  This creates an "ASPO" index for NFS outpatient active standing orders (SO). It is killed when the order is cancelled.  
+        Set Logic:  I X2(1),X2(2)="" S ^FHPT("ASPO",DA(2),DA(1),DA)=""
+       Kill Logic:  I X2(2) K ^FHPT("ASPO",DA(2),DA(1),DA)
+       Whole Kill:  K ^FHPT("ASPO")
+             X(1):  ORDER  (115.1626,1)  (forwards)
+             X(2):  DATE/TIME CANCELLED  (115.1626,5)  (forwards)
+
+
+INPUT TEMPLATE(S):
+FHSEL                         FEB 19, 1992@12:17  USER #0    
+     This template is used to enter the food preferences for a patient.
+     It will prompt for the quantity only if the selected preference
+     is a 'Like' rather than a 'Dislike'.
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

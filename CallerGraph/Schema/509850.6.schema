@@ -1,0 +1,1612 @@
+STANDARD DATA DICTIONARY #509850.6 -- A&SP CLINIC VISIT FILE                                                                                                                                                                      MAY 20,2014@15:40:25  PAGE 1
+STORED IN ^ACK(509850.6,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                         (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The A&SP CLINIC VISIT file (#509850.6) contains all data specific to each patient encounter.  This includes the patient, the clinicians and students involved, the diagnostic and procedure codes, the date of the visit, procedure time, and the CDR cost
+account.  
+  
+Data in this file SHOULD NOT be altered through the use of VA FileMan; input should take place ONLY through the QUASAR menu options.  
+  
+Per VHA Directive 10-93-142, this file definition SHOULD NOT be modified.  
+
+
+              DD ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: PATIENT NAME (#1)[R]
+
+CROSS
+REFERENCED BY: EVENT CAPTURE PROCEDURE(AC), VISIT ELIGIBILITY(AD), PROCEDURE CODE(AD), VOLUME(AD), CDR ACCOUNT(ADCI), SERVICE CONNECTED(AE), PROCEDURE PROVIDER(AE), EC PROCEDURE PROVIDER(AE), EXCEPTION DATE(AEX), LAST EDITED IN QUASAR(AEX1), 
+               LAST SENT TO PCE(AEX2), PCE VISIT IEN(AEX3), CLINIC LOCATION(AEXCLN), PATIENT NAME(AEXPAT), AGENT ORANGE(AF), RADIATION(AG), EC PROCEDURE PROVIDER(AG), ENVIRONMENTAL CONTAMINANTS(AH), PRIMARY PROVIDER(AI), *SECOND CLINCIAN(AJ), 
+               STUDENT(AK), DIVISION(AL), LINKED C&P EXAM(ALCP), DATE(AM), TONE R500(AMD), APPOINTMENT TIME(AN), EVENT CAPTURE PROCEDURE(AO), MILITARY SEXUAL TRAUMA(AP), CLINIC LOCATION(APCEC), DATE(APCED), PATIENT NAME(APCEP), 
+               APPOINTMENT TIME(APCET), PATIENT NAME(APD), PATIENT NAME(APT), VOLUME(AQ), CDR ACCOUNT(ATCAT), CDR ACCOUNT(ATCDR), DATE(ATMV), C AND P STATUS(AWAIT), DATE(B), PATIENT NAME(C), PRIMARY PROVIDER(ST1), *SECOND CLINCIAN(ST2), STUDENT(ST3), 
+               *OTHER PROVIDER(ST4)
+
+509850.6,.01  DATE                   0;1 DATE (Required)
+
+              Date                                                                                                             
+              INPUT TRANSFORM:  S %DT="EXT" D ^%DT S:Y["." Y=$P(Y,".",1) S X=Y K:Y<0 X I $D(X) D CHKDT^ACKQAS
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Enter the patient's clinic visit date. 
+              DESCRIPTION:
+                                The DATE field contains the encounter date or date and time.  
+
+              LAYGO TEST:       1,0)= W:'$D(ACKLAYGO) !!?5,"Input should take place ONLY through the QUASAR menu options.",!! I $D(ACKLAYGO)
+
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  509850.6^B 
+                                1)= S ^ACK(509850.6,"B",$E(X,1,30),DA)=""
+                                2)= K ^ACK(509850.6,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  509850.6^ATMV^MUMPS 
+                                1)= S ACKMO=$E(X,1,5)_"00",$P(^(ACKMO),U)=$S($D(^ACK(509850.6,"ATMV",ACKMO)):^(ACKMO)+1,1:1) K ACKMO
+                                2)= S ACKMO=$E(X,1,5)_"00" S:$D(^ACK(509850.6,"ATMV",ACKMO)) $P(^(ACKMO),U)=^(ACKMO)-1 K:$S($D(^(ACKMO)):'^(ACKMO),1:0) ^(ACKMO) K ACKMO
+                                3)= DO NOT DELETE!
+                                This cross reference is ordered by FileMan internal date (year and month).  It is used to store an incremental count of total monthly visits.  
+
+
+              CROSS-REFERENCE:  509850.6^APCED^MUMPS 
+                                1)= D SETREF^ACKQUTL5(X,DA,"D")
+                                2)= D KILLREF^ACKQUTL5(X,DA,"D")
+                                3)= Do not Delete
+                                This cross reference is only set when all four of the required fields (Visit Date, Patient, Clinic Location and Visit Time) for this cross reference exist within the Visit File.  After the cross reference has been set up,
+                                if any of the required fields are deleted the cross reference is deleted.  If any of the required fields are amended the cross reference is deleted and reset with the amended values.  
+
+
+              CROSS-REFERENCE:  509850.6^AM^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= Q
+                                3)= Do not Delete
+                                Call to update PCE PENDING field with '1', set the SENT OKAY field to null and the LAST EDITED IN QUASAR field to todays date.  This processing is not run when the dummy record is created (i.e. when D0 is undefined).  
+
+
+
+509850.6,.07  TIME SPENT (minutes)   0;7 NUMBER (Required)
+
+              Time Spent in Minutes                                                                                            
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 09, 2007 
+              HELP-PROMPT:      Enter the entire amount of time that was spent on this visit (in minutes). 
+              DESCRIPTION:      The TIME SPENT field is used to record the TOTAL number of minutes that were used during this clinic visit.  TIME SPENT is to include direct (e.g., face-to-face) and indirect time (e.g., paperwork, documentation, 
+                                administration).  
+
+              EXECUTABLE HELP:  W !?5,"Your answer should be a number between 0 and 999.",!
+              WRITE AUTHORITY:  ^
+
+509850.6,.08  LINKED C&P EXAM        0;8 FREE TEXT
+
+              Linked C&P Exam                                                                                                  
+              INPUT TRANSFORM:  W !,"You may not edit this field!",*7 K X
+              LAST EDITED:      JAN 08, 2008 
+              DESCRIPTION:      For C&P exams, the LINKED C&P EXAM field is automatically filled in by the QUASAR package.  It provides a means of linking this QUASAR visit with a specific AMIE C&P request.  If the visit is not a C&P exam this field is
+                                left blank.  
+                                  
+                                This field should not be edited manually.  
+
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  509850.6^ALCP 
+                                1)= S ^ACK(509850.6,"ALCP",$E(X,1,30),DA)=""
+                                2)= K ^ACK(509850.6,"ALCP",$E(X,1,30),DA)
+                                3)= Do not Delete
+                                This cross-reference stores the soft link data from the AMIE interface and the internal entry number for each clinic visit which is an AMIE C&P request.  
+
+
+
+509850.6,.09  C AND P STATUS         0;9 SET
+
+              C and P Status                                                                                                   
+                                '0' FOR NOT A C&P EXAM; 
+                                '1' FOR NOT SIGNED OFF; 
+                                '2' FOR AWAITING ADEQUATION; 
+                                '3' FOR COMPLETE; 
+              LAST EDITED:      JUL 17, 1995 
+              HELP-PROMPT:      Enter the code for the C&P status. 
+              DESCRIPTION:
+                                The C AND P STATUS field indicates the status of the C&P exam (if any).  0 stands for NOT A C&P EXAM, 1 stands for NOT SIGNED OFF, 2 stands for AWAITING ADEQUATION, and 3 stands for COMPLETE.  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the C AND P field of the A&SP CLINIC VISIT File 
+                                TRIGGERED by the SIGNATURE field of the A&SP CLINIC VISIT File 
+                                TRIGGERED by the ADEQUATED BY field of the A&SP CLINIC VISIT File 
+
+              CROSS-REFERENCE:  509850.6^AWAIT^MUMPS 
+                                1)= S:X=1!(X=2) ^ACK(509850.6,"AWAIT",X,DA)=""
+                                2)= K ^ACK(509850.6,"AWAIT",X,DA)
+                                3)= DO NOT DELETE!
+                                This cross-reference is ordered by C AND P STATUS set of codes number, followed by internal entry number.  It is used to quickly find C&P exams waiting for signatures.  A look-up cross-reference was not used, as the lookup
+                                was not intended to be available to FileMan proper.  
+
+
+
+509850.6,.25  *SECOND CLINCIAN       2;5 POINTER TO A&SP STAFF FILE (#509850.3)
+
+              Second Clinician                                                                                                 
+              INPUT TRANSFORM:  S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      If a secondary provider was involved with this visit, enter his or her name. 
+              DESCRIPTION:      If more than one provider was involved in this exam, the name of the SECONDARY PROVIDER should be entered here.  In order to enter a provider in this field, the provider must already exist in the A&SP STAFF file
+                                (#509850.3) and the ACTIVATION DATE and INACTIVATION DATE must indicate that the selected provider is active on the date of the exam.  The SECONDARY PROVIDER field can be left blank.  
+
+              SCREEN:           S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")"
+              EXPLANATION:      Only A&SP CLINICIANS or OTHER PROVIDERS who are ACTIVE on the VISIT DATE can be selected.
+              EXECUTABLE HELP:  I '$D(ACKVD) W !?5,"Input should take place ONLY through the QUASAR menu options.",!
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  509850.6^ST2^MUMPS 
+                                1)= S ^ACK(509850.6,"ST",X,DA)=2
+                                2)= K ^ACK(509850.6,"ST",X,DA)
+                                3)= DO NOT DELETE!
+                                The ST subscript holds cross-references for all staff involved in this clinic visit.  Rather than set the cross-reference equal to null, it is coded as to the position of the staff member.  
+                                  
+                                           1 = PRIMARY PROVIDER 
+                                           2 = SECONDARY PROVIDER 
+                                           3 = STUDENT 
+
+
+              CROSS-REFERENCE:  509850.6^AJ^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                Call to update send to PCE field with todays date, this in turn creates the cross reference used by the overnight send to PCE process.  
+
+
+
+509850.6,.27  *LEAD ROLE             2;7 POINTER TO A&SP STAFF FILE (#509850.3)
+
+              Lead Role                                                                                                        
+              INPUT TRANSFORM:  S DIC("S")="I $D(ACKSTF(Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 19, 1999 
+              HELP-PROMPT:      Enter the name of the lead staff member involved in this exam. 
+              DESCRIPTION:      For visits involving more than one staff member, the LEAD ROLE field is provided to show which staff member played the leading role in the examination.  Credit for the visit is always given to the clinician in the LEAD
+                                ROLL field.  
+                                  
+                                This field can only be entered through the Enter Clinic Visits option.  
+                                 
+                                The LEAD ROLE field has been marked for deletion.  This field is not used by QUASAR V. 3.0.  Eighteen months after the release of QUASAR 3.0, this field can be removed. 
+
+              SCREEN:           S DIC("S")="I $D(ACKSTF(Y))"
+              EXPLANATION:      You must select a clinician, other provider, or student involved with this exam.
+              WRITE AUTHORITY:  ^
+
+509850.6,1    PATIENT NAME           0;2 POINTER TO A&SP PATIENT FILE (#509850.2) (Required)
+
+              Patient Name                                                                                                     
+              INPUT TRANSFORM:  S DFN=X
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Enter the name of the patient seen during this clinic visit. 
+              DESCRIPTION:
+                                The PATIENT NAME field contains the name of the patient seen during this clinic visit.  In order to enter a patient name into this field, the patient must already exist in the PATIENT file (#2).  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  ^^TRIGGER^509850.6^2 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(509850.6,1,1,1,1.1) X ^DD(509850.6,1,1,1,1.4)
+                                1.1)= S X=DIV X ^DD(509850.6,1,1,1,49.2) S D0=$P(Y(101),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(201)=$S($D(^DPT(D0,.36)):^(.36),1:"") S X=$S('$D(^DIC(8,+$P(Y(201),U,1),0)):"",1:$P(^(0),U,1)) S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=509850.6,DIG=2 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(509850.6,1,1,1,2.4)
+                                2.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=509850.6,DIG=2 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                3)= DO NOT DELETE!
+                                49.2)= S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^ACK(509850.2,+D0,0)) D0=-1 S I(100,0)=$S($D(D0):D0,1:""),Y(101)=$S($D(^ACK(509850.2,D0,0)):^(0),1:"")
+                                CREATE VALUE)= PATIENT NAME:NAME:ELIGIBILITY CODE
+                                DELETE VALUE)= @
+                                FIELD)= PATIENT ELIGI
+                                The PATIENT NAME field triggers the appropriate value into the PATIENT ELIGIBILITY CODE field.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^509850.6^1.5 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV D AOA^ACKQAS X ^DD(509850.6,1,1,2,1.4)
+                                1.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=509850.6,DIG=1.5 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(509850.6,1,1,2,2.4)
+                                2.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,4)=DIV,DIH=509850.6,DIG=1.5 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                3)= DO NOT DELETE!
+                                CREATE VALUE)= D AOA^ACKQAS
+                                DELETE VALUE)= @
+                                FIELD)= AGE ON APPOINTMENT
+                                The PATIENT NAME field triggers the appropriate value into the AGE ON APPOINTMENT field.  
+
+
+              CROSS-REFERENCE:  509850.6^APT 
+                                1)= S ^ACK(509850.6,"APT",$E(X,1,30),DA)=""
+                                2)= K ^ACK(509850.6,"APT",$E(X,1,30),DA)
+                                3)= DO NOT DELETE!
+                                This cross-reference is in patient DFN and internal entry number order.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^509850.2^1 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 X ^DD(509850.6,1,1,4,89.2) S X=$P(Y(101),U,2) S D0=I(0,0) S DIU=X K Y S X=DIV D IVD^ACKQAS X ^DD(509850.6,1,1,4,1.4)
+                                1.4)= S DIH=$S($D(^ACK(509850.2,DIV(0),0)):^(0),1:""),DIV=X I $D(^(0)) S $P(^(0),U,2)=DIV,DIH=509850.2,DIG=1 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                2)= Q
+                                3)= Do not Delete.
+                                89.2)= S I(0,0)=$S($D(D0):D0,1:""),Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:""),D0=$P(Y(1),U,2) S:'$D(^ACK(509850.2,+D0,0)) D0=-1 S DIV(0)=D0 S Y(101)=$S($D(^ACK(509850.2,D0,0)):^(0),1:"")
+                                CREATE VALUE)= D IVD^ACKQAS
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= #1:#1
+                                When a PATIENT NAME is selected for this visit, the user is asked for the patient's INITIAL VISIT DATE if it has not been entered.  
+
+
+              CROSS-REFERENCE:  509850.6^APD^MUMPS 
+                                1)= S ^ACK(509850.6,"APD",X,+^ACK(509850.6,DA,0),DA)=""
+                                2)= K ^ACK(509850.6,"APD",X,+^ACK(509850.6,DA,0),DA)
+                                3)= DO NOT DELETE!
+                                This cross-reference is in patient DFN, date of visit, and internal entry number order.  It is used to check for duplicate visits by this patient on this date.  
+
+
+              CROSS-REFERENCE:  509850.6^C 
+                                1)= S ^ACK(509850.6,"C",$E(X,1,30),DA)=""
+                                2)= K ^ACK(509850.6,"C",$E(X,1,30),DA)
+                                3)= DO NOT DELETE!
+                                This cross-reference is in patient DFN and internal entry number order.  It is used for lookup by patient name.  
+
+
+              CROSS-REFERENCE:  509850.6^APCEP^MUMPS 
+                                1)= D SETREF^ACKQUTL5(X,DA,"P")
+                                2)= D KILLREF^ACKQUTL5(X,DA,"P")
+                                3)= Do not Delete
+                                This cross reference is only set when all four of the required fields (Visit Date, Patient, Clinic Location and Visit Time) for this cross reference exist within the Visit File.  After the cross reference has been set up,
+                                if any of the required fields are deleted the cross reference is deleted.  If any of the required fields are amended the cross reference is deleted and reset with the amended values.  
+
+
+              CROSS-REFERENCE:  509850.6^AEXPAT^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index sets the last edited in Quasar to NOW which in turn may cause the visit to be a PCE Exception.  
+
+
+
+509850.6,1.5  AGE ON APPOINTMENT     0;4 NUMBER
+
+              Age on Appointment                                                                                               
+              INPUT TRANSFORM:  K:+X'=X!(X>120)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 17, 1995 
+              HELP-PROMPT:      Enter a number between 0 and 120 with 0 decimal digits. 
+              DESCRIPTION:
+                                The AGE ON APPOINTMENT field is automatically filled in by the QUASAR package.  It is triggered by the PATIENT NAME field of the A&SP CLINIC VISIT file (#509850.6).  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the PATIENT NAME field of the A&SP CLINIC VISIT File 
+
+
+509850.6,2    PATIENT ELIGIBILITY CODE 0;3 FREE TEXT (Required)
+
+              Patient Eligibility Code                                                                                         
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      OCT 02, 2000 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is the Primary Eligibility of the patient 
+
+              EXECUTABLE HELP:   
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the PATIENT NAME field of the A&SP CLINIC VISIT File 
+
+
+509850.6,2.5  C AND P                0;5 SET
+
+              C and P                                                                                                          
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Is this a C&P exam? 
+              DESCRIPTION:      The C AND P field contains 0 or NO if this is not a C&P exam.  The field contains 1 or YES if this is a C&P exam.  
+                                  
+                                WARNING:  QUASAR points to the AMIE 2507 REQUEST file (#396.3) to determine if a patient on a given date is a C&P visit.  If AUDIO exam is not found in the exam list, QUASAR does not recognize the visit as a C&P visit.  
+                                  
+                                The C AND P field can be filled with 1 or YES at the "Is this a C&P exam?" prompt or by entering ^C AND P.  This provides you with the AMIE worksheet fields, but the examination is not available for adequation and is not
+                                linked to the AMIE system.  
+
+              EXECUTABLE HELP:   
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  ^^TRIGGER^509850.6^.09 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X=DIV D TRIGCP^ACKQUTL X ^DD(509850.6,2.5,1,1,1.4)
+                                1.1)= S X=DIV S X=DIV,X=X S X=X=1,Y(1)=X S X=1,Y(2)=X S X=1,Y(3)=X S X=0,X=$S(Y(1):Y(2),Y(3):X)
+                                1.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,9)=DIV,DIH=509850.6,DIG=.09 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X=DIV D TRIGCP^ACKQUTL X ^DD(509850.6,2.5,1,1,2.4)
+                                2.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,9)=DIV,DIH=509850.6,DIG=.09 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                3)= DO NOT DELETE!
+                                CREATE VALUE)= D TRIGCP^ACKQUTL
+                                DELETE VALUE)= D TRIGCP^ACKQUTL
+                                FIELD)= #.09
+                                The C AND P field triggers the appropriate value into the C AND P STATUS field.  
+
+
+
+509850.6,2.6  CLINIC LOCATION        0;6 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              Clinic Location                                                                                                  
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Enter the clinic location for this visit. 
+              DESCRIPTION:
+                                The CLINIC LOCATION field is a pointer to the HOSPITAL LOCATION file (#44).  Clinic location names must match exactly with MAS clinic names set up in DHCP.  
+
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  509850.6^APCEC^MUMPS 
+                                1)= D SETREF^ACKQUTL5(X,DA,"C")
+                                2)= D KILLREF^ACKQUTL5(X,DA,"C")
+                                3)= Do not Delete
+                                This cross reference is only set when all four of the required fields (Visit Date, Patient, Clinic Location and Visit Time) for this cross reference exist within the Visit File.  After the cross reference has been set up,
+                                if any of the required fields are deleted the cross reference is deleted.  If any of the required fields are amended the cross reference is deleted and reset with the amended values.  
+
+
+              CROSS-REFERENCE:  509850.6^AEXCLN^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updated the Last Edited in Quasar field which in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,2.7  SECONDARY PROVIDER     2.7;0 POINTER Multiple #509850.66 (Add New Entry without Asking)
+
+              LAST EDITED:      NOV 04, 1999 
+
+509850.66,.01   SECONDARY PROVIDER     0;1 POINTER TO A&SP STAFF FILE (#509850.3) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 08, 2008 
+                HELP-PROMPT:      If a secondary provider was involved with this visit, enter his or her name. 
+                DESCRIPTION:      If more than one provider was involved in this exam, the name or names of the SECONDARY PROVIDER(S) should be entered here.  In order to enter a provider in this field, the provider must already exist in the A&SP STAFF
+                                  file (#509850.3) and the ACTIVATION DATE and INACTIVATION DATE must indicate that the selected provider is active on the date of the exam.  The SECONDARY PROVIDER field can be left blank.  
+
+                SCREEN:           S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")"
+                EXECUTABLE HELP:  I '$D(ACKVD) W !?5,"Input should take place ONLY through the QUASAR menu options.",!
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  509850.66^B 
+                                  1)= S ^ACK(509850.6,DA(1),2.7,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ACK(509850.6,DA(1),2.7,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  509850.66^ST2^MUMPS 
+                                  1)= S ^ACK(509850.6,"ST",X,DA(1))=2
+                                  2)= K ^ACK(509850.6,"ST",X,DA(1))
+                                  3)= Do Not Delete
+                                  The ST subscript holds cross-references for all staff involved in this clinic visit.  Rather than set the cross-reference equal to null, it is coded as to the position of the staff member.  
+                                    
+                                             1 = PRIMARY PROVIDER 
+                                             2 = SECONDARY PROVIDER 
+                                             3 = STUDENT 
+
+
+                CROSS-REFERENCE:  509850.66^AJ^MUMPS 
+                                  1)= D SEND^ACKQUTL5(DA(1))
+                                  2)= D SEND^ACKQUTL5(DA(1))
+                                  3)= Do not Delete
+                                  Call to update send to PCE field with todays date, this in turn creates the cross reference used by the overnight send to PCE process.  
+
+
+
+
+
+509850.6,3    DIAGNOSTIC CODE        1;0 POINTER Multiple #509850.63 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                The DIAGNOSTIC CODE field is a pointer to the A&SP DIAGNOSTIC CONDITION file (#509850.1).  
+
+              WRITE AUTHORITY:  ^
+
+509850.63,.01   DIAGNOSTIC CODE        0;1 POINTER TO A&SP DIAGNOSTIC CONDITION FILE (#509850.1) (Multiply asked)
+
+                Diagnostic Code                                                                                                
+                INPUT TRANSFORM:  S DIC("S")="I $D(ACKCSC),$$ICD^ACKQUT1(+Y,ACKVD,ACKCSC)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 08, 2008 
+                HELP-PROMPT:      Enter an ICD9 code for this clinic visit. 
+                SCREEN:           S DIC("S")="I $D(ACKCSC),$$ICD^ACKQUT1(+Y,ACKVD,ACKCSC)"
+                EXPLANATION:      The diagnostic code must be active and consistent with the stop code.
+                EXECUTABLE HELP:   
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  509850.63^B 
+                                  1)= S ^ACK(509850.6,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ACK(509850.6,DA(1),1,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  509850.63^AC^MUMPS 
+                                  1)= D SEND^ACKQUTL5(DA(1))
+                                  2)= D SEND^ACKQUTL5(DA(1))
+                                  3)= Do not Delete
+                                  This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.63,.12   PRIMARY DIAGNOSIS      0;2 SET (Required)
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                INPUT TRANSFORM:  I X=1,$$PRIMARY^ACKQASU5(DA(1),"") K X
+                LAST EDITED:      JAN 08, 2008 
+                HELP-PROMPT:      Select whether this was the Primary or a Secondary Diagnosis.  Note that each visit must have a Primary Diagnosis and that it is only possible to allocate one Diagnosis as the Primary Diagnosis. 
+                DESCRIPTION:
+                                  This field indicates whether the Diagnosis is the Primary or a Secondary Diagnosis.  A Primary Diagnosis must be defined within each visit.  It is only possible to have one Primary Diagnosis. 
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  509850.63^AC^MUMPS 
+                                  1)= D SEND^ACKQUTL5(DA(1))
+                                  2)= D SEND^ACKQUTL5(DA(1))
+                                  3)= Do not Delete
+                                  This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.63,.13   UPDATE PCE PROBLEM LIST 0;3 SET (Required)
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      SEP 11, 2000 
+                HELP-PROMPT:      Do you wish to update the PCE Problem List with this Diagnosis code. 
+                DESCRIPTION:
+                                  If set to true the associated Diagnosis code will be transferred to the PCE Problem List along with the other Visit data.  
+
+
+509850.63,.14   DIAGNOSIS PROVIDER     0;4 POINTER TO A&SP STAFF FILE (#509850.3) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 08, 2008 
+                HELP-PROMPT:      Enter the Provider associated with this Diagnosis. 
+                SCREEN:           S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")"
+                EXPLANATION:      Only valid Primary or Secondary Providers may be selected.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  509850.63^AD^MUMPS 
+                                  1)= D SEND^ACKQUTL5(DA(1))
+                                  2)= D SEND^ACKQUTL5(DA(1))
+                                  3)= Do not delete.
+                                  This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.63,.15   *MODIFIER              0;15 FREE TEXT (Required)
+
+                Modifier                                                                                                       
+                INPUT TRANSFORM:  D DCXFM^ACKQAS1
+                LAST EDITED:      FEB 23, 1999 
+                HELP-PROMPT:      Select a modifier for this diagnostic code. 
+                DESCRIPTION:      The MODIFIER field contains the description of the ICD-9CM diagnostic code for this clinic visit.  
+                                   
+                                  The MODIFIER field has been marked for deletion.  This field is not used by QUASAR V. 3.0.  Eighteen months after the release of QUASAR 3.0, this field can be removed.  Any Modifiers defined for  Diagnostic Codes pre
+                                  version 3.0 will be retained for the integrity of historic data.  
+
+                EXECUTABLE HELP:   
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+509850.6,4    CLINIC STOP CODE       2;1 SET
+
+              Clinic Stop Code                                                                                                 
+                                'A' FOR AUDIOLOGY; 
+                                'S' FOR SPEECH; 
+                                'AT' FOR TELEPHONE AUDIOLOGY; 
+                                'ST' FOR TELEPHONE SPEECH; 
+              LAST EDITED:      MAY 12, 1999 
+              HELP-PROMPT:        
+              DESCRIPTION:
+                                The CLINIC STOP CODE field contains A for Audiology, S for Speech Pathology, AT for an Audiology Telephone visit and ST for Speech Telephone visit.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.01 TONE R500              4;1 NUMBER (Required)
+
+              Tone R500                                                                                                        
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:      The TONE R500 field indicates the patient's pure tone threshold at 500Hz.  The 500Hz threshold is not currently used for evaluation, but is used in determining whether or not a ratable hearing loss exists.  It is not
+                                included in the four-frequency average.  
+
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  509850.6^AMD^MUMPS 
+                                1)= S X1=^ACK(509850.6,DA,0) S:'$D(ACKNAMD) ^ACK(509850.6,"AMD",+$P(X1,U,2),9999999-$P(X1,U),DA)="" K X1
+                                2)= S X1=^ACK(509850.6,DA,0) K ^ACK(509850.6,"AMD",+$P(X1,U,2),9999999-$P(X1,U),DA),X1
+                                3)= Do not delete
+                                This cross-reference is in patient DFN, inverse date, and internal entry number order.  It is used to easily locate the most recent audiometric data for a patient.  
+
+
+
+509850.6,4.02 TONE R1000             4;2 NUMBER (Required)
+
+              Tone R1000                                                                                                       
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:
+                                The TONE R1000 field indicates the pure tone threshold (Right) at 1000Hz for this patient.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.03 TONE R2000             4;3 NUMBER (Required)
+
+              Tone R2000                                                                                                       
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:
+                                The TONE R2000 field indicates the pure tone threshold (Right) at 2000Hz for this patient.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.04 TONE R3000             4;4 NUMBER (Required)
+
+              Tone R3000                                                                                                       
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:
+                                The TONE R3000 field indicates the pure tone threshold (Right) at 3000Hz for this patient.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.05 TONE R4000             4;5 NUMBER (Required)
+
+              Tone R4000                                                                                                       
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:
+                                The TONE R4000 field indicates the pure tone threshold (Right) at 4000Hz for this patient.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.06 TONE R AVERAGE         4;6 NUMBER (Required)
+
+              Tone R Average                                                                                                   
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 17, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 105, 0 Decimal Digits 
+              DESCRIPTION:      The TONE R AVERAGE field is the average pure tone threshold for this patient's right ear.  This indicates the average of the 1000, 2000, 3000 and 4000Hz scores for the right ear.  
+                                  
+                                This is a computed field.  If the package options are used to enter the 1000 to 4000Hz threshold values, this field is computed and filled in by the QUASAR software.  
+
+              EXECUTABLE HELP:  W !?5,"This field is automatically filled in by the package.",!
+              WRITE AUTHORITY:  ^
+
+509850.6,4.07 TONE L500              4;7 NUMBER (Required)
+
+              Tone L500                                                                                                        
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:      The TONE L500 field indicates the patient's pure tone threshold at 500Hz.  The 500Hz threshold is not currently used for evaluation, but is used in determining whether or not a ratable hearing loss exists.  It is not
+                                included in the four-frequency average.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.08 TONE L1000             4;8 NUMBER (Required)
+
+              Tone L1000                                                                                                       
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:
+                                The TONE L1000 field indicates the pure tone threshold (Left) at 1000Hz for this patient.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.09 TONE L2000             4;9 NUMBER (Required)
+
+              Tone L2000                                                                                                       
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:
+                                The TONE L2000 field indicates the pure tone threshold (Left) at 2000Hz for this patient.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.1  TONE L3000             4;10 NUMBER (Required)
+
+              Tone L3000                                                                                                       
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:
+                                The TONE L3000 field indicates the pure tone threshold (Left) at 3000Hz for this patient.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.11 TONE L4000             4;11 NUMBER (Required)
+
+              Tone L4000                                                                                                       
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<-10)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Type a Number between -10 and 105, 0 Decimal Digits 
+              DESCRIPTION:
+                                The TONE L4000 field indicates the pure tone threshold (Left) at 4000Hz for this patient.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.12 TONE L AVERAGE         4;12 NUMBER (Required)
+
+              Tone L Average                                                                                                   
+              INPUT TRANSFORM:  K:+X'=X!(X>105)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 17, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 105, 0 Decimal Digits 
+              DESCRIPTION:      The TONE L AVERAGE field is the average pure tone threshold for this patient's left ear.  This indicates the average of the 1000, 2000, 3000 and 4000Hz scores for the left ear.  
+                                  
+                                This is a computed field.  If the package options are used to enter the 1000 to 4000Hz threshold values, this field is computed and filled in by the QUASAR software.  
+
+              EXECUTABLE HELP:  W !?5,"This field is automatically filled in by the package.",!
+              WRITE AUTHORITY:  ^
+
+509850.6,4.13 CNC R                  4;13 NUMBER
+
+              CNC Right                                                                                                        
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Enter a number between 0 and 100 without the % symbol. 
+              DESCRIPTION:
+                                The CNC R field contains the patient's (Right) word recognition score for Maryland CNC material.  This score is a percentage between 0 and 100.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.14 CNC L                  4;14 NUMBER
+
+              CNC Left                                                                                                         
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Enter a number between 0 and 100 without the % symbol. 
+              DESCRIPTION:
+                                The CNC L field contains the patient's (Left) word recognition score for Maryland CNC material.  This score is a percentage between 0 and 100.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.15 W22 R                  4;15 NUMBER
+
+              W22 Right                                                                                                        
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Enter a number between 0 and 100 without the % symbol. 
+              DESCRIPTION:
+                                The W22 R field contains the patient's (Right) word recognition score for CID W-22 material.  This score is a percentage between 0 and 100.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.16 W22 L                  4;16 NUMBER
+
+              W22 Left                                                                                                         
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Enter a number between 0 and 100 without the % symbol. 
+              DESCRIPTION:
+                                The W22 L field contains the patient's (Left) word recognition score for CID W-22 material.  This score is a percentage between 0 and 100.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.17 SIGNATURE              4;17 FREE TEXT
+
+              Signature                                                                                                        
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAY 01, 2007 
+              HELP-PROMPT:      Your answer must be 3 to 30 characters in length. 
+              DESCRIPTION:      For C&P exams, the SIGNATURE field contains the electronic signature of the audiologist who completed the exam.  When the exam is signed, it is released for adequation by the supervisor.  Clinicians and adequators must
+                                have an electronic signature provided by IRM or selected through the Edit Electronic Signature Code option on the User's Toolbox menu in the user's secondary DHCP menu.  The signature field is not displayed for routine
+                                exams.  
+
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  ^^TRIGGER^509850.6^.09 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X=DIV D TRIGCP^ACKQUTL X ^DD(509850.6,4.17,1,1,1.4)
+                                1.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,9)=DIV,DIH=509850.6,DIG=.09 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X=DIV D TRIGCP^ACKQUTL X ^DD(509850.6,4.17,1,1,2.4)
+                                2.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,9)=DIV,DIH=509850.6,DIG=.09 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                3)= DO NOT DELETE!
+                                CREATE VALUE)= D TRIGCP^ACKQUTL
+                                DELETE VALUE)= D TRIGCP^ACKQUTL
+                                FIELD)= #.09
+                                The SIGNATURE field triggers the appropriate value into the C&P STATUS field.  
+
+
+
+509850.6,4.18 DATE SIGNED            4;18 DATE
+
+              Date Signed                                                                                                      
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 01, 2007 
+              HELP-PROMPT:      Enter the date and time that the electronic signature was entered. 
+              DESCRIPTION:
+                                For C&P exams, the DATE SIGNED field contains the date that the electronic signature was entered, thereby releasing the C&P exam for adequation.  The DATE SIGNED field is not displayed for routine exams.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.19 ADEQUATED BY           4;19 FREE TEXT
+
+              Adequated By                                                                                                     
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      JUL 25, 1995 
+              HELP-PROMPT:      Your answer must be 3 to 30 characters in length. 
+              DESCRIPTION:      The ADEQUATED BY field contains the electronic signature of the audiologist who adequated the clinic visit.  Only an adequator designated as a supervisor in the A&SP STAFF file (#509850.3) can adequate a C&P exam for other
+                                clinicians.  Clinicians may adequate there own C&P exams.  
+                                  
+                                Adequators must have an electronic signature provided by IRM or selected through the Edit Electronic Signature Code option on the User's Toolbox menu in the user's secondary DHCP menu.  The signature field is not displayed
+                                for routine exams.  Adequated exams can be printed and/or released to the AMIE package.  
+
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  ^^TRIGGER^509850.6^.09 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X=DIV D TRIGCP^ACKQUTL X ^DD(509850.6,4.19,1,1,1.4)
+                                1.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,9)=DIV,DIH=509850.6,DIG=.09 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^ACK(509850.6,D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X=DIV D TRIGCP^ACKQUTL X ^DD(509850.6,4.19,1,1,2.4)
+                                2.4)= S DIH=$S($D(^ACK(509850.6,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,9)=DIV,DIH=509850.6,DIG=.09 D ^DICR:$O(^DD(DIH,DIG,1,0))'=""
+                                3)= DO NOT DELETE!
+                                CREATE VALUE)= D TRIGCP^ACKQUTL
+                                DELETE VALUE)= D TRIGCP^ACKQUTL
+                                FIELD)= #.09
+                                The ADEQUATED BY field triggers the appropriate value into the C&P STATUS field.  
+
+
+
+509850.6,4.2  DATE ADEQUATED         4;20 DATE
+
+              Date Adequated                                                                                                   
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 25, 1995 
+              HELP-PROMPT:      Enter the date and time that the electronic signature was entered. 
+              DESCRIPTION:
+                                The DATE ADEQUATED field contains the date that the electronic signature was entered for the adequation of this C&P exam.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.21 *NU6 R                 4;21 NUMBER
+
+              NU6 Right                                                                                                        
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 14, 1995 
+              HELP-PROMPT:      Enter a number between 0 and 100 with 0 decimal digits. 
+              DESCRIPTION:      The NU6 R field contains the patient's (Right) word recognition score for NU-6 material.  This score is a percentage between 0 and 100.  
+                                  
+                                The NU6 R field has been marked for deletion.  This field is not used by QUASAR V. 2.0.  Eighteen months after the release of QUASAR 2.0, this field can be removed.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.22 *NU6 L                 4;22 NUMBER
+
+              NU6 Left                                                                                                         
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 14, 1995 
+              HELP-PROMPT:      Enter a number between 0 and 100 with 0 decimal digits. 
+              DESCRIPTION:      The NU6 L field contains the patient's (Left) word recognition score for NU-6 material.  This score is a percentage between 0 and 100.  
+                                  
+                                The NU6 L field has been marked for deletion.  This field is not used by QUASAR V. 2.0.  Eighteen months after the release of QUASAR 2.0, this field can be removed.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.23 DATE OF AUDIOMETRIC TESTING 4;23 DATE
+
+              Date of Audiometric Testing                                                                                      
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Enter the date that audiometric testing was done. 
+              DESCRIPTION:
+                                When audiometric data are pulled from a past visit (i.e., testing is not done on the current date), the DATE OF AUDIOMETRIC TESTING field is filled with the date when actual testing was done.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.24 COMPLETER TITLE        4;24 FREE TEXT
+
+              Completer Title                                                                                                  
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      MAY 01, 2007 
+              HELP-PROMPT:      Your answer must be 3 to 30 characters in length. 
+              DESCRIPTION:      For C&P exams, the COMPLETER TITLE field contains the title of the audiologist who completed the exam.  QUASAR fills in this field from the SIGNATURE BLOCK TITLE in the NEW PERSON file (#200).  SIGNATURE BLOCK TITLE can be
+                                entered by IRM or through the Edit Electronic Signature Code option on the User's Toolbox menu in the user's secondary DHCP menu.  The title field is not displayed for routine exams.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,4.25 ADEQUATOR TITLE        4;25 FREE TEXT
+
+              Adequator Title                                                                                                  
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      APR 02, 1996 
+              HELP-PROMPT:      Your answer must be 3 to 30 characters in length. 
+              DESCRIPTION:      For C&P exams, the ADEQUATOR TITLE field contains the title of the audiologist who adequated the clinic visit.  QUASAR fills in this field from the SIGNATURE BLOCK TITLE in the NEW PERSON file (#200).  SIGNATURE BLOCK
+                                TITLE can be entered by IRM or through the Edit Electronic Signature Code option on the User's Toolbox menu in the user's secondary DHCP menu.  The title field is not displayed for routine exams.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,5    CDR ACCOUNT            2;2 POINTER TO CDR ACCOUNT FILE (#509850)
+
+              CDR Account                                                                                                      
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,5)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 30, 2007 
+              HELP-PROMPT:      Enter the CDR account number for this exam. 
+              DESCRIPTION:
+                                The CDR ACCOUNT field contains the CDR account number to be credited with this clinic visit.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,5)=1"
+              EXPLANATION:      The CDR account must be active.
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  509850.6^ATCAT^MUMPS 
+                                1)= S ACKCAT=$E(^ACK(509850,X,0),1,2),ACKMO=$E(^ACK(509850.6,DA,0),1,5)_"00",$P(^(ACKCAT),U)=$S($D(^ACK(509850.6,"ATCAT",ACKMO,ACKCAT)):^(ACKCAT)+1,1:1)
+                                2)= S ACKCAT=$E(^ACK(509850,X,0),1,2),ACKMO=$E(^ACK(509850.6,DA,0),1,5)_"00" S:$D(^ACK(509850.6,"ATCAT",ACKMO,ACKCAT)) $P(^(ACKCAT),U)=^(ACKCAT)-1 K:$S($D(^(ACKCAT)):'^(ACKCAT),1:0) ^(ACKCAT) K ACKCAT,ACKMO
+                                3)= DO NOT DELETE!
+                                This cross reference is ordered by FileMan internal date (year and month), followed by the first two digits of the CDR account number.  The cross-reference is used to store an incremental count of the visits for the
+                                month/CDR category.  
+
+
+              CROSS-REFERENCE:  509850.6^ATCDR^MUMPS 
+                                1)= S ACKCDR=+^ACK(509850,X,0),ACKMO=$E(^ACK(509850.6,DA,0),1,5)_"00",$P(^(ACKCDR),U)=$S($D(^ACK(509850.6,"ATCDR",ACKMO,ACKCDR)):^(ACKCDR)+1,1:1) K ACKMO,ACKCDR
+                                2)= S ACKCDR=+^ACK(509850,X,0),ACKMO=$E(^ACK(509850.6,DA,0),1,5)_"00" S:$D(^ACK(509850.6,"ATCDR",ACKMO,ACKCDR)) $P(^(ACKCDR),U)=^(ACKCDR)-1 K:$S($D(^(ACKCDR)):'^(ACKCDR),1:0) ^(ACKCDR) K ACKMO,ACKCDR
+                                3)= DO NOT DELETE!
+                                This cross reference is ordered by FileMan internal date (year and month), followed by the full CDR account number (without trailing ".00").  The cross-reference is used to store an incremental count of the visits for the
+                                month and CDR account number.  
+
+
+              CROSS-REFERENCE:  509850.6^ADCI^MUMPS 
+                                1)= S ^ACK(509850.6,"ADCI",$E($P(^ACK(509850.6,DA,0),U),1,5)_"00",X,DA)=""
+                                2)= K ^ACK(509850.6,"ADCI",$E($P(^ACK(509850.6,DA,0),U),1,5)_"00",X,DA)
+                                3)= DO NOT DELETE!
+                                This cross-reference identifies the date (internal FileMan year and month), CDR number (pointer to the CDR ACCOUNT file (#509850)), and internal entry number for each clinic visit.  
+
+
+
+509850.6,6    PRIMARY PROVIDER       2;3 POINTER TO A&SP STAFF FILE (#509850.3)
+
+              Primary Provider                                                                                                 
+              INPUT TRANSFORM:  S DIC("S")="I $D(ACKVD),'$$STACT^ACKQUTL(+Y,ACKVD)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Enter the name of the Primary Provider who saw the patient. 
+              DESCRIPTION:      The PRIMARY PROVIDER field contains the name of the primary A&SP Provider who participated in this exam.  In order to enter a Provider in this field, the Provider must already exist in the A&SP STAFF file (#509850.3) and
+                                the ACTIVATION DATE and INACTIVATION DATE must indicate that the selected Provider is active on the date of the exam.  
+                                  
+                                Credit for a clinic visit is always credited to the Primary Provider. If you want credit be given to the SECONDARY PROVIDER or STUDENT, then you should enter ONLY the name of the provider who will get the credit.  For 
+                                example, if a health technician provides care and will get credit for the visit, the health technician's name should be entered in the SECONDARY PROVIDER field.  All other fields should be left blank.  
+
+              SCREEN:           S DIC("S")="I $D(ACKVD),'$$STACT^ACKQUTL(+Y,ACKVD)"
+              EXPLANATION:      Only A&SP PRIMARY PROVIDERS who are ACTIVE on the VISIT DATE can be selected.
+              EXECUTABLE HELP:  I '$D(ACKVD) W !?5,"Input should take place ONLY through the QUASAR menu options.",!
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  509850.6^ST1^MUMPS 
+                                1)= S ^ACK(509850.6,"ST",X,DA)=1
+                                2)= K ^ACK(509850.6,"ST",X,DA)
+                                3)= DO NOT DELETE!
+                                The ST subscript holds cross-references for all staff involved in this clinic visit.  Rather than set the cross-reference equal to null, it is coded as to the position of the staff member.  
+                                 
+                                           1 = PRIMARY PROVIDER 
+                                           2 = SECONDARY PROVIDER 
+                                           3 = STUDENT 
+
+
+              CROSS-REFERENCE:  509850.6^AI^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,6.5  PCE ERROR              6.5;0 Multiple #509850.65 (Add New Entry without Asking)
+
+              LAST EDITED:      JUL 02, 1999 
+              DESCRIPTION:      This multiple contains any error messages returned by PCE when this visit was transmitted via the Interface to PCE. The multiple contains the name of the field in error, the internal value of the field, the external value
+                                of the field (where possible) and the text of the error message.  
+
+
+509850.65,.01   PCE ERROR              0;1 NUMBER (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X S:$D(X) DINUM=X
+                LAST EDITED:      JUL 02, 1999 
+                HELP-PROMPT:      Type a Number between 1 and 999999, 0 Decimal Digits 
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  509850.65^B 
+                                  1)= S ^ACK(509850.6,DA(1),6.5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ACK(509850.6,DA(1),6.5,"B",$E(X,1,30),DA)
+
+
+509850.65,.02   PCE FIELD NAME         0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+                LAST EDITED:      JUL 02, 1999 
+                HELP-PROMPT:      Answer must be 1-25 characters in length. 
+                DESCRIPTION:
+                                  This is the name of the field as defined in the array passed across to PCE.  Examples of this field are: ENC D/T=Visit Date/Time, PATIENT=Patient, HOS LOC=Clinic, PROCEDURE=Procedure CPT, DIAGNOSIS=Diagnosis ICD9.  
+
+
+509850.65,.03   PCE FIELD INTERNAL VALUE 0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+                LAST EDITED:      JUL 02, 1999 
+                HELP-PROMPT:      Answer must be 1-25 characters in length. 
+                DESCRIPTION:      This is the internal value of the field, that was passed to PCE and caused the error message.  The type for this field will obviously depend on the value of PCE FIELD NAME.  For instance, if field name is ENC D/T (Visit
+                                  Date/Time) then this field will contain an internal Fileman Date/Time value. If the field name is PATIENT then this field will contain the pointer to the PATIENT File.  
+
+
+509850.65,.04   PCE FIELD EXTERNAL VALUE 0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+                LAST EDITED:      JUL 02, 1999 
+                HELP-PROMPT:      Answer must be 1-25 characters in length. 
+                DESCRIPTION:      This field contains the External value of the field that was rejected by PCE.  As with the Internal Value field, the type of value in this field will depend on the PCE FIELD NAME that caused the error.  If the PCE FIELD
+                                  NAME is ENC D/T then this field will contain the external value of the Visit Date/Time. If the PCE FIELD NAME is PATIENT then this field will contain the Patient Name.  It is not always possible to determine the external
+                                  value of the PCE FIELD NAME and so in some cases this field will be blank.  
+
+
+509850.65,1     PCE ERROR MESSAGE      1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+                LAST EDITED:      JUL 02, 1999 
+                HELP-PROMPT:      Answer must be 1-200 characters in length. 
+                DESCRIPTION:
+                                  This field contains the text of the error message returned by PCE. The text in this field comes directly from PCE and has not been generated in Quasar.  
+
+
+
+
+509850.6,7    STUDENT                2;4 POINTER TO A&SP STAFF FILE (#509850.3)
+
+              Student                                                                                                          
+              INPUT TRANSFORM:  S DIC("S")="I $D(ACKVD),$$STACT^ACKQUTL(+Y,ACKVD)=-2" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      If a student was involved with this visit, enter the student's name. 
+              DESCRIPTION:      If a student or trainee participated in this exam, the name of the STUDENT should be entered here.  In order to enter a student in this field, the student must already exist in the A&SP STAFF file (#509850.3), be
+                                designated as a student, and the ACTIVATION DATE and INACTIVATION DATE must indicate that the selected student is active on the date of the exam.  
+                                  
+                                QUASAR assumes that students are supervised 100% of the time. 
+
+              SCREEN:           S DIC("S")="I $D(ACKVD),$$STACT^ACKQUTL(+Y,ACKVD)=-2"
+              EXPLANATION:      Only STUDENTS who are ACTIVE on the VISIT DATE can be selected.
+              EXECUTABLE HELP:  I '$D(ACKVD) W !?5,"Input should take place ONLY through the QUASAR menu options.",!
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  509850.6^ST3^MUMPS 
+                                1)= S ^ACK(509850.6,"ST",X,DA)=3
+                                2)= K ^ACK(509850.6,"ST",X,DA)
+                                3)= DO NOT DELETE!
+                                The ST subscript holds cross-references for all staff involved in this clinic visit.  Rather than set the cross-reference equal to null, it is coded as to the position of the staff member.  
+                                  
+                                           1 = CLINICIAN 
+                                           2 = SECOND CLINICIAN 
+                                           3 = STUDENT 
+                                           4 = OTHER PROVIDER 
+
+
+              CROSS-REFERENCE:  509850.6^AK^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,8    *OTHER PROVIDER        2;8 POINTER TO A&SP STAFF FILE (#509850.3)
+
+              Other Provider                                                                                                   
+              INPUT TRANSFORM:  S DIC("S")="I $D(ACKVD),$$STACT^ACKQUTL(+Y,ACKVD)=-6" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      FEB 19, 1999 
+              HELP-PROMPT:      If an health technician was involved with this visit, enter his or her name. 
+              DESCRIPTION:      The OTHER PROVIDER field contains the name of the health technician who participated in this exam.  In order to enter a name in this field, the person must already exist in the A&SP STAFF file (#509850.3) and the
+                                ACTIVATION DATE and INACTIVATION DATE must indicate that the selected individual is active on the date of the exam.  
+                                 
+                                The OTHER PROVIDER field has been marked for deletion.  This field is not used by QUASAR V. 3.0.  Eighteen months after the release of QUASAR 3.0, this field can be removed.  
+
+              SCREEN:           S DIC("S")="I $D(ACKVD),$$STACT^ACKQUTL(+Y,ACKVD)=-6"
+              EXPLANATION:      Only OTHER PROVIDERS who are ACTIVE on the VISIT DATE can be selected.
+              EXECUTABLE HELP:  I '$D(ACKVD) W !?5,"Input should take place ONLY through the QUASAR menu options.",!
+              WRITE AUTHORITY:  ^
+              CROSS-REFERENCE:  509850.6^ST4^MUMPS 
+                                1)= S ^ACK(509850.6,"ST",X,DA)=4
+                                2)= K ^ACK(509850.6,"ST",X,DA)
+                                3)= DO NOT DELETE!
+                                The ST subscript holds cross-references for all staff involved in this clinic visit.  Rather than set the cross-reference equal to null, it is coded as to the position of the staff member.  
+                                  
+                                           1 = CLINICIAN 
+                                           2 = SECOND CLINICIAN 
+                                           3 = STUDENT 
+                                           4 = OTHER PROVIDER 
+
+
+
+509850.6,9    *DISPOSITION           2;6 FREE TEXT
+
+              Disposition                                                                                                      
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+              LAST EDITED:      FEB 19, 1999 
+              HELP-PROMPT:      Your answer must be 3 to 80 characters in length. 
+              DESCRIPTION:      The DISPOSITION field permits you to enter free text data (up to 80 characters).  You can code any data in this field such as clinic outcomes, pre and/or post test data, patient satisfaction, or any other numerical data. 
+                                This data field can be sorted using FileMan in the Tailor-Made A&SP Reports option on the A&SP Reports menu.  
+                                 
+                                The DISPOSITION field has been marked for deletion.  This field is not used by QUASAR V. 3.0.  Eighteen months after the release of QUASAR 3.0, this field can be removed.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,10   PROCEDURE CODE         3;0 POINTER Multiple #509850.61 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                The PROCEDURE CODE field contains CPT-4 procedure codes and modifiers, if any, for this exam.  
+
+              WRITE AUTHORITY:  ^
+
+509850.61,.01   PROCEDURE CODE         0;1 POINTER TO A&SP PROCEDURE CODE FILE (#509850.4) (Multiply asked)
+
+                Procedure Code                                                                                                 
+                INPUT TRANSFORM:  S DIC("S")="I $D(ACKCSC),'$G(ACKEVENT),$$CPT^ACKQUT1(+Y,ACKVD,ACKCSC)" S DIC("W")="" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 08, 2008 
+                HELP-PROMPT:      Enter a CPT procedure code for this visit. 
+                DESCRIPTION:      The PROCEDURE CODE field contains a CPT procedure code for this exam.  QUASAR accepts multiple CPT-4 codes and displays a sequential count of entered procedures.  QUASAR allows the same CPT-4 code to be entered more than
+                                  once if the second and subsequent codes are enclosed in quotation marks (e.g., "92507").  If this is not done, QUASAR assumes that the entry is a mistake and displays the entered code followed by double slant bars (e.g.,
+                                  92507//).  This signals you that this code has already been entered for this visit.  
+
+                SCREEN:           S DIC("S")="I $D(ACKCSC),'$G(ACKEVENT),$$CPT^ACKQUT1(+Y,ACKVD,ACKCSC)" S DIC("W")=""
+                EXPLANATION:      The CPT code must be active and consistent with the stop code.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  509850.61^B 
+                                  1)= S ^ACK(509850.6,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ACK(509850.6,DA(1),3,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  509850.61^AC^MUMPS 
+                                  1)= D SEND^ACKQUTL5(DA(1))
+                                  2)= D SEND^ACKQUTL5(DA(1))
+                                  3)= Do not Delete
+                                  This index updates the Last Edited in Quasar field. This in turn may cause the visit to become a PCE Exception.  
+
+
+                CROSS-REFERENCE:  509850.6^AD^MUMPS 
+                                  1)= Q
+                                  2)= D KILLEC^ACKQUTL5(DA,DA(1))
+                                  3)= Do not Delete.
+                                  If the CPT code was set up via the input of an EC code and the CPT is being deleted the EC code also requires deleting.  
+
+
+
+509850.61,.02   *MODIFIER              0;2 FREE TEXT
+
+                Modifier                                                                                                       
+                INPUT TRANSFORM:  K:X'?1A X I $D(X) D PCXFM^ACKQAS1
+                LAST EDITED:      OCT 16, 2000 
+                HELP-PROMPT:      Your answer must be 1 character in length. 
+                DESCRIPTION:      The MODIFIER field contains the letter modifiers for some CPT-4 procedure codes.  The CPT-4 code set does not provide codes to describe the full scope and complexity of procedures performed by audiologists and
+                                  speech-language pathologists.  Recognizing this deficiency, modifiers are provided to more fully describe procedures or to provide procedures where none exist.  
+                                   
+                                  The MODIFIER field has been marked for deletion.  This field is not used by QUASAR V. 3.0.  Eighteen months after the release of QUASAR 3.0, this field can be removed.  Any Modifiers already defined for Procedure codes
+                                  pre Version 3.0 will however be retained for the integrity of historic data.  
+
+                EXECUTABLE HELP:   
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+509850.61,.03   VOLUME                 0;3 NUMBER (Required)
+
+                PROCEDURE COUNT                                                                                                
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 08, 2008 
+                HELP-PROMPT:      How many times was the procedure performed. Enter 1-99. 
+                DESCRIPTION:
+                                  A procedure may be carried out multiple times during a visit.  The volume field allows the user to specify how many times each procedure was performed.  
+
+                CROSS-REFERENCE:  509850.61^AD^MUMPS 
+                                  1)= D SEND^ACKQUTL5(DA(1))
+                                  2)= D SEND^ACKQUTL5(DA(1))
+                                  3)= Do not Delete
+                                  This index updates the Last Edited in Quasar field. This in turn may cause the visit to become a PCE Exception.  
+
+
+                CROSS-REFERENCE:  509850.61^AE^MUMPS 
+                                  1)= D CPVOLPRV^ACKQUTL5(DA,DA(1),X,"V","S")
+                                  2)= D CPVOLPRV^ACKQUTL5(DA,DA(1),X,"V","D")
+                                  3)= Do not Delete.
+                                  If this CPT record contains a reference to a EC record the value entered within this field is automatically updated to the associated EC field.  
+
+
+
+509850.61,.04   CPT MODIFIER           1;0 POINTER Multiple #509850.64 (Add New Entry without Asking)
+
+
+509850.64,.01     CPT MODIFIER           0;1 POINTER TO A&SP PROCEDURE MODIFIER FILE (#509850.5) (Multiply asked)
+
+                  INPUT TRANSFORM:  S DIC("S")="D:'$D(ACKMOD(ACKPC)) MOD^ACKQUTL5  I $D(ACKMOD(ACKPC,Y))" D MODW^ACKQUTL5 D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 08, 2008 
+                  HELP-PROMPT:      Enter a Modifier code(s) for the selected Procedure. 
+                  DESCRIPTION:
+                                    This allows for a more specific description of the procedure than is possible using just the CPT Procedure Codes.  
+
+                  SCREEN:           S DIC("S")="D:'$D(ACKMOD(ACKPC)) MOD^ACKQUTL5  I $D(ACKMOD(ACKPC,Y))" D MODW^ACKQUTL5
+                  EXPLANATION:      Only valid Modifiers for the selected Procedure that are marked as active on the A&SP CPT Modifiers File are available for selection.
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  509850.64^B 
+                                    1)= S ^ACK(509850.6,DA(2),3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^ACK(509850.6,DA(2),3,DA(1),1,"B",$E(X,1,30),DA)
+
+                  CROSS-REFERENCE:  509850.64^AC^MUMPS 
+                                    1)= D SEND^ACKQUTL5(DA(2))
+                                    2)= D SEND^ACKQUTL5(DA(2))
+                                    3)= Do not Delete
+                                    This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+
+
+509850.61,.05   PROCEDURE PROVIDER       0;4 POINTER TO A&SP STAFF FILE (#509850.3)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 08, 2008 
+                  HELP-PROMPT:      Enter the Provider who carried out this Procedure. 
+                  SCREEN:           S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")"
+                  EXPLANATION:      Only Fee Basis Clinicians, Clinicians or Other Providers are valid values.
+                  CROSS-REFERENCE:  509850.6^AE^MUMPS 
+                                    1)= D SEND^ACKQUTL5(DA(1))
+                                    2)= D SEND^ACKQUTL5(DA(1))
+                                    3)= Do not delete
+                                    This index updates the Last Edited in Quasar field. This in turn may cause the visit to become a PCE Exception.  
+
+
+                  CROSS-REFERENCE:  509850.61^AF^MUMPS 
+                                    1)= D CPVOLPRV^ACKQUTL5(DA,DA(1),X,"P","S")
+                                    2)= D CPVOLPRV^ACKQUTL5(DA,DA(1),X,"P","D")
+                                    3)= Do not Delete.
+                                    If this CPT record contains a reference to a EC record the value entered within this field is automatically updated to the associated EC field.  
+
+
+
+509850.61,.07   EVENT CAPTURE CODE POINTER 0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      OCT 06, 2000 
+                  HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This value is a pointer to this CPT entries corresponding EC entry.  
+
+
+
+
+509850.6,15   EVENT CAPTURE PROCEDURE 7;0 POINTER Multiple #509850.615 (Add New Entry without Asking)
+
+              LAST EDITED:      OCT 03, 2000 
+
+509850.615,.01  EVENT CAPTURE PROCEDURE 0;1 POINTER TO EC NATIONAL PROCEDURE FILE (#725) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $D(ACKVD),$D(ACKCSC),$G(ACKEVENT),$$CHK^ACKQUTL5(+Y,ACKVD,ACKCSC)" S DIC("W")="W ?42,""  ""_$P(^EC(725,+Y,0),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 08, 2008 
+                HELP-PROMPT:      Enter an Event Capture Procedure code. 
+                DESCRIPTION:
+                                  Procedures performed during this QUASAR encounter as defined by Event Capture codes.  
+
+                SCREEN:           S DIC("S")="I $D(ACKVD),$D(ACKCSC),$$CHK^ACKQUTL5(+Y,ACKVD,ACKCSC)"
+                EXPLANATION:      Only active Audiology & Speech Pathology codes with associated CPT codes are valid.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  509850.615^B 
+                                  1)= S ^ACK(509850.6,DA(1),7,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ACK(509850.6,DA(1),7,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  509850.6^AC^MUMPS 
+                                  1)= D SEND^ACKQUTL5(DA(1))
+                                  2)= D SEND^ACKQUTL5(DA(1))
+                                  3)= Do not Delete
+                                  This index updates the Last Edited in Quasar field. This in turn may cause the visit to become a PCE Exception.  
+
+
+                CROSS-REFERENCE:  509850.6^AO^MUMPS 
+                                  1)= D SETCPT^ACKQUTL5(DA,DA(1),X)
+                                  2)= D KILLCPT^ACKQUTL5(DA,DA(1))
+                                  3)= Do not Delete.
+                                  Sets up corresponding CPT Procedure entry when an Event Capture Code is created. If EC code is deleted this cross reference will delete the CPT node the EC entry is pointing to.  
+
+
+
+509850.615,.03  VOLUME                 0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 08, 2008 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:
+                                  A procedure may be carried out multiple times during a visit.  The volume field allows the user to specify how many times each procedure was performed.  
+
+                CROSS-REFERENCE:  509850.6^AD^MUMPS 
+                                  1)= D SEND^ACKQUTL5(DA(1))
+                                  2)= D SEND^ACKQUTL5(DA(1))
+                                  3)= Do not delete
+                                  This index updates the Last Edited in Quasar field. This in turn may cause the visit to become a PCE Exception.  
+
+
+                CROSS-REFERENCE:  509850.6^AQ^MUMPS 
+                                  1)= D ECVOLPRV^ACKQUTL5(DA,DA(1),X,"V","S")
+                                  2)= D ECVOLPRV^ACKQUTL5(DA,DA(1),X,"V","D")
+                                  3)= Do not Delete.
+                                  If this Event Capture record contains a reference to a CPT record the value entered within this field is automatically updated to the associated CPT field.  
+
+
+
+509850.615,.05  EC PROCEDURE PROVIDER  0;3 POINTER TO A&SP STAFF FILE (#509850.3)
+
+                INPUT TRANSFORM:  S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JAN 08, 2008 
+                HELP-PROMPT:      Enter the Provider who carried out this Event Capture Procedure. 
+                DESCRIPTION:
+                                  This is the Provider who carried out this Event Capture Procedure.  
+
+                SCREEN:           S DIC("S")="I $D(ACKVD) S ACKVALSC=$$STACT^ACKQUTL(+Y,ACKVD) I ACKVALSC=""0""!(ACKVALSC=""-6"")"
+                EXPLANATION:      Only Fee Basis Clinicians, Clinicians or Other Providers are valid entries.
+                CROSS-REFERENCE:  509850.6^AE^MUMPS 
+                                  1)= D SEND^ACKQUTL5(DA(1))
+                                  2)= D SEND^ACKQUTL5(DA(1))
+                                  3)= Do not Delete
+                                  This index updates the Last Edited in Quasar field. This in turn may cause the visit to become a PCE Exception.  
+
+
+                CROSS-REFERENCE:  509850.6^AG^MUMPS 
+                                  1)= D ECVOLPRV^ACKQUTL5(DA,DA(1),X,"P","S")
+                                  2)= D ECVOLPRV^ACKQUTL5(DA,DA(1),X,"P","D")
+                                  3)= Do not Delete.
+                                  If this Event Capture record contains a reference to a CPT record the value entered within this field is automatically updated to the associated CPT field.  
+
+
+
+509850.615,.07  CPT CODE POINTER       0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 06, 2000 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This value is a pointer to this EC entries corresponding CPT entry.  
+
+
+
+
+509850.6,20   SERVICE CONNECTED      5;3 SET (Required)
+
+                                                                                                                               
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Was care for Service Connected Condition ?                                 Enter YES or NO 
+              DESCRIPTION:      This prompt allows the user to indicate if the visit is Service Connected or not.  If the visit is not Service Connected the user may be prompted for additional information relating to Agent Orange, Radiation and 
+                                Environmental Contaminants.  
+
+              EXECUTABLE HELP:  D RATDIS^ACKQNQ W !!
+              CROSS-REFERENCE:  509850.6^AE^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,25   AGENT ORANGE           5;4 SET (Required)
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Was care related to Agent Orange Exposure ?                                Enter YES or NO 
+              DESCRIPTION:
+                                Is this visit related to Agent Orange Exposure.  
+
+              CROSS-REFERENCE:  509850.6^AF^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,30   RADIATION              5;5 SET (Required)
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Was care related to Ionizing Radiation Exposure ?                          Enter YES or NO 
+              DESCRIPTION:
+                                Is this visit related to Radiation Exposure.  
+
+              CROSS-REFERENCE:  509850.6^AG^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,35   ENVIRONMENTAL CONTAMINANTS 5;6 SET (Required)
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Was care related to Environmental Contaminants Exposure ?                 Enter YES or NO 
+              DESCRIPTION:
+                                Is this visit related to Environmental Contaminants exposure.  
+
+              CROSS-REFERENCE:  509850.6^AH^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,40   HEAD AND/OR NECK CANCER 5;9 SET (Required)
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 24, 2010 
+              HELP-PROMPT:      Was care related to Head and/or Neck Cancer? 
+              DESCRIPTION:
+                                Indicates whether or not the visit is related to Head and/or Neck Cancer.  
+
+
+509850.6,45   COMBAT RELATED         5;10 SET (Required)
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 24, 2010 
+              HELP-PROMPT:      Was care related to Combat? 
+              DESCRIPTION:
+                                Indicates whether or not the visit is related to Combat.  
+
+
+509850.6,55   APPOINTMENT TIME       5;8 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X I $D(X) S X=$$DATACHEK^ACKQUTL6(X,DA) K:'X X I $D(X) I '$$DUPECHK^ACKQUTL6(X,DA,$G(ACKPAT)) S ACKITME=X K X
+              OUTPUT TRANSFORM: Q:'$D(Y)  S Y=$TR(Y,".",""),Y=$$FMT^ACKQUTL6(Y)
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Answer must be 1-8 characters in length. 
+              DESCRIPTION:
+                                Enter the time the visit took place such as 10, 10AM, 10:30, 0100, 0025 etc.  You may also enter a time, such as NOON, MIDNIGHT or NOW.  Time is REQUIRED in this response.  
+
+              EXECUTABLE HELP:  D:$D(ACKITME) DUPCHK^ACKQUTL6 D TIMERR^ACKQASU5
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  509850.6^AN^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+              CROSS-REFERENCE:  509850.6^APCET^MUMPS 
+                                1)= D SETREF^ACKQUTL5(X,DA,"T")
+                                2)= D KILLREF^ACKQUTL5(X,DA,"T")
+                                3)= Do not Delete
+                                This cross reference is only set when all four of the required fields (Visit Date, Patient, Clinic Location and Visit Time) for this cross reference exist within the Visit File.  After the cross reference has been set up,
+                                if any of the required fields are deleted the cross reference is deleted.  If any of the required fields are amended the cross reference is deleted and reset with the amended values.  
+
+
+
+509850.6,60   DIVISION               5;1 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8) (Required)
+
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Enter the Division at which the visit took place. 
+              DESCRIPTION:
+                                This is the division at which the visit took place.  All clinics are defined as part of a Division.  The user may only select a division that has been entered on the A&SP Site Parameters file.  
+
+              CROSS-REFERENCE:  509850.6^AL^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,80   VISIT ELIGIBILITY      5;2 POINTER TO ELIGIBILITY CODE FILE (#8) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(ACKELDIS(Y))",DIC("W")="W """"" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:        
+              DESCRIPTION:
+                                Only Eligibilities associated with the visit are valid for entry.  
+
+              SCREEN:           S DIC("S")="I $D(ACKELDIS(Y))",DIC("W")="W """""
+              EXPLANATION:      Only eligibilities associated with the visit are valid for entry.
+              CROSS-REFERENCE:  509850.6^AD^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,90   MILITARY SEXUAL TRAUMA 2;9 SET (Required)
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JAN 08, 2008 
+              HELP-PROMPT:      Please enter YES or NO. 
+              DESCRIPTION:
+                                Indicates whether the patients visit was related to Military Sexual Trauma.  
+
+              CROSS-REFERENCE:  509850.6^AP^MUMPS 
+                                1)= D SEND^ACKQUTL5(DA)
+                                2)= D SEND^ACKQUTL5(DA)
+                                3)= Do not Delete
+                                This index updates the Last Edited in QUASAR field. This in turn may cause the visit to become a PCE Exception.  
+
+
+
+509850.6,100  REVIEW OF MEDICAL RECORDS 100;0   WORD-PROCESSING #509850.62
+
+              LAST EDITED:      JUN 04, 1997 
+              DESCRIPTION:       REVIEW OF MEDICAL RECORDS: Indicate whether the C-file was reviewed. If 
+                                 the C-file was not reviewed or was not available for review, the examiner 
+                                 should so state.  
+
+              WRITE AUTHORITY:  ^
+              GROUP:            C AND P
+
+509850.6,101  MEDICAL HISTORY        101;0   WORD-PROCESSING #509850.6101
+
+              LAST EDITED:      JUN 04, 1997 
+              DESCRIPTION:       MEDICAL HISTORY (SUBJECTIVE COMPLAINTS): |NOWRAP| 
+                                 Comment on: 
+                                 1. Chief Complaint.  
+                                 2. Situation of greatest difficulty.  
+                                 3. Pertinent service history.  
+                                 4. History of military, occupational, and recreational noise exposure.  
+                                 5. Tinnitus - If present, state: 
+                                    a. date and circumstances of onset 
+                                    b. whether it is unilateral or bilateral 
+                                    c. whether it is recurrent (indicate frequency and duration) 
+                                    d. State the most likely etiology of the tinnitus, and    
+                                       specifically, if hearing loss is present, whether the tinnitus 
+                                       is due to the same etiology (or causative factor) as the hearing 
+                                       loss.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,102  PHYSICAL EXAMINATION   102;0   WORD-PROCESSING #509850.6102
+
+              LAST EDITED:      JUN 04, 1997 
+              DESCRIPTION:       PHYSICAL EXAMINATION (OBJECTIVE FINDINGS): |NOWRAP| 
+                                 1. Measure pure tone thresholds in decibels at the indicated 
+                                    frequencies (air conduction): 
+                                 ==========RIGHT EAR=============================LEFT EAR=============== 
+                                  A*    B     C     D     E    **     A*    B     C     D     E    ** 
+                                 500  1000  2000  3000  4000 average 500  1000  2000  3000  4000 average 
+                                   
+                                   *The pure tone threshold at 500 Hz is not used in determining the 
+                                    evaluation but is used in determining whether or not a ratable 
+                                    hearing loss exists.  
+                                   **The average of B, C, D, and E.  
+                                   
+                                 2. Speech Recognition Score: 
+                                    Maryland CNC word list ______% right ear _____% left ear 
+                                 
+                                 3. When only pure tone results should be used to evaluate hearing 
+                                    loss, the examiner, who must be a state-licensed audiologist, should  
+                                    certify that language difficulties or other problems (specify what 
+                                    the problems are) make the combined use of pure tone average and 
+                                    speech discrimination inappropriate.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,103  DIAGNOSTIC AND CLINICAL TESTS 103;0   WORD-PROCESSING #509850.6103
+
+              LAST EDITED:      JUN 04, 1997 
+              DESCRIPTION:       DIAGNOSTIC AND CLINICAL TESTS: |NOWRAP| 
+                                 1. Report middle-ear status, confirm type of loss, and indicate need for 
+                                    medical follow-up.  In cases where there is poor inter-test 
+                                    reliability and/or positive Stenger test results, obtain and report 
+                                    estimates of hearing thresholds using a combination of behavioral 
+                                    testing, Stenger interference levels, and electrophysiological tests.  
+                                 
+                                 2. Include results of all diagnostic and clinical tests conducted in the 
+                                    examination report.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,104  DIAGNOSIS              104;0   WORD-PROCESSING #509850.6104
+
+              LAST EDITED:      JUN 04, 1997 
+              DESCRIPTION:       DIAGNOSIS: |NOWRAP| 
+                                 1. Summary of audiologic test results. Indicate type and degree of 
+                                    hearing loss for the frequency range from 500 to 4000 Hz.  For type of 
+                                    loss, indicate whether it is normal, conductive, sensorineural, 
+                                    central, or mixed.  For degree, indicate whether it is mild (26-40 dB 
+                                    HL), moderate (41-54 dB HL), moderately-severe (55-69 dB HL), severe 
+                                    (70-89  dB HL), or profound (90+ dB HL). For VA purposes, impaired 
+                                    hearing is considered to be a disability when the auditory threshold 
+                                    in any of the frequencies 500, 1000, 2000, 3000, and 4000 Hz is 40 dB 
+                                    HL or greater; or when the auditory thresholds for at least three of 
+                                    these frequencies are 26 dB HL or greater; or when speech recognition 
+                                    scores are less than 94%.  
+                                 
+                                 2. Note whether, based on audiologic results, medical follow-up is needed 
+                                    for an ear or hearing problem, and whether there is a problem that, if 
+                                    treated, might cause a change in hearing threshold levels.  
+
+              WRITE AUTHORITY:  ^
+
+509850.6,125  PCE VISIT IEN          6;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1999 
+              HELP-PROMPT:      Answer must be 1-8 characters in length. 
+              DESCRIPTION:
+                                This is the IEN of the PCE visit passed back by the send to PCE processing. 
+
+              CROSS-REFERENCE:  509850.6^AEX3^MUMPS 
+                                1)= D EXCEPT^ACKQUTL5(DA,125,X)
+                                2)= D EXCEPT^ACKQUTL5(DA,125,X)
+                                3)= Do not Delete
+                                Set and Kill logic gets LAST SENT TO QUASAR,LAST EDITED IN QUASAR and PCE VISIT IEN field values and runs processing that either sets or kills the EXCEPTION DATE depending on the field values. 
+
+
+
+509850.6,135  LAST SENT TO PCE       6;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 06, 1999 
+              DESCRIPTION:
+                                The Date/Time that the system last attempted to send this data to PCE.  
+
+              CROSS-REFERENCE:  509850.6^AEX2^MUMPS 
+                                1)= D EXCEPT^ACKQUTL5(DA,135,X)
+                                2)= D EXCEPT^ACKQUTL5(DA,135,X)
+                                3)= Do not Delete
+                                Set and Kill logic gets LAST SENT TO QUASAR,LAST EDITED IN QUASAR and PCE VISIT IEN field values and runs processing that either sets or kills the EXCEPTION DATE depending on the field values. 
+
+
+
+509850.6,140  LAST EDITED IN QUASAR  6;7 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 06, 1999 
+              DESCRIPTION:
+                                This date is the date when the visit record was last edited in Quasar.  This field is not dependant on the PCE interface being on for the current Division.  
+
+              CROSS-REFERENCE:  509850.6^AEX1^MUMPS 
+                                1)= D EXCEPT^ACKQUTL5(DA,140,X)
+                                2)= D EXCEPT^ACKQUTL5(DA,140,X)
+                                3)= Do not Delete
+                                Set and Kill logic gets LAST SENT TO QUASAR,LAST EDITED IN QUASAR and PCE VISIT IEN field values and runs processing that either sets or kills the EXCEPTION DATE depending on the field values.  
+
+
+
+509850.6,900  EXCEPTION DATE         6;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 06, 1999 
+              DESCRIPTION:      Set to NOW whenever the system determines that the Visit has become a PCE Exception. Triggered by changes to the PCE Visit IEN field, the LAST SENT TO PCE field and the LAST EDITED IN QUASAR field.  
+                                 
+                                NB. This field has been numbered 900 to ensure it is the last field killed when a visit is deleted.  
+
+              CROSS-REFERENCE:  509850.6^AEX^MUMPS 
+                                1)= S ^ACK(509850.6,"AEX",X,DA)=""
+                                2)= K ^ACK(509850.6,"AEX",X,DA)
+                                This index is used by the PCE Exception Report to identify all visits that are EXCEPTIONS.  
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+A&SP DIAGNOSTIC CONDITION 
+                   (#509850.1)    DIAGNOSTIC CODE:DIAGNOSTIC CODE (#.01)
+
+A&SP PATIENT (#509850.2)          PATIENT NAME (#1)
+
+A&SP PROCEDURE CODE (#509850.4)   PROCEDURE CODE:PROCEDURE CODE (#.01)
+
+A&SP PROCEDURE MODIFIER (#509850.5)  CPT MODIFIER:CPT MODIFIER (#.01)
+
+A&SP STAFF (#509850.3)            *SECOND CLINCIAN (#.25)
+                                  *LEAD ROLE (#.27)
+                                  PRIMARY PROVIDER (#6)
+                                  STUDENT (#7)
+                                  *OTHER PROVIDER (#8)
+                                  PROCEDURE CODE:PROCEDURE PROVIDER (#.05)
+                                  EVENT CAPTURE PROCEDURE:EC PROCEDURE PROVIDER (#.05)
+                                  DIAGNOSTIC CODE:DIAGNOSIS PROVIDER (#.14)
+                                  SECONDARY PROVIDER:SECONDARY PROVIDER (#.01)
+
+CDR ACCOUNT (#509850)             CDR ACCOUNT (#5)
+
+EC NATIONAL PROCEDURE (#725)      EVENT CAPTURE PROCEDURE:EVENT CAPTURE PROCEDURE (#.01)
+
+ELIGIBILITY CODE (#8)             VISIT ELIGIBILITY (#80)
+
+HOSPITAL LOCATION (#44)           CLINIC LOCATION (#2.6)
+
+MEDICAL CENTER DIVISION (#40.8)   DIVISION (#60)
+
+
+
+INPUT TEMPLATE(S):
+ACKQAS VISIT ENTRY            DEC 05, 2007@11:51  USER #0    ^ACKQTE 
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

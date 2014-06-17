@@ -1,0 +1,106 @@
+STANDARD DATA DICTIONARY #363.32 -- BILLING SPECIAL GROUPS FILE                                                                                                                                                                   MAY 20,2014@15:35:59  PAGE 1
+STORED IN ^IBE(363.32,  (2 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                          (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the names of special cases that should be applied to certain bill types.  This includes the Revenue Code Link group names and the Provider Discount group names.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: TYPE (#.02)[R]
+
+POINTED TO BY: GROUP field (#.02) of the BILLING REVENUE CODE LINKS File (#363.33) 
+               GROUP field (#.02) of the BILLING PROVIDER DISCOUNT File (#363.34) 
+               
+
+CROSS
+REFERENCED BY: NAME(B)
+
+363.32,.01    NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      DEC 28, 1998 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is the name of the billing group.  
+
+              DELETE TEST:      363.33,0)= I +$P($G(^IBE(363.32,DA,0)),U,2)=1,+$O(^IBE(363.33,"C",DA,0)) W !,"Can not Delete a Group that has Revenue Code Links defined!",!
+
+                                363.34,0)= I +$P($G(^IBE(363.32,DA,0)),U,2)=2,+$O(^IBE(363.34,"C",DA,0)) W !,"Can not Delete a Group that has Provider Discounts defined!",!
+
+              CROSS-REFERENCE:  363.32^B 
+                                1)= S ^IBE(363.32,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(363.32,"B",$E(X,1,30),DA)
+
+
+363.32,.02    TYPE                   0;2 SET (Required)
+
+                                '1' FOR REVENUE CODE LINK; 
+                                '2' FOR PROVIDER DISCOUNT; 
+              LAST EDITED:      APR 13, 1999 
+              HELP-PROMPT:      Enter the type of this group. 
+              DESCRIPTION:
+                                This defines the type of data that will be associated with this group.  
+
+
+363.32,11     BILLING RATE/SET       11;0 POINTER Multiple #363.3211 (Add New Entry without Asking)
+
+              LAST EDITED:      APR 28, 1999 
+
+363.3211,.01    BILLING RATE           0;1 POINTER TO BILLING RATE FILE (#363.3) (Multiply asked)
+
+                LAST EDITED:      APR 28, 1999 
+                HELP-PROMPT:      Enter the Billing Rate(s) this group applies to. 
+                DESCRIPTION:
+                                  This is the Billing rate the special links defined by this group should be applied to during billing.  
+
+                CROSS-REFERENCE:  363.3211^B 
+                                  1)= S ^IBE(363.32,DA(1),11,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBE(363.32,DA(1),11,"B",$E(X,1,30),DA)
+
+
+363.3211,.02    CHARGE SET             0;2 POINTER TO CHARGE SET FILE (#363.1)
+
+                INPUT TRANSFORM:  S DIC("S")="I +$P(^(0),U,2)=+$G(^IBE(363.32,+$G(DA(1)),11,+$G(DA),0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      APR 28, 1999 
+                HELP-PROMPT:      If only some of a Billing Rates Charge Sets should be assigned to this Special Group, enter one of those Charge Sets. 
+                DESCRIPTION:      An entire Billing Rate may be assigned to a Special Group, in this case no Charge Set is needed.  
+                                   
+                                  If all Charge Sets of a Billing Rate should not be assigned to a Special Group then enter one of the Charge Sets that should be assigned to the Group.  
+
+                SCREEN:           S DIC("S")="I +$P(^(0),U,2)=+$G(^IBE(363.32,+$G(DA(1)),11,+$G(DA),0))"
+                EXPLANATION:      Charge Sets for this Billing Rate Only!
+
+363.3211,.03    ORDER                  0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 28, 1999 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  If a Billing Rate or Charge Set has been assigned to more than one Special Group then enter the order of precedence that should determine the order they should be used.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILLING RATE (#363.3)             BILLING RATE/SET:BILLING RATE (#.01)
+
+CHARGE SET (#363.1)               BILLING RATE/SET:CHARGE SET (#.02)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

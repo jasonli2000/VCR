@@ -1,0 +1,782 @@
+STANDARD DATA DICTIONARY #668 -- PROSTHETIC SUSPENSE FILE                                                                                                                                                                         MAY 20,2014@15:40:21  PAGE 1
+STORED IN ^RMPR(668,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Prosthetic Suspense file used to contain information regarding pending Prosthetic requests and orders.  This file contains both Manual and CPRS Orders.  
+  
+When a suspense is added to Prosthetics the status is OPEN.  Once an initial action is taken on the suspense record, the status changes from OPEN to PENDING.  The status remains PENDING when additional action is taken on a suspense record.  The status is
+changed to CLOSED when the process is complete and either service was performed or an item was given to the patient.  
+ 
+There are two main types of suspense items, MANUAL and CPRS via Consult Tracking.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: VETERAN (#1), SUSPENSE FORM (#3)[R]
+
+POINTED TO BY: SUSPENSE RECORD field (#.05) of the PROSTHETIC 2529-3 File (#664.1) 
+               
+
+CROSS
+REFERENCED BY: SUSPENSE DATE(B), VETERAN(C), COMPLETION DATE(CD), CONSULT(D), STATUS(E), PATIENT 2319(F), AMIS GROUPER(G), STATUS(I), STATUS(L), STATUS(L1)
+
+668,.01       SUSPENSE DATE          0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 12, 2000 
+              HELP-PROMPT:      Enter date and time as mmddyy@hhmm when this entry is added. 
+              DESCRIPTION:
+                                Date that the Suspense entry was entered.  
+
+              TECHNICAL DESCR:
+                                 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  668^B 
+                                1)= S ^RMPR(668,"B",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(668,"B",$E(X,1,30),DA)
+
+
+668,1         VETERAN                0;2 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      APR 07, 1992 
+              HELP-PROMPT:      Please Enter The Name of the Veteran 
+              DESCRIPTION:
+                                Pointer to the Patient file.  MAS Patients may not become Prosthetic Patients while their eligility is being determined.  
+
+              CROSS-REFERENCE:  668^C 
+                                1)= S ^RMPR(668,"C",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(668,"C",$E(X,1,30),DA)
+                                Cross refference to allow looking up by patient name.  e 
+
+
+
+668,1.5       PROVISIONAL DIAGNOSIS  8;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      SEP 15, 2003 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                CPRS Provisional Diagnosis at the time the Consult was created.  
+
+              TECHNICAL DESCR:
+                                 
+
+
+668,1.6       ICD9                   8;3 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAR 01, 2000 
+              DESCRIPTION:
+                                CPRS ICD9 Code at the time the Consult was entered.  
+
+
+668,2         STATION                0;7 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      DEC 17, 1992 
+              HELP-PROMPT:      Enter the Station Number of the patient. 
+              DESCRIPTION:
+                                This field stores the station number of the patient.  
+
+
+668,2.1       REQUESTING FACILITY    8;1 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      MAR 01, 2000 
+              DESCRIPTION:
+                                CPRS Requesting Facility, local facility only from Consult Tracking.  
+
+
+668,2.3       URGENCY                8;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
+              LAST EDITED:      MAR 01, 2000 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                From CPRS, the urgency the user defined at the time the Consult was created.  
+
+
+668,3         SUSPENSE FORM          0;3 SET (Required)
+
+                                '1' FOR PSC; 
+                                '2' FOR 2421; 
+                                '3' FOR 2237; 
+                                '4' FOR 2529-3; 
+                                '5' FOR 2529-7; 
+                                '6' FOR 2474; 
+                                '7' FOR 2431; 
+                                '8' FOR 2914; 
+                                '9' FOR OTHER; 
+                                '10' FOR 2520; 
+                                '11' FOR STOCK ISSUE; 
+              LAST EDITED:      MAR 20, 1991 
+              DESCRIPTION:
+                                Type of form for the transaction that is being tracked by the Suspense Module.  
+
+
+668,4         DESCRIPTION OF ITEM/SERVICES 2;0   WORD-PROCESSING #668.04   (NOWRAP)
+
+              DESCRIPTION:
+                                This Field will contain the Description of the Item on suspense and Service rendered to the Veteran.  
+
+
+668,5         COMPLETION DATE        0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 14, 2003 
+              HELP-PROMPT:      MUST NOT BE LESS THAN BEGINNING SUSPENSE DATE 
+              DESCRIPTION:
+                                This is the date and time of the completion note.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^668^6 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(668,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(668,5,1,1,1.4)
+                                1.4)= S DIH=$S($D(^RMPR(668,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,6)=DIV,DIH=668,DIG=6 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RMPR(668,D0,0)):^(0),1:"") S X=$P(Y(1),U,6),X=X S DIU=X K Y S X="" S DIH=$S($D(^RMPR(668,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,6)=DIV,DIH=668,DIG=6 D ^DICR:$O(^DD(DIH,DIG,1
+                                ,0))>0
+
+                                CREATE VALUE)= S X=DUZ
+                                DELETE VALUE)= @
+                                FIELD)= COMPLETED BY
+                                Triggers completed by field.  
+
+
+              CROSS-REFERENCE:  668^CD^MUMPS 
+                                1)= D EN02^RMPR9X
+                                2)= D KILL02^RMPR9X
+                                This will create a cross reference to be used with the Delayed Order Report.  Completeion Date and Number of Processing Days.  
+
+
+
+668,6         COMPLETED BY           0;6 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 20, 1991 
+              DESCRIPTION:
+                                This is the person who dispositioned this transaction.  
+
+              NOTES:            TRIGGERED by the COMPLETION DATE field of the PROSTHETIC SUSPENSE File 
+
+
+668,7         INITIAL ACTION NOTE    3;0   WORD-PROCESSING #668.07
+
+              LAST EDITED:      JAN 26, 2000 
+              DESCRIPTION:
+                                A word-processing field storing the action taken on a suspense with the initial action to remove from the delayed order report.  
+
+              TECHNICAL DESCR:
+                                This field has changed from the action taken to the initial action taken.  This used to be the only action taken, the action taken at the time a suspense is completed.  
+
+
+668,8         SUSPENDED BY           0;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 22, 1992 
+              HELP-PROMPT:      Enter the name of the employee to suspended the action 
+              DESCRIPTION:
+                                Person who created the suspense entry.  
+
+
+668,8.1       PATIENT 2319           10;0 POINTER Multiple #668.81 (Add New Entry without Asking)
+
+
+668.81,.01      PATIENT 2319           0;1 POINTER TO RECORD OF PROS APPLIANCE/REPAIR FILE (#660)
+
+                LAST EDITED:      AUG 29, 2001 
+                DESCRIPTION:
+                                   Pointer to 2319 record (#660).  
+
+                CROSS-REFERENCE:  668.81^B 
+                                  1)= S ^RMPR(668,DA(1),10,"B",$E(X,1,30),DA)=""
+                                  2)= K ^RMPR(668,DA(1),10,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  668^F 
+                                  1)= S ^RMPR(668,"F",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RMPR(668,"F",$E(X,1,30),DA(1),DA)
+                                  Cross-reference "F" will be used to access suspense entry that has a link to patient 2319 record.  
+
+
+
+
+
+668,8.2       AMIS GROUPER           11;0 Multiple #668.82 (Add New Entry without Asking)
+
+
+668.82,.01      AMIS GROUPER           0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+                LAST EDITED:      OCT 16, 2001 
+                HELP-PROMPT:      Answer must be 3-15 characters in length. 
+                DESCRIPTION:
+                                  This is the amis grouper as it appears in file#660.  
+
+                CROSS-REFERENCE:  668.82^B 
+                                  1)= S ^RMPR(668,DA(1),11,"B",$E(X,1,30),DA)=""
+                                  2)= K ^RMPR(668,DA(1),11,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  668^G 
+                                  1)= S ^RMPR(668,"G",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RMPR(668,"G",$E(X,1,30),DA(1),DA)
+
+
+
+
+668,9         TYPE OF REQUEST        0;8 SET
+
+                                '1' FOR ROUTINE PROSTHETICS; 
+                                '2' FOR EYEGLASS; 
+                                '3' FOR CONTACT LENS; 
+                                '4' FOR OXYGEN; 
+                                '5' FOR MANUAL  NON CPRS; 
+                                '6' FOR CLOTHING ALLOWANCE; 
+                                '7' FOR CLONE; 
+                                '8' FOR AUTO ADAPTIVE; 
+                                '9' FOR PROSTHETICS IFC; 
+                                '10' FOR DISCONTINUED; 
+                                '11' FOR LAB; 
+              LAST EDITED:      JAN 31, 2006 
+              DESCRIPTION:
+                                This is the type of order from CPRS Consult Tracking Module, or VBA.  It also records MANUAL for paper orders received.  
+
+
+668,10        INITIAL ACTION DATE    0;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 26, 2000 
+              DESCRIPTION:
+                                This is the date and time the first action on a suspense was taken.  
+
+
+668,11        ACTION DATE            1;0 DATE Multiple #668.011 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is the date an Other Action Note was created.  
+
+
+668.011,.01     ACTION DATE            0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAR 08, 2000 
+                DESCRIPTION:
+                                  This is the date an Other Action Note was created.  
+
+                CROSS-REFERENCE:  668.011^B 
+                                  1)= S ^RMPR(668,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^RMPR(668,DA(1),1,"B",$E(X,1,30),DA)
+
+
+668.011,1       ACTION NOTE            1;0   WORD-PROCESSING #668.111
+
+                DESCRIPTION:
+                                  This is an action note, must be after the Initial Action Note.  If this is a CPRS suspense then this will be recorded in the Consult.  
+
+
+
+
+668,12        COMPLETION NOTE        4;0   WORD-PROCESSING #668.012
+
+              DESCRIPTION:
+                                This is the note for the completion comments.  
+
+
+668,13        REQUESTOR              0;11 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 03, 2000 
+              DESCRIPTION:
+                                This is the person who requested the order, or submitted the order.  
+
+
+668,14        STATUS                 0;10 SET
+
+                                'O' FOR OPEN; 
+                                'P' FOR PENDING; 
+                                'C' FOR CLOSED; 
+                                'X' FOR CANCELLED; 
+              LAST EDITED:      MAR 05, 2003 
+              DESCRIPTION:
+                                This is the current status, Open, Pending, Closed, or Cancelled.  
+
+              TECHNICAL DESCR:
+                                 
+
+              CROSS-REFERENCE:  668^E 
+                                1)= S ^RMPR(668,"E",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(668,"E",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  668^I^MUMPS 
+                                1)= D EN^RMPR9X
+                                2)= D KILL^RMPR9X
+                                Sort and filter on last 2 numbers of the Patients SSN number for Open or Pending Orders Only.  
+
+
+              CROSS-REFERENCE:  668^L^MUMPS 
+                                1)= D EN0^RMPR9X
+                                2)= D KILL0^RMPR9X
+                                This cross refernce is used for the Delayed Order Report GUI Grid.  It is the last 2 of SSN, the Create Date with no Time, and the Status.  
+
+
+              CROSS-REFERENCE:  668^L1^MUMPS 
+                                1)= D EN01^RMPR9X
+                                2)= D KILL01^RMPR9X
+                                This is for the Delayed Order Report, GUI Grid.  It is the last 2 of patient SSN, Status and ien.  
+
+
+
+668,15        OIF/OEF                7;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      APR 30, 2007 
+              DESCRIPTION:
+                                Veteran determined to be OEF/OIF 1 Yes 0 NO.  
+
+
+668,16        INITIAL ACTION BY      0;12 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 29, 2000 
+              DESCRIPTION:
+                                This is the person who took first action.  
+
+
+668,17        CANCELLED BY           0;13 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 17, 2000 
+              DESCRIPTION:
+                                This is the person who cancelled the suspense.  
+
+
+668,18        CANCEL DATE            5;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 17, 2000 
+              DESCRIPTION:
+                                This is the date the suspense record was cancelled.  
+
+
+668,19        ORDER                  0;14 POINTER TO ORDER FILE (#100)
+
+              LAST EDITED:      MAR 21, 2000 
+              DESCRIPTION:
+                                This is the CPRS Order Number used to send messages.  
+
+
+668,20        CONSULT                0;15 POINTER TO REQUEST/CONSULTATION FILE (#123)
+
+              LAST EDITED:      MAR 22, 2000 
+              DESCRIPTION:
+                                This is the entry associated with consult Tracking.  
+
+              CROSS-REFERENCE:  668^D 
+                                1)= S ^RMPR(668,"D",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(668,"D",$E(X,1,30),DA)
+                                To be used with GMRC API.  
+                                ~
+
+
+
+668,21        CANCEL NOTE            9;0   WORD-PROCESSING #668.021   (NOWRAP)
+
+              DESCRIPTION:
+                                This is the cancel note.  If it is a CPRS order the note will be recorded with the Consult.  Reason you are cancelling suspense, and/or deny consult.  
+
+
+668,22        DATE RX WRITTEN        0;16 DATE
+
+              INPUT TRANSFORM:  S %DT(0)=X D NOW^%DTC S X=%DT(0),%DT(0)=0-%,%DT="ESTX" D ^%DT S X=Y K:Y<1 X K %DT
+              LAST EDITED:      DEC 12, 2000 
+              DESCRIPTION:
+                                This is the date the request was signed by a provider.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+668,23        CONSULT REQUEST SERVICE 8;6 POINTER TO REQUEST SERVICES FILE (#123.5)
+
+              LAST EDITED:      JUN 28, 2000 
+              DESCRIPTION:
+                                This is used to forward a Consult to another service.  
+
+
+668,24        FORWARDED BY           8;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 03, 2000 
+              DESCRIPTION:
+                                This is the person who forwarded the consult.  
+
+
+668,27        ORDERING PROVIDER      IFC1;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      JUN 24, 2004 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                Provider who ordered the entry for Inter-facility Consults (IFC).  This is a free text field.  
+
+
+668,30        PRIMARY ICD DIAGNOSIS CODE BA1;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter a pointer to the ICD DIAGNOSIS file (#80) for Primary ICD Diagnosis code. 
+              DESCRIPTION:
+                                CPRS ICD Diagnosis code 1 at time of consult.  
+
+
+668,30.1      PRIMARY AGENT ORANGE   BA1;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Agent Orange exposure. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Agent Orange exposure.  
+
+
+668,30.2      PRIMARY IONIZED RADIATION BA1;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Ionized Radiation exposure. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Ionized Radiation exposure.  
+
+
+668,30.3      PRIMARY SERVICE-CONNECTED BA1;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to a Service-Connected condition. 
+              DESCRIPTION:
+                                Primary diagnosis is related to a Service-Connected condition.  
+
+
+668,30.4      PRIMARY ENVIRONMENTAL CONT. BA1;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Environmental Contaminants exposure. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Environmental Contaminants exposure.  
+
+
+668,30.5      PRIMARY MST            BA1;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if diagnosis is related to Military Sexual Trauma. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Military Sexual Trauma.  
+
+
+668,30.6      PRIMARY HEAD/NECK CANCER BA1;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Head/Neck Cancer. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Head/Neck Cancer.  
+
+
+668,30.7      PRIMARY COMBAT VET     BA1;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Primary diagnosis is related to Combat. 
+              DESCRIPTION:
+                                Primary diagnosis is related to Combat.  
+
+
+668,31        SECONDARY ICD DIAGNOSIS 1 BA2;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter pointer to ICD Diagnosis file (#80) for Secondary ICD diagnosis code 1. 
+              DESCRIPTION:
+                                Pointer to ICD Diagnosis file (#80) for Secondary ICD diagnosis code 1.  
+
+
+668,31.1      SECONDARY AGENT ORANGE 1 BA2;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Agent Orange exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Agent Orange exposure.  
+
+
+668,31.2      SECONDARY IONIZED RADIATION 1 BA2;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Ionized Radiation exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Ionized Radiation exposure.  
+
+
+668,31.3      SECONDARY SERVICE-CONNECTED 1 BA2;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to a Service-Connected condition. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to a Service-Connected condition.  
+
+
+668,31.4      SECONDARY ENVIRON. CONT. 1 BA2;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Environmental Contaminants exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Environmental Contaminants exposure.  
+
+
+668,31.5      SECONDARY MST 1        BA2;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Military Sexual Trauma. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Military Sexual Trauma.  
+
+
+668,31.6      SECONDARY HEAD/NECK CANCER 1 BA2;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Head/Neck Cancer. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Head/Neck Cancer.  
+
+
+668,31.7      SECONDARY COMBAT VET 1 BA2;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 1 is related to Combat. 
+              DESCRIPTION:
+                                Secondary diagnosis 1 is related to Combat.  
+
+
+668,32        SECONDARY ICD DIAGNOSIS 2 BA3;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter pointer to ICD Diagnosis file (#80) for Secondary ICD diagnosis code 2. 
+              DESCRIPTION:
+                                Pointer to ICD Diagnosis file (#80) for Secondary ICD Diagnosis 2.  
+
+
+668,32.1      SECONDARY AGENT ORANGE 2 BA3;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Agent Orange exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Agent Orange exposure.  
+
+
+668,32.2      SECONDARY IONIZED RADIATION 2 BA3;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Ionized Radiation exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Ionized Radiation exposure.  
+
+
+668,32.3      SECONDARY SERVICE-CONNECTED 2 BA3;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to a Service-Connected condition. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to a Service-Connected condition.  
+
+
+668,32.4      SECONDARY ENVIRON. CONT. 2 BA3;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Environmental Contaminants exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Environmental Contaminants exposure.  
+
+
+668,32.5      SECONDARY MST 2        BA3;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if diagnosis is related to Military Sexual Trauma. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Military Sexual Trauma.  
+
+
+668,32.6      SECONDARY HEAD/NECK CANCER 2 BA3;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Head/Neck Cancer. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Head/Neck Cancer.  
+
+
+668,32.7      SECONDARY COMBAT VET 2 BA3;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 2 is related to Combat. 
+              DESCRIPTION:
+                                Secondary diagnosis 2 is related to Combat.  
+
+
+668,33        SECONDARY ICD DIAGNOSIS 3 BA4;1 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter pointer to ICD Diagnosis file (#80) for Secondary Diagnosis 3. 
+              DESCRIPTION:
+                                Pointer to ICD Diagnosis file (#80) for Secondary Diagnosis code 3.  
+
+
+668,33.1      SECONDARY AGENT ORANGE 3 BA4;2 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to Agent Orange exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Agent Orange.  
+
+
+668,33.2      SECONDARY IONIZED RADIATION 3 BA4;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to Ionized Radiation exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Ionized Radiation.  
+
+
+668,33.3      SECONDARY SERVICE-CONNECTED 3 BA4;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to a Service-Connected condition. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to a Service-Connected condition.  
+
+
+668,33.4      SECONDARY ENVIRON. CONT. 3 BA4;5 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if Secondary diagnosis 3 is related to Environmental Contaminants exposure. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Environmental Contaminants exposure.  
+
+
+668,33.5      SECONDARY MST 3        BA4;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es if diagnosis is related to Military Sexual Trauma. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Military Sexual Trauma.  
+
+
+668,33.6      SECONDARY HEAD/NECK CANCER 3 BA4;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es to indicate Secondary diagnosis 3 is related to Head/Neck Cancer. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Head/Neck Cancer.  
+
+
+668,33.7      SECONDARY COMBAT VET 3 BA4;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 25, 2004 
+              HELP-PROMPT:      Enter 'Y'es to indicate Secondary diagnosis 3 is related to Combat. 
+              DESCRIPTION:
+                                Secondary diagnosis 3 is related to Combat.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ICD DIAGNOSIS (#80)               ICD9 (#1.6)
+                                  PRIMARY ICD DIAGNOSIS CODE (#30)
+                                  SECONDARY ICD DIAGNOSIS 1 (#31)
+                                  SECONDARY ICD DIAGNOSIS 2 (#32)
+                                  SECONDARY ICD DIAGNOSIS 3 (#33)
+
+INSTITUTION (#4)                  STATION (#2)
+                                  REQUESTING FACILITY (#2.1)
+
+NEW PERSON (#200)                 COMPLETED BY (#6)
+                                  SUSPENDED BY (#8)
+                                  REQUESTOR (#13)
+                                  INITIAL ACTION BY (#16)
+                                  CANCELLED BY (#17)
+                                  FORWARDED BY (#24)
+
+ORDER (#100)                      ORDER (#19)
+
+PATIENT (#2)                      VETERAN (#1)
+
+RECORD OF PROS APPLIANCE/REPAI 
+                   (#660)         PATIENT 2319:PATIENT 2319 (#.01)
+
+REQUEST SERVICES (#123.5)         CONSULT REQUEST SERVICE (#23)
+
+REQUEST/CONSULTATION (#123)       CONSULT (#20)
+
+
+
+INPUT TEMPLATE(S):
+RMPR EDIT STATION             JUL 27, 2000@12:28  USER #0    
+
+PRINT TEMPLATE(S):
+RMPR OACT NOTE                MAR 10, 2000@09:48  USER #0                                                                                                                                                                                 Other Action Note(s)
+RMPR SUSPENSE CLOSE           AUG 21, 2000@10:50  USER #0                                                                                                                                                                Prosthetics Closed Suspense File List
+     Prints  Prosthetics Closed Suspense file list.
+RMPR VIEW COMP NOTE           MAR 01, 2000@10:13  USER #0                                                                                                                                                                                        Complete Note
+RMPR VIEW INITIAL ACTION      MAR 01, 2000@10:12  USER #0                                                                                                                                                                                  Initial Action Note
+RMPR VIEW REQUEST             OCT 09, 2003@12:04  USER #0                                                                                                                                                                                                 View
+SUSPENSE OIF/OEF VETS         MAR 28, 2007@17:04  USER #0                                                                                                                                                                             PROSTHETIC SUSPENSE LIST
+
+SORT TEMPLATE(S):
+RMPR SUSPENSE CLOSE           MAR 20, 1991@12:54  USER #0    
+SORT BY: 'COMPLETION DATE//    (User is asked range)
+  WITHIN COMPLETION DATE, SORT BY: VETERAN// (VETERAN not null)
+     Sorts file 668 by completion date and veteran.
+
+SUSPENSE OIF/OEF VETS         MAR 28, 2007@17:09  USER #0    
+SORT BY: STATUS'="CLOSED";L1// (STATUS'=""CLOSED"")
+  WITHIN STATUS'="CLOSED", SORT BY: VETERAN:;L1//
+  PATIENT FIELD: SERVICE [OEF OR OIF]//
+  SERVICE [OEF OR OIF] SUB-FIELD: .01'=""// (.01'="""")
+
+
+FORM(S)/BLOCK(S):

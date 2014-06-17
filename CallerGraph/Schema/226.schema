@@ -1,0 +1,128 @@
+STANDARD DATA DICTIONARY #226 -- DENTAL NON CLINICAL TIME FILE                                                                                                                                                                    MAY 20,2014@15:32:06  PAGE 1
+STORED IN ^DENT(226,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the non-clinical time spent by each dental provider in each of four categories: Administrative; Research; Fee Basis and Education and Training.  This information is totaled for the month, then combined with the data in the Dental
+Personnel file to produce a monthly personnel report.  
+
+
+IDENTIFIED BY: STATION.DIVISION (#.3)[R]
+         "Z0": I $D(^(0)),$P(^(0),U,1) S Z=Y,Y=$P(^(0),U,1) X ^DD("DD") W ?21,Y S Y=Z K Z
+         "Z1": W:$D(^DENT(226,+Y,0)) ?42,$P(^(0),U,3)
+
+CROSS
+REFERENCED BY: STATION.DIVISION(A), PROVIDER NUMBER(AC), DATE/TIME(AD), RELEASED BY(AE), DATE/TIME(B), PROVIDER NUMBER(C)
+
+226,.01       DATE/TIME              0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT(0)="-NOW",%DT="ESTX" D ^%DT K %DT(0) S X=Y K:Y<1 X I $D(X) D IEN6^DENTE1
+              LAST EDITED:      FEB 16, 1995 
+              HELP-PROMPT:      Enter the date and time for this non clinical time entry 
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  226^B^MUMPS 
+                                1)= S ^DENT(226,"B",X,DA)=""
+                                2)= K ^DENT(226,"B",X,DA)
+
+              CROSS-REFERENCE:  226^AD^MUMPS 
+                                1)= Q
+                                2)= Q:$P(^DENT(226,DA,0),"^",2)=""  K ^DENT(226,"A",$P(^DENT(226,DA,0),"^",2),$P(X,".",1),DA)
+
+
+226,.06       DENTAL PROVIDER        0;6 POINTER TO DENTAL PROVIDER FILE (#220.5)
+
+              LAST EDITED:      DEC 17, 2004 
+              HELP-PROMPT:      Enter the Dental Provider associated with the Non-Clinical time. 
+              DESCRIPTION:
+                                This field contains the Dental Provider.  The 4 digit Provider Id saved in the Provider Number field (#.4) is being phased out, although we will continue to keep that field for historical records.  
+
+
+226,.3        STATION.DIVISION       0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) S DIC="^DENT(225,",DIC(0)="QEMZ" D ^DIC S:Y>0 X=$P(Y(0),U,1) K:Y'>0 X K DIC
+              LAST EDITED:      JAN 13, 1995 
+              HELP-PROMPT:      Select the appropriate station (division) number for this Dental non clinical time entry 
+              EXECUTABLE HELP:  S:$D(D) ZD=D S X="?",DIC="^DENT(225,",DIC(0)="QEM" D ^DIC S DIC=DIE S:$D(ZD) D=ZD K ZD
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  226^A^MUMPS 
+                                1)= D STATSET^DENTXREF(X)
+                                2)= D STATKIL^DENTXREF(X)
+                                In the case when station.division field is being modified xrefs on fields 60 (released by) and .4 (provider #) (A and AC xrefs), need 2 b updated, since part of the key 2 both of those xrefs is the station.division field.  
+
+
+
+226,.4        PROVIDER NUMBER        0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) S DIC="^DENT(220.5,",DIC(0)="QEMZ" D ^DIC S:Y>0 X=$P(Y(0),U,2) K:Y'>0 X K DIC
+              LAST EDITED:      DEC 17, 2004 
+              HELP-PROMPT:      Select the appropriate Dental provider by name or provider number for this non clinical time entry 
+              DESCRIPTION:
+                                Provider names are entered last name, first name.  This field contains the old 4 digit Provider Id which is being phased out and replaced with a new 8 digit Id.  This field will remain for historical records.  
+
+              EXECUTABLE HELP:  S:$D(D) ZD=D S X="?",DIC="^DENT(220.5,",DIC(0)="QEM" D ^DIC S DIC=DIE S:$D(ZD) D=ZD K ZD
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  226^C 
+                                1)= S ^DENT(226,"C",$E(X,1,30),DA)=""
+                                2)= K ^DENT(226,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  226^AC^MUMPS 
+                                1)= Q:$P(^DENT(226,DA,0),"^",2)=""  S ^DENT(226,"AC",$P(^DENT(226,DA,0),"^",2),$P($P(^DENT(226,DA,0),"^"),"."),X,DA)=""
+                                2)= Q:$P(^DENT(226,DA,0),"^",2)=""  K ^DENT(226,"AC",$P(^DENT(226,DA,0),"^",2),$P($P(^DENT(226,DA,0),"^"),"."),X,DA)
+                                this cross reference is used for AMIS and other reports 
+
+
+
+226,.6        NON CLINICAL TIME CATEGORY 0;4 SET (Required)
+
+                                'A' FOR ADMIN; 
+                                'R' FOR RESEARCH; 
+                                'F' FOR FEE BASIS; 
+                                'E' FOR EDUC & TRAIN; 
+              INPUT TRANSFORM:  I X="A"!(X="F") I X1'=1 W !,"Administrative and Fee non clinical time categories may only be entered for",!,"Dentists.  They are not applicable to other providers",*7 K X
+              LAST EDITED:      SEP 09, 1985 
+              HELP-PROMPT:      Select the appropriate non clinical time category.  Remember, Admin and Fee categories are only applicable to Dentists 
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+226,.9        TIME SPENT             0;5 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>50)!(X'>0) X I $D(X),X["." K:'($P(X,".",2)=25!($P(X,".",2)=75)!($P(X,".",2)=5)) X
+              LAST EDITED:      JAN 03, 1986 
+              HELP-PROMPT:      Enter the amount of time spent in this non clinical time category.  Answer must be a number from .25 to 50 in quarter hour increments (e.g., 4.5 or 6.25 or 7.75 or 8). 
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+226,60        RELEASED BY            .1;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 19, 1995 
+              CROSS-REFERENCE:  226^AE^MUMPS 
+                                1)= Q:$P(^DENT(226,DA,0),"^",2)=""  K ^DENT(226,"A",$P(^DENT(226,DA,0),"^",2),$P($P(^DENT(226,DA,0),"^"),"."),DA)
+                                2)= Q:$P(^DENT(226,DA,0),"^",2)=""  S ^DENT(226,"A",$P(^DENT(226,DA,0),"^",2),$P($P(^DENT(226,DA,0),"^"),"."),DA)=""
+
+
+226,61        DATE RELEASED          .1;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 15, 1985 
+
+
+      FILES POINTED TO                      FIELDS
+
+DENTAL PROVIDER (#220.5)          DENTAL PROVIDER (#.06)
+
+NEW PERSON (#200)                 RELEASED BY (#60)
+
+
+
+INPUT TEMPLATE(S):
+DENT NONCLIN                  SEP 09, 1985        USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

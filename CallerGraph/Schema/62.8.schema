@@ -1,0 +1,556 @@
+STANDARD DATA DICTIONARY #62.8 -- LAB SHIPPING MANIFEST FILE                                                                                                                                                                      MAY 20,2014@15:30:47  PAGE 1
+STORED IN ^LAHM(62.8,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 5.2)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds the information that describes and controls the specimens that make up the shipment of specimens to another facility.  
+ 
+
+
+
+POINTED TO BY: SHIPPING MANIFEST field (#9) of the TESTS sub-field (#68.04) of the ACCESSION NUMBER sub-field (#68.02) of the DATE sub-field (#68.01) of the ACCESSION File (#68) 
+               
+
+CROSS
+REFERENCED BY: STATUS(AC), STATUS(AC1), INVOICE(B), SPECIMEN ID(UID)
+
+INDEXED BY:    INVOICE (C)
+
+
+62.8,.01      INVOICE                0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      NOV 05, 2004 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:      This field contains a uniquely generated invoice number. The number is derived as follows: site number-date-number 
+                                   Site number - field #99 of Institution file 
+                                          Date - date shipping manifest created in form YYYYMMDD 
+                                        Number - sequential number starting at 1 for a given site/date.  
+
+              CROSS-REFERENCE:  62.8^B 
+                                1)= S ^LAHM(62.8,"B",$E(X,1,30),DA)=""
+                                2)= K ^LAHM(62.8,"B",$E(X,1,30),DA)
+
+              FIELD INDEX:      C (#478)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  Reverse x-ref for shipping manifest invoice
+                    Set Logic:  S ^LAHM(62.8,"C",$E(X,1,30),DA)=""
+                   Kill Logic:  K ^LAHM(62.8,"C",$E(X,1,30),DA)
+                   Whole Kill:  K ^LAHM(62.8,"C")
+                         X(1):  INVOICE  (62.8,.01)  (Subscr 1)  (Len 30)  (backwards)
+
+
+62.8,.02      SHIPPING CONFIGURATION 0;2 POINTER TO LAB SHIPPING CONFIGURATION FILE (#62.9) (Required)
+
+              LAST EDITED:      JAN 25, 1997 
+              HELP-PROMPT:      Enter the shipping configuration for this manifest. 
+              DESCRIPTION:
+                                This field contains a pointer to the LAB SHIPPING CONFIGURATION file (#62.9).  
+
+
+62.8,.03      STATUS                 0;3 SET (Required)
+
+                                '0' FOR CANCELLED; 
+                                '1' FOR OPEN; 
+                                '2' FOR BUILDING; 
+                                '3' FOR CLOSED; 
+                                '4' FOR SHIPPED; 
+                                '5' FOR RECEIVED; 
+                                '6' FOR COMPLETED; 
+              LAST EDITED:      APR 21, 1997 
+              HELP-PROMPT:      Enter the current status of this shipping manifest. 
+              DESCRIPTION:
+                                This field contains the current status on the shipping manifest.  
+
+              CROSS-REFERENCE:  62.8^AC 
+                                1)= S ^LAHM(62.8,"AC",$E(X,1,30),DA)=""
+                                2)= K ^LAHM(62.8,"AC",$E(X,1,30),DA)
+                                Cross-reference on shipping status of this shipping manifest.  
+
+
+              CROSS-REFERENCE:  62.8^AC1^MUMPS 
+                                1)= I X,X<3,$P($G(^LAHM(62.8,DA,0)),"^",2) S ^LAHM(62.8,"AC1",$P(^LAHM(62.8,DA,0),"^",2),DA)=""
+                                2)= I X,X<3,$P($G(^LAHM(62.8,DA,0)),"^",2) K ^LAHM(62.8,"AC1",$P(^LAHM(62.8,DA,0),"^",2),DA)
+                                Cross-reference used to identify active shipping manifests for a specific shipping configuration.  The format of the cross reference is as follows 
+                                 IF STATUS,STATUS<3,SHIPPING CONFIGURATION S ^LAHM(62.8,"AC1",SHIPPING CONFIGURATION,DA)="" 
+
+
+
+62.8,.04      SHIP VIA               0;4 POINTER TO LAB SHIPPING METHOD FILE (#62.92)
+
+              LAST EDITED:      JUN 05, 1997 
+              HELP-PROMPT:      Enter the method used to transport this shipment. 
+
+62.8,.05      TEST CODING SYSTEM     0;5 SET
+
+                                '0' FOR NLT; 
+                                '1' FOR NON-VA; 
+                                '2' FOR LOINC; 
+              LAST EDITED:      FEB 24, 1999 
+              HELP-PROMPT:      Answer with type of coding system to use for this configuration. 
+              DESCRIPTION:      If orders are being sent to a non-VA facility and the facility can not accept VA test order codes then answer with the type of coding system.  "NON-VA" indicates that the other system is using a local coding system.  The
+                                laboratory shipping software will then use the non-VA test codes entered for each test on this configuration.  
+                                 
+                                If the non-VA facility can accept VA test codes then answer "NLT" and the software will sent VA test order codes.  
+                                 
+                                VA test order codes are usually NLT codes but in the future will probably be LOINC codes. Selecting "LOINC" is currently not supported. Support will be added in a future version of the LEDI software when LOINC coding has 
+                                been implemented within VA facilities.  
+
+
+62.8,.06      SPECIMEN CODING SYSTEM 0;6 SET
+
+                                '0' FOR HL7 TABLE 0070; 
+                                '1' FOR LOCAL-NON HL7; 
+              LAST EDITED:      AUG 14, 2002 
+              HELP-PROMPT:      Answer with type of coding system to use for this configuration. 
+              DESCRIPTION:
+                                If orders are sent to a non-VA facility and the facility can not receive HL7 specimen codes from HL7 table 0070 then answer with the type of coding system "LOCAL".  
+
+
+62.8,10       SPECIMENS              10;0 POINTER Multiple #62.801 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple contains all of the information (LRDFN, TEST, SPECIMEN TYPE, URGENCY, and SPECIMEN ID) needed to identify and ship the ordered test.  
+
+
+62.801,.01      LRDFN                  0;1 POINTER TO LAB DATA FILE (#63)
+
+                LAST EDITED:      JAN 25, 1997 
+                HELP-PROMPT:      This field is populated with the patients LRDFN. 
+                DESCRIPTION:
+                                  This field identifies the laboratory patient (LRDFN) for this specimen. 
+
+                CROSS-REFERENCE:  62.801^B 
+                                  1)= S ^LAHM(62.8,DA(1),10,"B",$E(X,1,30),DA)=""
+                                  2)= K ^LAHM(62.8,DA(1),10,"B",$E(X,1,30),DA)
+
+
+62.801,.02      TEST                   0;2 POINTER TO LABORATORY TEST FILE (#60) (Required)
+
+                LAST EDITED:      JAN 25, 1997 
+                HELP-PROMPT:      This field is populated with the ordered test. 
+                DESCRIPTION:
+                                  This field contains the test that is being ordered for this specimen.  This field is populated using the LAB SHIPPING CONFIGURATION file (#62.9).  
+
+
+62.801,.03      SPECIMEN TYPE          0;3 POINTER TO TOPOGRAPHY FIELD FILE (#61)
+
+                TYPE OF SPECIMEN                                                                                               
+                LAST EDITED:      JAN 26, 1997 
+                HELP-PROMPT:      This field is populated with the specimen type. 
+                DESCRIPTION:
+                                  This field contains the specimen type, identified in the TOPOGRAPHY FIELD file (#61).  
+
+
+62.801,.04      URGENCY                0;4 POINTER TO URGENCY FILE (#62.05)
+
+                LAST EDITED:      JAN 25, 1997 
+                HELP-PROMPT:      This field is populated with the test urgency. 
+                DESCRIPTION:
+                                  This field contains information about the urgency of the test.  
+
+
+62.801,.05      SPECIMEN ID            0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      APR 25, 1997 
+                HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                DESCRIPTION:
+                                  This field contains the specimen id.  The specimen id is the UID or unique accession number from the ACCESSION file (#68).  
+
+                CROSS-REFERENCE:  62.801^UID 
+                                  1)= S ^LAHM(62.8,DA(1),10,"UID",$E(X,1,30),DA)=""
+                                  2)= K ^LAHM(62.8,DA(1),10,"UID",$E(X,1,30),DA)
+                                  Cross-reference used to identify all tests on shipping manifest belonging to an accession.  
+
+
+                CROSS-REFERENCE:  62.8^UID 
+                                  1)= S ^LAHM(62.8,"UID",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^LAHM(62.8,"UID",$E(X,1,30),DA(1),DA)
+                                  Cross-reference used to determine which shipping manifests an accession has been placed on.  
+
+
+
+62.801,.06      SHIPPING CONTAINER     0;6 POINTER TO LAB SHIPPING CONTAINER FILE (#62.91)
+
+                LAST EDITED:      MAY 07, 1997 
+                HELP-PROMPT:      This field is populated with the specimens shipping container. 
+                DESCRIPTION:
+                                  This field identifies the specimens shipping container.  This field is populated with information gathered from the LAB SHIPPING CONFIGURATION file (#62.9).  
+
+
+62.801,.07      SHIPPING CONDITIONS    0;7 POINTER TO LAB SHIPPING CONDITIONS FILE (#62.93)
+
+                LAST EDITED:      MAY 07, 1997 
+                HELP-PROMPT:      This field is populated with the specimens shipping condition. 
+                DESCRIPTION:
+                                  This field contains the specimens shipping conditions.  The information in this field is pulled from the LAB SHIPPING CONFIGURATION file (#62.9).  
+
+
+62.801,.08      TEST STATUS            0;8 SET (Required)
+
+                                  '0' FOR CANCELLED/REMOVED; 
+                                  '1' FOR PENDING SHIPMENT; 
+                                  '2' FOR SHIPPED; 
+                                  '3' FOR RECEIVED; 
+                                  '4' FOR PARTIAL; 
+                                  '5' FOR COMPLETED; 
+                                  '6' FOR REJECTED; 
+                LAST EDITED:      JUL 12, 2006 
+                HELP-PROMPT:      Enter the status of this test as it pertains to the shipping manifest. 
+                DESCRIPTION:
+                                  This field contains the status of the test as it pertains to the shipping manifest.  This field is updated by various events within the Laboratory Electronic Data Interchange (LEDI) software.  
+
+
+62.801,.09      PACKAGING CONTAINER    0;9 POINTER TO LAB SHIPPING CONTAINER FILE (#62.91)
+
+                LAST EDITED:      JUN 05, 1997 
+                HELP-PROMPT:      Enter the type of package that is used to ship this specimen. 
+                DESCRIPTION:
+                                  This field is used to designate the package which is used to transport the specimen. It is the container into which the specimen container is placed.  
+
+
+62.801,.1       RELEVANT CLINICAL INFORMATION .1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>250!($L(X)<1) X
+                LAST EDITED:      JAN 23, 2004 
+                HELP-PROMPT:      Answer must be 1-250 characters in length. 
+                DESCRIPTION:
+                                  This field contains additional clinical information about the patient or specimen. It is used to report the suspected diagnosis and clinical findings on requests for interpreted diagnostic studies. 
+
+
+62.801,1.1      REQUIRE PATIENT HEIGHT 1;1 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      SEP 10, 2001 
+                DESCRIPTION:      Determines if the patient's height is required to be sent in the HL7 ORM order message and printed on the shipping manifest.  Actual shipping and/or electronic transmission of a shipping manifest will check for entry of
+                                  the patient's height and prevent release if absent.  
+
+
+62.801,1.11     PATIENT HEIGHT         1;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>1000)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      SEP 10, 2001 
+                HELP-PROMPT:      Type a Number between 0 and 1000, 2 Decimal Digits 
+                DESCRIPTION:
+                                  Stores the patient's height for transmission in the HL7 ORM order message and display on the shipping manifest when required to accompany test orders and specimens.  See field REQUIRE PATIENT HEIGHT #1.1.  
+
+                SOURCE OF DATA:   Patient's medical record
+
+62.801,1.13     PATIENT HEIGHT UNITS   1;3 POINTER TO LAB ELECTRONIC CODES FILE (#64.061)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,7)=""M""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 07, 2001 
+                DESCRIPTION:
+                                  Units used to measure the patient's height. Select an entry from the LAB ELECTRONIC CODE file (#64.061) that are measurements.  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,7)=""M"""
+                EXPLANATION:      Only codes that are measurements are selectable.
+
+62.801,1.14     PATIENT HEIGHT CODE    1;7 POINTER TO LAB LOINC FILE (#95.3)
+
+                LAST EDITED:      NOV 02, 2001 
+                HELP-PROMPT:      Enter the appropriate LOINC code to identify the patient's height 
+                DESCRIPTION:
+                                  Select the appropriate LOINC code to identify the patient's height.  
+
+
+62.801,1.2      REQUIRE PATIENT WEIGHT 1;4 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      SEP 10, 2001 
+                DESCRIPTION:      Determines if the patient's weight is required to be sent in the HL7 ORM order message and printed on the shipping manifest.  Actual shipping and/or electronic transmission of a shipping manifest will check for entry of
+                                  the patient's weight and prevent release if absent. 
+
+
+62.801,1.21     PATIENT WEIGHT         1;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>1000)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      SEP 10, 2001 
+                HELP-PROMPT:      Type a Number between 0 and 1000, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Stores the patient's weight for transmission in the HL7 ORM order message and display on the shipping manifest when required to accompany test orders and specimens.  See field REQUIRE PATIENT WEIGHT #1.2. 
+
+                SOURCE OF DATA:   Patient's medical record
+
+62.801,1.23     PATIENT WEIGHT UNITS   1;6 POINTER TO LAB ELECTRONIC CODES FILE (#64.061)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,7)=""M""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      SEP 10, 2001 
+                DESCRIPTION:
+                                  Units used to measure the patient's weight. Select an entry from the LAB ELECTRONIC CODE file (#64.061) that are measurements. 
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,7)=""M"""
+                EXPLANATION:      Only codes that are measurements are selectable.
+
+62.801,1.24     PATIENT WEIGHT CODE    1;8 POINTER TO LAB LOINC FILE (#95.3)
+
+                LAST EDITED:      NOV 02, 2001 
+                HELP-PROMPT:      Enter the appropriate LOINC code to identify this patient's weight. 
+                DESCRIPTION:
+                                  Select the appropriate LOINC code to identify the patient's weight.  
+
+
+62.801,2.1      REQUIRE COLLECTION VOLUME 2;1 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      SEP 10, 2001 
+                DESCRIPTION:      Determines if the specimen's collection volume is required to be sent in the HL7 ORM order message and printed on the shipping manifest.  Actual shipping and/or electronic transmission of a shipping manifest will check
+                                  for entry of the specimen's collection volume and prevent release if absent.  
+
+
+62.801,2.11     COLLECTION VOLUME      2;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>100000)!(X<0)!(X?.E1"."6N.N) X
+                LAST EDITED:      MAY 20, 1998 
+                HELP-PROMPT:      Type a Number between 0 and 100000, 5 Decimal Digits 
+                DESCRIPTION:
+                                  Stores the specimen's collection volume for transmission in the HL7 ORM order message and printing on the shipping manifest when required to accompany test orders and specimens. See field REQUIRE COLLECTION VOLUME #2.1. 
+
+
+62.801,2.13     COLLECTION VOLUME UNITS 2;3 POINTER TO LAB ELECTRONIC CODES FILE (#64.061)
+
+                INPUT TRANSFORM:  S DIC("S")="N LA7X S LA7X=$G(^LAB(64.061,Y,0)) I $P(LA7X,U,7)=""M""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      MAY 20, 1998 
+                DESCRIPTION:
+                                  Units used to measure the specimen's collection volume.  Select an entry from the LAB ELECTRONIC CODE file #64.061) that is a measurement. 
+
+                SCREEN:           S DIC("S")="N LA7X S LA7X=$G(^LAB(64.061,Y,0)) I $P(LA7X,U,7)=""M"""
+                EXPLANATION:      Only codes of type=measurement are selectable.
+
+62.801,2.14     COLLECTION VOLUME CODE 2;11 POINTER TO LAB LOINC FILE (#95.3)
+
+                LAST EDITED:      NOV 02, 2001 
+                HELP-PROMPT:      Enter the appropriate LOINC code for collection volume. 
+                DESCRIPTION:
+                                  Enter the appropriate LOINC code to identify the specimen's collection volume.  
+
+
+62.801,2.2      REQUIRE COLLECTION END D/T 2;4 SET
+
+                                  '1' FOR YES; 
+                LAST EDITED:      MAY 20, 1998 
+                DESCRIPTION:      Determines if the specimen's collection end date/time is required to be sent in the HL7 ORM order message and printed on the shipping manifest.  Actual shipping and/or electronic transmission of a shipping manifest will
+                                  check for entry of the specimen's collection end date/time and prevent release if absent. 
+
+
+62.801,2.21     COLLECTION END DATE/TIME 2;5 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAY 27, 1998 
+                DESCRIPTION:
+                                  Stores the specimen's collection end date/time for transmission in the HL7 ORM order message and on the shipping manifest when required to accompany test orders and specimens.  See field REQUIRE COLLECTION END D/T #2.2.  
+
+
+62.801,2.22     COLLECTION DURATION    2;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAY 19, 1998 
+                HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Stores the calculated duration of the specimen collection.  Based on specimen's collection date/time and end date/time.  Reported in the units specified in field COLLECTION DURATION UNITS (#2.23) 
+
+
+62.801,2.23     COLLECTION DURATION UNITS 2;7 POINTER TO LAB ELECTRONIC CODES FILE (#64.061)
+
+                INPUT TRANSFORM:  S DIC("S")="N LA7X S LA7X=$G(^LAB(64.061,Y,0)) I $P(LA7X,U)?.(1""s"",1""min"",1""hr""),$P(LA7X,U,7)=""M""" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+                LAST EDITED:      AUG 31, 2001 
+                DESCRIPTION:
+                                  Units used to calculate the specimen's collection duration.  Select an entry from the LAB ELECTRONIC CODE file (#64.061) that is a measurement and relate to time.  
+
+                SCREEN:           S DIC("S")="N LA7X S LA7X=$G(^LAB(64.061,Y,0)) I $P(LA7X,U)?.(1""s"",1""min"",1""hr""),$P(LA7X,U,7)=""M"""
+                EXPLANATION:      Only codes that are measurements and relate to time (seconds, minutes, hours) are selectable.
+
+62.801,2.24     COLLECTION DURATION CODE 2;12 POINTER TO LAB LOINC FILE (#95.3)
+
+                INPUT TRANSFORM:  S DIC("S")="I $$GET1^DIQ(95.3,Y_"","",1)=""COLLECTION DURATION""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      NOV 02, 2001 
+                HELP-PROMPT:      Enter the appropriate LOINC code to identify this specimen's collection duration. 
+                DESCRIPTION:
+                                  Enter the appropriate LOINC code to identify the specimen's collection duration. 
+
+                SCREEN:           S DIC("S")="I $$GET1^DIQ(95.3,Y_"","",1)=""COLLECTION DURATION"""
+                EXPLANATION:      Only allow selection of LOINC codes with "COLLECTION DURATION" component.
+
+62.801,2.3      REQUIRE COLLECTION WEIGHT 2;8 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      NOV 10, 1998 
+                DESCRIPTION:      Determines if the specimen's collection weight is required to be sent in the HL7 ORM order message and printed on the shipping manifest.  Actual shipping and/or electronic transmission of a shipping manifest will check
+                                  for entry of the specimen's collection weight and prevent release if absent. 
+
+
+62.801,2.31     COLLECTION WEIGHT      2;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>100000)!(X<0)!(X?.E1"."6N.N) X
+                LAST EDITED:      NOV 10, 1998 
+                HELP-PROMPT:      Type a Number between 0 and 100000, 5 Decimal Digits 
+                DESCRIPTION:
+                                  Stores the specimen's collection weight for transmission in the HL7 ORM order message and on the shipping manifest when required to accompany test orders and specimens. See field REQUIRE COLLECTION WEIGHT (#2.3).  
+
+
+62.801,2.33     COLLECTION WEIGHT UNITS 2;10 POINTER TO LAB ELECTRONIC CODES FILE (#64.061)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,7)=""M""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      NOV 10, 1998 
+                DESCRIPTION:
+                                  Units used to measure the specimen's collection weight.  Select an entry from the LAB ELECTRONIC CODE file #64.061) that is a measurement. 
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,7)=""M"""
+                EXPLANATION:      Only codes that are measurements are selectable.
+
+62.801,2.34     COLLECTION WEIGHT CODE 2;13 POINTER TO LAB LOINC FILE (#95.3)
+
+                LAST EDITED:      NOV 02, 2001 
+                HELP-PROMPT:      Enter the appropriate LOINC code for collection weight 
+                DESCRIPTION:
+                                  Enter the appropriate LOINC code to identify the specimen's collection weight. 
+
+
+62.801,5.1      NON-NLT TEST ORDER CODE 5;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUN 24, 2004 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:      If sending test orders to a non-VistA facility this field is used to store the test order codes used by the non-VistA system. It is valued by VistA from the corresponding field in LAB SHIPPING CONFIGURATION file (#62.9)
+                                  during shipping manifest building.  
+
+
+62.801,5.2      NON-NLT TEST ORDER NAME 5;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                LAST EDITED:      JUN 24, 2004 
+                HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                DESCRIPTION:      If sending test orders to a non-VistA system this field is used to store the test order name used by the non-VistA system. It is valued VistA from the corresponding field in LAB SHIPPING CONFIGURATION file (#62.9) during
+                                  shipping manifest building.  
+
+
+62.801,5.3      NON-HL7 SPECIMEN CODE  5;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      NOV 05, 2004 
+                HELP-PROMPT:      Answer must be 1-10 characters in length 
+                DESCRIPTION:      If sending test orders to a non-VistA system that does not use HL7 Table 0070 Specimen Source, use this field to store the specimen code used by the non-VistA system. It is only used when the value of field SPECIMEN
+                                  CODING SYSTEM (#.06) is LOCAL-NON HL7.  It provides a means for a collecting facility to map non standard specimen codes to the host site.  
+
+
+62.801,5.4      NON-HL7 SPECIMEN NAME  5;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 05, 2004 
+                HELP-PROMPT:      Answer must be 1-30 characters in length 
+                DESCRIPTION:      If sending test orders to a non-VistA system that does not use HL7 Table 0070 Specimen Source, use this field to store the specimen name used by the non-VA system. It is only used when the value of field SPECIMEN CODING
+                                  SYSTEM (#.06) is LOCAL-NON HL7.  It provides a means for a collecting facility to map non standard specimen names to the site's TOPOGRAPHY FIELD file (#61). 
+
+
+62.801,5.5      NON-NLT TEST CODING SYSTEM 5;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      NOV 05, 2004 
+                HELP-PROMPT:      Answer must be 1-10 characters in length 
+                DESCRIPTION:      If sending test orders to a non-VistA system use this field to store the name of the coding system used by the non-VistA system. It will be used when the TEST CODING SYSTEM field (#.05) is set to "NON-VA".  Name usually
+                                  begins with "99" to indicate a local coding system in the HL7 Standard. 
+
+
+62.801,5.6      NON-HL7 SPECIMEN CODING SYSTEM 5;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      NOV 05, 2004 
+                HELP-PROMPT:      Answer must be 1-10 characters in length 
+                DESCRIPTION:      If sending test orders to a non-VistA system that does not use HL7 Table 0070 Specimen Source, use this field to store the name of the coding system used by the non-VistA system. It will be used when the value of field 
+                                  SPECIMEN CODING SYSTEM (#.06) is LOCAL-NON HL7. Name usually begins with "99" to indicate a local coding system in the HL7 Standard. 
+
+
+62.801,5.7      COLLECTION SAMPLE CODE 5;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      NOV 05, 2004 
+                HELP-PROMPT:      Answer must be 1-10 characters in length 
+                DESCRIPTION:      If sending test orders to a non-VA facility that also requires a collection sample code use this field to store the collection sample code used by the non-VA system. It is only used when the value of field SPECIMEN
+                                  CODING SYSTEM (#.06) is LOCAL-NON HL7.  
+
+
+62.801,5.8      COLLECTION SAMPLE NAME 5;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      NOV 05, 2004 
+                HELP-PROMPT:      Answer must be 1-30 characters in length 
+                DESCRIPTION:      If sending test orders to a non-VA facility that also requires a collection sample name use this field to store the collection sample name used by the non-VA system. It is only used when the value of field SPECIMEN
+                                  CODING SYSTEM (#.06) is LOCAL-NON HL7.  
+
+
+62.801,5.9      COLLECT SAMPLE SYSTEM  5;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      NOV 05, 2004 
+                HELP-PROMPT:      Answer must be 1-10 characters in length 
+                DESCRIPTION:      If sending collection sample codes/names to a non-VA facility use this field to store the name of the coding system used by the non-VA system. It will be used when the TEST CODING SYSTEM field (#.05) is set to "NON-VA". 
+                                  Name usually begins with "99" to indicate a local coding system in the HL7 Standard.  
+
+
+62.801,20.1     NON-VA SPECIMEN SNOMED CT SCT;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1.N) X
+                LAST EDITED:      DEC 22, 2006 
+                HELP-PROMPT:      Type a number between 1 and 9999999999, 0 Decimal Digits 
+                DESCRIPTION:      Allows a facility to transmit a SNOMED CT ID code for a specimen topography that is different than the code assigned by the VA to the term.  It accommodates those situations when the external system does not recognize or
+                                  accept the standard VA code assigned to a given term.  
+
+
+62.801,20.2     NON-VA SAMPLE SNOMED CT SCT;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1.N) X
+                LAST EDITED:      DEC 22, 2006 
+                HELP-PROMPT:      Type a number between 1 and 9999999999, 0 Decimal Digits 
+                DESCRIPTION:      Allows a facility to transmit a SNOMED CT ID code for a collection sample that is different than the code assigned by the VA to the term.  It accommodates those situations when the external system does not recognize or
+                                  accepts the assigned standard VA code .  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+LAB DATA (#63)                    SPECIMENS:LRDFN (#.01)
+
+LAB ELECTRONIC CODES (#64.061)    SPECIMENS:PATIENT HEIGHT UNITS (#1.13)
+                                  PATIENT WEIGHT UNITS (#1.23)
+                                  COLLECTION VOLUME UNITS (#2.13)
+                                  COLLECTION DURATION UNITS (#2.23)
+                                  COLLECTION WEIGHT UNITS (#2.33)
+
+LAB LOINC (#95.3)                 SPECIMENS:PATIENT HEIGHT CODE (#1.14)
+                                  PATIENT WEIGHT CODE (#1.24)
+                                  COLLECTION VOLUME CODE (#2.14)
+                                  COLLECTION DURATION CODE (#2.24)
+                                  COLLECTION WEIGHT CODE (#2.34)
+
+LAB SHIPPING CONDITIONS (#62.93)  SPECIMENS:SHIPPING CONDITIONS (#.07)
+
+LAB SHIPPING CONFIGURATION 
+                   (#62.9)        SHIPPING CONFIGURATION (#.02)
+
+LAB SHIPPING CONTAINER (#62.91)   SPECIMENS:SHIPPING CONTAINER (#.06)
+                                  PACKAGING CONTAINER (#.09)
+
+LAB SHIPPING METHOD (#62.92)      SHIP VIA (#.04)
+
+LABORATORY TEST (#60)             SPECIMENS:TEST (#.02)
+
+TOPOGRAPHY FIELD (#61)            SPECIMENS:SPECIMEN TYPE (#.03)
+
+URGENCY (#62.05)                  SPECIMENS:URGENCY (#.04)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

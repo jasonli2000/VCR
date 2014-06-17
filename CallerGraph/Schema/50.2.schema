@@ -1,0 +1,98 @@
+STANDARD DATA DICTIONARY #50.2 -- IV CATEGORY FILE                                                                                                                                                                                MAY 20,2014@15:35:17  PAGE 1
+STORED IN ^PS(50.2,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  This file allows drugs to be grouped into categories.  Once a category has been created, custom-tailored reports such as provider cost reports, ward/drug usage reports, and drug cost reports, may be run for groups of drugs defined in a category.  
+
+
+              DD ACCESS: @
+
+CROSS
+REFERENCED BY: GENERIC DRUG(AD), NAME(B)
+
+50.2,.01      NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1)!'(X'?1P.E) X
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                  Enter the name of the IV CATEGORY.  
+
+              GROUP:            PSJI
+              CROSS-REFERENCE:  50.2^B 
+                                1)= S ^PS(50.2,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(50.2,"B",$E(X,1,30),DA)
+
+
+50.2,1        IV DRUG                1;0          VARIABLE POINTER  Multiple #50.21
+              DESCRIPTION:
+                                  This multiple contains the drugs which are members of this category.  
+
+              GROUP:            PSJI
+              IDENTIFIED BY:    GENERIC DRUG(#1)[R]
+
+50.21,.01       IV DRUG                0;1        VARIABLE POINTER (Multiply asked)
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   52.6 1    A            n   IV ADDITIVES 
+                   52.7 2    S            n   IV SOLUTIONS 
+                SCREEN ON FILE 52.6: S DIC("S")="I $P(^(0),""^"",2)"
+                SCREEN ON FILE 52.7: S DIC("S")="I $P(^(0),""^"",2)"
+                                         
+                DESCRIPTION:
+                                    This is the IV drug which is a member of this category.  It is a pointer to either the IV SOLUTIONS file (52.7) or the IV ADDITIVES file (52.6), depending on the drug selected.  
+
+                GROUP:            PSJI
+                CROSS-REFERENCE:  50.21^B 
+                                  1)= S ^PS(50.2,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(50.2,DA(1),1,"B",$E(X,1,30),DA)
+                                  3)= Required Index for Variable Pointer
+
+                CROSS-REFERENCE:  ^^TRIGGER^50.21^1 
+                                1)= S X=$S($D(@("^"_$P(X,";",2)_+X_",0)")):$P(^(0),"^",2),1:""),DIU=$S($D(^PS(50.2,DA(1),1,DA,0)):$P(^(0),"^",2),1:"") I X'=DIU S $P(^(0),"^",2)=X I $O(^DD(50.21,1,1,0)) K DIV S (DIV(0),D0)=DA(1),(DIV(1),D1)=DA,DIV=X,DIH=5
+                                0.21,DIG=1 D ^DICR
+
+                                2)= S X="",DIU=$S($D(^PS(50.2,DA(1),1,DA,0)):$P(^(0),"^",2),1:"") I DIU]"" S $P(^(0),"^",2)=X I $O(^DD(50.21,1,1,0)) K DIV S (DIV(0),D0)=DA(1),(DIV(1),D1)=DA,DIV=X,DIH=50.21,DIG=1 D ^DICR
+                                3)= DON'T DELETE - HOMEGROWN EXTENDED TRIGGER FOR A VP - CML3
+                                CREATE VALUE)= IV DRUG:GENERIC DRUG
+                                DELETE VALUE)= @
+                                FIELD)= GENERIC DRUG
+                                Triggers data into sub-field (1).  
+
+
+
+50.21,1         GENERIC DRUG         0;2 POINTER TO DRUG FILE (#50) (Required)
+
+                LAST EDITED:    MAY 02, 1989 
+                DESCRIPTION:
+                                  This is the generic name of the IV drug, and is a pointer to the DRUG file (50).  
+
+                GROUP:          PSJI
+                                UNEDITABLE
+                NOTES:          TRIGGERED by the IV DRUG field of the IV DRUG sub-field of the IV CATEGORY File 
+
+                CROSS-REFERENCE:50.2^AD^MUMPS 
+                                1)= S ^PS(50.2,"AD",DA(1),X)=""
+                                2)= K ^PS(50.2,"AD",DA(1),X)
+                                 Cross-reference by: IV Drug, Generic Drug.  
+                                 S ^PS(50.2,"AD",IV DRUG,GENERIC DRUG)="" 
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DRUG (#50)                        IV DRUG:GENERIC DRUG (#1)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

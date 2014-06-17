@@ -1,0 +1,1072 @@
+STANDARD DATA DICTIONARY #798.1 -- ROR REGISTRY PARAMETERS FILE                                                                                                                                                                   MAY 20,2014@15:31:10  PAGE 1
+STORED IN ^ROR(798.1,  (18 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                          (VERSION 1.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Records of the ROR REGISTRY PARAMETERS file contain various registry parameters and the data that indicates current registry state. Every registry must have a record in this file.  
+ 
+Records of the file are uniquely identified by the registry name (the "A" primary key and the uniqueness index "B" are used for that purpose).  
+ 
+A permanent screen (the ^DD(798.1,0,"SCR") node) restricts access to records of this file. Users can only access records of those registries that they have the security key(s) for. Users with the ROR VA IRM security key can access all records of the
+file.  
+ 
+If you want the changes in the security keys allocation to have an effect immediately, you should rebuild the "ACL" cross-reference of the .01 field of the SECURITY KEY multiple of this file. See the description of the cross-reference for more details.  
+
+
+FILE SCREEN (SCR-node) : I $$ACCESS^RORDD(798.1,Y)
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: 
+IDENTIFIED BY: 
+      "WRITE": D EN^DDIOL("  "_$P($G(^(0)),U,4),,"?30")
+
+SECONDARY KEY:      A (#4)
+  Uniqueness Index: B (#151)
+       File, Field: 1) REGISTRY NAME (798.1,.01)
+
+POINTED TO BY: REGISTRY field (#.02) of the ROR REGISTRY RECORD File (#798) 
+               REGISTRY field (#.01) of the ERROR sub-field (#798.31) of the ROR PATIENT EVENTS File (#798.3) 
+               REGISTRY field (#.01) of the ROR ICD SEARCH File (#798.5) 
+               REGISTRY field (#.02) of the ROR PHARMACY CODE File (#798.6) 
+               REGISTRY field (#.01) of the REGISTRY sub-field (#798.73) of the ROR LOG File (#798.7) 
+               REGISTRY field (#.03) of the ROR TASK File (#798.8) 
+               REGISTRY field (#.03) of the ROR LIST ITEM File (#799.1) 
+               REGISTRY field (#.02) of the ROR GENERIC DRUG File (#799.51) 
+               REGISTRY field (#.03) of the ROR LOCAL FIELD File (#799.53) 
+               
+
+CROSS
+REFERENCED BY: SECURITY KEY(ACL), ENABLE PROTOCOLS(AEP), SELECTION RULE(ARULES), AUTO-CONFIRM(C)
+
+INDEXED BY:    REGISTRY NAME (B)
+
+
+798.1,.01     REGISTRY NAME          0;1 FREE TEXT (Required) (Key field)
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))  K:$L(X)>30!($L(X)<3)!'(X?1.UNP) X
+              LAST EDITED:      FEB 03, 2006 
+              HELP-PROMPT:      Enter the unique registry name (3-30 characters). 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                 
+                                You can either select an existing registry or add a new one. Registry names must be unique. Names of the National registries must start with "VA".  
+                                 
+                                You can only select records of those registries that you have appropriate security key(s) for.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              FIELD INDEX:      B (#151)    REGULAR    IR    LOOKUP & SORTING
+                   Unique for:  Key A (#4), File #798.1
+                  Short Descr:  Uniqueness Index for Key 'A' of File #798.1
+                    Set Logic:  S ^ROR(798.1,"B",X,DA)=""
+                   Kill Logic:  K ^ROR(798.1,"B",X,DA)
+                   Whole Kill:  K ^ROR(798.1,"B")
+                         X(1):  REGISTRY NAME  (798.1,.01)  (Subscr 1)
+
+
+798.1,.09     NATIONAL               0;11 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,,-1)
+              LAST EDITED:      NOV 20, 2001 
+              DESCRIPTION:      ONLY AUTHORIZED NATIONAL REGISTRY DEVELOPERS CAN EDIT THIS FIELD! 
+                                 
+                                The national registries must have this field set to "YES". This prevents local editing of other fields of national registry definitions.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,,-1)
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,1       REGISTRY UPDATED UNTIL 0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 28, 2001 
+              DESCRIPTION:      This field indicates the date of the last successful run of the regular registry update process. The search engine looks for new patients starting from this date.  
+                                 
+                                Usually, this field should not be manually edited; it is updated automatically. Before initial population of the registry, enter the date that the data search should start from.  
+
+              TECHNICAL DESCR:
+                                This field is updated automatically by the registry update process after successful completion (see the $$TMSTMP^RORUPD01 function for details).  
+
+              GROUP:            STATE
+
+798.1,2       DATA EXTRACTED UNTIL   0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 28, 2001 
+              DESCRIPTION:
+                                This field indicates the date of the last successful run of the regular data extraction process. Do not edit this field.  
+
+              TECHNICAL DESCR:
+                                This field is updated automatically by the regular data extraction process after its successful completion (see the $$TMSTMP^ROREXTUT function for details).  
+
+              GROUP:            STATE
+
+798.1,3       SELECTION RULE         1;0 Multiple #798.13
+
+              DESCRIPTION:      The SELECTION RULE field contains a list of the top-level selection rules that are used to screen the patients to be added to the registry.  
+                                 
+                                The records of the multiple are uniquely identified by the selection rule names. The "A" primary key and the uniqueness index "B" are used for this purpose.  
+
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+
+              SECONDARY KEY:    A (#5)
+              Uniqueness Index: B (#152)
+                   File, Field: 1) SELECTION RULE (798.13,.01)
+
+              INDEXED BY:       SELECTION RULE (B)
+
+798.13,.01      SELECTION RULE         0;1 FREE TEXT (Multiply asked) (Key field)
+
+                INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA(1)))  K:$L(X)>30!($L(X)<3)!'(X?3.UNP) X I $D(X) K:'$D(^ROR(798.2,"B",$E(X,1,30))) X
+                LAST EDITED:      JUL 22, 2005 
+                HELP-PROMPT:      Enter a name of the selection rule (3-30 characters). 
+                DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                   
+                                  Enter a name of the selection rule that will be used to select patients for addition to the registry. The name should be entered exactly as it appears in the list of selection rules (file #798.2).  
+
+                TECHNICAL DESCR:
+                                  Names of the selection rules are used here instead of pointers because the KIDS pointer resolving feature does not work for .01 fields.  
+
+                EXECUTABLE HELP:  I $G(X)="??" N D,DIC,DZ S DIC="^ROR(798.2,",DIC(0)="",D="B",DZ="??" D DQ^DICQ,EN^DDIOL("",,"!")
+                DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA(1)))
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  798.1^ARULES 
+                                  1)= S ^ROR(798.1,"ARULES",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^ROR(798.1,"ARULES",$E(X,1,30),DA(1),DA)
+                                  3)= Do not delete!
+                                  This cross-reference can be used to find all registries that use the selection rule.  
+
+
+                FIELD INDEX:      B (#152)    REGULAR    IR    LOOKUP & SORTING
+                     Unique for:  Key A (#5), File #798.13
+                    Short Descr:  Uniqueness Index for Key 'A' of Subfile #798.13
+                      Set Logic:  S ^ROR(798.1,DA(1),1,"B",X,DA)=""
+                     Kill Logic:  K ^ROR(798.1,DA(1),1,"B",X,DA)
+                     Whole Kill:  K ^ROR(798.1,DA(1),1,"B")
+                           X(1):  SELECTION RULE  (798.13,.01)  (Subscr 1)
+
+
+
+
+798.1,4       SHORT DESCRIPTION      0;4 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))  K:$L(X)>40!($L(X)<3) X
+              LAST EDITED:      NOV 09, 2001 
+              HELP-PROMPT:      Enter a short description of the registry (3-40 characters). 
+              DESCRIPTION:
+                                YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,5       DESCRIPTION            2;0   WORD-PROCESSING #798.15
+
+              DESCRIPTION:
+                                Any additional reference information related to the registry may be stored in this field.  
+
+              TECHNICAL DESCR:
+                                Content of this field is not used by the application.  
+
+
+798.1,6.1     BEFORE UPDATE          4;E1,245 FREE TEXT
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))  Q:$$EP^RORDD(3)
+              LAST EDITED:      NOV 20, 2001 
+              HELP-PROMPT:      Answer must be $$TAG^ROUTINE (5-19 characters in length). 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                 
+                                Enter a full name ($$TAG^ROUTINE) of the external MUMPS function that will be called before adding a new record to the registry. This entry point can be used to prepare any additional data.  
+
+              TECHNICAL DESCR:  The call-back entry point must accept three parameters: 
+                                 
+                                FDA - A reference to a local array that contains prepared data (for the UPDATE^DIE FileMan DSB call) that should be stored as a new record in the ROR REGISTRY RECORD (#798) file.  
+                                 
+                                The main record uses "+1," placeholder and records of the SELECTION RULE multiple use placeholders with numbers starting from 1001.  
+                                 
+                                See the source code of the $$ADD^RORUPD50 function and the FileMan Programmer Manual for further details.  
+                                 
+                                PATIEN - Patient IEN (in the file #2) 
+                                 
+                                REGIEN - Registry IEN (in the file #798.1) 
+                                 
+                                The function should return a negative number in case of errors. Otherwise, zero should be returned.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,6.2     AFTER UPDATE           5;E1,245 FREE TEXT
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))  Q:$$EP^RORDD(3)
+              LAST EDITED:      NOV 20, 2001 
+              HELP-PROMPT:      Answer must be $$TAG^ROUTINE (5-19 characters in length). 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                 
+                                Enter a full name ($$TAG^ROUTINE) of the external MUMPS function that will be called after adding a new record to the registry. This entry point can be used to create record(s) in additional linked file(s) of the local
+                                registry.  
+
+              TECHNICAL DESCR:  The call-back function must accept three parameters: 
+                                 
+                                IEN - An IEN of the newly added record of the ROR REGISTRY RECORD file 
+                                 
+                                PATIEN - Patient IEN (in file #2) 
+                                 
+                                REGIEN - Registry IEN (in file #798.1) 
+                                 
+                                The function should return a negative number in case of errors. Otherwise, zero should be returned.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,7       EXTRACT PERIOD FOR NEW PATIENT 0;5 NUMBER
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))  K:+X'=X!(X>15000)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 09, 2001 
+              HELP-PROMPT:      Enter number of days between 1 and 15000. 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                 
+                                Enter the number of days that should be subtracted from the earliest date when the patient passed one of the selection rules. The result will be used as the start date of the data extraction for this new patient.  
+                                 
+                                If this field is empty, the default value of 3650 is used.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,8       ENABLE LOG             0;6 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 03, 2000 
+              DESCRIPTION:
+                                Select "YES" to enable recording of different kinds of events (debug messages, errors, etc.) generated by registry processes.  
+
+              TECHNICAL DESCR:  The ENABLE LOG field controls recording of the errors and other events in the log file.  
+                                 
+                                If internal value of the field is 0 or the field is empty, the recording of all events associated with the registry is disabled.  
+                                 
+                                If internal value of the field is 1, content of the LOG EVENT multiple is analyzed to determine which events (errors, warnings, etc.) should be recorded.  
+
+              GROUP:            PARAMETERS
+
+798.1,8.1     LOG EVENT              3;0 SET Multiple #798.11
+
+              LAST EDITED:      JUL 22, 2005 
+              DESCRIPTION:      The LOG EVENT multiple contain a list of event types that are enabled to record. 
+                                 
+                                If the list is empty and recording is enabled, all events except debug messages will be recorded.  
+                                 
+                                Otherwise, only recording of the events from the list and error messages will be enabled.  
+
+
+              SECONDARY KEY:    A (#9)
+              Uniqueness Index: B (#160)
+                   File, Field: 1) LOG EVENT (798.11,.01)
+
+              INDEXED BY:       LOG EVENT (B)
+
+798.11,.01      LOG EVENT              0;1 SET (Multiply asked) (Key field)
+
+                                  '1' FOR Debug; 
+                                  '2' FOR Information; 
+                                  '3' FOR Data Quality; 
+                                  '4' FOR Warning; 
+                                  '5' FOR Database Error; 
+                                  '6' FOR Error; 
+                LAST EDITED:      JUL 22, 2005 
+                DESCRIPTION:      Select the type of the event if you want to enable recording of these events. If the list is empty, recording of all events is enabled. Otherwise, only events from the list and error messages will be recorded.  
+                                   
+                                  Debug messages are exclusions from this rule (they are not logged if the ENABLE LOG field is set to "YES" and this multiple is empty). Their recording can only be enabled explicitly.  
+
+                TECHNICAL DESCR:  If several registries are processed at the same time, the recording parameters are combined.  
+                                   
+                                  If one of the registries requests recording of all events, all events except the debug messages (type 1) will be recorded for all registries.  
+                                   
+                                  Otherwise, merged content of the LOG EVENT multiples will determine the events to be recorded.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                FIELD INDEX:      B (#160)    REGULAR    IR    LOOKUP & SORTING
+                     Unique for:  Key A (#9), File #798.11
+                    Short Descr:  Uniqueness Index for Key 'A' of Subfile #798.11
+                      Set Logic:  S ^ROR(798.1,DA(1),3,"B",X,DA)=""
+                     Kill Logic:  K ^ROR(798.1,DA(1),3,"B",X,DA)
+                     Whole Kill:  K ^ROR(798.1,DA(1),3,"B")
+                           X(1):  LOG EVENT  (798.11,.01)  (Subscr 1)
+
+
+
+
+798.1,10      MESSAGE BUILDER        7;E1,245 FREE TEXT
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))  Q:$$EP^RORDD(4)
+              LAST EDITED:      NOV 20, 2001 
+              HELP-PROMPT:      Answer must be $$TAG^ROUTINE (5-19 characters in length). 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                 
+                                Enter a full name ($$TAG^ROUTINE) of the external MUMPS function that will be called to generate the registry-specific section of the HL7 message for each record of the registry.  
+                                 
+                                If this field has no value, the default entry point ($$REGDATA^ROREXT02) will be used.  
+
+              TECHNICAL DESCR:  The call-back function must accept four parameters: 
+                                 
+                                IEN - IEN of the registry record 
+                                 
+                                PATIEN - Patient IEN (in the file #2) 
+                                 
+                                [.]DXDTS - Either a single time frame in StartDate^EndDate format or a reference to a local variable containing the list of data extraction time frames. The main time frame should be stored in the root node (see the
+                                $$DXPERIOD^ROREXTUT function for details): 
+                                 
+                                  DXDTS(         StartDate^EndDate  (FileMan) 
+                                    DataArea, 
+                                      i)         StartDate^EndDate  (FileMan) 
+                                 
+                                The function should add the text of the HL7 message after already existing nodes in the standard location: ^TMP("HLS",$J). DO NOT KILL THIS NODE! It contains the previous messages of the batch.  
+                                 
+                                If the message was generated successfully, the function should return zero. A negative value corresponds to the error code.  
+                                                                                                    
+                                See the source code of the $$REGDATA^ROREXT02 function for further details.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,11      REGISTRY STATUS        0;7 SET
+
+                                '0' FOR ACTIVE; 
+                                '1' FOR INACTIVE; 
+              LAST EDITED:      APR 24, 2002 
+              DESCRIPTION:
+                                Select the "INACTIVE" code if you want to exclude the registry from the regular registry updates and data transmissions.  
+
+              GROUP:            PARAMETERS
+
+798.1,12      EXTRACTED RESULT       8;0 Multiple #798.112
+
+              LAST EDITED:      JUN 29, 2001 
+              DESCRIPTION:
+                                This multiple contains a list of Lab result codes.  These results will be extracted and transmitted to AAC.  
+
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              IDENTIFIED BY:    
+                    "WRITE":    D EN^DDIOL($P(^(0),U,2),"","?20")
+
+798.112,.01     LOINC CODE             0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA(1)))  K:X'?1(1.7N,1"*") X
+                LAST EDITED:      JUL 16, 2001 
+                HELP-PROMPT:      Answer must be 1-7 characters in length. 
+                DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                   
+                                  Enter the unique numeric LOINC code (without the check digit) of the Lab result to be extracted. If you want to use only NLT code, enter zero as the value of this field.  
+                                   
+                                  If you want to extract all results, create a record in this multiple containing the "*" character in this field.  
+
+                DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA(1)))
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  798.112^B 
+                                  1)= S ^ROR(798.1,DA(1),8,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ROR(798.1,DA(1),8,"B",$E(X,1,30),DA)
+                                  3)= Do not delete!
+
+
+798.112,.02     NLT CODE               0;2 FREE TEXT
+
+                INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA(1)))  K:'(X?5N1"."4.5N) X
+                LAST EDITED:      JUL 16, 2001 
+                HELP-PROMPT:      Answer must be 10-11 characters in length. 
+                DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                   
+                                  Enter the unique NLT code of the Lab result to be extracted. Both LOINC and NLT codes (if available) are used for searching the Lab results. If you want to use only the LOINC code, leave this field empty.  
+
+                DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA(1)))
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  798.112^C 
+                                  1)= S ^ROR(798.1,DA(1),8,"C",$E(X,1,30),DA)=""
+                                  2)= K ^ROR(798.1,DA(1),8,"C",$E(X,1,30),DA)
+                                  3)= Do not delete!
+
+
+798.112,.03     SUBSCRIPTS             0;3 FREE TEXT
+
+                INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA(1)))  K:$L(X)>30!($L(X)<2) X
+                LAST EDITED:      MAR 18, 2003 
+                HELP-PROMPT:      Answer must be 2-30 characters in length. 
+                DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                   
+                                  Enter a list of the subscripts separated by commas (CH, MI, etc.) from where the results should be loaded by the $$GCPR^LA7QRY function. Only these subscripts will be searched for new data.  
+                                   
+                                  NOTE: The value of the field affects the data extraction only if the LOINC CODE field is equal to "*".  
+                                   
+                                  If this field is empty (by default), the API searches through all supported subscripts.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+798.1,13      PROTOCOL               9;1 POINTER TO PROTOCOL FILE (#101)
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))  S DIC("S")="S D=$G(^(0)) I $E($P(D,U),1,3)=""ROR"",$P(D,U,4)=""E""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 12, 2001 
+              HELP-PROMPT:        
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS A PART OF NATIONAL REGISTRY DEFINITION! 
+                                 
+                                This field contains a pointer to the protocol in the PROTOCOL file that is used as the event driver for sending HL7 messages.  
+
+              TECHNICAL DESCR:  If several registries are processed by the same nightly task and they have different values of the PROTOCOL field, then the registries are grouped by the value of this field and data extraction is performed separately for
+                                each of those groups.  
+
+              SCREEN:           S DIC("S")="S D=$G(^(0)) I $E($P(D,U),1,3)=""ROR"",$P(D,U,4)=""E"""
+              EXPLANATION:      Only Event Drivers from the "ROR" namespace can be selected!
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,13.1    MAXIMUM MESSAGE SIZE   9;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."2N.N) X
+              LAST EDITED:      JUL 30, 2002 
+              HELP-PROMPT:      Enter maximum size (in megabytes) between 0 and 99, 1 decimal digit. 
+              DESCRIPTION:      This field stores the maximum size (in megabytes) of a batch HL7 message that can be sent to Austin Automation Center (AAC). If this field is empty or contains 0, the size is not limited.  
+                                 
+                                You must coordinate your intentions with AAC support personnel if you are going to edit this field.  
+
+              TECHNICAL DESCR:  Actual size of an HL7 batch can be greater than the value of this field because the software does not break in the middle of an individual HL7 message.  
+                                 
+                                For example, if the maximum size is 10Mb, the current size is 9Mb and 3Mb should be sent for the patient being processed, then the actual size of the batch will be 12Mb.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            PARAMETERS
+
+798.1,13.2    ALERT FREQUENCY        9;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 03, 2005 
+              HELP-PROMPT:      Type a Number between 1 and 10, 0 Decimal Digits 
+              DESCRIPTION:      Value of the ALERT FREQUENCY field determines how often e-mail notifications and VistA alerts are sent to the AAC and local staff in case of problems with the site's CCR software (data extraction problems, unsent HL7
+                                messages, etc.).  
+                                 
+                                If this field is empty or 0, notifications are not sent.  
+                                 
+                                Otherwise, the nightly task increments the error counters and checks the remainders from division of the counters by the value of this field. When a reminder becomes 0, the software sends the corresponding e-mail
+                                notification to the AAC and generates the VistA alert to the local staff listed in the NOTIFICATION multiple (14).  
+                                 
+                                For example, if the nightly task runs every night and the ALERT FREQUENCY is 2, then alerts and notifications will be sent every other night.  
+
+              TECHNICAL DESCR:
+                                See description of the HL7 PROBLEM COUNTER field (19.3) and source code of the $$CHECKMSG^ROR10 function for more details.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            PARAMETERS
+
+798.1,13.3    NATIONAL NOTIFICATION E-MAIL 9;4 FREE TEXT
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))  K:$L(X)>50!($L(X)<3)!(X'?1.ANP1"@"1.ANP) X
+              LAST EDITED:      APR 29, 2003 
+              HELP-PROMPT:      Answer must be a valid e-mail address (3-50 characters in length). 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS A PART OF NATIONAL REGISTRY DEFINITION! 
+                                 
+                                The NATIONAL NOTIFICATION E-MAIL field holds an e-mail address where notifications about registry problems (mostly, data transmission problems) are sent to.  
+                                 
+                                If the field is empty, e-mail notifications will not be sent.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,14      NOTIFICATION           10;0 POINTER Multiple #798.114
+
+              LAST EDITED:      APR 27, 2005 
+              DESCRIPTION:
+                                This multiple contains a list of VistA users that should be notified about problems with the local registry.  
+
+
+798.114,.01     NOTIFICATION           0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                INPUT TRANSFORM:  S:$D(X) DINUM=X
+                LAST EDITED:      APR 27, 2005 
+                DESCRIPTION:
+                                  Select a user who already receives alerts or add a new one from the NEW PERSON file. VistA users referenced by this field will be notified about problems with the registry processes.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  798.114^B 
+                                  1)= S ^ROR(798.1,DA(1),10,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ROR(798.1,DA(1),10,"B",$E(X,1,30),DA)
+                                  3)= Do not delete!
+
+
+
+
+798.1,15.1    LAG DAYS               11;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>7)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 26, 2002 
+              HELP-PROMPT:      Enter number of days between 1 and 7. 
+              DESCRIPTION:      Number of days that defines an overlap of the data searches during the registry updates and a data extraction delay during the regular data extractions.  
+                                 
+                                If this field is empty, the default value of 1 is used by the registry update and data extraction processes.  
+                                 
+                                See the package documentation or Technical Description of the field in the data dictionary for more information.  
+
+              TECHNICAL DESCR:  Clinical data may be entered into the VistA system later than they are available. For example, an encounter that occurred today may not get entered into the system until tomorrow.  
+                                 
+                                Because of this delay, data may be missed by the registry update and data extraction processes if they look for the data until the current date and then continue from that point next time.  
+                                 
+                                To avoid this problem, data search intervals are overlapped by the number of days indicated by this field. The registry update process looks for new data not from the end date of its previous run but from the date that is
+                                earlier by the number of days from this field. This overlap increases the chances of data entered retrospectively to be found by the next run of the registry update process.  
+                                 
+                                Moreover, the regular data extraction process extracts data not until the date when the process is run but until the date that is earlier by the number of days from this field. So, this is a delay that allows the data to
+                                be entered retrospectively before the next data extraction.  
+                                 
+                                If the value of this field is too small, you may miss some data entered retrospectively. If it is too big, the national registry will not contain up to date information (data will be delayed by the number of days indicated
+                                by this field) and the registry update process will take more time to complete, because additional time will be spent processing the data from the overlap interval).  
+                                 
+                                When several registries are processed at the same time, the maximum value of the LAG DAYS field is used.  
+
+              GROUP:            PARAMETERS
+
+798.1,18      SECURITY KEY           18;0 Multiple #798.118
+
+              DESCRIPTION:
+                                This multiple stores a list of security keys associated with the registry.  
+
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+
+              SECONDARY KEY:    A (#12)
+              Uniqueness Index: B (#220)
+                   File, Field: 1) SECURITY KEY (798.118,.01)
+
+              INDEXED BY:       SECURITY KEY (B)
+
+798.118,.01     SECURITY KEY           0;1 FREE TEXT (Multiply asked) (Key field)
+
+                INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA(1)))  K:$L(X)>27!($L(X)<3) X
+                LAST EDITED:      JUL 22, 2005 
+                HELP-PROMPT:      Enter a name of security key (3-27 characters in length). 
+                DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                   
+                                  The SECURITY KEY field contains the name of the security key associated with the registry.  
+
+                DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA(1)))
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  798.1^ACL^MUMPS 
+                                  1)= D ACLSET^RORDD
+                                  2)= D ACLKILL^RORDD
+                                  3)= Do not delete!
+                                  This cross-reference is used by the screening logic (the "SCR" node) of some Clinical Case Registries files to check whether a user is allowed to access the records or not.  
+                                   
+                                  The cross-reference contains two kinds of items: 
+                                   
+                                    ^ROR(798.1,"ACL",RORDUZ,RegIEN,KEY,IEN) = "" 
+                                    ^ROR(798.1,"ACL",RORDUZ,RegName,KEY,IEN) = "" 
+                                   
+                                  where RORDUZ is the value of the DUZ variable for the user who has access to one or more registries (according to the allocated security keys). RegIEN and RegName are the registry IEN and name. KEY is the name of
+                                  security key and IEN is the internal entry number of the corresponding record of the SECURITY KEY multiple.  
+                                   
+                                  The cross-reference should be rebuilt after changes in the allocation of the security keys associated with any registry. Usually, this is done by the nightly task (the [ROR TASK] option).  However, if you want the
+                                  changes to be in effect immediately, you should rebuild this cross-reference manually.  
+
+
+                FIELD INDEX:      B (#220)    REGULAR    IR    LOOKUP & SORTING
+                     Unique for:  Key A (#12), File #798.118
+                    Short Descr:  Uniqueness Index for Key 'A' of Subfile #798.118
+                      Set Logic:  S ^ROR(798.1,DA(1),18,"B",X,DA)=""
+                     Kill Logic:  K ^ROR(798.1,DA(1),18,"B",X,DA)
+                     Whole Kill:  K ^ROR(798.1,DA(1),18,"B")
+                           X(1):  SECURITY KEY  (798.118,.01)  (Subscr 1)
+
+
+
+
+798.1,19.1    NUMBER OF PATIENTS     19;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 27, 2003 
+              HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The NUMBER OF PATIENTS field contains total number of confirmed patients in the registry right after the last registry update.  
+
+              TECHNICAL DESCR:
+                                This field should not be edited. It is updated automatically by the $$UPDDEM^RORUPD51 function during the registry update.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+
+798.1,19.2    NUMBER OF PENDING PATIENTS 19;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 27, 2005 
+              HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The NUMBER OF PENDING PATIENTS field stores number of pending patients in the registry right after the last registry update.  
+
+              TECHNICAL DESCR:
+                                This field should not be edited. It is updated automatically by the $$UPDDEM^RORUPD51 function during the registry update.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+
+798.1,19.3    HL7 ATTEMPT COUNTER    19;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 01, 2005 
+              HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+              DESCRIPTION:      The HL7 ATTEMPT COUNTER field is incremented each time the nightly task (the Registry Update & Data Extraction [ROR TASK] option) encounters at least one unsent HL7 message.  
+                                 
+                                The nightly task assigns 1 to the field when new HL7 messages are generated (only if all previous messages have been successfully transmitted).  
+                                 
+                                Usually, you should not edit this field.  
+
+              TECHNICAL DESCR:
+                                See description of the ALERT FREQUENCY field (13.2) and source code of the $$CHECKMSG^ROR10 function for more details.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            HL7
+
+798.1,21.01   AUTOMATIC BACKPULL     21;1 POINTER TO ROR HISTORICAL DATA EXTRACTION FILE (#799.6)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P($G(^(0)),U,2)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 10, 2005 
+              DESCRIPTION:
+                                This field stores the pointer to the historical data extraction definition that was used during the previous run of the nightly task.  
+
+              SCREEN:           S DIC("S")="I $P($G(^(0)),U,2)=1"
+              EXPLANATION:      Only "Auto" definitions can be selected.
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+
+798.1,21.04   LOCAL DATA RESENT      21;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 08, 2002 
+              DESCRIPTION:      This field holds the date when all local registry data was resent to AAC after the installation (to fix the data incorrectly overwritten with the historical data).  
+                                 
+                                Usually, you should not modify this field. If you need to resend all local registry and demographic data to AAC, you should clear this field. The data will be resent automatically during the next nightly transmission.  
+
+              TECHNICAL DESCR:
+                                The value of this field is analyzed and modified by the $$REMARK^RORUTL05 function. The function is called by the nightly registry update and data transmission task (TASK^ROR).  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+
+798.1,21.05   HDT DATE/TIME          21;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 27, 2003 
+              DESCRIPTION:
+                                This field is initialized with the current date/time by the registry setup task upon successful completion of the initial registry population.  
+
+              TECHNICAL DESCR:  The field is populated by the $$UPDHDTRP^RORSETU2 function during the registry setup.  
+                                 
+                                Do not delete value of this field! 
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+
+798.1,22      LAST BATCH CONTROL ID  22;0 Multiple #798.122
+
+              LAST EDITED:      MAY 04, 2005 
+              DESCRIPTION:
+                                This multiple contains a list of identifiers of the HL7 batch messages generated during the previous run of the nightly task.  
+
+              TECHNICAL DESCR:
+                                The nightly task checks status of each message from this multiple before the registry update and data extraction.  
+
+              WRITE AUTHORITY:  @
+              GROUP:            HL7
+
+              SECONDARY KEY:    A (#14)
+              Uniqueness Index: B (#221)
+                   File, Field: 1) LAST BATCH CONTROL ID (798.122,.01)
+
+              INDEXED BY:       LAST BATCH CONTROL ID (B)
+
+798.122,.01     LAST BATCH CONTROL ID  0;1 FREE TEXT (Multiply asked) (Key field)
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      NOV 29, 2005 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  The LAST BATCH CONTROL ID field contains the message control ID (BHS-11) of the latest batch HL7 message submitted to the VistA HL7 engine.  
+
+                TECHNICAL DESCR:
+                                  This field is populated with the value returned by the GENERATE^HLMA procedure. This value is usually different from that of the INTERNAL BATCH ID field.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                GROUP:            HL7
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                FIELD INDEX:      B (#221)    REGULAR    IR    LOOKUP & SORTING
+                     Unique for:  Key A (#14), File #798.122
+                    Short Descr:  Uniqueness Index for Key 'A' of Subfile #798.122
+                      Set Logic:  S ^ROR(798.1,DA(1),22,"B",X,DA)=""
+                     Kill Logic:  K ^ROR(798.1,DA(1),22,"B",X,DA)
+                     Whole Kill:  K ^ROR(798.1,DA(1),22,"B")
+                           X(1):  LAST BATCH CONTROL ID  (798.122,.01)  (Subscr 1)
+
+
+798.122,.02     INTERNAL BATCH ID      0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      MAY 03, 2005 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:      This field contains the internal batch identifier that was used during the generation of the batch message.  
+                                   
+                                  The Control ID of each individual message included in the batch is constructed from the value of this field and a sequential number separated by the '-' character.  
+
+                TECHNICAL DESCR:  The INTERNAL BATCH ID field is automatically populated with the identifier of the batch placeholder created by the CREATE^HLTF procedure. See the $$CREATE^RORHL7 and $$TMSTMP^ROREXTUT functions for details.  
+                                   
+                                  The actual batch control ID (BHS-11) is usually different from the value stored in this field.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                GROUP:            HL7
+
+798.122,.03     DATE                   0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 29, 2005 
+                DESCRIPTION:
+                                  This field stores the date/time of the batch HL7 message.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+
+
+
+798.1,25      ENABLE PROTOCOLS       0;14 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      APR 18, 2002 
+              DESCRIPTION:      If this field is set to "YES", event protocols will be used by the package to speed up the registry processing.  
+                                 
+                                The protocols create references to patient events in the ROR PATIENT EVENTS file. Only those patients that have new references will be processed by the next registry update.  
+                                 
+                                If several registries are updated at the same time and at least one of them has this field set to "YES", all these registries will be processed using event references.  
+
+              TECHNICAL DESCR:  This field controls both the registry update engine and the event protocols.  
+                                 
+                                If at least one of the defined registries enables the protocols, they will process the events and create references in the ROR PATIENT EVENTS file (#798.3).  
+                                 
+                                Otherwise, the protocols will be executed (if they are not disabled or unsubscribed manually) but will not call processing routines and will not create references in file #798.3.  
+
+              GROUP:            PARAMETERS
+              CROSS-REFERENCE:  798.1^AEP^MUMPS 
+                                1)= S:X ^ROR(798.1,"AEP",DA)=""
+                                2)= K ^ROR(798.1,"AEP",DA)
+                                3)= Do not delete!
+                                This cross-reference controls the package event protocols.  
+                                 
+                                If at least one registry has the ENABLE PROTOCOLS field set to "YES", the ^ROR(798.1,"AEP") node will be defined and the protocols will call the processing routines.  
+                                 
+                                Otherwise, they will run idle unless they are disabled or unsubscribed manually.  
+
+
+
+798.1,26      EXCLUDE EMPLOYEES      0;10 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))
+              LAST EDITED:      AUG 02, 2002 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS PART OF A NATIONAL REGISTRY DEFINITION! 
+                                 
+                                If this field is set to "YES", patients who are employees will not be processed by the registry update or data extraction functions.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,27      AVAILABLE REPORTS      27;E1,250 FREE TEXT
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.1,$G(DA))  K:$L(X)>250!($L(X)<1) X
+              LAST EDITED:      APR 17, 2003 
+              HELP-PROMPT:      Answer must be 1-250 characters in length. 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS A PART OF NATIONAL REGISTRY DEFINITION! 
+                                 
+                                The AVAILABLE REPORTS field stores a list of report codes (not the IENs!) separated by commas.  These reports will be available for this registry in the GUI.  
+
+              TECHNICAL DESCR:  The GUI loads the value of this field using the ROR REPORTS AVAILABLE remote procedure.  
+                                 
+                                See the data dictionary of the ROR REPORT PARAMETERS file (#799.12) for more details.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.1,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              GROUP:            DEFINITION
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.1,28      LOCAL TEST NAME        28;0 POINTER Multiple #798.128
+
+              LAST EDITED:      APR 02, 2003 
+              DESCRIPTION:
+                                This multiple maps local lab tests to the predefined lab test groups that are used in the reports.  
+
+              GROUP:            PARAMETERS
+              IDENTIFIED BY:    
+                    "WRITE":    S %I=Y,Y=+$P($G(^(0)),U,2),Y=$S(Y>0:$P($G(^ROR(799.1,Y,0)),U),1:"") D EN^DDIOL("   "_Y,,"?40") S Y=%I K %I
+
+              PRIMARY KEY:      G (#6)
+              Uniqueness Index: G (#364)
+                   File, Field: 1) LAB GROUP (798.128,.02)  2) LOCAL TEST NAME (798.128,.01)
+
+              INDEXED BY:       LAB GROUP & LOCAL TEST NAME (G)
+
+798.128,.01     LOCAL TEST NAME        0;1 POINTER TO LABORATORY TEST FILE (#60) (Multiply asked) (Key field)
+
+                LAST EDITED:      JUL 06, 2003 
+                CROSS-REFERENCE:  798.128^B 
+                                  1)= S ^ROR(798.1,DA(1),28,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ROR(798.1,DA(1),28,"B",$E(X,1,30),DA)
+
+                RECORD INDEXES:   G (#364)
+
+798.128,.02     LAB GROUP              0;2 POINTER TO ROR LIST ITEM FILE (#799.1) (Required) (Key field)
+
+                INPUT TRANSFORM:  S DIC("S")="S D=$G(^(0)) I $P(D,U,2)=3,$P(D,U,3)="_DA(1) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 06, 2003 
+                SCREEN:           S DIC("S")="I $P(^(0),U,2)=3"
+                EXPLANATION:      Only Lab Groups can be selected.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                RECORD INDEXES:   G (#364)
+
+
+
+798.1,29      LOCAL DRUG NAME        29;0 POINTER Multiple #798.129
+
+              DESCRIPTION:
+                                This multiple maps local medication names to the predefined medication groups that are used in the reports.  
+
+              GROUP:            PARAMETERS
+
+              PRIMARY KEY:      G (#13)
+              Uniqueness Index: G (#365)
+                   File, Field: 1) DRUG GROUP (798.129,.02)  2) LOCAL DRUG NAME (798.129,.01)
+
+              INDEXED BY:       DRUG GROUP & LOCAL DRUG NAME (G)
+
+798.129,.01     LOCAL DRUG NAME        0;1 POINTER TO DRUG FILE (#50) (Multiply asked) (Key field)
+
+                LAST EDITED:      JUL 06, 2003 
+                CROSS-REFERENCE:  798.129^B 
+                                  1)= S ^ROR(798.1,DA(1),29,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ROR(798.1,DA(1),29,"B",$E(X,1,30),DA)
+
+                RECORD INDEXES:   G (#365)
+
+798.129,.02     DRUG GROUP             0;2 POINTER TO ROR LIST ITEM FILE (#799.1) (Required) (Key field)
+
+                INPUT TRANSFORM:  S DIC("S")="S D=$G(^(0)) I $P(D,U,2)=4,$P(D,U,3)="_DA(1) D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      JUL 06, 2003 
+                SCREEN:           S DIC("S")="I $P(^(0),U,2)=4"
+                EXPLANATION:      Only Drug Groups can be selected.
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                RECORD INDEXES:   G (#365)
+
+
+
+798.1,30      REPORT STATS           30;0 POINTER Multiple #798.12
+
+              DESCRIPTION:
+                                Records of this multiple store the statistic data related to running reports. Usually, the stats are reset after successful data transmission to the AAC.  
+
+              TECHNICAL DESCR:  Please do not edit the records of this multiple directly. Use the entry points of the RORTSK12 routine instead.  
+                                 
+                                The input transform associated with the .01 field of this multiple guarantees that each report has only one corresponding record in the multiple.  
+
+              WRITE AUTHORITY:  @
+              GROUP:            STATE
+
+798.12,.01      REPORT STATS           0;1 POINTER TO ROR REPORT PARAMETERS FILE (#799.34) (Multiply asked)
+
+                INPUT TRANSFORM:  S:$D(X) DINUM=X
+                LAST EDITED:      JUL 22, 2005 
+                HELP-PROMPT:        
+                DESCRIPTION:
+                                  A pointer stored in this field links the stats to the report definition.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                GROUP:            STATE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  798.12^B 
+                                  1)= S ^ROR(798.1,DA(1),30,"B",$E(X,1,30),DA)=""
+                                  2)= K ^ROR(798.1,DA(1),30,"B",$E(X,1,30),DA)
+                                  3)= Do not delete!
+
+
+798.12,.02      NUMBER OF RUNS         0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 15, 2005 
+                HELP-PROMPT:      Type a Number between 0 and 999999999, 0 Decimal Digits. 
+                DESCRIPTION:
+                                  This field serves as a counter of report runs since the last successful data transmission.  
+
+                TECHNICAL DESCR:
+                                  Please do not edit the field directly. Use the entry points of the RORTSK12 routine instead.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                GROUP:            STATE
+
+
+
+798.1,31      AUTO-CONFIRM           6;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      MAR 01, 2012 
+              HELP-PROMPT:      Enter 'Yes' if the status of patients added to this registry should be automatically confirmed. 
+              DESCRIPTION:      This field is used during the registry update to set the status of new patients.  If the registry is set to auto-confirm, the patient status is set to 'Confirmed'.  If auto-confirm is no, the patient status is set to 
+                                'Pending'.  
+
+              CROSS-REFERENCE:  798.1^C 
+                                1)= S ^ROR(798.1,"C",$E(X,1,30),DA)=""
+                                2)= K ^ROR(798.1,"C",$E(X,1,30),DA)
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DRUG (#50)                        LOCAL DRUG NAME:LOCAL DRUG NAME (#.01)
+
+LABORATORY TEST (#60)             LOCAL TEST NAME:LOCAL TEST NAME (#.01)
+
+NEW PERSON (#200)                 NOTIFICATION:NOTIFICATION (#.01)
+
+PROTOCOL (#101)                   PROTOCOL (#13)
+
+ROR HISTORICAL DATA EXTRACTION 
+                   (#799.6)       AUTOMATIC BACKPULL (#21.01)
+
+ROR LIST ITEM (#799.1)            LOCAL TEST NAME:LAB GROUP (#.02)
+                                  LOCAL DRUG NAME:DRUG GROUP (#.02)
+
+ROR REPORT PARAMETERS (#799.34)   REPORT STATS:REPORT STATS (#.01)
+
+
+Subfile #798.128
+
+  Record Indexes:
+
+  G (#364)    RECORD    REGULAR    IR    LOOKUP & SORTING
+       Unique for:  Key G (#6), File #798.128
+      Short Descr:  Lab Group and Local Test Name
+        Set Logic:  S ^ROR(798.1,DA(1),28,"G",X(1),X(2),DA)=""
+       Kill Logic:  K ^ROR(798.1,DA(1),28,"G",X(1),X(2),DA)
+       Whole Kill:  K ^ROR(798.1,DA(1),28,"G")
+             X(1):  LAB GROUP  (798.128,.02)  (Subscr 1)  (forwards)
+                      Transform (Storage):   
+                      Transform (Display):   
+             X(2):  LOCAL TEST NAME  (798.128,.01)  (Subscr 2)  (forwards)
+                      Transform (Display):   
+
+Subfile #798.129
+
+  Record Indexes:
+
+  G (#365)    RECORD    REGULAR    IR    LOOKUP & SORTING
+       Unique for:  Key G (#13), File #798.129
+      Short Descr:  Drug Group and Local Drug Name
+        Set Logic:  S ^ROR(798.1,DA(1),29,"G",X(1),X(2),DA)=""
+       Kill Logic:  K ^ROR(798.1,DA(1),29,"G",X(1),X(2),DA)
+       Whole Kill:  K ^ROR(798.1,DA(1),29,"G")
+             X(1):  DRUG GROUP  (798.129,.02)  (Subscr 1)  (forwards)
+                      Transform (Display):   
+             X(2):  LOCAL DRUG NAME  (798.129,.01)  (Subscr 2)  (forwards)
+                      Transform (Display):   
+
+
+INPUT TEMPLATE(S):
+RORMNT EDIT REG PARAMS        APR 24, 2003@14:22  USER #0    
+     This template is used by the [RORMNT EDIT REG PARAMS] menu option to
+     review/edit the registry parameters.
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,417 @@
+STANDARD DATA DICTIONARY #554 -- CMOP OPERATIONS FILE                                                                                                                                                                             MAY 20,2014@15:31:05  PAGE 1
+STORED IN ^PSX(554,  (1 ENTRY)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                               (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file will contain information regarding the operations of the CMOP software. The information will include data on the background jobs which release prescriptions,file data,print transmission labels, compile cost information and purge files. Data in
+this file is maintained by the Consolidated Mail Outpatient Pharmacy software and must not be edited using VA FileMan.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: TASK NUMBER(AB), MESSAGE NUMBER(AC), TASK NUMBER(AD), FACILITY(AF), TASK NUMBER(AR), STATUS(ARUN), TASK NUMBER(AS), NAME(B)
+
+554,.01       NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(X?.N)!($L(X)<3)!'(X'?1P.E) X
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              DESCRIPTION:      Free text name of the site.  
+                                   
+                                   
+
+              CROSS-REFERENCE:  554^B 
+                                1)= S ^PSX(554,"B",$E(X,1,30),DA)=""
+                                2)= K ^PSX(554,"B",$E(X,1,30),DA)
+
+
+554,1         BACKGROUND FILE PROCESSES 1;0 SET Multiple #554.01 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                 This sub-file contains data about the schedules for the different background file processes.  
+
+
+554.01,.01      BACKGROUND FILE PROCESSES 0;1 SET
+
+                                  '1' FOR BACKGROUND FILER; 
+                                  '2' FOR RELEASE FILE PURGE; 
+                                  '3' FOR DATABASE PURGE; 
+                                  '4' FOR RELEASE DATA PURGE; 
+                LAST EDITED:      AUG 29, 1995 
+                DESCRIPTION:
+                                   This is the type of process that is scheduled.  
+
+                CROSS-REFERENCE:  554.01^B 
+                                  1)= S ^PSX(554,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSX(554,DA(1),1,"B",$E(X,1,30),DA)
+
+
+554.01,1        START TIME             0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 19, 1994 
+                DESCRIPTION:
+                                   This is the date/time the job was first scheduled to run.  
+
+
+554.01,2        TASK NUMBER            0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 29, 1995 
+                HELP-PROMPT:      Type a Number between 0 and 999999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                   This is the task number of the job.  If the task number exists the job has been scheduled to run.  If the task number is not present, the job has been unscheduled.  
+
+                CROSS-REFERENCE:  554^AB^MUMPS 
+                                  1)= S:X>0&($P(^PSX(554,1,1,DA,0),U,1)=1) ^PSX(554,"AB",DA)=""
+                                  2)= K:($P(^PSX(554,1,1,DA,0),U,1)=1) ^PSX(554,"AB",DA)
+                                   This cross reference exists if the background filer process is scheduled.  
+
+
+                CROSS-REFERENCE:  554^AR^MUMPS 
+                                  1)= S:X>0&($P(^PSX(554,1,1,DA,0),U,1)=2) ^PSX(554,"AR",DA)=""
+                                  2)= K:($P(^PSX(554,1,1,DA,0),U,1)=2) ^PSX(554,"AR",DA)
+                                   This cross reference exists if the background process to purge the CMOP RELEASE file is scheduled.  
+
+
+                CROSS-REFERENCE:  554^AD^MUMPS 
+                                  1)= S:X>0&($P(^PSX(554,1,1,DA,0),U,1)=3) ^PSX(554,"AD",DA)=""
+                                  2)= K:($P(^PSX(554,1,1,DA,0),U,1)=3) ^PSX(554,"AD",DA)
+                                   This cross reference exists if the background purge of the CMOP DATABASE file is scheduled.  
+                                   
+
+
+                CROSS-REFERENCE:  554^AS^MUMPS 
+                                  1)= S:X>0&($P(^PSX(554,1,1,DA,0),"^",1)=4) ^PSX(554,"AS",DA)=""
+                                  2)= K:($P(^PSX(554,1,1,DA,0),"^",1)=4) ^PSX(554,"AS",DA)
+                                  This cross reference exists if the background job to purge the Release Data multiple in the CMOP Operations file (#554) is scheduled.  
+
+
+
+554.01,3        STATUS                 0;4 SET
+
+                                  'R' FOR RUNNING; 
+                                  'S' FOR STOPPED; 
+                LAST EDITED:      DEC 19, 1994 
+                DESCRIPTION:
+                                   This is the current status of the job.  
+
+
+554.01,4        DUZ                    0;5 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      DEC 19, 1994 
+                DESCRIPTION:
+                                   The person who scheduled the task to run.  
+
+
+554.01,5        UNSCHEDULED DATE/TIME  0;6 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      DEC 19, 1994 
+                DESCRIPTION:
+                                   This is the date/time the task was unscheduled.  
+
+
+554.01,6        USER                   0;7 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      DEC 19, 1994 
+                DESCRIPTION:
+                                   This is the user who unscheduled the process.  
+
+
+554.01,7        DAYS TO KEEP           0;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 29, 1995 
+                HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of days of data to retain during a purge of the Release Data multiple.  
+
+
+554.01,8        COMPLETED              0;9 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAR 21, 1996 
+                DESCRIPTION:
+                                  This is the date/time the process last ran to completion.  
+
+
+
+
+554,2         COST                   2;0 DATE Multiple #554.02 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                The sub-file contains a log of queued cost jobs for the last 30 days.  
+
+
+554.02,.01      TASK START TIME        0;1 DATE
+
+                Task Start Time                                                                                                
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 10, 1994 
+                HELP-PROMPT:      Enter the date and time the job was sent to be queued. 
+                DESCRIPTION:
+                                  This field contains the date and time the task was sent to be queued.  
+
+                CROSS-REFERENCE:  554.02^B 
+                                  1)= S ^PSX(554,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSX(554,DA(1),2,"B",$E(X,1,30),DA)
+
+
+554.02,1        STATUS                 0;2 SET
+
+                Status                                                                                                         
+                                  '0' FOR QUEUED; 
+                                  '1' FOR RUNNING; 
+                                  '2' FOR COMPLETED; 
+                LAST EDITED:      NOV 15, 1994 
+                HELP-PROMPT:      Enter the status of the task. 
+                DESCRIPTION:
+                                  This field contains the status of the task. The task can be queued, running, or completed.  
+
+                CROSS-REFERENCE:  554^ARUN^MUMPS 
+                                  1)= S:'X!(X=1) ^PSX(554,"ARUN",X,DA)=""
+                                  2)= K ^PSX(554,"ARUN",X,DA)
+                                  3)= DO NOT DELETE!
+                                  This cross-reference is set if the task is queued or running. It is used to find the active tasks. 
+
+
+
+554.02,2        BEGINNING DATE         0;3 DATE
+
+                Beginning Date                                                                                                 
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 10, 1994 
+                HELP-PROMPT:      Enter the first date the data is to be compiled or purged. 
+                DESCRIPTION:
+                                  This field contains the first date the data is to be compiled or purged.  
+
+
+554.02,3        ENDING DATE            0;4 DATE
+
+                Ending Date                                                                                                    
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 10, 1994 
+                HELP-PROMPT:      Enter the last date the data is to be compiled or purged. 
+                DESCRIPTION:
+                                  This field contains the last date the data is to be compiled or purged.  
+
+
+554.02,4        USER                   0;5 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      MAR 01, 1995 
+                DESCRIPTION:      This field identifies the person who sent the job to be tasked.  
+                                   
+
+                TECHNICAL DESCR:
+                                  Pointer to the New Person file #200.  
+
+
+554.02,5        PURGE/COMPILE          0;6 SET
+
+                Purge/Compile                                                                                                  
+                                  'C' FOR Compile Data; 
+                                  'P' FOR Purge Data; 
+                LAST EDITED:      NOV 10, 1994 
+                HELP-PROMPT:      Enter the type of activity the task is performing. 
+                DESCRIPTION:
+                                  This field contains the type of activity the task is performing.  
+
+
+554.02,6        TASK END TIME          0;7 DATE
+
+                Task End Time                                                                                                  
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 15, 1994 
+                HELP-PROMPT:      Enter the date and time the task is completed. 
+                DESCRIPTION:
+                                  This field contains the date and time the task was completed.  
+
+
+554.02,7        TASK NUMBER            0;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 15, 1994 
+                HELP-PROMPT:      Enter the number assigned to the task by TaskMan. 
+                DESCRIPTION:
+                                  This field contains the number assigned to the task by TaskMan.  
+
+
+
+
+554,3         RELEASE DATA           3;0 DATE Multiple #554.03 (Add New Entry without Asking)
+
+
+554.03,.01      RELEASE DATA           0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 19, 1995 
+                DESCRIPTION:
+                                  This is the date/time the Vendor Release Data mail message was created.  
+
+                CROSS-REFERENCE:  554.03^B 
+                                  1)= S ^PSX(554,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PSX(554,DA(1),3,"B",$E(X,1,30),DA)
+
+
+554.03,1        MESSAGE NUMBER         0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUL 19, 1995 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This is the mail message number of the message containing the Vendor Release Data message that returned data to the medical center.  
+
+                CROSS-REFERENCE:  554^AC^MUMPS 
+                                  1)= S:X'="" ^PSX(554,"AC",X,DA)=""
+                                  2)= K ^PSX(554,"AC",X,DA)
+                                  This cross reference lists the outstanding Vendor Release Data messages.  
+
+
+
+554.03,2        FACILITY               0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>9!($L(X)<1) X
+                LAST EDITED:      JUL 19, 1995 
+                HELP-PROMPT:      Answer must be 1-9 characters in length. 
+                DESCRIPTION:
+                                  This is the facility number of the medical center.  
+
+                CROSS-REFERENCE:  554^AF^MUMPS 
+                                  1)= S:X'="" ^PSX(554,"AF",X,DA)=""
+                                  2)= K ^PSX(554,"AF",X,DA)
+                                  This cross reference lists the facilities that have outstanding Vendor Release Data mail messages.  
+
+
+
+554.03,3        ACKNOWLEDGEMENT MESSAGE NUMBER 0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JUL 19, 1995 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This is the message number of the mail message containing the release data acknowledgement for the Vendor Release Data message.  
+
+
+554.03,4        ACK MESSAGE DATE/TIME  0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 19, 1995 
+                DESCRIPTION:
+                                  This is the date/time the Release Data Acknowledgement message was received.  This date/time is the time that the message began filing.  
+
+
+554.03,5        TOTAL RX'S             0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 19, 1995 
+                HELP-PROMPT:      Type a Number between 1 and 99999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the number of Rx's in the Vendor Release Data mail message.  
+
+
+554.03,6        COMPLETED DATE/TIME    0;7 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 03, 1995 
+                DESCRIPTION:
+                                  This is the date/time the Release Data Acknowledgement completed filing.  
+
+
+
+
+554,4         LAST TRANSMISSION DOWNLOADED 0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+              LAST EDITED:      MAR 21, 1996 
+              HELP-PROMPT:      Answer must be 3-40 characters in length. 
+              DESCRIPTION:
+                                This is the last transmission downloaded to the vendor system.  
+
+
+554,5         LAST QUERY             0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      MAR 21, 1996 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                This is the last query executed.  
+
+
+554,6         LAST TRANSMISSION LABEL PRINT 0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<3) X
+              LAST EDITED:      MAR 21, 1996 
+              HELP-PROMPT:      Answer must be 3-40 characters in length. 
+              DESCRIPTION:
+                                This is the last transmission that DHCP labels were printed for the entire transmission.  
+
+
+554,8         CMOP DRUG Cost Missing reports 0;5 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      NOV 20, 2000 
+              HELP-PROMPT:      Do you want the "CMOP DRUG Cost Missing" error report generated? (Y/N) 
+              DESCRIPTION:
+                                This parameter controls the generation of the "CMOP DRUG Cost Missing" report.  
+
+
+554,20        CMOP DOD IN DIRECTORY  DOD;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      SEP 27, 2002 
+              HELP-PROMPT:      Answer must be 2-30 characters in length 
+              DESCRIPTION:
+                                The host directory where VA CMOP interagency messages are deposited for CMOP processing.  
+
+
+554,21        CMOP DOD OUT DIRECTORY DOD;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      SEP 27, 2002 
+              HELP-PROMPT:      Answer must be 2-30 characters in length 
+              DESCRIPTION:
+                                The host directory where VA CMOP places interagency messages to be picked up and processed by other agencies.  
+
+
+554,22        CMOP DOD ARCHIVE DIRECTORY DOD;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      SEP 27, 2002 
+              HELP-PROMPT:      Answer must be 2-30 characters in length 
+              DESCRIPTION:
+                                The host directory where copies of all interagency messages, in and out, are deposited.  
+
+
+554,23        CMOP DOD HOLD DIRECTORY DOD;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      SEP 27, 2002 
+              HELP-PROMPT:      Answer must be 1-30 characters in length 
+              DESCRIPTION:
+                                The host directory where copies are kept of interagency messages that experienced problems being processed by the VA CMOP.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 BACKGROUND FILE PROCESSES:DUZ (#4)
+                                  USER (#6)
+                                  COST:USER (#4)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

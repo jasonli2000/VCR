@@ -1,0 +1,251 @@
+STANDARD DATA DICTIONARY #57.1 -- PHARMACY QUICK ORDER FILE                                                                                                                                                                       MAY 20,2014@15:35:22  PAGE 1
+STORED IN ^PS(57.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                              
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  This file is used to store order information needed to create IV Fluid and Inpatient Medication quick orders.  
+
+
+              DD ACCESS: @
+
+POINTED TO BY: FILE LINK field (#6) of the PROTOCOL File (#101) 
+               
+
+CROSS
+REFERENCED BY: NAME(B), TYPE(C)
+
+57.1,.01      NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      DEC 31, 1991 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                 The name of the quick order.  
+
+              TECHNICAL DESCR:    The name of the quick order.  When a protocol is created for the quick order, the quick order name is used as the default for the display name of the quick order. The name of the protocol created will be in the form 
+                                "PSJQ"_internal entry no. of the quick order in the quick order file_1st 10 characters of the quick order name.  
+
+              LAYGO TEST:       1,0)= W:$D(^PS(57.1,"B",X)) *7,!!,"DUPLICATE QUICK ORDER NAMES ARE NOT ALLOWED!" I '$D(^(X))
+
+              GROUP:            PSJ
+              CROSS-REFERENCE:  57.1^B 
+                                1)= S ^PS(57.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(57.1,"B",$E(X,1,30),DA)
+
+
+57.1,1        PROTOCOL               0;2 POINTER TO PROTOCOL FILE (#101)
+
+              LAST EDITED:      JAN 15, 1992 
+              DESCRIPTION:
+                                  This is the protocol that has been created to allow selection of this quick order. A quick order may not be modified if a protocol has been assigned to it.  
+
+
+57.1,2        TYPE                   0;3 SET (Required)
+
+                                '1' FOR IV FLUID; 
+                                '2' FOR INPATIENT MEDICATION; 
+              LAST EDITED:      JAN 15, 1992 
+              HELP-PROMPT:      Enter the type of Inpatient order (IV Fluid or Inpatient Med) this quick order is to create. 
+              DESCRIPTION:
+                                This is the type of order (IV Fluid or Inpatient Medication) that will be created when the quick order is used.  
+
+              TECHNICAL DESCR:
+                                  This will determine the type of the order created when the quick order is used. The fields to be filled in by the quick order will be determined by type.  
+
+              GROUP:            PSJ
+              CROSS-REFERENCE:  57.1^C 
+                                1)= S ^PS(57.1,"C",$E(X,1,30),DA)=""
+                                2)= K ^PS(57.1,"C",$E(X,1,30),DA)
+
+
+57.1,3        PRIMARY DRUG           1;1 POINTER TO PRIMARY DRUG FILE (#50.3)
+
+              INPUT TRANSFORM:  S DIC("S")="S PSJQSET=3 I $$DRGSC^PSIVUTL(Y,PSJQSET)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 21, 1992 
+              HELP-PROMPT:      Enter the primary drug to be used with this quick order. 
+              DESCRIPTION:
+                                  This is the name of a drug used by this site. Primary drug is used to allow order entry to be easier for no-pharmacy personnel and for display.  
+
+              TECHNICAL DESCR:
+                                  This is used in order entry by non-pharmacy personnel, for display purposes, and by other packages, when it is inappropriate for the dosage of the order to be part of the drug name.  
+
+              SCREEN:           S DIC("S")="S PSJQSET=3 I $$DRGSC^PSIVUTL(Y,PSJQSET)"
+              EXPLANATION:      Only allow selection of active primary drugs specified for use by the UD or IV packages in the APPLICATION field of the PRIMARY DRUG file.
+              GROUP:            PSJ
+
+57.1,4        MED ROUTE              1;2 POINTER TO MEDICATION ROUTES FILE (#51.2)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^PS(51.2,+Y,0),U,4)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 08, 1992 
+              HELP-PROMPT:      Enter how this medication will be administered to the patient. 
+              DESCRIPTION:
+                                  This is the route of administration for this medication.  
+
+              TECHNICAL DESCR:
+                                  If a corresponding abbreviation is found for this route in the MEDICATION ROUTES file, this package will print that abbreviation on it's reports.  
+
+              SCREEN:           S DIC("S")="I $P(^PS(51.2,+Y,0),U,4)"
+              EXPLANATION:      Only allow Inpatient Pharmacy med routes to be entered.
+              GROUP:            PSJ
+
+57.1,5        SCHEDULE               1;3 FREE TEXT
+
+              INPUT TRANSFORM:  D EN^PSGS0
+              LAST EDITED:      JAN 08, 1992 
+              HELP-PROMPT:      Answer must be 1-70 characters in length and may not contain any spaces. 
+              DESCRIPTION:        This is the frequency (ONLY) with which the doses are to be administered.  Several forms of entry are acceptable, such as Q6H, 09-12-15, STAT, QOD, and MO-WE-FR@AD, where MO-WE-FR are days of the weeks, and AD is the
+                                admin.  times. The schedule will show on the MAR, labels, etc. No more than ONE space (Q3H 4 or Q8H PRN) in the schedule is acceptable. If the letters PRN are found as part of the schedule, no admin. times will print on
+                                the MAR or labels, and the PICK LIST will always show a count of zero (0).  
+                                 
+                                  Avoid using notation such as W/F (with food) or WM (with meals) in the schedule as it may cause erroneous calculations. That information should be entered in the SPECIAL INSTRUCTIONS field. When using the MO-WE-FR@AD 
+                                schedule, please remember that this type of schedule will no work properly without the "@" character and at least one admin. time, and that at least the first two letters of each weekday entered is needed.  
+
+              EXECUTABLE HELP:  D ENSH3^PSGSH
+              GROUP:            PSJ
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+57.1,6        PROVIDER COMMENTS      2;0   WORD-PROCESSING #57.16
+
+              DESCRIPTION:        
+                                  This is used to allow provider comments to be "pre-entered" for the quick order. Text entered here will be included in the order created and may be edited before the order is accepted.  
+
+              GROUP:            PSJ
+
+57.1,7        ADDITIVE               3;0 POINTER Multiple #57.17 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                 This is the additive(s) to be included in the IV order. This is a pointer to the IV ADDITIVES file (52.6).  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,13) "_$$IVDRGSC^PSIVUTL
+              EXPLANATION:      Choose an additive or additive's synonym.
+              GROUP:            PSJ
+
+57.17,.01       ADDITIVE               0;1 POINTER TO IV ADDITIVES FILE (#52.6) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,13) "_$$IVDRGSC^PSIVUTL D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      DEC 13, 1994 
+                DESCRIPTION:
+                                    This is the additive which was selected as part of the IV order. This entry is a pointer to the IV ADDITIVES file (52.6).  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,13) "_$$IVDRGSC^PSIVUTL
+                EXPLANATION:      Only allow additives marked for use in IV Fluid order entry to be selected.
+                GROUP:            PSJ
+                CROSS-REFERENCE:  57.17^B 
+                                  1)= S ^PS(57.1,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(57.1,DA(1),3,"B",$E(X,1,30),DA)
+
+
+57.17,1         STRENGTH               0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:X'?.6N.".".8N!(X<0) X I $D(X) S X=X_" "_$$ENU^PSIVUTL($P(^PS(57.1,DA(1),3,DA,0),U)) W " ",$P(X," ",2)
+                LAST EDITED:      JAN 08, 1992 
+                DESCRIPTION:        This is the amount of an additive that is used in the manufacturing of the IV order. NOTE! You will be expected to use the strength units that have been previously defined within the IV ADDITIVES file (52.6) for each 
+                                  additive. For example, if the additive file expects AMPICILLIN to be dispensed in grams, it would be incorrect for you to enter "500" for a half-gram dose. Enter 0.5 instead.  
+
+                EXECUTABLE HELP:  D:X="??" ENTDRG^PSIVDRG W !,"Enter the strength in ",$$ENU^PSIVUTL($P(^PS(57.1,DA(1),3,DA,0),U)) W ". Enter only a number.",!
+                GROUP:            PSJ
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+57.1,8        SOLUTION               4;0 POINTER Multiple #57.18 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                The solution to be included in this IV order.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,13) "_$$IVDRGSC^PSIVUTL
+              EXPLANATION:      Only active solutions marked for use in IV Fluid order entry may be selected.
+
+57.18,.01       SOLUTION               0;1 POINTER TO IV SOLUTIONS FILE (#52.7)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,13) "_$$IVDRGSC^PSIVUTL D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      DEC 13, 1994 
+                HELP-PROMPT:      Enter the solution to be used in preparing the IV order. 
+                DESCRIPTION:
+                                    This is the solution to be entered as part of the IV order.  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,13) "_$$IVDRGSC^PSIVUTL
+                EXPLANATION:      Only active solutions marked for use in IV Fluid order entry may be selected.
+                GROUP:            PSJ
+                CROSS-REFERENCE:  57.18^B 
+                                  1)= S ^PS(57.1,DA(1),4,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(57.1,DA(1),4,"B",$E(X,1,30),DA)
+
+
+57.18,1         VOLUME                 0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45)!(X'=+X)!(X>3000)!(X<.01) X I $D(X) S X=X_" ML" W " ML"
+                LAST EDITED:      JAN 08, 1992 
+                HELP-PROMPT:      Answer must be a number from .01-3000 
+                DESCRIPTION:
+                                    This field represents the volume of this solution in MLs. Only a number can be entered into this field. The total volume of an IV order is the sum of the volumes of each solution included in the order.  
+
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+57.1,9        DOSAGE ORDERED         1;4 FREE TEXT
+
+              INPUT TRANSFORM:  I $S(X?.E1C.E:1,$L(X)>20:1,X="":1,X["^":1,X?1.P:1,1:X=+X) K X
+              LAST EDITED:      MAY 09, 1994 
+              HELP-PROMPT:      Enter the amount of the drug the patient is to receive as a dose for this order, using 1-20 characters.  This is an amount, such as '20MG', and NOT the number of tablets. 
+              DESCRIPTION:
+                                This is the amount of the medication the patient is to receive as one dose for this order.  This should be an amount with a unit of measure, such '500MG' or '50CC'.  THIS SHOULD NOT BE THE NUMBER OF TABLETS, ETC.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+57.1,10       INFUSION RATE          1;5 FREE TEXT
+
+              INPUT TRANSFORM:  D 59^PSIVUTL
+              LAST EDITED:      OCT 07, 1993 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:        Enter the rate at which the infusion is to take place.  This value, in conjunction with the total volume of the hyperal or the admixture type, is used to determine the time covered by one bag; hence the system can 
+                                predict the bags needed during a specified time of coverage. This field is free text for IVPB's.  For LVP's you must enter a number that will represent the infusion rate.  You may also specify the # of bags per day that
+                                will be needed.  
+                                     Example: 
+                                       125 = 125 ml/hr (IV system will calculate bags needed per day) 
+                                     125@2 = 125 ml/hr with 2 labels per day 
+                                 TITRATE@1 = TITRATE with 1 label per day 
+                                 The format of this field is either a number only or 
+                                 [FREE TEXT@NUMBER OF LABELS PER DAY].  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+57.1,11       PROVIDER COMMENTS PROMPT 1;6 SET
+
+                                '1' FOR DON'T PROMPT FOR PROVIDER COMMENTS; 
+              LAST EDITED:      NOV 04, 1993 
+              HELP-PROMPT:      Enter "1" to eliminate the PROVIDER COMMENTS prompt when using this quick order. If no value is entered the prompt will be issued and the Quick Order Report will show the field as "YES". 
+              DESCRIPTION:
+                                This field will indicate whether to prompt for the provider comments during the order entry process of this quick order.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+IV ADDITIVES (#52.6)              ADDITIVE:ADDITIVE (#.01)
+
+IV SOLUTIONS (#52.7)              SOLUTION:SOLUTION (#.01)
+
+MEDICATION ROUTES (#51.2)         MED ROUTE (#4)
+
+PRIMARY DRUG (#50.3)              PRIMARY DRUG (#3)
+
+PROTOCOL (#101)                   PROTOCOL (#1)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

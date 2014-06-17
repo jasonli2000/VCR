@@ -1,0 +1,514 @@
+STANDARD DATA DICTIONARY #79.1 -- IMAGING LOCATIONS FILE                                                                                                                                                                          MAY 20,2014@15:40:36  PAGE 1
+STORED IN ^RA(79.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains, for each imagaing location entry, parameters that the module uses during various stages of exam and report processing and inquiring.  The parameter switches allow the 'customizing' of the module for each location by the package
+coordinator.  
+ 
+Within an imaging division there may be a number of physical locations where a imaging procedure can be performed.  The module is designed to handle multiple locations within a division.  However, each location can only be associated with one division.  
+ 
+These parameters are loaded into the user's partition once the module determines which division and location the user is currently associated with.  This is determined by one of two ways: 1) the device the user is using is an entry in the 'INPUT DEVICES'
+sub-file for a location or 2) if (1) is not true than the module will simply ask the user what his/her current location is.  
+ 
+Entries in this file should not be deleted.  Adding new entries is always allowed.  
+ 
+ Data Storage 
+ ------------
+The data for the 'IMAGING LOCATIONS' file is stored in the ^RA(79.1, global. At the present time this file is very static after day-one initialization is complete.  However, it still should be journaled.  It should also be translated if the operating
+system supports this function.  
+ 
+ Input Templates 
+ ---------------
+The following is a list of input templates used by the package and the entry in the OPTIONS file (#19) that uses the template: 
+ 
+                     Compiled 
+ Name                Routine      Description; Option(s) 
+ ----                -------     -----------------------
+ RA LOCATION PARAMETERS          Used to enter/edit location parameters 
+                                 that are controlled by the package 
+                                 coordinator; 
+                                 RA SYSLOC 
+ 
+ RA SITE MANAGER                 Used to enter/edit location parameters 
+                                 that are controlled by IRM; 
+                                 RA DEVICE 
+ 
+If any modifications to these input templates are needed for local purposes, then great care should be taken not to degrade any branching logic in the template.  
+ 
+ Print Templates 
+ ---------------
+ The following is a list of print templates used by the package: 
+ 
+ Name                  Description; Option(s) 
+ ----                  ----------------------
+ RA IMAGE LOC LIST     Print the location parameters for the entries in 
+                       this file; 
+                       RA SYSLOCLIST 
+ 
+ RA EXAM ROOM LIST     Prints a list of cameras/equip/rms 
+                       and the locations 
+                       associated with the camera/equip/rm; 
+                       RA SYSEXLIST 
+ 
+ Sort Templates 
+ --------------
+ The following is a list of sort templates used by the package: 
+ 
+ Name                  Related Print Template 
+ ----                  ----------------------
+ RA IMAGE LOC LIST     RA IMAGE LOC LIST 
+ 
+ RA EXAM ROOM LIST     RA EXAM ROOM LIST 
+ 
+ The modification of any sort templates is not recommended.  
+
+
+IDENTIFIED BY: TYPE OF IMAGING (#6)[R]
+
+POINTED TO BY: IMAGING LOCATION field (#4) of the REGISTERED EXAMS sub-field (#70.02) of the RAD/NUC MED PATIENT File (#70) 
+               IMAGING LOCATION field (#8) of the RAD/NUC MED COMMON PROCEDURE File (#71.3) 
+               INTERPRETING IMAGING LOCATION field (#86) of the RAD/NUC MED REPORTS File (#74) 
+               IMAGING LOCATION field (#20) of the RAD/NUC MED ORDERS File (#75.1) 
+               IMAGING LOCATION field (#.01) of the IMAGING LOCATIONS sub-field (#79.01) of the RAD/NUC MED DIVISION File (#79) 
+               RAD/NUC MED LOCATION ACCESS field (#.01) of the RAD/NUC MED LOCATION ACCESS sub-field (#200.074) of the NEW PERSON File (#200) 
+               IMAGING LOCATION field (#11) of the RADIOLOGY EXTRACT File (#727.814) 
+               IMAGING LOCATION field (#.01) of the OUTSIDE IMAGING LOCATION File (#2006.5759) 
+               
+
+CROSS
+REFERENCED BY: LOCATION(B), TYPE OF IMAGING(BIMG)
+
+79.1,.01      LOCATION               0;1 POINTER TO HOSPITAL LOCATION FILE (#44) (Required)
+
+              IMAGING LOCATION                                                                                                 
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)=""C"",'$D(^(""I"")),($D(^RAMIS(71.5,""B"",+$P(^(0),U,7))))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      AUG 05, 2003 
+              HELP-PROMPT:      Select the appropriate location. 
+              DESCRIPTION:      This field points to the Hospital Location File, and contains the name of this location.  The Hospital Location pointed to should be a COUNT clinic, with a type of 'CLINIC', and should be a clinic that prohibits making 
+                                appointments or creating appointment patterns.  The Stop Code of the clinic in file #44 should be a valid imaging stop code (i.e. an entry in file #71.5) and should match the DSS ID field #22 of the Imaging Location in
+                                file #79.1.  The Institution of this clinic in file #44 should match the Rad/Nuc Med Division to which this Imaging Location is assigned.  
+                                 
+                                Coordination with MAS personnel is necessary to add locations to the Hospital Location file.  
+
+              TECHNICAL DESCR:
+                                Cannot edit this field through FileMan, part of patch RA*5*42.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,3)=""C"",'$D(^(""I"")),($D(^RAMIS(71.5,""B"",+$P(^(0),U,7))))"
+              EXPLANATION:      Entry must be an active "Clinic" type with a valid imaging Stop Code in the Hospital Location file.
+              DELETE TEST:      1,0)= I 1 W !?5,$C(7),"Imaging Locations CANNOT be deleted!"
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+                                UNEDITABLE
+              CROSS-REFERENCE:  79.1^B 
+                                1)= S ^RA(79.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^RA(79.1,"B",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+                                     Regular 'B' cross reference assigned by FileMan.  
+
+
+
+79.1,2        HOW MANY FLASH CARDS PER VISIT 0;2 NUMBER
+
+              HOW MANY FLASH CARDS TO PRINT PER VISIT?                                                                         
+              INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      Enter a number, between 0 and 10, for the number of flash cards to print per patient visit. 
+              DESCRIPTION:      This imaging 'locations' parameter is used to set up the number of flash cards to print per patient visit.  It must contain a whole number between 0 and 10.  If the Division parameter 'Print Flash Card for each exam' is
+                                set to 'Yes', this location parameter is ignored.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,3        FLASH CARD PRINTER NAME 0;3 POINTER TO DEVICE FILE (#3.5)
+
+              NAME OF THE DEVICE TO PRINT FLASH CARDS ON                                                                       
+              LAST EDITED:      FEB 07, 1996 
+              HELP-PROMPT:      Select the device where the flash cards and exam labels are to be printed. 
+              DESCRIPTION:      This 'locations' parameter can contain the device name (1-20 characters) that flash cards and exam labels are to be printed on.  If this field is filled in, the system automatically queues the process and the user is not 
+                                asked the device question.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,4        HOW MANY JACKET LBLS PER VISIT 0;4 NUMBER
+
+              HOW MANY JACKET LABELS TO PRINT PER VISIT?                                                                       
+              INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      Enter a number, between 0 and 10, for the number of jacket labels to print per patient visit. 
+              DESCRIPTION:
+                                This 'locations' parameter is used to set up the number of jacket labels to print per patient visit.  It must contain a whole number between 0 and 10.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,5        JACKET LABEL PRINTER NAME 0;5 POINTER TO DEVICE FILE (#3.5)
+
+              NAME OF THE DEVICE TO PRINT JACKET LABELS ON                                                                     
+              LAST EDITED:      FEB 07, 1996 
+              HELP-PROMPT:      Select the device where the jacket labels are to be printed. 
+              DESCRIPTION:      This 'locations' parameter can contain the device name (1-20 characters) that the jacket labels are to be printed on.  If this field is filled in, the system automatically queues the process and the user is not asked the 
+                                device question.  
+
+              SOURCE OF DATA:   SITE MANAGER
+
+79.1,6        TYPE OF IMAGING        0;6 POINTER TO IMAGING TYPE FILE (#79.2) (Required)
+
+              THE TYPE OF IMAGING USED FOR THE EXAM                                                                            
+              INPUT TRANSFORM:  D:'$D(^RA(79.1,"BIMG",+Y)) EN1^RAUTL14 Q
+              LAST EDITED:      MAR 28, 1995 
+              HELP-PROMPT:      Enter an imaging type for this location. 
+              DESCRIPTION:      This 'locations' parameter can contain the name of the type of imaging from the 'Imaging Type' file.  If this field is filled in, the system automatically fills in the proper imaging type on the registration record.  
+                                 
+                                Assigning an new imaging type (i.e. one not previously selected for any other location) implies that procedures of the new imaging type are performed under a separate service or section at your site, and separate workload
+                                report is desired. For instance, at some sites Ultrasound may be done separately from Radiology, and it would be appropriate to assign the 'Ultrasound' imaging type to one or more locations.  Once the 'Ultrasound' imaging
+                                type is "activated" in this way, and procedures designated as 'Ultrasound' imaging type have been registered, the system will report Ultrasound workload separately from Radiology workload.  
+                                 
+                                NOTE:  The 'Cardiology Studies' imaging type should NOT be assigned to a location unless nuclear cardiology studies are done under a service other than Nuclear Medicine.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  79.1^BIMG 
+                                1)= S ^RA(79.1,"BIMG",$E(X,1,30),DA)=""
+                                2)= K ^RA(79.1,"BIMG",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+                                Used to determine if a given Imaging Type is assigned to one or more locations.  
+
+
+
+79.1,7        DEFAULT FLASH CARD FORMAT 0;7 POINTER TO LBL/HDR/FTR FORMATS FILE (#78.2)
+
+              DEFAULT FLASH CARD FORMAT TO PRINT                                                                               
+              LAST EDITED:      OCT 01, 1984 
+              HELP-PROMPT:      Enter the default flash card format for this location. 
+              DESCRIPTION:
+                                This 'locations' parameter can contain the default format (from the 'Flash Cards Formats' file) to be used when queueing a flash card to print.  This format is the default 'flash card' for the current location.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,8        HOW MANY EXAM LABELS PER EXAM 0;8 NUMBER
+
+              HOW MANY EXAM LABELS TO PRINT PER CASE?                                                                          
+              INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 23, 1997 
+              HELP-PROMPT:      Enter a number, between 0 and 10, for the number of exam labels to print per registered case. 
+              DESCRIPTION:
+                                This imaging location parameter is used to set up the number of exam labels to print per registered case.  It must contain a whole number between 0 and 9.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,9        DEFAULT EXAM LABEL FORMAT 0;9 POINTER TO LBL/HDR/FTR FORMATS FILE (#78.2)
+
+              DEFAULT EXAM LABEL FORMAT TO PRINT                                                                               
+              LAST EDITED:      NOV 20, 1984 
+              HELP-PROMPT:      Enter an exam label format to be used as the default format for this location. 
+              DESCRIPTION:      This imaging 'locations' parameter can contain the default format (from the 'Flash Cards Formats File') to be used when queueing an exam label to print.  This format is the default 'exam label' for the current location.  
+                                 
+                                Exam labels always print after flash card labels are printed.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,10       REPORT PRINTER NAME    0;10 POINTER TO DEVICE FILE (#3.5)
+
+              NAME OF THE DEVICE TO PRINT REPORTS ON                                                                           
+              LAST EDITED:      FEB 07, 1996 
+              HELP-PROMPT:      Select a device where the reports are to be printed. 
+              DESCRIPTION:      This 'locations' parameter can contain the device name (1-20 characters) that reports are to be printed on.  If this field is filled in, the system automatically queues the process and the user is not asked the device 
+                                question.  
+
+              SOURCE OF DATA:   SITE MANAGER
+
+79.1,11       DEFAULT JACKET LABEL FORMAT 0;11 POINTER TO LBL/HDR/FTR FORMATS FILE (#78.2)
+
+              DEFAULT JACKET LABEL FORMAT TO PRINT                                                                             
+              LAST EDITED:      NOV 30, 1984 
+              HELP-PROMPT:      Enter a format for jacket labels to be used as the default format for this location. 
+              DESCRIPTION:
+                                This 'locations' parameter can contain the default format (from the 'Flash Cards Formats' file) to be used when queueing a jacket label to print.  This format is the default 'jacket label' for the current location.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,12       DEFAULT REPORT HEADER FORMAT 0;12 POINTER TO LBL/HDR/FTR FORMATS FILE (#78.2)
+
+              DEFAULT REPORT HEADER FORMAT TO PRINT                                                                            
+              LAST EDITED:      MAR 05, 1985 
+              HELP-PROMPT:      Enter a default report header for this location. 
+              DESCRIPTION:
+                                This 'locations' parameter can contain the default format (from the 'Flash Cards Formats' file) to be used when queing a report to print. This format is the default 'header' for the current location.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,13       DEFAULT REPORT FOOTER FORMAT 0;13 POINTER TO LBL/HDR/FTR FORMATS FILE (#78.2)
+
+              DEFAULT REPORT FOOTER FORMAT TO PRINT                                                                            
+              HELP-PROMPT:      Enter a default report footer for this location. 
+              DESCRIPTION:
+                                This 'locations' parameter can contain the default format (from the 'Flash Cards Formats' file) to be used when queing a report to print. This format is the default 'footer' for the current location.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,14       REPORT LEFT MARGIN     0;14 NUMBER
+
+              LEFT MARGIN FOR REPORT TEXT                                                                                      
+              INPUT TRANSFORM:  K:+X'=X!(X>20)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 18, 1986 
+              HELP-PROMPT:      Enter a number, between 0 and 20, to indicate which column the text fields should begin printing. 
+              DESCRIPTION:
+                                This field indicates which column the text for 'clinical history', 'report' and 'impression' should start at when printing the report.  Enter a number between 1 and 20.  
+
+
+79.1,15       REPORT RIGHT MARGIN    0;15 NUMBER
+
+              RIGHT MARGIN FOR REPORT TEXT                                                                                     
+              INPUT TRANSFORM:  K:+X'=X!(X>130)!(X<50)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 18, 1986 
+              HELP-PROMPT:      Enter a number, between 50 and 130, to indicate which column the text fields should end printing. 
+              DESCRIPTION:
+                                This field indicates which column the text for 'clinical history', 'report' and 'impression' should end at when printing the report.  Enter a number between 50 and 130.  
+
+
+79.1,16       REQUEST PRINTER NAME   0;16 POINTER TO DEVICE FILE (#3.5)
+
+              NAME OF THE DEVICE TO PRINT REQUESTS ON                                                                          
+              LAST EDITED:      FEB 07, 1996 
+              HELP-PROMPT:      Select a device where the requests are to be printed. 
+              DESCRIPTION:      This 'locations' parameter can contain the device name (1-20 characters) that requests are to be printed on. If this field is filled in, the system automatically queues the process to the specified device. If this field is 
+                                not filled in the request is not automatically queued to print to any device.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,17       ALLOW 'RELEASED/NOT VERIFIED' 0;17 SET
+
+                                'Y' FOR yes; 
+                                'N' FOR no; 
+              LAST EDITED:      FEB 03, 1997 
+              HELP-PROMPT:      Enter 'Y'es if 'Released/Not Verified' reports should be allowed. 
+              DESCRIPTION:      This Imaging Location parameter can be set to 'Yes' to allow reports to have the status 'RELEASED/NOT VERIFIED' which permits the displaying of the report to users outside of the Imaging service even if it is not yet
+                                verified.  
+
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+
+79.1,18       PRINT DX CODES IN REPORT? 0;18 SET
+
+              PRINT DIAGNOSTIC CODES IN THE BODY OF THE REPORT?                                                                
+                                'Y' FOR yes; 
+                                'N' FOR no; 
+              LAST EDITED:      MAY 24, 1994 
+              HELP-PROMPT:      Enter 'Y'es if you want the diagnostic codes to print on the report. 
+              DESCRIPTION:      If this field is set to Yes, all primary and secondary diagnostic codes associated with the exam will be printed on the exam report.  (Note: Since the primary diagnostic code may be printed in exam report headers and 
+                                footers, you may also need to change report header and footer set-ups to get the diagnostic codes printed exactly as you wish.) 
+
+
+79.1,19       INACTIVE               0;19 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX",%DT(0)="-NOW" D ^%DT K %DT(0) S X=Y K:Y<1 X
+              LAST EDITED:      APR 04, 1995 
+              HELP-PROMPT:      Enter the date the Imaging Location was inactivated.  The date entered cannot be a date in the future. 
+              DESCRIPTION:
+                                Contains the date the Imaging Location was inactivated.  Orders cannot be submitted to an inactive location and cases cannot be registered in an inactive location.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+79.1,20       URGENT REQUEST ALERTS? 0;20 SET
+
+                                'Y' FOR yes; 
+              LAST EDITED:      FEB 14, 1996 
+              HELP-PROMPT:      Answer 'Yes' if you want alerts to be sent to Imaging Personnel recipients for URGENT requests. 
+              DESCRIPTION:      This field will determine if alerts will be sent to the Imaging Personnel defined in the STAT REQUEST ALERT RECIPIENTS field.  If this field is set to 'Yes', then all the users in the STAT REQUEST ALERT RECIPIENTS field 
+                                will be sent an alert for urgent requests. To use this feature, the Division parameter 'Ask Imaging Location' must be set to 'YES', and OE/RR Version 3.0 or higher must be installed.  
+
+
+79.1,21       CREDIT METHOD          0;21 SET
+
+                                '0' FOR Regular Credit; 
+                                '1' FOR Interpretation Only; 
+                                '2' FOR No Credit; 
+                                '3' FOR Technical Component Only; 
+              LAST EDITED:      AUG 26, 2003 
+              HELP-PROMPT:      Enter the type of credit this location will receive for this examination. 
+              DESCRIPTION:      This field indicates the type of credit this location receives for examinations.  The default is REGULAR (code 0), which means that for this imaging location both the exam and the interpretation are done at your facility.
+                                If this imaging location has been set up to register exams done in another facility, with the imaging interpretation only done at this facility, enter code 1.  If exams are done in this location, but interpretation is done
+                                elsewhere, enter code 3.  If both the exam and the interpretation are done elsewhere, and exams entered for this imaging location are entered only for record-keeping purposes, enter code 2.  
+
+
+79.1,22       DSS ID                 0;22 POINTER TO CLINIC STOP FILE (#40.7)
+
+              INPUT TRANSFORM:  S DIC("S")="I $D(^RAMIS(71.5,""B"",+Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 20, 1996 
+              HELP-PROMPT:      Enter a valid stop code for this imaging location. 
+              DESCRIPTION:      DSS ID will be used to identify the general outpatient area where an imaging exam was done.  It is used only by DSS, and only when processing outpatients. It is roughly equivalent to the "Stop Codes" previously used for
+                                crediting outpatient exams.  Only entries also in the Imaging Stop Codes file #71.5 (which must be updated yearly by the Radiology/Nuclear Medicine ADPAC) are valid.  
+
+              SCREEN:           S DIC("S")="I $D(^RAMIS(71.5,""B"",+Y))"
+              EXPLANATION:      Only Stop Codes entered in the Imaging Stop Codes file may be selected.
+
+79.1,23       DOSAGE TICKET PRINTER  0;23 POINTER TO DEVICE FILE (#3.5)
+
+              PHARMACEUTICAL DOSAGE TICKET PRINTING DEVICE                                                                     
+              LAST EDITED:      JUN 19, 1996 
+              HELP-PROMPT:      Enter the device to print the radiopharmaceutical dosage ticket 
+              DESCRIPTION:      This question only applies to imaging locations with an imaging type where radiopharmaceuticals are used (i.e. nuclear medicine and cardiology studies). If the facility's exam status parameters are configured to print 
+                                Radiopharmaceutical dosage tickets when exams reach a specified status, and name of the printer device is entered here, then dosage tickets for nuclear medicine procedures registered in this location will print on this 
+                                device.  
+
+
+79.1,24       CANCELLED REQUEST PRINTER 0;24 POINTER TO DEVICE FILE (#3.5)
+
+              LAST EDITED:      SEP 05, 1996 
+              HELP-PROMPT:      Enter the device receiving the cancelled request.  
+              DESCRIPTION:
+                                This field specifies the device where the cancelled request will be output.  
+
+
+79.1,25       RAD/NUC MED DIVISION   DIV;1 POINTER TO RAD/NUC MED DIVISION FILE (#79)
+
+              RAD/NUC MED HOSPITAL DIVISION                                                                                    
+              LAST EDITED:      MAY 25, 1994 
+              HELP-PROMPT:      Enter the name of the division associated with this location. 
+              DESCRIPTION:
+                                This field contains the name of the Radiology/Nuclear Medicine 'division' that this 'location' is associated with.  A 'location' can only be associated with one 'division'.  
+
+              WRITE AUTHORITY:  ^
+              SOURCE OF DATA:   RAD/NUC MED COORDINATOR
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the IMAGING LOCATION field of the IMAGING LOCATIONS sub-field of the RAD/NUC MED DIVISION File 
+
+
+79.1,26       VOICE DICTATION AUTO-PRINT 0;26 SET
+
+                                'Y' FOR yes; 
+              LAST EDITED:      JUN 26, 1997 
+              HELP-PROMPT:      Enter  Y  if you want to have a report automatically printed when voice dictation is used to enter a report. 
+              DESCRIPTION:
+                                If this field is  Y  , and voice dictation is used to enter a report, a copy of the report will be automatically printed on the device defined in field REPORT PRINTER NAME.  
+
+
+79.1,100      CAMERAS/EQUIP/RMS      R;0 POINTER Multiple #79.12
+
+              CAMERA/EQUIP/RMS SUB-FIELD                                                                                       
+              LAST EDITED:      JUN 03, 1994 
+              DESCRIPTION:
+                                This is a multiple field containing the cameras/equip/rms associated with this 'location'.  
+
+
+79.12,.01       CAMERA/EQUIP/RM        0;1 POINTER TO CAMERA/EQUIP/RM FILE (#78.6) (Multiply asked)
+
+                CAMERAS/EQUIP/RMS ASSOCIATED WITH THIS 'LOCATION'                                                              
+                INPUT TRANSFORM:  S DINUM=X Q
+                LAST EDITED:      JUN 03, 1994 
+                HELP-PROMPT:      Enter all the cameras/equip/rms for this location. 
+                DESCRIPTION:
+                                  This field contains a list of cameras/equip/rms (from the 'Camera/Equip/Rm' file) that can be chosen when entering data for exams done in this 'location'. Cameras/equip/rms can be used by more than one 'location'.  
+
+                SOURCE OF DATA:   COORDINATOR
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+79.1,135      DEFAULT CPT MODIFIERS(LOC) DCM;0 POINTER Multiple #79.1135
+
+
+79.1135,.01     DEFAULT CPT MODIFIERS(LOC) 0;1 POINTER TO CPT MODIFIER FILE (#81.3) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $$SDL^RACPTMSC(+Y)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      APR 28, 2000 
+                TECHNICAL DESCR:  One or more default CPT Modifiers may be entered for this location; however, the entry cannot be screened against a CPT CODE, because there is no CPT CODE to compare with.  The only screening done would be to eliminate
+                                  VA local modifiers.  
+                                   
+                                  Whatever are entered here will be stuffed into the exam record that is registered under this location, IF AND ONLY IF that procedure being registered does not already have default CPT Modifiers.  
+
+                SCREEN:           S DIC("S")="I $$SDL^RACPTMSC(+Y)"
+                EXPLANATION:      VA local modifiers are automatically screened out (rejected.)
+                EXECUTABLE HELP:  D EHDL^RACPTMSC
+                CROSS-REFERENCE:  79.1135^B 
+                                  1)= S ^RA(79.1,DA(1),"DCM","B",$E(X,1,30),DA)=""
+                                  2)= K ^RA(79.1,DA(1),"DCM","B",$E(X,1,30),DA)
+
+
+
+
+79.1,150      STAT REQUEST ALERT RECIPIENTS REC;0 POINTER Multiple #79.13 (Add New Entry without Asking)
+
+              LAST EDITED:      FEB 14, 1996 
+              DESCRIPTION:      Names entered here will be used as recipients of an alert when new STAT requests for Imaging exams are submitted to this Imaging Location. To use this feature, the division parameter 'ASK IMAGING LOCATION' must be set to 
+                                'Yes', and OE/RR Version 3.0 or higher must be installed. If the URGENT alert is turned on, the recipients entered here will also receive alerts when an URGENT request is entered.  
+
+
+79.13,.01       STAT REQUEST ALERT RECIPIENTS 0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                INPUT TRANSFORM:  S DIC("S")="I $O(^VA(200,+Y,""RAC"",0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      FEB 14, 1996 
+                HELP-PROMPT:      Enter Rad/Nuc Med personnel who should be notified if a request priority is 'STAT'. 
+                DESCRIPTION:      Recipients must have a Radiology/Nuclear Medicine personnel classification.  They will receive an alert whenever a STAT request is submitted to this Imaging Location.  To use this feature, the division parameter, 'ASK
+                                  IMAGING LOCATION' must be set to 'Yes', and OE/RR Version 3.0 or higher must be installed.  
+
+                SCREEN:           S DIC("S")="I $O(^VA(200,+Y,""RAC"",0))"
+                EXPLANATION:      Recipients must have Rad/Nuc Med personnel classification.
+                CROSS-REFERENCE:  79.13^B 
+                                  1)= S ^RA(79.1,DA(1),"REC","B",$E(X,1,30),DA)=""
+                                  2)= K ^RA(79.1,DA(1),"REC","B",$E(X,1,30),DA)
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CAMERA/EQUIP/RM (#78.6)           CAMERAS/EQUIP/RMS:CAMERA/EQUIP/RM (#.01)
+
+CLINIC STOP (#40.7)               DSS ID (#22)
+
+CPT MODIFIER (#81.3)              DEFAULT CPT MODIFIERS(LOC):DEFAULT CPT MODIFIERS(LOC) (#.01)
+
+DEVICE (#3.5)                     FLASH CARD PRINTER NAME (#3)
+                                  JACKET LABEL PRINTER NAME (#5)
+                                  REPORT PRINTER NAME (#10)
+                                  REQUEST PRINTER NAME (#16)
+                                  DOSAGE TICKET PRINTER (#23)
+                                  CANCELLED REQUEST PRINTER (#24)
+
+HOSPITAL LOCATION (#44)           LOCATION (#.01)
+
+IMAGING TYPE (#79.2)              TYPE OF IMAGING (#6)
+
+LBL/HDR/FTR FORMATS (#78.2)       DEFAULT FLASH CARD FORMAT (#7)
+                                  DEFAULT EXAM LABEL FORMAT (#9)
+                                  DEFAULT JACKET LABEL FORMAT (#11)
+                                  DEFAULT REPORT HEADER FORMAT (#12)
+                                  DEFAULT REPORT FOOTER FORMAT (#13)
+
+NEW PERSON (#200)                 STAT REQUEST ALERT RECIPIENTS:STAT REQUEST ALERT RECIPIENTS (#.01)
+
+RAD/NUC MED DIVISION (#79)        RAD/NUC MED DIVISION (#25)
+
+
+
+INPUT TEMPLATE(S):
+RA LOCATION PARAMETERS        JUL 30, 2003@08:50  USER #0    
+     This input template is used for the entering of the imaging location
+     parameters.
+RA SITE MANAGER               SEP 05, 1996@10:54  USER #0    
+     This template is used by the IRM service for defining input and
+     printing devices for the radiology/nuclear medicine package.
+
+PRINT TEMPLATE(S):
+RA EXAM ROOM LIST             AUG 14, 1996@10:21  USER #0                                                                                                                                                                   Imaging Camera/Equipment/Room List
+RA IMAGE LOC LIST             APR 06, 2009@14:58  USER #0                                                                                                                                                                                Imaging Location List
+     Generates a list of locations from the Imaging Location file.
+
+SORT TEMPLATE(S):
+RA EXAM ROOM LIST             JUN 24, 1996@10:56  USER #0                                                                                                                                                       'RA EXAM ROOM LIST' Print Template always used
+SORT BY: @CAMERAS/EQUIP/RMS//
+CAMERAS/EQUIP/RMS SUB-FIELD: CAMERA/EQUIP/RM// (CAMERA/EQUIP/RM not null)
+  WITHIN CAMERA/EQUIP/RM, SORT BY: RAD/NUC MED DIVISION// (RAD/NUC MED DIVISION not null)
+    WITHIN RAD/NUC MED DIVISION, SORT BY: LOCATION// (LOCATION not null)
+
+RA IMAGE LOC LIST             FEB 21, 1996@08:54  USER #0                                                                                                                                                       'RA IMAGE LOC LIST' Print Template always used
+SORT BY: TYPE OF IMAGING// (TYPE OF IMAGING not null)
+  WITHIN TYPE OF IMAGING, SORT BY: RAD/NUC MED DIVISION// (All RAD/NUC MED DIVISION (includes nulls))
+    WITHIN RAD/NUC MED DIVISION, SORT BY: #LOCATION// (LOCATION not null)
+     This template is used to sort location parameters by imaging
+     location.
+
+
+FORM(S)/BLOCK(S):

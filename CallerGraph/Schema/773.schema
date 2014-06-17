@@ -1,0 +1,619 @@
+STANDARD DATA DICTIONARY #773 -- HL7 MESSAGE ADMINISTRATION FILE                                                                                                                                                                  MAY 20,2014@15:33:38  PAGE 1
+STORED IN ^HLMA(  (23 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                               (VERSION 1.6)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to create and maintain unique message IDs.  It also contains a date/time when each ID was created.  
+
+
+IDENTIFIED BY: MESSAGE ID (#2)
+
+POINTED TO BY: HL7 MESSAGE field (#.05) of the HL7 Message Exceptions File File (#79.3) 
+               HL7_MESSAGE_ADMINISTRATION field (#.04) of the CP_HL7_LOG File (#704.002) 
+               INITIAL MESSAGE field (#6) of the HL7 MESSAGE ADMINISTRATION File (#773) 
+               ACKNOWLEDGEMENT TO field (#12) of the HL7 MESSAGE ADMINISTRATION File (#773) 
+               
+
+CROSS
+REFERENCED BY: LOGICAL LINK(AC), LAST DATE/TIME UPDATED(AD), RECEIVING APPLICATION(AE), INITIAL MESSAGE(AF), LAST DATE/TIME UPDATED(AF), STATUS(AG), MESSAGE ID(AH), DATE/TIME ENTERED(B)
+
+INDEXED BY:    MESSAGE ID (AHNEW), STATUS (AI), FAST PURGE DT/TM (AJ), MESSAGE ID (C)
+
+
+773,.001      NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 13, 1998 
+              HELP-PROMPT:      Type a Number between 1 and 999999999, 0 Decimal Digits 
+
+773,.01       DATE/TIME ENTERED      0;1 POINTER TO HL7 MESSAGE TEXT FILE (#772) (Required)
+
+              LAST EDITED:      APR 16, 1998 
+              CROSS-REFERENCE:  773^B 
+                                1)= S ^HLMA("B",$E(X,1,30),DA)=""
+                                2)= K ^HLMA("B",$E(X,1,30),DA)
+
+
+773,2         MESSAGE ID             0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      MAY 15, 2008 
+              HELP-PROMPT:      Answer must be 1-60 characters in length 
+              DESCRIPTION:
+                                This is an unique identifier associated with a message.  
+
+              CROSS-REFERENCE:  773^AH^MUMPS 
+                                1)= S:$P(^HLMA(DA,0),U,12) ^HLMA("AH",+$P(^(0),U,12),X,DA)=""
+                                2)= K:$P(^HLMA(DA,0),U,12) ^HLMA("AH",+$P(^(0),U,12),X,DA)
+                                3)= This x-reference is used in conjunction with the 'AG' x-ref on field 205
+                                This x-reference is used to look up the original message when processing a response.  
+
+
+              FIELD INDEX:      C (#782)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  This is a regular index of new-style cross-reference on the Message ID field
+                  Description:  This cross reference allows a user to look up an HL7 message by its unique message ID.  
+                    Set Logic:  S ^HLMA("C",$E(X,1,60),DA)=""
+                   Kill Logic:  K ^HLMA("C",$E(X,1,60),DA)
+                   Whole Kill:  K ^HLMA("C")
+                         X(1):  MESSAGE ID  (773,2)  (Subscr 1)  (Len 60)  (forwards)
+
+              FIELD INDEX:      AHNEW (#799)    MUMPS    IR    ACTION
+                  Short Descr:  This x-ref is used to look up the original message to check duplicate
+                    Set Logic:  N HDR,FLD S HDR=$G(^HLMA(DA,"MSH",1,0)) Q:HDR']""  S:$G(^HLMA(DA,"MSH",2,0))]"" HDR=HDR_$G(^HLMA(DA,"MSH",2,0)) S FLD=$E(HDR,4) Q:FLD']""  S HDR=$P(HDR,FLD,3,6) S:HDR]"" ^HLMA("AH-NEW",HDR,X,DA)=""
+                   Kill Logic:  N HDR,FLD S HDR=$G(^HLMA(DA,"MSH",1,0)) Q:HDR']""  S:$G(^HLMA(DA,"MSH",2,0))]"" HDR=HDR_$G(^HLMA(DA,"MSH",2,0)) S FLD=$E(HDR,4) Q:FLD']""  S HDR=$P(HDR,FLD,3,6) K:HDR]"" ^HLMA("AH-NEW",HDR,X,DA)
+                   Whole Kill:  K ^HLMA("AH-NEW")
+                         X(1):  MESSAGE ID  (773,2)  (Subscr 1)  (Len 60)  (forwards)
+
+
+773,2.02      FAST PURGE DT/TM       2;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      SEP 23, 2003 
+              HELP-PROMPT:      This is the date and time that the record may be purged. 
+              FIELD INDEX:      AJ (#347)    MUMPS        ACTION
+                  Short Descr:  Removes record from the "AI" x-ref if Fast Purge Date/Time is edited.
+                    Set Logic:  Q
+                   Kill Logic:  K:$G(X1(1)) ^HLMA("AI",X1(1),773,+$G(DA))
+                         X(1):  FAST PURGE DT/TM  (773,2.02)  (Subscr 1)  (forwards)
+
+
+773,3         TRANSMISSION TYPE      0;3 SET (Required)
+
+                                'I' FOR INCOMING; 
+                                'O' FOR OUTGOING; 
+              LAST EDITED:      MAY 13, 1998 
+              HELP-PROMPT:      The type of transmission (incoming or outgoing). 
+              DESCRIPTION:
+                                The type of transmission (incoming or outgoing).  
+
+                                UNEDITABLE
+
+773,4         PRIORITY               0;4 SET
+
+                                'I' FOR IMMEDIATE; 
+                                'D' FOR DEFERRED; 
+              LAST EDITED:      MAY 05, 1998 
+              HELP-PROMPT:      The mode in which this message is delivered 
+              DESCRIPTION:
+                                The delivery priority assigned to this outgoing message.  
+
+
+773,5         HEADER TYPE            0;5 SET
+
+                                'M' FOR SINGLE MESSAGE; 
+                                'B' FOR BATCH OF MESSAGES; 
+                                'F' FOR FILE OF BATCHES; 
+              LAST EDITED:      AUG 11, 1998 
+              DESCRIPTION:      There are three types of messages as follows: 
+                                 
+                                 M for Single message (contains only one MSH segment) 
+                                 B for Batch of messages (contains multiple MSH segments) 
+                                 F for File of batches (contains multiple BHS segments) 
+                                 
+                                This field is automatically filled in by the Messaging System and is used to determine the appropriate header segment to build for a message.  
+
+
+773,6         INITIAL MESSAGE        0;6 POINTER TO HL7 MESSAGE ADMINISTRATION FILE (#773)
+
+              LAST EDITED:      DEC 08, 1998 
+              DESCRIPTION:
+                                This is the first message of a transaction.  All messages pointing to the initial message are part of the transaction.  
+
+              CROSS-REFERENCE:  773^AF 
+                                1)= S ^HLMA("AF",$E(X,1,30),DA)=""
+                                2)= K ^HLMA("AF",$E(X,1,30),DA)
+
+
+773,7         LOGICAL LINK           0;7 POINTER TO HL LOGICAL LINK FILE (#870)
+
+              LAST EDITED:      DEC 02, 2003 
+              HELP-PROMPT:      The link that will be used to transmit this message over. 
+              DESCRIPTION:      This is a pointer to the Logical Link file (#870).  This link is used to transmit messages to an external receiving application.  This field is not filled in when messages are exchanged between DHCP applications on the
+                                same system.  
+
+              CROSS-REFERENCE:  773^AC^MUMPS 
+                                1)= Q  S %=$P(^HLMA(DA,0),U,3) S:%]"" ^HLMA("AC",%,X,DA)="" I %="O",'$D(HLTCPO) D LLCNT^HLCSTCP(X,3)
+                                2)= Q  S %=$P(^HLMA(DA,0),U,3) K:%]"" ^HLMA("AC",%,X,DA)
+                                3)= Required to determine outgoing transmissions and incoming deferred responses.
+                                This cross-references is used to determine outgoing transmission for a Logical Link; ^HLMA("AC","O",LL,DA).  The background job for the LL will use this x-ref and delete it as each message is transmitted.  It is also used
+                                to process incoming messages that have a deferred response; ^HLMA("AC","I",LL,DA).  The incoming filer will check this x-ref and delete it as it processes each message.  
+                                 
+
+
+
+773,8         SUBSCRIBER PROTOCOL    0;8 POINTER TO PROTOCOL FILE (#101)
+
+              LAST EDITED:      JUL 06, 1998 
+              HELP-PROMPT:      The Protocol related to this message. 
+              DESCRIPTION:
+                                The Protocol related to this message.  
+
+
+773,9         SECURITY               0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+              LAST EDITED:      MAY 26, 1998 
+              HELP-PROMPT:      Answer must be 1-40 characters in length. 
+              DESCRIPTION:
+                                The value to use in the Security field of the Message Header segment.  
+
+
+773,10        DON'T PURGE            2;1 SET
+
+                                '1' FOR DON'T PURGE; 
+                                '0' FOR TO PURGE; 
+              LAST EDITED:      MAY 05, 1998 
+              HELP-PROMPT:      When set to 1, the message will never be purged by HL7. 
+              DESCRIPTION:      When this field is set to 1, the message wil never be purged by the HL7 "Purge Message Text File Entries" option.  However, when this field is set to 0 or is empty, the message is allowed to be purged by the HL7 "Purge
+                                Message Text Entries" option.  
+
+
+773,11        CONTINUATION POINTER   1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>180!($L(X)<1) X
+              LAST EDITED:      MAY 26, 1998 
+              HELP-PROMPT:      Answer must be 1-180 characters in length. 
+              DESCRIPTION:
+                                The value to use in the Continuation Pointer field of the Message Header segment.  
+
+
+773,12        ACKNOWLEDGEMENT TO     0;10 POINTER TO HL7 MESSAGE ADMINISTRATION FILE (#773)
+
+              LAST EDITED:      DEC 08, 1998 
+              DESCRIPTION:
+                                This field points to the message that the MSA segment in the current message is acknowledging.  
+
+
+773,13        SENDING APPLICATION    0;11 POINTER TO HL7 APPLICATION PARAMETER FILE (#771)
+
+              LAST EDITED:      AUG 11, 1998 
+              DESCRIPTION:
+                                The application that is sending the message.  
+
+
+773,14        RECEIVING APPLICATION  0;12 POINTER TO HL7 APPLICATION PARAMETER FILE (#771)
+
+              LAST EDITED:      AUG 11, 1998 
+              DESCRIPTION:
+                                The application that is receiving this message.  
+
+              CROSS-REFERENCE:  773^AE^MUMPS 
+                                1)= S:$P($G(^HLMA(DA,0)),U,2)]"" ^HLMA("AH",X,$P(^(0),U,2),DA)=""
+                                2)= K:$P($G(^HLMA(DA,0)),U,2)]"" ^HLMA("AH",X,$P(^(0),U,2),DA)
+                                3)= This x-reference is used in conjunction with the 'AH' on field 2.
+                                This x-reference is used to look up the original message when processing a response.  
+
+
+
+773,15        MESSAGE TYPE           0;13 POINTER TO HL7 MESSAGE TYPE FILE (#771.2)
+
+              LAST EDITED:      AUG 12, 1998 
+              DESCRIPTION:
+                                This is the Message type from the HL7 standard.  
+
+
+773,16        EVENT TYPE             0;14 POINTER TO HL7 EVENT TYPE CODE FILE (#779.001)
+
+              LAST EDITED:      AUG 12, 1998 
+              DESCRIPTION:
+                                This is the Event Type from the HL7 standard.  
+
+
+773,17        LOGICAL LINK - IN QUEUE 0;17 POINTER TO HL LOGICAL LINK FILE (#870)
+
+              LAST EDITED:      JAN 28, 2004 
+              HELP-PROMPT:      The logical link for this message's subscriber protocol is set into this field. 
+
+773,20        STATUS                 P;1 POINTER TO HL7 MESSAGE STATUS FILE (#771.6) (Required)
+
+              LAST EDITED:      AUG 04, 2003 
+              HELP-PROMPT:      The current status of this message. 
+              DESCRIPTION:
+                                The status currently assigned to this message.  
+
+              CROSS-REFERENCE:  773^AG 
+                                1)= S ^HLMA("AG",$E(X,1,30),DA)=""
+                                2)= K ^HLMA("AG",$E(X,1,30),DA)
+
+              FIELD INDEX:      AI (#346)    MUMPS        ACTION
+                  Short Descr:  Used by the Fast Purge process.
+                  Description:  This cross-reference is used by the fast purge option to purge records in both file 773 and file 772.  The format is: 
+                                 
+                                "AI",<date/time that the record may be purged>,772,<list of record numbers in file 772 that may be purged as of this date and time>)="" 
+                                 
+                                 
+                                "AI",<date/time that the record may be purged>,773,<list of record numbers in file 773 that may be purged as of this date and time>)="" 
+                    Set Logic:  D PXREF^HLUOPTF1($G(DA),$G(X2(1)))
+                   Kill Logic:  Q
+                         X(1):  STATUS  (773,20)  (Subscr 1)  (forwards)
+
+
+773,21        STATUS UPDATE DATE/TIME P;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 26, 1998 
+              HELP-PROMPT:      The date and time the Status was updated. 
+              DESCRIPTION:
+                                The date and time the Status field was last updated for this message.  
+
+
+773,22        ERROR MESSAGE          P;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<3) X
+              LAST EDITED:      MAY 05, 1998 
+              HELP-PROMPT:      Answer must be 3-200 characters in length. 
+              DESCRIPTION:
+                                If there was an error in sending or receiving this message, this field will contain the error message.  
+
+
+773,23        ERROR TYPE             P;4 POINTER TO HL7 ERROR MESSAGE FILE (#771.7)
+
+              LAST EDITED:      MAY 05, 1998 
+              DESCRIPTION:
+                                A description of the type of error that occured.  
+
+
+773,24        TRANSMISSION ATTEMPTS  P;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 30, 2000 
+              HELP-PROMPT:      Type a Number between 1 and 999. 
+              DESCRIPTION:
+                                This field contains the number of transmission attempts for this outgoing message.  
+
+
+773,25        OPEN ATTEMPTS          P;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      MAR 30, 2000 
+              HELP-PROMPT:      Type a number between 0 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the number of attempts to open a TCP connections for this outgoing message.  
+
+
+773,26        ACK TIMEOUT            P;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>600)!(X<0)!(X?.E1"."1.N) X
+              LAST EDITED:      MAR 30, 2000 
+              HELP-PROMPT:      Type a number between 0 and 600, 0 Decimal Digits 
+              DESCRIPTION:
+                                The number of seconds the Lower Layer Protocol waits for an acknowledgement from the receiving application. This field will override the ACK TIMEOUT of the Logical Link for this message.  
+
+
+773,50        MESSAGE SIZE            ;  COMPUTED
+
+              MUMPS CODE:       S X=$$MSGSIZE^HLCSUTL(D0) S X=$J(X,0,0)
+              ALGORITHM:        S X=$$MSGSIZE^HLCSUTL(D0)  (ALWAYS 0 DECIMAL DIGITS)
+              DESCRIPTION:
+                                This computed field returns the number of character in a message.  It includes the message header and body.  
+
+
+773,90.01     HLP-SUBSCRIBER PROTOCOL 90;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>45!($L(X)<1) X
+              LAST EDITED:      OCT 22, 2002 
+              HELP-PROMPT:      This field's source is the HLP("SUBSCRIBER"[,#]) array (1-45 characters) 
+              DESCRIPTION:      This field holds the SUBSCRIBER PROTOCOL that was on the 1st piece of the HLP("SUBSCRIBER"[,#]) subscriber entry.  (If the HLP("SUBSCRIBER") entry was used to reset the MSH segment fields, this field will be null.) 
+                                 
+                                 
+                                Additional Comments on ^HLMA(ien,90) Node 
+                                -----------------------------------------
+                                When the MSH segment fields are successfully reset using either HLP("SUBSCRIBER") or HLP("SUBSCRIBER",#), the entire HLP("SUBSCRIBER") or HLP("SUBSCRIBER",#) array entry is stored on the ^HLMA(#,90) node.  There are eight
+                                pieces in the HLP("SUBSCRIBER"[,#]) array, and there are eight fields on the ^HLMA(ien,90) node.  The eight pieces of HLP("SUBSCRIBER"[,#]) and the eight ^HLMA(ien,90) fields exactly correspond to each other.  
+                                 
+                                Note:  When ^HLMA(ien,90) is created, it is set equal to the entire 
+                                       value of the HLP("SUBSCRIBER"[,#]) array entry.  The fields on 
+                                       the ^HLMA(ien,90) node are not set separately!  (So, if the 
+                                       application developer creates an invalid HLP("SUBSCRIBER"[,#]) 
+                                       array, with invalid data stored in one or more of the eight 
+                                       pieces, the ^HLMA(ien,90) node will similarly hold invalid 
+                                       data.) 
+
+
+773,90.02     HLP-SENDING APPLICATION 90;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>45!($L(X)<1) X
+              LAST EDITED:      OCT 22, 2002 
+              HELP-PROMPT:      This field's source is the HLP("SUBSCRIBER"[,#]) array (1-45 characters) 
+              DESCRIPTION:      This field holds the SENDING APPLICATION that was on the 2nd piece of the HLP("SUBSCRIBER"[,#]) subscriber entry.  
+                                 
+                                (See the 'Additional Comments on ^HLMA(ien,90) Node' section in the description for field # 90.01.) 
+
+
+773,90.03     HLP-SENDING FACILITY   90;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      OCT 22, 2002 
+              HELP-PROMPT:      This field's source is the HLP("SUBSCRIBER"[,#]) array (1-30 characters) 
+              DESCRIPTION:      This field holds the SENDING FACILITY that was on the 3rd piece of the HLP("SUBSCRIBER"[,#]) subscriber entry.  
+                                 
+                                (See the 'Additional Comments on ^HLMA(ien,90) Node' section in the description for field # 90.01.) 
+
+
+773,90.04     HLP-RECEIVING APPLICATION 90;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>45!($L(X)<1) X
+              LAST EDITED:      OCT 22, 2002 
+              HELP-PROMPT:      This field's source is the HLP("SUBSCRIBER"[,#]) array (1-45 characters) 
+              DESCRIPTION:      This field holds the RECEIVING APPLICATION that was on the 4th piece of the HLP("SUBSCRIBER"[,#]) subscriber entry.  
+                                 
+                                (See the 'Additional Comments on ^HLMA(ien,90) Node' section in the description for field # 90.01.) 
+
+
+773,90.05     HLP-RECEIVING FACILITY 90;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      OCT 22, 2002 
+              HELP-PROMPT:      This field's source is the HLP("SUBSCRIBER"[,#]) array (1-30 characters) 
+              DESCRIPTION:      This field holds the RECEIVING FACILITY that was on the 5th piece of the HLP("SUBSCRIBER"[,#]) subscriber entry.  
+                                 
+                                (See the 'Additional Comments on ^HLMA(ien,90) Node' section in the description for field # 90.01.) 
+
+
+773,90.06     HLP-SUBROUTINE         90;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      OCT 22, 2002 
+              HELP-PROMPT:      This field's source is the HLP("SUBSCRIBER"[,#]) array (1-8 characters) 
+              DESCRIPTION:
+                                See the description for the HLP-ROUTINE field (#90.07).  
+
+
+773,90.07     HLP-ROUTINE            90;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      OCT 22, 2002 
+              HELP-PROMPT:      This field's source is the HLP("SUBSCRIBER"[,#]) array (1-8 characters) 
+              DESCRIPTION:      Application developers may pass a reference to M code in the HLP("SUBSCRIBER"[,#]) subscriber entry.  When this is done, the subroutine being referenced is stored in the HLP-SUBROUTINE field (#90.06), and the routine is
+                                stored in this field.  
+
+
+773,90.08     HLP-DEBUG              90;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<1) X
+              LAST EDITED:      OCT 22, 2002 
+              HELP-PROMPT:      This field's source is the HLP("SUBSCRIBER"[,#]) array (1-12 characters) 
+              DESCRIPTION:      The application developer can control what type of debugging data is stored when MSH segment fields are reset by the HLP("SUBSCRIBER"[,#]) entry.  This field holds the data on the eighth piece of the HLP("SUBSCRIBER"[,#])
+                                entry, which also specifies which debugging data should be stored.  
+                                 
+                                Types Debug Data: 
+                                -----------------
+                                There are three types of debug data: 
+                                 
+                                  - Node ^HLMA(ien,90) data.  (See global map of this file for fields.) 
+                                  - Node ^HLMA(ien,91) data.  (See global map of this file for fields.) 
+                                  - ^XTMP("HLCSHDR3 ien") data.  (See patch documentation for 
+                                    explanation.) 
+                                 
+                                Syntax:  
+                                -------
+                                The syntax for the eight piece of the HLP("SUBSCRIBER"[,#]) array entry, (which is also the value for this field), is: 
+                                 
+                                   [1]-[1]-[1]      
+                                 
+                                The [brackets] above indicate optionality; any of the three dash-delimited pieces may be null.  
+                                 
+                                Examples:  1-1-1 -> ^HLMA(ien,90), ^HLMA(ien,91) and ^XTMP data captured.  
+                                           1--1 -> ^HLMA(ien,90 and ^XTMP data captured.  
+                                           --1 -> Only ^XTMP data captured.  
+
+
+773,91.01     ORIGINAL SND APP       91;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>45!($L(X)<1) X
+              LAST EDITED:      JAN 23, 2003 
+              HELP-PROMPT:      This field contains the value of the SENDING APPLICATION before overwrite. 
+              DESCRIPTION:      The value of the SENDING APPLICATION is calculated from the event driver protocol.  If this value is overwritten by a HLP("SUBSCRIBER"[,#]) entry, the value before overwrite is stored in this field.  
+                                 
+                                Note:  Fields 91.03, 91.05, and 91.07 similarly hold the pre-overwrite 
+                                       values for their respective fields.  
+
+
+773,91.02     ORIGINAL SND APP-SOURCE 91;2 SET
+
+                                'A' FOR ARRAY; 
+                                'M' FOR M CODE; 
+              LAST EDITED:      JAN 23, 2003 
+              HELP-PROMPT:      This field records whether the overwrite was created by the HLP("SUBSCRIBER"[,#]) array, or by M code. 
+              DESCRIPTION:      MSH segment fields can be overwritten by free-text values on pieces 2 through 5 of the HLP("SUBSCRIBER"[,#]) node, or by M code referenced in this node.  If the HLP-ORIGINAL SND APP field (#91.01) is overwritten by 
+                                free-text data, this field will hold an "A" (for array.)  If overwritten by M code this field will hold "M".  
+
+
+773,91.03     ORIGINAL SND FAC       91;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      JAN 23, 2003 
+              HELP-PROMPT:      This field contains the value of the SENDING FACILITY before overwrite. 
+              DESCRIPTION:
+                                The value of the SENDING FACILITY is calculated from the event driver protocol.  If this value is overwritten by a HLP("SUBSCRIBER"[,#]) entry, the value before overwrite is stored in this field.  
+
+
+773,91.04     ORIGINAL SND FAC-SOURCE 91;4 SET
+
+                                'A' FOR ARRAY; 
+                                'M' FOR M CODE; 
+              LAST EDITED:      JAN 23, 2003 
+              HELP-PROMPT:      This field records whether the overwrite was created by the HLP("SUBSCRIBER"[,#]) array, or by M code. 
+              DESCRIPTION:      MSH segment fields can be overwritten by free-text values on pieces 2 through 5 of the HLP("SUBSCRIBER"[,#]) node, or by M code referenced in this node.  If the HLP-ORIGINAL SND FAC field (#91.03) is overwritten by 
+                                free-text data, this field will hold an "A" (for array.)  If overwritten by M code this field will hold "M".  
+
+
+773,91.05     ORIGINAL REC APP       91;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>45!($L(X)<1) X
+              LAST EDITED:      JAN 23, 2003 
+              HELP-PROMPT:      This field contains the value of the RECEIVING APPLICATION before overwrite. 
+              DESCRIPTION:
+                                The value of the RECEIVING APPLICATION is calculated from the subscriber protocol.  If this value is overwritten by a HLP("SUBSCRIBER"[,#]) entry, the value before overwrite is stored in this field.  
+
+
+773,91.06     ORIGINAL REC APP-SOURCE 91;6 SET
+
+                                'A' FOR ARRAY; 
+                                'M' FOR M CODE; 
+              LAST EDITED:      JAN 23, 2003 
+              HELP-PROMPT:      This field records whether the overwrite was created by the HLP("SUBSCRIBER"[,#]) array, or by M code. 
+              DESCRIPTION:      MSH segment fields can be overwritten by free-text values on pieces 2 through 5 of the HLP("SUBSCRIBER"[,#]) node, or by M code referenced in this node.  If the HLP-ORIGINAL REC APP field (#91.05) is overwritten by 
+                                free-text data, this field will hold an "A" (for array.)  If overwritten by M code this field will hold "M".  
+
+
+773,91.07     ORIGINAL REC FAC       91;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAR 21, 2003 
+              HELP-PROMPT:      This field contains the value of the SENDING FACILITY before overwrite. 
+              DESCRIPTION:
+                                The value of the RECEIVING FACILITY is calculated from the subscriber protocol. If this value is overwritten by a HLP("SUBSCRIBER"[,#]) entry, the value before overwrite is stored in this field.  
+
+
+773,91.08     ORIGINAL REC FAC-SOURCE 91;8 SET
+
+                                'A' FOR ARRAY; 
+                                'M' FOR M CODE; 
+              LAST EDITED:      MAR 21, 2003 
+              HELP-PROMPT:      This field records whether the overwrite was created by the HLP("SUBSCRIBER"[,#]) array, or by M code. 
+              DESCRIPTION:      MSH segment fields can be overwritten by free-text values on pieces 2 through 5 of the HLP("SUBSCRIBER"[,#]) node, or by M code referenced in this node.  If the HLP-ORIGINAL REC FAC field (#91.07) is overwritten by 
+                                free-text data, this field will hold an "A" (for array.)  If overwritten by M code this field will hold "M".  
+
+
+773,100       LAST DATE/TIME UPDATED S;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 24, 2009 
+              HELP-PROMPT:      The date and time this transmission was processed. 
+              DESCRIPTION:      For outgoing message: 
+                                  1. Date/time of its commit ACK received.  
+                                  2. Date/time of its application ACK message received (overwriting 
+                                     #1).  
+                                 
+                                And for incoming message: 
+                                  1. Date/time of the message received.  
+                                  2. Date/time of the message has been processed by the application 
+                                     (overwriting #1).  
+
+              CROSS-REFERENCE:  773^AD^MUMPS 
+                                1)= S ^HLMA("AD",X,DA)="" N %,%1 S %=$G(^HLMA(DA,0)),%1=$P(%,U,3),%=$P(%,U,7) K:%1]""&% ^HLMA("AC",%1,%,DA)
+                                2)= K ^HLMA("AD",X,DA)
+                                3)= Required to determine if a message has been processed.
+                                This cross-reference is used to remove messages from the 'AC' x-ref. after they have been processed.  It also set the 'AD' x-ref for the date processed.  
+
+
+              CROSS-REFERENCE:  773^AF 
+                                1)= S ^HLMA("AF",$E(X,1,30),DA)=""
+                                2)= K ^HLMA("AF",$E(X,1,30),DA)
+
+
+773,102       TIME START TO SEND     S;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 23, 2009 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date/time the transmission of this outgoing message began.  
+
+
+773,103       TIME SENT              S;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 23, 2009 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date/time the transmission of this outgoing message finished.  
+
+
+773,104       TIME OF COMMIT/APP ACK S;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 23, 2009 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date/time this message received the commit ACK, or application ACK of original mode or direct connect transmission (API: DIRECT^HLMA).  
+
+
+773,105       TIME OF APPLICATION ACK S;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 23, 2009 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date/time this message received the application ACK.  
+
+
+773,106       TIME START PROCESSING  S;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 23, 2009 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date/time the application began processing this message.  
+
+
+773,107       TIME PROCESSED         S;7 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      FEB 23, 2009 
+              HELP-PROMPT:      (No range limit on date) 
+              DESCRIPTION:
+                                This is the date/time the application finished processing this message.  
+
+
+773,200       MSH                    MSH;0   WORD-PROCESSING #773.01   (NOWRAP)   (IGNORE "|")
+
+              LAST EDITED:      JUN 14, 2004 
+
+
+      FILES POINTED TO                      FIELDS
+
+HL LOGICAL LINK (#870)            LOGICAL LINK (#7)
+                                  LOGICAL LINK - IN QUEUE (#17)
+
+HL7 APPLICATION PARAMETER 
+                   (#771)         SENDING APPLICATION (#13)
+                                  RECEIVING APPLICATION (#14)
+
+HL7 ERROR MESSAGE (#771.7)        ERROR TYPE (#23)
+
+HL7 EVENT TYPE CODE (#779.001)    EVENT TYPE (#16)
+
+HL7 MESSAGE ADMINISTRATION 
+                   (#773)         INITIAL MESSAGE (#6)
+                                  ACKNOWLEDGEMENT TO (#12)
+
+HL7 MESSAGE STATUS (#771.6)       STATUS (#20)
+
+HL7 MESSAGE TEXT (#772)           DATE/TIME ENTERED (#.01)
+
+HL7 MESSAGE TYPE (#771.2)         MESSAGE TYPE (#15)
+
+PROTOCOL (#101)                   SUBSCRIBER PROTOCOL (#8)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

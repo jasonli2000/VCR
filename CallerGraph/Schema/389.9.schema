@@ -1,0 +1,144 @@
+STANDARD DATA DICTIONARY #389.9 -- STATION NUMBER (TIME SENSITIVE) FILE                                                                                                                                                           MAY 20,2014@15:40:52  PAGE 1
+STORED IN ^VA(389.9,  (1 ENTRY)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                              (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The purpose of this file is to allow DHCP software flexibility and reliability when the station number of a medical center changes or when one or more stations have merged into one station.  
+ 
+Adding or modifing entries in this file may affect many DHCP applications.  Control of entry into this file should be carefully controlled by the IRM Service Chief.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+IDENTIFIED BY: EFFECTIVE DATE (#.02), MEDICAL CENTER DIVISION (#.03), STATION NUMBER (#.04)[R]
+
+CROSS
+REFERENCED BY: MEDICAL CENTER DIVISION(AIVDT), EFFECTIVE DATE(AIVDT0), IS PRIMARY DIVISION(AIVDT1), EFFECTIVE DATE(AIVDT10), REFERENCE NUMBER(B), MEDICAL CENTER DIVISION(C), STATION NUMBER(D), EFFECTIVE DATE(E)
+
+389.9,.01     REFERENCE NUMBER       0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 07, 1991 
+              HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field is the reference number of the entry in the file.  It is assigned by the enter/edit routine.  
+
+              CROSS-REFERENCE:  389.9^B 
+                                1)= S ^VA(389.9,"B",$E(X,1,30),DA)=""
+                                2)= K ^VA(389.9,"B",$E(X,1,30),DA)
+
+
+389.9,.02     EFFECTIVE DATE         0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 07, 1991 
+              DESCRIPTION:      This is the effective date of the station number for this division.  If you are creating a new division with a new station number then the entry for this division should be sufficient.  If your medical center is changing 
+                                station numbers then an entry for this effective date is required for all medical center divisions.  
+
+              CROSS-REFERENCE:  389.9^E 
+                                1)= S ^VA(389.9,"E",$E(X,1,30),DA)=""
+                                2)= K ^VA(389.9,"E",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  389.9^AIVDT0^MUMPS 
+                                1)= I $P(^VA(389.9,DA,0),U,3) S ^VA(389.9,"AIVDT",$P(^(0),U,3),-X,DA)=""
+                                2)= I $P(^VA(389.9,DA,0),U,3) K ^VA(389.9,"AIVDT",$P(^(0),U,3),-X,DA)
+
+              CROSS-REFERENCE:  389.9^AIVDT10^MUMPS 
+                                1)= I $P(^VA(389.9,DA,0),U,5) S ^VA(389.9,"AIVDT1",$E($P(^(0),U,5),1,30),-X,DA)=""
+                                2)= I $P(^VA(389.9,DA,0),U,5) K ^VA(389.9,"AIVDT1",$E($P(^(0),U,5),1,30),-X,DA)
+
+
+389.9,.03     MEDICAL CENTER DIVISION 0;3 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8)
+
+              LAST EDITED:      JUL 16, 1992 
+              DESCRIPTION:      This is the medical center division that you want to create a station number entry for.  You must create one entry for each medical center division.  If you are changing station numbers then one entry for each division is
+                                required for the new effective date.  
+
+              CROSS-REFERENCE:  389.9^C 
+                                1)= S ^VA(389.9,"C",$E(X,1,30),DA)=""
+                                2)= K ^VA(389.9,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  389.9^AIVDT^MUMPS 
+                                1)= I $P(^VA(389.9,DA,0),U,2) S ^VA(389.9,"AIVDT",$E(X,1,30),-$P(^(0),U,2),DA)=""
+                                2)= I $P(^VA(389.9,DA,0),U,2) K ^VA(389.9,"AIVDT",$E(X,1,30),-$P(^(0),U,2),DA)
+
+
+389.9,.04     STATION NUMBER         0;4 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>7!($L(X)<3)!'(X?3N.AN) X
+              LAST EDITED:      FEB 10, 1992 
+              HELP-PROMPT:      This is the full station number and suffix.  Answer must be 3-7 characters in length. 
+              DESCRIPTION:
+                                This is the 3 digit station number, if this divison has a suffix then this is the station number and the suffix.  
+
+              CROSS-REFERENCE:  389.9^D 
+                                1)= S ^VA(389.9,"D",$E(X,1,30),DA)=""
+                                2)= K ^VA(389.9,"D",$E(X,1,30),DA)
+
+
+389.9,.05     IS PRIMARY DIVISION    0;5 FREE TEXT
+
+              INPUT TRANSFORM:  I $D(X) D YN^VASITE I $D(X) K:$L(X)>1!($L(X)<1)!'(X?1"1") X
+              OUTPUT TRANSFORM: S Y=$S(Y:"YES",Y=0:"NO",1:"")
+              LAST EDITED:      NOV 08, 1991 
+              HELP-PROMPT:      Answer 'Yes' if this is the primary station number for this date.  Only 1 entry may be a primary station number for a date. 
+              DESCRIPTION:      Each station has one primary divison.  This normally is the divison where the station number is 3 numberic characters with no suffix.  If this is the primary division then this field should be set to 'YES'.  
+                                 
+                                Only one division may be the primary division at a time.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  389.9^AIVDT1^MUMPS 
+                                1)= I $P(^VA(389.9,DA,0),"^",2) S ^VA(389.9,"AIVDT1",X,-$P(^(0),"^",2),DA)=""
+                                2)= I $P(^VA(389.9,DA,0),"^",2) K ^VA(389.9,"AIVDT1",X,-$P(^(0),"^",2),DA)
+
+
+389.9,.06     INACTIVE               0;6 SET
+
+                                '1' FOR YES - INACTIVE; 
+                                '0' FOR NO - ACTIVE; 
+              LAST EDITED:      NOV 07, 1991 
+              DESCRIPTION:      This field is used to inactivate a station number.  A new entry for a station number for the date it became inactive is required, and this field should be made set to 'YES' for the entry that inactivates the station
+                                number.  
+
+
+389.9,.07     OTHER INSTITUTION      0;7 POINTER TO INSTITUTION FILE (#4)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^VA(389.9,DA,0),U,3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 08, 1991 
+              DESCRIPTION:      If this entry in the Station Number file is for a station that is not a Medical Center Division then this is the institution pointer to this entry.  
+                                 
+                                This field isn't currently used but could be used for possibly Record Tracking, Outpatient Pharmacy CMOP's, or Reference Lab work and others if only I knew what else to do with it.  
+
+              SCREEN:           S DIC("S")="I '$P(^VA(389.9,DA,0),U,3)"
+              EXPLANATION:      Other institution can only be used if this is not a Medical Center Division!
+
+389.9,17000   INTEGRATION NAME       INTEG;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+              LAST EDITED:      JAN 29, 1998 
+              HELP-PROMPT:      Answer must be 3-80 characters in length. 
+              DESCRIPTION:
+                                This will be used for the new name for sites that have integrated.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  OTHER INSTITUTION (#.07)
+
+MEDICAL CENTER DIVISION (#40.8)   MEDICAL CENTER DIVISION (#.03)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

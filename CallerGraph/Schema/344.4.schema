@@ -1,0 +1,847 @@
+STANDARD DATA DICTIONARY #344.4 -- ELECTRONIC REMITTANCE ADVICE FILE                                                                                                                                                              MAY 20,2014@15:30:05  PAGE 1
+STORED IN ^RCY(344.4,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 4.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds the ERA (Electronic Remittance Advice) information that is received electronically.  It holds the summary for each individual EOB (Explanation of Benefits) that comprise the ERA.  Individual EOB detail data is found in file 361.1 in
+Integrated Billing.  
+
+
+IDENTIFIED BY: TRACE NUMBER (#.02), ERA DATE (#.04), TOTAL AMOUNT PAID (#.05), PAYMENT FROM (#.06), EFT MATCH STATUS (#.09), DETAIL POST STATUS (#.14)
+
+POINTED TO BY: ERA REFERENCE field (#.18) of the AR BATCH PAYMENT File (#344) 
+               ERA RECORD field (#.1) of the EDI THIRD PARTY EFT DETAIL File (#344.31) 
+               ERA REFERENCE field (#.01) of the EDI LOCKBOX EOB WORKLIST File (#344.49) 
+               ERA TOTALS RECORD field (#.07) of the AR EDI LOCKBOX MESSAGES File (#344.5) 
+               
+
+CROSS
+REFERENCED BY: ERA DATE(AC), REMOVED DATE(AD), EOB DETAIL(ADET), ERROR CATEGORY(AEXC), FILE DATE/TIME(AFD), DATE/TIME ERA LINKED(AFL), EFT MATCH STATUS(AMATCH), RECEIPT(AREC), TRANSFERRED DATE(ATOUT), ENTRY(B), PAYMENT FROM(C)
+
+INDEXED BY:    RECEIPT (ARCT), TRACE NUMBER & INSURANCE CO ID (ATRID), TRACE NUMBER (D)
+
+
+344.4,.01     ENTRY                  0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1N.N) X I $D(X) S DINUM=X
+              LAST EDITED:      MAR 14, 2003 
+              HELP-PROMPT:      Type a Number between 1 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains a sequential number generated at the time a record is stored in the file.  It only serves to create an entry in the file and has no other special meaning.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  344.4^B 
+                                1)= S ^RCY(344.4,"B",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.4,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^344.4^.14 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^RCY(344.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,14),X=X S DIU=X K Y S X=DIV S X=0 S DIH=$G(^RCY(344.4,DIV(0),0)),DIV=X S $P(^(0),U,14)=DIV,DIH=344.4,DIG=.14 D ^DICR
+                                2)= Q
+                                3)= Do not delete
+                                CREATE VALUE)= S X=0
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= DETAIL POST STATUS
+
+
+344.4,.02     TRACE NUMBER           0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+              LAST EDITED:      JUN 22, 2010 
+              HELP-PROMPT:      Answer must be 3-50 characters in length. 
+              DESCRIPTION:
+                                This is the bank trace number assigned to the ERA received.  If the ERA was paid by paper check, this should be the check #.  
+
+              FIELD INDEX:      D (#981)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  REGULAR INDEX
+                    Set Logic:  S ^RCY(344.4,"D",$E(X,1,50),DA)=""
+                   Kill Logic:  K ^RCY(344.4,"D",$E(X,1,50),DA)
+                   Whole Kill:  K ^RCY(344.4,"D")
+                         X(1):  TRACE NUMBER  (344.4,.02)  (Subscr 1)  (Len 50)  (forwards)
+
+              RECORD INDEXES:   ATRID (#292)
+
+344.4,.03     INSURANCE CO ID        0;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAY 24, 2002 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is the insurance co's electronic ID that will be recorded on each ERA received at the site.  This field, along with the trace number should always be unique in this file.  
+
+              RECORD INDEXES:   ATRID (#292)
+
+344.4,.04     ERA DATE               0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 29, 2011 
+              HELP-PROMPT:      Enter the date from the ERA record. 
+              DESCRIPTION:
+                                This is the date the ERA was generated by the payer.  
+
+              CROSS-REFERENCE:  344.4^AC 
+                                1)= S ^RCY(344.4,"AC",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.4,"AC",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+                                This cross-reference is used by the option 'Mark ERAs Returned to Payer Audit Report'.  
+
+
+
+344.4,.05     TOTAL AMOUNT PAID      0;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999999)!(X<0) X
+              LAST EDITED:      SEP 24, 2002 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the total amount of all the individual EOB records included in the ERA.  
+
+
+344.4,.06     PAYMENT FROM           0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<1) X
+              LAST EDITED:      MAR 12, 2003 
+              HELP-PROMPT:      Answer must be 1-35 characters in length. 
+              DESCRIPTION:
+                                This is the name of the insurance co as returned on the ERA.  
+
+              CROSS-REFERENCE:  344.4^C 
+                                1)= S ^RCY(344.4,"C",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.4,"C",$E(X,1,30),DA)
+                                3)= Do not delete
+
+
+344.4,.07     FILE DATE/TIME         0;7 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 21, 2004 
+              HELP-PROMPT:      Enter the date/time the ERA was filed in VistA. 
+              DESCRIPTION:
+                                This is the date/time the ERA was filed in VistA.  
+
+              CROSS-REFERENCE:  344.4^AFD 
+                                1)= S ^RCY(344.4,"AFD",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.4,"AFD",$E(X,1,30),DA)
+                                3)= Do not delete
+                                Created to find entries to include on ERA worklist pick list.  
+
+
+
+344.4,.08     RECEIPT                0;8 POINTER TO AR BATCH PAYMENT FILE (#344)
+
+              LAST EDITED:      APR 06, 2004 
+              HELP-PROMPT:      Enter the receipt that this ERA detail is contained in. 
+              DESCRIPTION:
+                                This is the receipt created to record the detail of the ERA for AR posting.  
+
+              NOTES:            TRIGGERED by the RECEIPT # field of the AR BATCH PAYMENT File 
+
+              CROSS-REFERENCE:  344.4^AREC 
+                                1)= S ^RCY(344.4,"AREC",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.4,"AREC",$E(X,1,30),DA)
+                                3)= Do not delete
+
+              CROSS-REFERENCE:  ^^TRIGGER^344.49^.02 
+                                1)= Q
+                                2)= X ^DD(344.4,.08,1,2,2.3) I X S X=DIV S I(0,0)=$G(D0),D0=D0 S:'D0!'$D(^RCY(344.49,+D0,0)) D0=-1 S DIV(0)=D0,Y(101)=$S($D(^RCY(344.49,D0,0)):^(0),1:"") S X=$P($G(^RCY(344,+$P(Y(101),U,2),0)),U),D0=I(0,0),DIU=X K Y S X=""
+                                 X ^DD(344.4,.08,1,2,2.4)
+
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^RCY(344.4,D0,0)):^(0),1:"") S X=$P($G(^RCY(344,+$P(Y(1),U,8),0)),U)=""
+
+                                2.4)= S DIH=$G(^RCY(344.49,DIV(0),0)),DIV=X I $D(^(0)) S $P(^(0),U,2)=DIV,DIH=344.49,DIG=.02 D ^DICR
+                                3)= Do not delete
+                                CREATE VALUE)= NO EFFECT
+                                DELETE CONDITION)= RECEIPT=""
+                                DELETE VALUE)= @
+                                FIELD)= EDI LOCKBOX EOB WORKLIST:RECEIPT
+
+              FIELD INDEX:      ARCT (#291)    REGULAR    IR    SORTING ONLY
+                  Short Descr:  Cross reference by AR receipt #
+                    Set Logic:  S ^RCY(344.4,"ARCT",X,DA)=""
+                   Kill Logic:  K ^RCY(344.4,"ARCT",X,DA)
+                   Whole Kill:  K ^RCY(344.4,"ARCT")
+                         X(1):  RECEIPT  (344.4,.08)  (Subscr 1)  (forwards)
+
+
+344.4,.09     EFT MATCH STATUS       0;9 SET
+
+                                '0' FOR UNMATCHED; 
+                                '-1' FOR MATCHED WITH ERRORS; 
+                                '1' FOR MATCHED; 
+                                '2' FOR MATCHED TO PAPER CHECK; 
+                                '3' FOR MATCH-0 PAYMENT; 
+                                '4' FOR REMOVED FROM WORKLIST; 
+              LAST EDITED:      FEB 08, 2012 
+              HELP-PROMPT:      Enter the status to indicate if the ERA has been matched 
+              DESCRIPTION:      This is the status that indicates whether or not the ERA has been matched to an electronic EFT record.  If the total amt of the EFT payment does not equal the total amount of the ERA payment, the status will be -1 (MATCHED
+                                WITH ERRORS).  If the ERA has a 0-payment and no EFT or check, the status will be 3 (MATCH-0 PAYMENT) and if matched to a paper check, the status will be 2 (MATCHED TO PAPER CHECK).  If the ERA has been removed from the
+                                worklist the status will be 4 (REMOVED FROM WORKLIST).  
+
+              CROSS-REFERENCE:  344.4^AMATCH 
+                                1)= S ^RCY(344.4,"AMATCH",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.4,"AMATCH",$E(X,1,30),DA)
+                                3)= Do not delete
+                                This xref allows easy access to unmatched or mismatched ERA records.  
+
+
+
+344.4,.1      ERA TYPE               0;10 SET
+
+                                '0' FOR MRA; 
+                                '1' FOR ERA; 
+              LAST EDITED:      DEC 06, 2002 
+              HELP-PROMPT:      Enter a 0 if this is an ERA from MEDICARE (MRA) 
+              DESCRIPTION:
+                                This is the field that will designate whether the ERA is from an insurance company or from MEDICARE via the MRA requests.  
+
+
+344.4,.11     INDIVIDUAL EOB COUNT   0;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 17, 2002 
+              HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field contains the total # of EOB detail records included in the ERA.  
+
+              NOTES:            TRIGGERED by the SEQUENCE # field of the ERA DETAIL sub-field of the ELECTRONIC REMITTANCE ADVICE File 
+
+
+344.4,.12     MAIL MESSAGE           0;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      JAN 14, 2003 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This is the list of message #s where the original ERA was received, separated by commas.  
+
+
+344.4,.13     CHECK #                5;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      MAY 23, 2011 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                This is the # of the paper check that was received for payment of this ERA.  
+
+
+344.4,.14     DETAIL POST STATUS     0;14 SET
+
+                                '0' FOR NOT POSTED; 
+                                '1' FOR POSTED; 
+                                '2' FOR MANUALLY POSTED; 
+                                '3' FOR POSTING NOT NEEDED; 
+                                '4' FOR NOT POSTED-REMOVED; 
+              LAST EDITED:      JAN 17, 2012 
+              HELP-PROMPT:      Enter the code that corresponds to whether or not the ERA detail was posted and if so, if it was manually posted. 
+              DESCRIPTION:
+                                This is a flag that indicates whether or not the receipt for the ERA has been posted.  It is used to limit the choices when selecting ERAs for the worklist function.  
+
+              NOTES:            TRIGGERED by the ENTRY field of the ELECTRONIC REMITTANCE ADVICE File 
+
+
+344.4,.15     EXPECTED PAYMENT METHOD CODE 0;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<1) X
+              LAST EDITED:      SEP 12, 2003 
+              HELP-PROMPT:      Answer must be 1-3 characters in length. 
+              DESCRIPTION:
+                                This is the code that indicates the method of payemnt that can be expected as a result of this ERA.  
+
+
+344.4,.16     REMOVED BY             6;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JAN 24, 2012 
+              HELP-PROMPT:      Select the person who removed the ERA from the EEOB worklist. 
+              DESCRIPTION:
+                                This field is used to record the person who removed the ERA from the EEOB worklist.  
+
+
+344.4,.17     REMOVED DATE           6;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 17, 2012 
+              HELP-PROMPT:      Enter the Date/time the ERA was removed. 
+              DESCRIPTION:
+                                This field records the date/time that the ERA was removed from the EEOB worklist.  
+
+              CROSS-REFERENCE:  344.4^AD 
+                                1)= S ^RCY(344.4,"AD",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.4,"AD",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+                                This cross-reference is used by the option 'Mark ERAs Returned to Payer Audit Report'.  
+
+
+
+344.4,.18     REMOVE REASON          6;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1)!($TR(X," ","")="") X
+              LAST EDITED:      JAN 24, 2012 
+              HELP-PROMPT:      Enter the reason the ERA was removed from the EEOB worklist (1-100 characters). 
+              DESCRIPTION:
+                                The justification for removing the ERA from the EEOB worklist.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+344.4,1       ERA DETAIL             1;0 Multiple #344.41 (Add New Entry without Asking)
+
+              LAST EDITED:      AUG 12, 2003 
+              DESCRIPTION:
+                                This subfile contains the list of individual EOBs that were processed in this ERA from a single payer.  
+
+
+              INDEXED BY:       EOB DETAIL & INVALID BILL NUMBER (AVAL)
+
+344.41,.01      SEQUENCE #             0;1 NUMBER (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."1.N) X I $D(X) S DINUM=X
+                LAST EDITED:      AUG 12, 2003 
+                HELP-PROMPT:      Type a number between 0 and 99999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is a sequence # used internally to identify this ERA detail record.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  344.41^B 
+                                  1)= S ^RCY(344.4,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^RCY(344.4,DA(1),1,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  ^^TRIGGER^344.4^.11 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^RCY(344.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,11),X=X S DIU=X K Y S X=DIV S X=DIU+1 S DIH=$G(^RCY(344.4,DIV(0),0)),DIV=X S $P(^(0),U,11)=DIV,DIH=344.4,DIG=.11 D ^DICR
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^RCY(344.4,D0,0)):^(0),1:"") S X=$P(Y(1),U,11),X=X S DIU=X K Y S X=DIV S X=DIU-1 S DIH=$G(^RCY(344.4,DIV(0),0)),DIV=X S $P(^(0),U,11)=DIV,DIH=344.4,DIG=.11 D ^DICR
+                                  3)= Do not delete
+                                  CREATE VALUE)= INDIVIDUAL EOB COUNT+1
+                                  DELETE VALUE)= INDIVIDUAL EOB COUNT-1
+                                  FIELD)= INDIVIDUAL EOB COUNT
+                                  Keeps track of the number of individual EOBs in the EOB transmission.  
+
+
+
+344.41,.02      EOB DETAIL             0;2 POINTER TO EXPLANATION OF BENEFITS FILE (#361.1)
+
+                INPUT TRANSFORM:  S DIC("S")="I '$P(^(0),U,4)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      NOV 25, 2002 
+                HELP-PROMPT:      Enter the EOB detail records that will comprise the EOB record 
+                DESCRIPTION:
+                                  The detail EOB records that comprise the 835 transaction.  
+
+                SCREEN:           S DIC("S")="I '$P(^(0),U,4)"
+                EXPLANATION:      This can only be regular EOB's, not MRA's
+                CROSS-REFERENCE:  344.41^AC 
+                                  1)= S ^RCY(344.4,DA(1),1,"AC",$E(X,1,30),DA)=""
+                                  2)= K ^RCY(344.4,DA(1),1,"AC",$E(X,1,30),DA)
+                                  3)= Do not delete
+
+                CROSS-REFERENCE:  344.4^ADET 
+                                  1)= S ^RCY(344.4,"ADET",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RCY(344.4,"ADET",$E(X,1,30),DA(1),DA)
+                                  3)= Do not delete
+                                  Cross references entire file by EOB detail pointer to file 361.1 
+
+
+                RECORD INDEXES:   AVAL (#293)
+
+344.41,.03      AMOUNT PAID            0;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999999999)!(X<-9999999999999) X
+                LAST EDITED:      FEB 13, 2003 
+                HELP-PROMPT:      Type a Dollar Amount between -9999999999999 and 9999999999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the specific amount the payer has paid on this bill.  
+
+
+344.41,.04      INSURANCE COMPANY ON BILL 0;4 POINTER TO INSURANCE COMPANY FILE (#36)
+
+                LAST EDITED:      AUG 27, 2003 
+                HELP-PROMPT:      Enter the name of the insurance co who supplied this EOB data 
+                DESCRIPTION:
+                                  This is the insurance company that supplied this EOB data 
+
+
+344.41,.05      INVALID BILL NUMBER    0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      APR 09, 2003 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This is the bill # received on the EOB, but it doesn't exist in VistA.  
+
+                CROSS-REFERENCE:  344.41^AD 
+                                  1)= S ^RCY(344.4,DA(1),1,"AD",$E(X,1,30),DA)=""
+                                  2)= K ^RCY(344.4,DA(1),1,"AD",$E(X,1,30),DA)
+                                  3)= Do not delete
+
+                CROSS-REFERENCE:  ^^TRIGGER^344.41^.17 
+                                  1)= Q
+                                  2)= X ^DD(344.41,.05,1,2,2.3) I X S X=DIV S Y(1)=$S($D(^RCY(344.4,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,17),X=X S DIU=X K Y X ^DD(344.41,.05,1,2,2.1) X ^DD(344.41,.05,1,2,2.4)
+                                  2.1)= S X=DIV S Y(1)=$S($D(^RCY(344.4,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,5)
+                                  2.3)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(0)=X S Y(1)=$S($D(^RCY(344.4,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,17)=""
+                                  2.4)= S DIH=$G(^RCY(344.4,DIV(0),1,DIV(1),0)),DIV=X S $P(^(0),U,17)=DIV,DIH=344.41,DIG=.17 D ^DICR
+                                  3)= Do not delete
+                                  CREATE VALUE)= NO EFFECT
+                                  DELETE CONDITION)= BILL NUMBER FROM PAYER=""
+                                  DELETE VALUE)= INVALID BILL NUMBER
+                                  FIELD)= BILL NUMBER FROM PAYER
+
+                RECORD INDEXES:   AVAL (#293)
+
+344.41,.07      ERROR CATEGORY         0;7 SET
+
+                                  '1' FOR VALID BILL NOT FOUND; 
+                                  '2' FOR EOB DETAIL NOT IN IB; 
+                                  '99' FOR OTHER; 
+                LAST EDITED:      DEC 23, 2002 
+                HELP-PROMPT:      Enter the # corresponding to the specific error detected 
+                DESCRIPTION:
+                                  This field is used to categorize the specific errors associated with EOB detail records.  This is the coded error for special exception processing.  
+
+                CROSS-REFERENCE:  344.4^AEXC 
+                                  1)= S ^RCY(344.4,"AEXC",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RCY(344.4,"AEXC",$E(X,1,30),DA(1),DA)
+                                  This xref is used to identify EOB records with exception conditions.  
+
+
+
+344.41,.08      UNSPECIFIC ERROR       0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      SEP 24, 2002 
+                HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                DESCRIPTION:
+                                  This is the text to describe the error associated with EOB detail records when the ERROR CATEGORY field is OTHER.  
+
+
+344.41,.09      TRANSFERRED OUT MSG #  0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      OCT 24, 2002 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                  This field will hold the last mail message number used to transmit a detail record for an EOB received for a bill belonging to another site.  
+
+
+344.41,.1       TRANSFER STATUS        0;10 SET
+
+                                  '0' FOR NOT ACCEPTED; 
+                                  '1' FOR ACCEPTED; 
+                LAST EDITED:      OCT 24, 2002 
+                HELP-PROMPT:      Enter the code that corresponds to the status of the EOB transferred to another site 
+                DESCRIPTION:
+                                  This field indicates whether or not an EOB transfer has been accepted by a site to whom this EOB detail record was sent.  
+
+
+344.41,.11      TRANSFERRED TO SITE    0;11 POINTER TO INSTITUTION FILE (#4)
+
+                LAST EDITED:      OCT 25, 2002 
+                HELP-PROMPT:      Enter the name of the site where the EOB detail record will be sent 
+                DESCRIPTION:
+                                  This is the name of the site where the EOB detail record will be sent.  
+
+
+344.41,.12      TRANSFERRED DATE       0;12 DATE
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JAN 15, 2003 
+                HELP-PROMPT:      Enter the date the EOB was last transferred to another site 
+                DESCRIPTION:
+                                  This is the latest date/time when the transfer of the EOB detail record took place.  
+
+                CROSS-REFERENCE:  344.4^ATOUT 
+                                  1)= S ^RCY(344.4,"ATOUT",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RCY(344.4,"ATOUT",$E(X,1,30),DA(1),DA)
+                                  3)= Do not delete
+                                  This cross reference allows easy access to EOBs that have been transferred out of the site to another site.  
+
+
+
+344.41,.13      ERROR STATUS           0;13 SET
+
+                                  '0' FOR UNRESOLVED; 
+                                  '1' FOR RESOLVED; 
+                LAST EDITED:      OCT 24, 2002 
+                HELP-PROMPT:      Enter the code to indicate if the error for this EOB detail record has been resolved. 
+                DESCRIPTION:
+                                  This indicates if the error associated with this EOB detail record was resolved or not.  If resolved, it will not appear on any more EOB detail exception lists.  
+
+
+344.41,.14      REVERSAL               0;14 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 07, 2003 
+                HELP-PROMPT:      Enter a 1 (YES) if this is a reversal notification 
+                DESCRIPTION:
+                                  This is the flag that indicates the bill was not paid, but was reversed.  
+
+                CROSS-REFERENCE:  344.41^ATB 
+                                  1)= S ^RCY(344.4,DA(1),1,"ATB",$E(X,1,30),DA)=""
+                                  2)= K ^RCY(344.4,DA(1),1,"ATB",$E(X,1,30),DA)
+                                  3)= Do not delete
+                                  This xref is used to easily find reversal or takeback EOBs in an ERA.  
+
+
+
+344.41,.15      FREE TEXT PATIENT NAME 0;15 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>35!($L(X)<1) X
+                LAST EDITED:      DEC 23, 2002 
+                HELP-PROMPT:      Answer must be 1-35 characters in length. 
+                DESCRIPTION:
+                                  This is the name of the patient as returned by the payer.  Used only if the bill cannot be found at the site.  
+
+
+344.41,.16      TRANSFER RECEIVED OTHER SITE 0;16 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      JAN 15, 2003 
+                HELP-PROMPT:      Enter YES (1) if the other site has received the transferred EOB 
+                DESCRIPTION:
+                                  This indicates whether or not the other site has received the transferred EOB record.  
+
+
+344.41,.17      BILL NUMBER FROM PAYER 0;17 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      APR 09, 2003 
+                HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                DESCRIPTION:
+                                  If a bill number must be edited because it could not be found in the site's A/R file, this is the original bill # that the payer sent.  
+
+                WRITE AUTHORITY:  ^
+                NOTES:            TRIGGERED by the INVALID BILL NUMBER field of the ERA DETAIL sub-field of the ELECTRONIC REMITTANCE ADVICE File 
+
+
+344.41,.18      BILLING PROVIDER NPI   3;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<10)!'(X?10N) X
+                LAST EDITED:      JUN 14, 2007 
+                HELP-PROMPT:      Answer must be 10 characters in length. 
+                DESCRIPTION:
+                                  This field contains the NPI for the Billing Provider that is found in piece 16 of the line type 10 of the 835ERA sent from Austin Information Technology Center.  
+
+
+344.41,.19      RENDERING/SERVICING PROV NPI 3;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<10)!'(X?10N) X
+                LAST EDITED:      MAY 06, 2008 
+                HELP-PROMPT:      Answer must be 10 characters in length. 
+                DESCRIPTION:      This field contains the NPI for the Rendering/Servicing Provider that is found in piece 16 of the line type 10 of the 835ERA sent from the Austin Information Technology Center.  This field is named Rendering NPI on the 
+                                  835ERA and can contain the NPI for the Rendering (individual) or the Servicing (non-individual) provider.  
+
+
+344.41,.2       ENTITY TYPE QUALIFIER  3;3 SET
+
+                                  '1' FOR INDIVIDUAL; 
+                                  '2' FOR NON-INDIVIDUAL; 
+                LAST EDITED:      OCT 18, 2007 
+                HELP-PROMPT:      Enter a '1' for an individual NPI or a '2' for a non-individual NPI. 
+                DESCRIPTION:      This field reflects the type of NPI that is being returned in the NM1 segment of the X12N 835.  If it is a 1 then the NPI is for an individual provider.  If it is a 2 then it is a non-individual (organizational) NPI. 
+                                  This data is found in piece 17 of line type 10 in the 835ERA message transmitted from the Austin Information Technology Center.  
+
+
+344.41,.21      RENDERING/SERVICING PROV NAME 3;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>96!($L(X)<2) X
+                LAST EDITED:      JUN 21, 2010 
+                HELP-PROMPT:      Answer must be 2-96 characters in length. 
+                DESCRIPTION:      This field holds the value of the "Rendering Provider Name" field from the NM1 segment of the X12N 835.  It is last name (or servicing organization name) concatenated with a comma (if there is a first name) concatenated
+                                  with the first name.  The last name is piece 18 of a line type of 10 in the 835ERA message and the first name is piece 19 of a line type of 10 in the 835ERA message transmitted from the Austin Information Technology
+                                  Center.  
+
+
+344.41,.22      BILLING PROV COMMENT   3;5 FREE TEXT
+
+                BILLING PROVIDER NPI REJECT COMMENT                                                                            
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+                LAST EDITED:      APR 28, 2008 
+                HELP-PROMPT:      Answer must be 3-80 characters in length. 
+                DESCRIPTION:
+                                  This comment is about the Billing Provider NPI.  This field is filled in only if the NPI is not in proper format.  
+
+
+344.41,.23      REN PROV COMMENT       4;1 FREE TEXT
+
+                RENDERING/SERVICING PROVIDER NPI REJECT COMMENT                                                                
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+                LAST EDITED:      JUN 21, 2010 
+                HELP-PROMPT:      Answer must be 3-80 characters in length. 
+                DESCRIPTION:
+                                  This field is filled in with a comment if the Rendering/Servicing Provider NPI is not in correct format.  
+
+
+344.41,1        RAW DATA               1;0   WORD-PROCESSING #344.411   (NOWRAP)
+
+                DESCRIPTION:
+                                  This field stores the raw data as it was received for the individual EOB if its detail could not be stored in IB.  
+
+
+344.41,1.1      FORMATTED MESSAGE DATA  ;  COMPUTED
+
+                MUMPS CODE:       S X="" N Q,Q0,Q1 D DISP^RCDPESR0("^RCY(344.4,"_D0_",1,"_D1_",1)","Q0",1,"Q1",75,1) I $O(Q1(0)) D EN^DDIOL("FORMATTED MESSAGE DATA: ","","!!") S Q=0 F  S Q=$O(Q1(Q)) D:'Q EN^DDIOL(" ","","!") Q:'Q  D EN^DDIOL(Q1(Q),"","!"
+                                  )
+                ALGORITHM:        S X="" N Q,Q0,Q1 D DISP^RCDPESR0("^RCY(344.4,"_D0_",1,"_D1_",1)","Q0",1,"Q1",75,1) I $O(Q1(0)) D EN^DDIOL("FORMATTED MESSAGE DATA: ","","!!") S Q=0 F  S Q=$O(Q1(Q)) D:'Q EN^DDIOL(" ","","!") Q:'Q  D EN^DDIOL(Q1(Q),"","!"
+                                  )
+                LAST EDITED:      NOV 04, 2002 
+
+344.41,2        RESOLUTION LOG         2;0   WORD-PROCESSING #344.412   (NOWRAP)
+
+                DESCRIPTION:
+                                  This field contains comments to detail the attempts made to remove the exception condition associated with this individual EOB.  
+
+
+344.41,99       BILL REFERENCE NUMBER   ;  COMPUTED
+
+                MUMPS CODE:       S:'$G(DA(1)) DA(1)=+$G(D0),DA=+$G(D1) S X=$$GETBILL^RCDPESR0(.DA)
+                                  9.2 = S Y(344.41,99,81)=$G(D1),Y(344.41,99,80)=$G(D0),Y(344.41,99,1)=$S($D(^RCY(344.4,D0,1,D1,0)):^(0),1:"")
+                                  9.3 = X ^DD(344.41,99,9.2) S D0=$P(Y(344.41,99,1),U,2) S:'D0!'$D(^IBM(361.1,+D0,0)) D0=-1 S Y(344.41,99,101)=$S($D(^IBM(361.1,D0,0)):^(0),1:"")
+                                  9.4 = X ^DD(344.41,99,9.3) S Y(344.41,99,102)=$G(X),D0=$P(Y(344.41,99,101),U,1) S:'D0!'$D(^DGCR(399,+D0,0)) D0=-1 S Y(344.41,99,201)=$S($D(^DGCR(399,D0,0)):^(0),1:"")
+                                  9.5 = X ^DD(344.41,99,9.4) S D0=$P(Y(344.41,99,1),U,2) S:'D0!'$D(^IBM(361.1,+D0,0)) D0=-1 S Y(344.41,99,280)=$G(D0),Y(344.41,99,201)=$S($D(^IBM(361.1,D0,0)):^(0),1:"")
+                                  9.6 = X ^DD(344.41,99,9.5) S Y(344.41,99,202)=$G(X),D0=$P(Y(344.41,99,201),U,1) S:'D0!'$D(^DGCR(399,+D0,0)) D0=-1 S Y(344.41,99,301)=$S($D(^DGCR(399,D0,0)):^(0),1:"")
+                ALGORITHM:        S:'$G(DA(1)) DA(1)=+$G(D0),DA=+$G(D1) S X=$$GETBILL^RCDPESR0(.DA)
+                LAST EDITED:      SEP 25, 2003 
+
+
+
+344.4,2       ERA LEVEL ADJUSTMENTS  2;0 Multiple #344.42 (Add New Entry without Asking)
+
+              DESCRIPTION:      This field holds the ERA level adjustments the payer has applied to the ERA.  These can be additional monies or less monies, depending on the   type of adjustment (i.e. Takeback would be less money, interest would be more
+                                money).  
+
+
+              INDEXED BY:       REFERENCE NUMBER (B)
+
+344.42,.01      REFERENCE NUMBER       0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                LAST EDITED:      JUN 22, 2010 
+                HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                FIELD INDEX:      B (#982)    REGULAR    IR    LOOKUP & SORTING
+                    Short Descr:  REGULAR INDEX
+                      Set Logic:  S ^RCY(344.4,DA(1),2,"B",$E(X,1,50),DA)=""
+                     Kill Logic:  K ^RCY(344.4,DA(1),2,"B",$E(X,1,50),DA)
+                     Whole Kill:  K ^RCY(344.4,DA(1),2,"B")
+                           X(1):  REFERENCE NUMBER  (344.42,.01)  (Subscr 1)  (Len 50)  (forwards)
+
+
+344.42,.02      ADJUSTMENT CODE        0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>5!($L(X)<1) X
+                LAST EDITED:      DEC 23, 2002 
+                HELP-PROMPT:      Answer must be 1-5 characters in length. 
+                DESCRIPTION:
+                                  This is the X12 code for the reason for the adjustment.  
+
+
+344.42,.03      ADJUSTMENT AMOUNT      0;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>999999999999.99)!(X<-999999999999.99) X
+                LAST EDITED:      DEC 23, 2002 
+                HELP-PROMPT:      Type a Dollar Amount between -999999999999.99 and 999999999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the amount of the adjustment.  
+
+
+344.42,.04      ADJUSTMENT TEXT        1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+                LAST EDITED:      JUN 21, 2010 
+                HELP-PROMPT:      Answer must be 1-190 characters in length. 
+                DESCRIPTION:
+                                  This is the text that describes the adjustment code.  
+
+
+
+
+344.4,3.01    CONTACT NAME           3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAR 20, 2003 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is the name of the contact the payer has provided for questions regarding this ERA.  
+
+
+344.4,3.02    CONTACT NUMBER 1       3;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 02, 2010 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This is a phone #/telephone extension or email address for the contact.  
+
+
+344.4,3.03    CONTACT TYPE 1         3;3 SET
+
+                                'EM' FOR E-MAIL; 
+                                'FX' FOR FAX; 
+                                'TE' FOR TELEPHONE; 
+                                'EX' FOR TELEPHONE EXTENSION; 
+              LAST EDITED:      MAR 20, 2003 
+              HELP-PROMPT:      Enter the code for the type of contact information. 
+              DESCRIPTION:
+                                This is the code that describes the type of contact information provided in the CONTACT NUMBER 1 field.  
+
+
+344.4,3.04    CONTACT NUMBER 2       3;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 02, 2010 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This is a phone #/telephone extension or email address for the contact.  
+
+
+344.4,3.05    CONTACT TYPE 2         3;5 SET
+
+                                'EM' FOR E-MAIL; 
+                                'FX' FOR FAX; 
+                                'TE' FOR TELEPHONE; 
+                                'EX' FOR TELEPHONE EXTENSION; 
+              LAST EDITED:      MAR 20, 2003 
+              HELP-PROMPT:      Enter the code for the type of contact information. 
+              DESCRIPTION:
+                                This is the code that describes the type of contact information provided in the CONTACT NUMBER 2 field.  
+
+
+344.4,3.06    CONTACT NUMBER 3       3;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 02, 2010 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This is a phone #/telephone extension or email address for the contact.  
+
+
+344.4,3.07    CONTACT TYPE 3         3;7 SET
+
+                                'EM' FOR E-MAIL; 
+                                'FX' FOR FAX; 
+                                'TE' FOR TELEPHONE; 
+                                'EX' FOR TELEPHONE EXTENSION; 
+              LAST EDITED:      MAR 20, 2003 
+              HELP-PROMPT:      Enter the code for the type of contact information. 
+              DESCRIPTION:
+                                This is the code that describes the type of contact information provided in the CONTACT NUMBER 3 field.  
+
+
+344.4,5.01    PAYER WEB SITE ADDRESS 5;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>115!($L(X)<1) X
+              LAST EDITED:      JUN 18, 2010 
+              HELP-PROMPT:      Enter payer web site address (1-115 characters). 
+              DESCRIPTION:
+                                This is the web site for the payer. The source for this field is the contact data record (type '01') of the X12 835 received from FSC.  
+
+              TECHNICAL DESCR:
+                                From 835 record 1000A PER04 where PER01 = "IC" and 1000A PER03 = "UR" 
+
+
+344.4,7.01    DATE/TIME ERA LINKED   7;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      MAR 24, 2011 
+              HELP-PROMPT:      Enter the date/time the ERA was linked to receipt.  
+              DESCRIPTION:
+                                This is date/time the ERA was linked to receipt. 
+
+              CROSS-REFERENCE:  344.4^AFL 
+                                1)= S ^RCY(344.4,"AFL",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.4,"AFL",$E(X,1,30),DA)
+                                Created to find entries to include on ERA posted to Paper EOB report.  
+
+
+
+344.4,7.02    ERA LINKED BY          7;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAR 28, 2011 
+              HELP-PROMPT:      Select the person who linked the ERA to the receipt. 
+              DESCRIPTION:
+                                This is the person who linked the ERA to the receipt.  
+
+
+344.4,20.01   DATE POSTED TO SUSPENSE 20;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 15, 2003 
+              HELP-PROMPT:      Enter the date/time this receipt was posted to suspense. 
+              DESCRIPTION:
+                                This is the date/time this ERA was posted to suspense.  
+
+
+344.4,20.02   POSTED TO SUSPENSE BY  20;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 15, 2003 
+              HELP-PROMPT:      Enter the name of the person who posted this ERA to suspense. 
+              DESCRIPTION:
+                                This is the person who posted this ERA to suspense.  
+
+
+344.4,20.03   PAPER EOB ENTRY        20;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 28, 2003 
+              HELP-PROMPT:      Enter a 1 (YES) if the ERA was posted using a paper EOB. 
+              DESCRIPTION:
+                                This is a flag that indicates if the ERA was not referenced when its data was posted to A/R and FMS because the data was posted using the paper EOB instead.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+AR BATCH PAYMENT (#344)           RECEIPT (#.08)
+
+EDI LOCKBOX EOB WORKLIST 
+                   (#344.49)      RECEIPT (#.08)
+
+ELECTRONIC REMITTANCE ADVICE 
+                   (#344.4)       ERA DETAIL:SEQUENCE # (#.01)
+
+EXPLANATION OF BENEFITS (#361.1)  ERA DETAIL:EOB DETAIL (#.02)
+
+INSTITUTION (#4)                  ERA DETAIL:TRANSFERRED TO SITE (#.11)
+
+INSURANCE COMPANY (#36)           ERA DETAIL:INSURANCE COMPANY ON BILL (#.04)
+
+NEW PERSON (#200)                 REMOVED BY (#.16)
+                                  ERA LINKED BY (#7.02)
+                                  POSTED TO SUSPENSE BY (#20.02)
+
+
+File #344.4
+
+  Record Indexes:
+
+  ATRID (#292)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  Xref by bank trace # and ins co id #
+        Set Logic:  S ^RCY(344.4,"ATRID",$E(X(1),1,50),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^RCY(344.4,"ATRID",$E(X(1),1,50),$E(X(2),1,30),DA)
+       Whole Kill:  K ^RCY(344.4,"ATRID")
+             X(1):  TRACE NUMBER  (344.4,.02)  (Subscr 1)  (Len 30)  (forwards)
+             X(2):  INSURANCE CO ID  (344.4,.03)  (Subscr 2)  (Len 30)  (forwards)
+
+Subfile #344.41
+
+  Record Indexes:
+
+  AVAL (#293)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  Xref to find EOBs for bills not valid in VistA
+      Description:  This cross reference is set when the free text bill number is entered for the EOB detail and when the EOB detail pointer is deleted.  This cross reference makes it possible to find those bills that do not belong to the site, but were
+                    included in the ERA received from an insurance co.  
+        Set Logic:  S ^RCY(344.4,DA(1),1,"AVAL",DA)=""
+         Set Cond:  S X=$S(X2(1)="":1,1:0)
+       Kill Logic:  K ^RCY(344.4,DA(1),1,"AVAL",DA)
+        Kill Cond:  S X=$S(X2(1)'="":1,1:0)
+       Whole Kill:  K ^RCY(344.4,DA(1),1,"AVAL")
+             X(1):  EOB DETAIL  (344.41,.02)  (forwards)
+             X(2):  INVALID BILL NUMBER  (344.41,.05)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

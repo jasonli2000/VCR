@@ -1,0 +1,163 @@
+STANDARD DATA DICTIONARY #354.5 -- BILLING ALERT DEFINITION FILE                                                                                                                                                                  MAY 20,2014@15:35:39  PAGE 1
+STORED IN ^IBE(354.5,  (14 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                          (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains data used to generate alerts.  This information is used to determine recipients and the contents of the alerts.  Sites should not normally need to delete or edit these entries.  Specific users and mailgroups can be assigned to receive
+each alert message.  
+ 
+Do not add, edit, or delete entries in this file without instructions from your ISC.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: CORRESPONDING ALERT field (#.06) of the IB ERROR File (#350.8) 
+               BILLING ALERT field (#.01) of the BILLING ALERTS File (#354.4) 
+               
+
+CROSS
+REFERENCED BY: NAME(B)
+
+354.5,.001    NUMBER                     NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 04, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+              DESCRIPTION:      This is the internal entry number assigned to this billing alert type.  Entries 1 through 999 are reserved for IB.  
+                                 
+                                The internal number is used by the ib routines to find entries in this file.  Do not delete, edit, or add entries to this file.  
+
+
+354.5,.01     NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(X?.N)!($L(X)<3)!'(X'?1P.E) X
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              DESCRIPTION:
+                                This is the name of this alert.  It should be close in name or meaning to the message text which the users are familiar with seeing.  
+
+              CROSS-REFERENCE:  354.5^B 
+                                1)= S ^IBE(354.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(354.5,"B",$E(X,1,30),DA)
+
+
+354.5,.02     PACKAGE ID             0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<2) X
+              LAST EDITED:      FEB 04, 1993 
+              HELP-PROMPT:      Answer must be 2-5 characters in length. 
+              DESCRIPTION:
+                                This is the package prefix for the package using this notification.  It will be concatenated with the internal number in the BILLING ALERTS file to form the variable XQAID for look up and deleting alerts.  
+
+              TECHNICAL DESCR:
+                                This is used to build the XQAID variable when passed to the alerts API.  
+
+
+354.5,.03     MESSAGE TEXT           0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>51!($L(X)<3) X
+              LAST EDITED:      FEB 04, 1993 
+              HELP-PROMPT:      Answer must be 3-51 characters in length. 
+              DESCRIPTION:
+                                This is the message text that will be appended to the patient's name and ssn and will be displayed to users when first notified about the alert.  
+
+
+354.5,.05     ACTION FLAG            0;5 SET
+
+                                'I' FOR INFORMATION ONLY; 
+                                'R' FOR RUN ROUTINE; 
+              LAST EDITED:      FEB 04, 1993 
+              DESCRIPTION:      Enter 'I' if the user is to take no follow-up action for this notification. Enter 'R' if the user is to take a follow-up action after viewing this notification. 
+                                 
+                                This is a mandatory flag used to regulate processing in the alert software.  No additional action will be allowed after viewing information only alerts.  
+
+
+354.5,.06     ENTRY POINT            0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      FEB 04, 1993 
+              HELP-PROMPT:      Answer must be 1-8 characters in length.  This will be concatentated with the routine name. 
+              DESCRIPTION:
+                                This is the entry point in a routine that will be run when the alert is processed.  It is used to build the variable XQAROU.  This field represents the TAG in tag^routine.  
+
+
+354.5,.07     ROUTINE NAME           0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<2) X
+              LAST EDITED:      FEB 04, 1993 
+              HELP-PROMPT:      Answer must be 2-8 characters in length. 
+              DESCRIPTION:
+                                This is the routine name that will be called by the alert software when processing the alert.  The variable XQAROU will be defined as tag^routine where this is the routine.  (ie xqarou=$p(^ibe(354.4,n,0),"^",6,7) 
+
+
+354.5,2       RECIPIENT GROUPS       2;0 POINTER Multiple #354.52 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                These are mail groups that this alert should be sent to.  
+
+
+354.52,.01      RECIPIENT GROUPS       0;1 POINTER TO MAIL GROUP FILE (#3.8) (Multiply asked)
+
+                LAST EDITED:      FEB 04, 1993 
+                DESCRIPTION:
+                                  Enter the name of a mail group.  The alert will be sent to all current members of this mail group if one is entered.  
+
+                CROSS-REFERENCE:  354.52^B 
+                                  1)= S ^IBE(354.5,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBE(354.5,DA(1),2,"B",$E(X,1,30),DA)
+
+
+
+
+354.5,3       PROCESSING FLAG        3;1 SET
+
+                                'D' FOR DISABLED; 
+                                'E' FOR ENABLED; 
+                                'M' FOR MANDATORY; 
+              LAST EDITED:      FEB 04, 1993 
+              DESCRIPTION:
+                                This field is used to regulate the alert processing.  Notifications flagged as "D" will indicate the alert is disabled and will not be processed.  A flag of "M" indicates the alert is enabled and mandatory.  
+
+
+354.5,200     RECIPIENT USERS        200;0 POINTER Multiple #354.5002 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                These are users who have been determined to need to see this alert.  
+
+
+354.5002,.01    RECIPIENT USERS        0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                LAST EDITED:      FEB 04, 1993 
+                DESCRIPTION:
+                                  These are users who have been determined to need to see this alert.  
+
+                CROSS-REFERENCE:  354.5002^B 
+                                  1)= S ^IBE(354.5,DA(1),200,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBE(354.5,DA(1),200,"B",$E(X,1,30),DA)
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MAIL GROUP (#3.8)                 RECIPIENT GROUPS:RECIPIENT GROUPS (#.01)
+
+NEW PERSON (#200)                 RECIPIENT USERS:RECIPIENT USERS (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

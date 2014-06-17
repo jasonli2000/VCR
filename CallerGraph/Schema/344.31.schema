@@ -1,0 +1,272 @@
+STANDARD DATA DICTIONARY #344.31 -- EDI THIRD PARTY EFT DETAIL FILE                                                                                                                                                               MAY 20,2014@15:30:05  PAGE 1
+STORED IN ^RCY(344.31,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 4.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to store each individual payment from a single payer made to the site using Electronic Funds Transfer and the EDI 3rd Party Lockbox system in VistA.  
+
+
+IDENTIFIED BY: PAYER NAME (#.02), TRACE # (#.04), AMOUNT OF PAYMENT (#.07)
+
+POINTED TO BY: EFT RECORD field (#.17) of the AR BATCH PAYMENT File (#344) 
+               
+
+CROSS
+REFERENCED BY: ERA RECORD(AERA), MATCH STATUS(AMATCH), EFT TRANSACTION(B), DATE/TIME DUPLICATE REMOVED(E)
+
+INDEXED BY:    PAYER NAME (C), TRACE # (D)
+
+
+344.31,.01    EFT TRANSACTION        0;1 POINTER TO EDI LOCKBOX DEPOSIT FILE (#344.3) (Required)
+
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Enter the reference to the eFT transaction that contains this EFT record. 
+              DESCRIPTION:
+                                This is the pointer to the EFT totals record that this EFT was received in.  
+
+              CROSS-REFERENCE:  344.31^B 
+                                1)= S ^RCY(344.31,"B",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.31,"B",$E(X,1,30),DA)
+
+
+344.31,.02    PAYER NAME             0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      JUL 09, 2010 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                This is the insurance co name as reported for the payment on the EFT.  
+
+              FIELD INDEX:      C (#668)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  REGULAR INDEX
+                    Set Logic:  S ^RCY(344.31,"C",$E(X,1,50),DA)=""
+                   Kill Logic:  K ^RCY(344.31,"C",$E(X,1,50),DA)
+                   Whole Kill:  K ^RCY(344.31,"C")
+                         X(1):  PAYER NAME  (344.31,.02)  (Subscr 1)  (Len 50)  (forwards)
+
+
+344.31,.03    PAYER ID               0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This is the payer id as reported for the payment on the EFT.  
+
+
+344.31,.04    TRACE #                0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+              LAST EDITED:      JUN 23, 2010 
+              HELP-PROMPT:      Answer must be 3-50 characters in length. 
+              DESCRIPTION:
+                                This is the bank trace number assigned to the electronic funds transfer (EFT) by the payer's bank.  
+
+              FIELD INDEX:      D (#980)    REGULAR    IR    LOOKUP & SORTING
+                  Short Descr:  REGULAR INDEX
+                    Set Logic:  S ^RCY(344.31,"D",$E(X,1,50),DA)=""
+                   Kill Logic:  K ^RCY(344.31,"D",$E(X,1,50),DA)
+                   Whole Kill:  K ^RCY(344.31,"D")
+                         X(1):  TRACE #  (344.31,.04)  (Subscr 1)  (Len 50)  (forwards)
+
+
+344.31,.05    PROVIDER TAX ID SENT   0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Answer must be 1-15 characters in length. 
+              DESCRIPTION:
+                                This is the tax ID of the Medical Center.  The EFT's are routed to the correct site based on this tax ID.  If the 'TAX ID CORRECTED' is 'Y', this field will contain the incorrect tax ID as received by the FSC in Austin.  
+
+
+344.31,.06    TAX ID CORRECTION      0;6 SET
+
+                                '0' FOR NO CHANGE; 
+                                'E' FOR CHANGE BY EPHRA; 
+                                'C' FOR CHANGE BY CLAIM DATA; 
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      If the tax id was corrected, enter the entity who corrected it. 
+              DESCRIPTION:
+                                This field indicates if the tax id was corrected and if so, who did it.  
+
+
+344.31,.07    AMOUNT OF PAYMENT      0;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999999999999)!(X<0) X
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount of the deposit made by the payer into the banking institution.  
+
+
+344.31,.08    MATCH STATUS           0;8 SET
+
+                                '-1' FOR MATCHED WITH ERRORS; 
+                                '0' FOR UNMATCHED; 
+                                '1' FOR MATCHED; 
+                                '2' FOR PAPER EOB MATCH; 
+              LAST EDITED:      JAN 29, 2003 
+              HELP-PROMPT:      Enter the status to indicate if the payment has been matched to an ERA. 
+              DESCRIPTION:      This is the status that indicates whether or not the EFT payment has been matched to an ERA record.  If the total amt of the EFT payment does not = the total amount of the ERA payment, the status will be -1 (MATCHED WITH 
+                                ERRORS).  
+
+              CROSS-REFERENCE:  344.31^AMATCH 
+                                1)= S ^RCY(344.31,"AMATCH",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.31,"AMATCH",$E(X,1,30),DA)
+                                3)= Do not delete
+
+              CROSS-REFERENCE:  ^^TRIGGER^344.3^.14 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=Y(0),X=X I X S X=DIV X ^DD(344.31,.08,1,2,89.2) S X=$P(Y(101),U,14) S D0=I(0,0) S DIU=X K Y X ^DD(344.31,.08,1,2,1.1) X ^DD(344.31,.08,1,2,1.4)
+                                1.1)= S X=DIV S Y(1)=$S($D(^RCY(344.31,D0,0)):^(0),1:"") S X=DIU+$P(Y(1),U,7)
+                                1.4)= S DIH=$G(^RCY(344.3,DIV(0),0)),DIV=X I $D(^(0)) S $P(^(0),U,14)=DIV,DIH=344.3,DIG=.14 D ^DICR
+                                2)= X ^DD(344.31,.08,1,2,2.3) I X S X=DIV X ^DD(344.31,.08,1,2,89.2) S X=$P(Y(101),U,14) S D0=I(0,0) S DIU=X K Y X ^DD(344.31,.08,1,2,2.1) X ^DD(344.31,.08,1,2,2.4)
+                                2.1)= S X=DIV S Y(1)=$S($D(^RCY(344.31,D0,0)):^(0),1:"") S X=DIU-$P(Y(1),U,7)
+                                2.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$C(59)_$P($G(^DD(344.31,.08,0)),U,3) S X=$P($P(Y(1),$C(59)_X_":",2),$C(59))'["UNMATCH"
+                                2.4)= S DIH=$G(^RCY(344.3,DIV(0),0)),DIV=X I $D(^(0)) S $P(^(0),U,14)=DIV,DIH=344.3,DIG=.14 D ^DICR
+                                89.2)= S I(0,0)=$G(D0),Y(1)=$S($D(^RCY(344.31,D0,0)):^(0),1:""),D0=$P(Y(1),U,1) S:'D0!'$D(^RCY(344.3,+D0,0)) D0=-1 S DIV(0)=D0 S Y(101)=$S($D(^RCY(344.3,D0,0)):^(0),1:"")
+                                CREATE CONDITION)= INTERNAL(MATCH STATUS)
+                                CREATE VALUE)= TOTAL AMOUNT MATCHED+AMOUNT OF PAYMENT
+                                DELETE CONDITION)= OLD MATCH STATUS'["UNMATCH"
+                                DELETE VALUE)= TOTAL AMOUNT MATCHED-AMOUNT OF PAYMENT
+                                FIELD)= #.01:TOTAL AMOUNT MATCHED
+
+
+344.31,.09    RECEIPT #              0;9 POINTER TO AR BATCH PAYMENT FILE (#344)
+
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Enter the receipt that was created for this EFT detail record. 
+              DESCRIPTION:
+                                This is the receipt that was created for this EFT record.  
+
+
+344.31,.1     ERA RECORD             0;10 POINTER TO ELECTRONIC REMITTANCE ADVICE FILE (#344.4)
+
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Enter the id of the ERA record for this EFT. 
+              DESCRIPTION:
+                                This is the ERA record that contains the detail for this EFT.  
+
+              CROSS-REFERENCE:  344.31^AERA 
+                                1)= S ^RCY(344.31,"AERA",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.31,"AERA",$E(X,1,30),DA)
+                                3)= Do not delete
+
+
+344.31,.11    EFT RECORDED AT SITE   0;11 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Enter a 1 if the EFT deposit this EFT was received in has been 
+              DESCRIPTION:
+                                This is a flag that indicates the EFT deposit this EFT was received in has been recorded to the FMS system.  This locks the record and it cannot be overwritten by another transmission of the same EFT deposit.  
+
+
+344.31,.12    DATE CLAIMS PAID       0;12 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 28, 2003 
+              HELP-PROMPT:      Enter the date the payer reported the claims were paid. 
+              DESCRIPTION:
+                                This is the date the payer reported the claims were paid.  
+
+
+344.31,.13    DATE RECEIVED          0;13 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 29, 2003 
+              HELP-PROMPT:      Enter the date this record was added to the system. 
+              DESCRIPTION:
+                                This is the date this record was added to the system.  
+
+
+344.31,.14    TRANSACTION #          0;14 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 13, 2003 
+              HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the transaction # within the receipt for this EFT.  
+
+
+344.31,.15    ACH TRACE#             1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      JUN 21, 2010 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is the ACH trace # assigned by the Lockbox banking institution to this EFT detail record.  
+
+
+344.31,.16    MANUAL TR DOCUMENT     1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2)!'(X?1"TR".E) X
+              LAST EDITED:      JUN 21, 2010 
+              HELP-PROMPT:      Answer must be 2-30 characters in length. 
+              DESCRIPTION:      This is the TR document that was entered on-line to manually post the EFT detail to the correct accounts and remove them from FUND 5287.4, revenue source code 8NZZ. This is used when a RECEIPT was not used to automatically
+                                generate a TR document for the EFT detail record.  
+
+
+344.31,.17    USER WHO REMOVED EFT   3;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 23, 2011 
+              HELP-PROMPT:      User who marked the EFT deposit as a duplicate 
+              DESCRIPTION:
+                                This field records the name of the person who is marking the EFT as a duplicate.  
+
+
+344.31,.18    DATE/TIME DUPLICATE REMOVED 3;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 23, 2011 
+              HELP-PROMPT:      Date/Time duplicate EFT was marked as removed 
+              DESCRIPTION:
+                                This field records the time that the EFT was marked as removed.  
+
+              CROSS-REFERENCE:  344.31^E 
+                                1)= S ^RCY(344.31,"E",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344.31,"E",$E(X,1,30),DA)
+                                This cross reference is used to sort the file by the DATE/TIME RETURNED field (#.18).  
+
+
+
+344.31,.19    EFT REMOVAL REASON     3;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1)!($TR(X," ","")="") X
+              LAST EDITED:      SEP 09, 2011 
+              HELP-PROMPT:      The removal reason must be 1-100 characters in length. 
+              DESCRIPTION:
+                                The EFT removal reason is used to record the justification for removing this EFT.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+344.31,2      ERROR MESSAGES         2;0   WORD-PROCESSING #344.312   (NOWRAP)
+
+              DESCRIPTION:
+                                This is the record of error messages for the EFT record.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+AR BATCH PAYMENT (#344)           RECEIPT # (#.09)
+
+EDI LOCKBOX DEPOSIT (#344.3)      EFT TRANSACTION (#.01)
+                                  MATCH STATUS (#.08)
+
+ELECTRONIC REMITTANCE ADVICE 
+                   (#344.4)       ERA RECORD (#.1)
+
+NEW PERSON (#200)                 USER WHO REMOVED EFT (#.17)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

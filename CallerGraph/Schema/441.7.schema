@@ -1,0 +1,152 @@
+STANDARD DATA DICTIONARY #441.7 -- AMENDMENTS TO DELIVERY SCHEDULES FILE                                                                                                                                                          MAY 20,2014@15:34:21  PAGE 1
+STORED IN ^PRC(441.7,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 5.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the delivery locations and dates for display on purchase orders.  
+
+
+FILE SCREEN (SCR-node) : X $S('$D(PRCHPONO):"I 1",'$D(PRCHLINO):"I $P(^(0),U,1)=PRCHPONO",1:"I $P(^(0),U,1)=PRCHPONO,$P(^(0),U,2)=PRCHDA")
+IDENTIFIED BY: 
+         "Z1": W ?5,$E($P(^(0),U,3),4,5)_"-"_$E($P(^(0),U,3),6,7)_"-"_$E($P(^(0),U,3),2,3)
+         "Z2": S %I=Y,Y=$S('$D(^(0)):"",$D(^PRCS(410.8,+$P(^(0),U,4),0))#2:$P(^(0),U,1),1:""),C=$P(^DD(410.8,.01,0),U,2) D Y^DIQ:Y]"" W ?14,Y,@("$E("_DIC_"%I,0),0)") S Y=%I K %I
+         "Z3": W ?55,$P(^(0),U,2)
+         "Z4": W ?62,"DELV.QTY:",$J($P(^(0),U,5),6)
+
+CROSS
+REFERENCED BY: DELIVERY DATE(AC), LOCATION FOR DELIVERY(AD), QTY TO BE DELIVERED(AE), ORDER NUMBER (PAT)(AG), ITEM(AH), ORDER NUMBER (PAT)(B)
+
+441.7,.01     ORDER NUMBER (PAT)     0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:X[""""!($A(X)=45) X
+              LAST EDITED:      APR 11, 1994 
+              HELP-PROMPT:      Enter entire PAT number 
+              DESCRIPTION:
+                                This is the entire PAT (Pending Accounting Transaction) number that must be a Purchase Order or Requisition.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  441.7^AG^MUMPS 
+                                1)= I $P(^PRC(441.7,DA,0),U,2) S ^PRC(441.7,"AG",$E(X,1,30),$P(^(0),U,2),DA)=""
+                                2)= I $P(^PRC(441.7,DA,0),U,2) K ^PRC(441.7,"AG",$E(X,1,30),$P(^(0),U,2),DA)
+                                This x-ref and the "AH" x-ref  in the ITEM field work together to control the "AG" x-ref, a list of ORDER NUMBER (PAT) and ITEM.  Both fields must have a value for the "AG" x-ref to be created.  The ITEM field must have a
+                                value to remove the "AG" x-ref.  
+
+
+              CROSS-REFERENCE:  441.7^B 
+                                1)= S ^PRC(441.7,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRC(441.7,"B",$E(X,1,30),DA)
+
+
+441.7,1       ITEM                   0;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>5!($L(X)<1)!'(X?1N.N) X I $D(X) S Z=$O(^PRC(443.6,"B",$P(^PRC(441.7,DA,0),U,1),0)) K:'$D(^PRC(443.6,+Z,2,X,0)) X K Z
+              LAST EDITED:      APR 08, 1997 
+              HELP-PROMPT:      Enter line-item number from the order (Must be an item on a Purchase Order or Requisition).  Type a number between 1 and 99999. 
+              DESCRIPTION:
+                                This is the Line-item number for a Purchase Order or Requisition.  
+
+              EXECUTABLE HELP:  S:$D(D) PRCHD=D S X="?",DIC="^PRC(443.6,"_PRCHPO_",2,",DIC(0)="QEM" D ^DIC S:$D(DIE) DIC=DIE S:$D(PRCHD) D=PRCHD K PRCHD,Z
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  441.7^AH^MUMPS 
+                                1)= I $P(^PRC(441.7,DA,0),U,1)]"" S ^PRC(441.7,"AG",$P(^(0),U,1),X,DA)=""
+                                2)= I $P(^PRC(441.7,DA,0),U,1)]"" K ^PRC(441.7,"AG",$P(^(0),U,1),X,DA)
+                                This x-ref and the "AG" x-ref in the ORDER NUMBER (PAT) field work together to control the "AG" x-ref, a list of ORDER NUMBER (PAT) and ITEM.  Both fields must contain data for the "AG" x-ref to be created.  The ORDER 
+                                NUMBER (PAT) field must have data to remove the "AG" x-ref.  
+
+
+
+441.7,2       DELIVERY DATE          0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 21, 1997 
+              HELP-PROMPT:      Enter date on which delivery is to be made. 
+              DESCRIPTION:
+                                This is the date on which delivery of the item (s) is to be made.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  441.7^AC^MUMPS 
+                                1)= I $G(PRCHNORE)=1 D:PRCHAMDA=21 EN6^PRCHAMXE Q:PRCHAMDA=21  D FLAG^PRCHMA Q:$T  I "22,23"[PRCHAMDA S PRCHX=X,X=0 D EN2^PRCHAMXE S X=PRCHX K PRCHX
+                                2)= I $G(PRCHNORE)=1,"22,23"[PRCHAMDA S FLAG=1 D EN2^PRCHAMXE
+                                This x-ref will set the old value in the CHANGES multiple.  If there was no previous value for this field or this is a new field the old value is set to '0'.  If there was a previous value for this field that becomes the 
+                                old value.  
+                                                                           
+                                ****NOTE-See routine PRCHAMXA for information on variable PRCHNORE and incidence of undefined DIK variable errors.  
+
+
+
+441.7,3       LOCATION FOR DELIVERY  0;4 POINTER TO DELIVERY POINT FILE (#410.8) (Required)
+
+              LAST EDITED:      FEB 21, 1997 
+              HELP-PROMPT:      Enter location to which the item should be delivered. 
+              DESCRIPTION:
+                                This is the location to which the item should be delivered.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  441.7^AD^MUMPS 
+                                1)= I $G(PRCHNORE)=1 D:PRCHAMDA=21 EN7^PRCHAMXE Q:PRCHAMDA=21  D FLAG^PRCHMA Q:$T  I "22,23"[PRCHAMDA S PRCHX=X,X=0 D EN3^PRCHAMXE S X=PRCHX K PRCHX
+                                2)= I $G(PRCHNORE)=1,"22,23"[PRCHAMDA S FLAG=1 D EN3^PRCHAMXE
+                                This x-ref will set the old value in the CHANGES multiple.  If there was no previous value for this field or this is a new field the old value is set to '0'.  If there was a previous value for this field that becomes the 
+                                old value.  
+                                                                  
+                                ****NOTE-See routine PRCHAMXA for information on variable PRCHNORE and incidence of undefined DIK variable errors.  
+
+
+
+441.7,4       QTY TO BE DELIVERED    0;5 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999.99)!(X<0)!(X?.E1"."3N.N)!($D(PRCHQTY)&$D(PRCHTOT)&($G(PRCHTOT)+X-$P($G(^PRC(441.7,DA,0)),U,5)>$G(PRCHQTY)&(X'=0))) X
+              LAST EDITED:      FEB 21, 1997 
+              HELP-PROMPT:      How many units should be delivered on this date? (Enter zero to exit option and delete this schedule.) 
+              DESCRIPTION:
+                                This is the quantity to be delivered to the specified location on the specified date.  
+
+              EXECUTABLE HELP:  I $D(PRCHTOT) S PRCHSUM=$G(PRCHQTY)-PRCHTOT+$P($G(^PRC(441.7,DA,0)),U,5) W !,"The largest valid quantity here is ",$S($G(PRCHSUM)>0:PRCHSUM,1:"0"),".",!
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  441.7^AE^MUMPS 
+                                1)= I $G(PRCHNORE)=1 D:PRCHAMDA=21 EN8^PRCHAMXE Q:PRCHAMDA=21  D FLAG^PRCHMA Q:$T  I "22,23"[PRCHAMDA S PRCHX=X,X=0 D EN4^PRCHAMXE S X=PRCHX K PRCHX
+                                2)= I $G(PRCHNORE)=1,"22,23"[PRCHAMDA S FLAG=1 D EN4^PRCHAMXE
+                                This x-ref will set the old value in the CHANGES multiple.  If there was no previous value for this field or this is a new field the old value is set to '0'.  If there was a previous value for this field that becomes the 
+                                old value.  
+                                               
+                                ****NOTE-See routine PRCHAMXA for information on variable PRCHNORE and incidence of undefined DIK variable errors.  
+
+
+
+441.7,5       DELETE FLAG            0;6 SET
+
+                                'D' FOR DELETE; 
+              LAST EDITED:      MAR 07, 1994 
+              DESCRIPTION:
+                                It is a flag to delete the amendments to delivery schedules.  
+
+
+441.7,6       PERMANENT ENTRY        0;7 POINTER TO DELIVERY SCHEDULE (ORDER) FILE (#442.8)
+
+              LAST EDITED:      APR 01, 1994 
+              DESCRIPTION:
+                                It is a permanent corresponding entry in File 442.8 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DELIVERY POINT (#410.8)           LOCATION FOR DELIVERY (#3)
+
+DELIVERY SCHEDULE (ORDER) 
+                   (#442.8)       PERMANENT ENTRY (#6)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

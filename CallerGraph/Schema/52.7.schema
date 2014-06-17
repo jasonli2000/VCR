@@ -1,0 +1,313 @@
+STANDARD DATA DICTIONARY #52.7 -- IV SOLUTIONS FILE                                                                                                                                                                                  MAY 20,2014@15:40  PAGE 1
+STORED IN ^PS(52.7,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  The IV SOLUTIONS file contains drugs which will be used as the primary solutions in the IV room.  Any drug entered in this file must already exist in the DRUG file (50).  All drug information relating to its use in the IV package is stored in the IV
+SOLUTIONS file.  If a drug is no longer to be used as an IV solution, DO NOT delete it from the IV SOLUTIONS file, but simply inactivate it by entering the date it is to be discontinued in the INACTIVATION DATE field.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: PRINT NAME {2} (#.02), VOLUME (#2)[R]
+      "WRITE": I $D(^PSDRUG(+$P(^PS(52.7,+Y,0),"^",2),0)) W !?15,$P(^(0),"^",10)
+
+POINTED TO BY: IV DRUG field (#1) of the IV CATEGORY File (#50.2) 
+               IV DRUG field (#.01) of the IV DRUG sub-field (#50.21) of the IV CATEGORY File (#50.2) 
+               USUAL IV SOLUTION field (#6) of the QUICK CODE sub-field (#52.61) of the IV ADDITIVES File (#52.6) 
+               SOLUTION field (#.01) of the SOLUTION sub-field (#53.158) of the NON-VERIFIED ORDERS File (#53.1) 
+               SOLUTIONS field (#.01) of the SOLUTIONS sub-field (#53.687) of the BCMA MISSING DOSE REQUEST File (#53.68) 
+               SOLUTIONS field (#.01) of the SOLUTIONS sub-field (#53.7712) of the BCMA UNABLE TO SCAN LOG File (#53.77) 
+               SOLUTIONS field (#.01) of the SOLUTIONS sub-field (#53.797) of the BCMA MEDICATION LOG File (#53.79) 
+               SOLUTION field (#.01) of the SOLUTION sub-field (#55.1058) of the BCMA ID sub-field (#55.0105) of the PHARMACY PATIENT File (#55) 
+               SOLUTION field (#.01) of the SOLUTION sub-field (#55.11) of the IV sub-field (#55.01) of the PHARMACY PATIENT File (#55) 
+               SOLUTION field (#.01) of the SOLUTION sub-field (#57.18) of the PHARMACY QUICK ORDER File (#57.1) 
+               
+
+CROSS
+REFERENCED BY: GENERIC DRUG(AC), GENERIC DRUG(AD), INACTIVATION DATE(AE), USED IN IV FLUID ORDER ENTRY(AF), PHARMACY ORDERABLE ITEM(AOI), *PRIMARY DRUG(APD), PRINT NAME(B), SYNONYM(D)
+
+52.7,.01      PRINT NAME             0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E)!(X'?.ANP) X
+              LAST EDITED:      APR 06, 1990 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:        This field should contain the print name of the solution.  The name that is entered here will be printed on the IV label, manufacturing list, ward list, etc.  The volume should NOT be part of the print name, since the
+                                volume of the IV ORDER will be printed next to the print name.  
+
+              DELETE TEST:      .01,0)= I 1 D EN^DDIOL("DELETIONS ARE NOT ALLOWED")
+
+              DELETE AUTHORITY: ^
+              GROUP:            PSJI
+              CROSS-REFERENCE:  52.7^B 
+                                1)= S ^PS(52.7,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.7,"B",$E(X,1,30),DA)
+
+
+52.7,.02      PRINT NAME {2}         0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>24!($L(X)<3) X
+              LAST EDITED:      DEC 19, 1985 
+              HELP-PROMPT:      Answer must be 3-24 characters in length. 
+              DESCRIPTION:
+                                  An additional print name can be added for each primary solution.  This field should only be used when the primary solution is a premix.  
+
+              GROUP:            PSJI
+
+52.7,1        GENERIC DRUG           0;2 POINTER TO DRUG FILE (#50) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P($G(^PSDRUG(+Y,2)),""^"",5)"_$S($D(DRUGEDIT):"",1:",$S('$G(^(""I"")):1,1:^(""I"")'<DT)") D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      OCT 18, 2000 
+              DESCRIPTION:
+                                  This field will link the IV Solution file (#52.7) to the drug file (#50).  
+
+              SCREEN:           S DIC("S")="I '$P($G(^PSDRUG(+Y,2)),""^"",5)"_$S($D(DRUGEDIT):"",1:",$S('$G(^(""I"")):1,1:^(""I"")'<DT)")
+              EXPLANATION:      INACTIVE DRUGS ARE NOT SELECTABLE
+              GROUP:            PSJI
+              CROSS-REFERENCE:  52.7^AC 
+                                1)= S ^PS(52.7,"AC",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.7,"AC",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  52.6^AAP^MUMPS 
+                                1)= I $P($G(^PSDRUG(X,2)),"^",3)'["I" S PSIUDA=X,PSIUX="I" D ENS^PSSGIU K PSIUDA,PSIUX
+                                2)= I '$D(^PS(52.6,"AC",X)) S XX=$O(^PS(52.7,"AC",X,0)) S:XX=DA XX=$O(^(XX)) I XX,$P($G(^PSDRUG(X,2)),"^",3)["I" S PSIUDA=X,PSIUX="I" D END^PSSGIU K PSIUDA,PSIUX
+                                3)= Updates the Application Package's Use field for the generic drug selected.
+                                  This is used to automatically update the Application Packages' use field in the Drug file for the generic drug selected.  In the form of: ^PS(52.7,"AC",X,DA) 
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^52.7^16 
+                                1)= K DIV S (DIV,X)=$P($G(^PSDRUG(X,2)),"^",6) I DIV S DIU=$P($G(^PS(52.7,DA,0)),"^",12) I DIV'=DIU S $P(^(0),"^",12)=DIV I $O(^DD(52.7,16,1,0)) S (D0,DIV(0))=DA,DIH=52.7,DIG=16 D ^DICR
+                                2)= S DIU=$P($G(^PS(52.7,DA,0)),"^",12) I DIU]"" S $P(^(0),"^",12)="" I $O(^DD(52.7,16,1,0)) K DIV S (DIV,X)="",(D0,DIV(0))=DA,DIH=52.7,DIG=16 D ^DICR
+                                3)= Needed to update the PRIMARY DRUG field.
+                                CREATE VALUE)= GENERIC DRUG:#64
+                                DELETE VALUE)= @
+                                FIELD)= PRIMARY DRUG
+                                  Used to update the PRIMARY DRUG field (16) when the solution's GENERIC DRUG field (1) is changed.  The primary drug field will only be updated if the generic drug entered has been matched to a primary drug in the PRIMARY 
+                                DRUG file (50.3).  
+
+
+              CROSS-REFERENCE:  52.7^AD^MUMPS 
+                                1)= D S527^PSSPOID1
+                                2)= D K527^PSSPOID1
+                                This cross reference is used to update the Pharmacy Orderable Item field (#9) of the IV SOLUTIONS file (#52.7). This cross reference is also used to keep the Pharmacy Orderable Item entries in the PHARMACY ORDERABLE ITEM 
+                                file (#50.7) up to date with current information, based on all active Drugs, IV Additives, and IV Solutions that are matched to the Pharmacy Orderable Item. This information includes Inactivation Date status, Non-Formulary
+                                status, Supply status, and Usage status. This information is also sent to CPRS (Computerized Patient Record System) by using the "PS MFSEND OR" protocol to update the corresponding Orderable Item entry in the ORDERABLE
+                                ITEMS file (#101.43). The cross references that are set and killed are: ^PSDRUG("A527",Dispense Drug IEN,IV Solution IEN)="", ^PS(52.7,"AOI",Pharmacy Orderable Item IEN,IV Solution IEN)="".  
+
+
+
+52.7,2        VOLUME                 0;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45)!(X'?.N0.1".".N)!(X>9999)!(X<.01) X I $D(X) S X=X_" ML" D EN^DDIOL(" ML","","?0")
+              LAST EDITED:      JUN 24, 2005 
+              HELP-PROMPT:      Enter a number from 0.01-9999. 
+              DESCRIPTION:
+                                  The number entered here will represent the volume of this solution.  When entering an IV order, this volume will be stuffed into the volume field for that IV ORDER.  
+
+              GROUP:            PSJI
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+52.7,4        ELECTROLYTES           2;0 POINTER Multiple #52.702
+
+              LAST EDITED:      JAN 17, 1992 
+              DESCRIPTION:
+                                  This contains information on the electrolytes that make up this solution.  
+
+              GROUP:            PSJI
+
+52.702,.01      ELECTROLYTES           0;1 POINTER TO DRUG ELECTROLYTES FILE (#50.4) (Multiply asked)
+
+                LAST EDITED:      SEP 29, 1985 
+                DESCRIPTION:        This field should contain the electrolytes that make up this solution.  If the solution drug is AMINOSYN 8.5% W/ELECT, it would be made up of several electrolytes which might be SODIUM, POTASSIUM, CHLORIDE, MAGNESIUM,
+                                  PHOSPHATE and ACETATE.  This field is used during hyperal label generation ONLY.  The IV PACKAGE will break down each solution into individual electrolytes and add together electrolytes that  are the same.  Thereby
+                                  giving total SODIUM, POTASSIUM, CHLORIDE etc. in the hyperal order.  If no electrolytes are entered here the IV PACKAGE will print the solution without breaking it down into electrolytes.  
+
+                GROUP:            PSJI
+
+52.702,1        CONCENTRATION          0;2 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."5N.N) X I $D(X) S PSIVX=X,Y=^DD(50.4,1,0),X=$P(^PS(50.4,+^PS(52.7,DA(1),2,DA,0),0),"^",2) D ENC^PSIV S X=PSIVX_" "_X K PSIVX D STRTH^PSSDDUT2
+                LAST EDITED:      MAR 07, 1986 
+                HELP-PROMPT:      Type a number between 0 and 99999. 
+                DESCRIPTION:        This field is the ratio of MLs to electrolyte unit.  This field makes it possible for the IV PACKAGE to calculate the true strength for each electrolyte.  For example: 
+                                     If the solution you are defining is AMINOSYN 8.5% W/ELECT with the following electrolytes.  
+                                                   ELECTROLYTE                    CONCENTRATION 
+                                                   ===========                    =============
+                                                   SODIUM                         .07  MEQ/ML 
+                                                   CHLORIDE                       .098 MEQ/ML 
+                                                   POTASSIUM                      .066 MEQ/ML 
+                                                   MAGNESIUM                      .01  MEQ/ML 
+                                                   ACETATE                        .142 MEQ/ML 
+                                                   PHOSPHATE                      .03  MM/ML 
+                                   
+                                    If the hyperal order had AMINOSYN 8.5% W/ELECT 500 ML, the 'true' strength of each electrolyte would be: 
+                                                   SODIUM    : 35 MEQ (500 ML*.07 MEQ/ML) 
+                                                   CHLORIDE  : 49 MEQ (500 ML*.098 MEQ/ML) 
+                                                   POTASSIUM : 33 MEQ (500 ML*.066 MEQ/ML) 
+                                                   MAGNESIUM :  5 MEQ (500 ML*.01 MEQ/ML) 
+                                                   ACETATE   : 71 MEQ (500 ML*.142 MEQ/ML) 
+                                                   PHOSPHATE : 15 MM  (500 ML*.03 MM/ML) 
+
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+52.7,5        SYNONYM                3;0 Multiple #52.703
+
+              DESCRIPTION:
+                                These are other names by which a solution may be identified.  
+
+              GROUP:            PSJI
+
+52.703,.01      SYNONYM                0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      JAN 29, 1990 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:
+                                    You may enter a synonym for this drug.  At any 'Select IV SOLUTIONS:' prompt, you will be able to enter the synonym for this drug, rather than the complete name.  
+
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  52.7^D 
+                                  1)= S ^PS(52.7,"D",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PS(52.7,"D",$E(X,1,30),DA(1),DA)
+
+
+
+
+52.7,6        DRUG INFORMATION       4;0   WORD-PROCESSING #52.704
+
+              DESCRIPTION:        Any data entered here will be shown under the 'DRUG INQUIRY' option of the IV PACKAGE.  This field can be used as a means of communication to other pharmacists or nurses on the wards to inform them about critical IV
+                                DRUGS.  
+
+              GROUP:            PSJI
+
+52.7,7        AVERAGE DRUG COST      0;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."10N.N) X
+              LAST EDITED:      SEP 26, 1989 
+              HELP-PROMPT:      Type a Number between 0 and 9999999, 9 Decimal Digits. 
+              DESCRIPTION:       
+                                  This is the average drug cost per ml for this IV solution.  
+                                 
+                                 
+
+              GROUP:            PSJI
+
+52.7,8        INACTIVATION DATE      I;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 17, 2000 
+              DESCRIPTION:        This field is used to inactivate a drug.  An IV drug should NEVER be deleted from a file since some IV ORDERS may still be using it.  Enter the date the drug should be inactivated.  Once the date of inactivation arrives,
+                                the drug will no longer be a valid choice for IV SOLUTIONS.  
+
+              GROUP:            PSJI
+              CROSS-REFERENCE:  52.7^AE^MUMPS 
+                                1)= I '$D(DIU(0)) N PSSTEST S PSSTEST=$P($G(^PS(52.7,DA,0)),"^",11) Q:'PSSTEST  S PSSCROSS=1 D EN1^PSSPOIDT K PSSCROSS Q
+                                2)= I '$D(DIU(0)) N PSSTEST S PSSTEST=$P($G(^PS(52.7,DA,0)),"^",11) Q:'PSSTEST  S PSSCROSS=1 D EN1^PSSPOIDT K PSSCROSS Q
+                                3)= Do Not Delete
+                                This cross reference is used to keep the Pharmacy Orderable Item entry in the PHARMACY ORDERABLE ITEM file (#50.7) up to date with current information, based on all active Drugs, IV Additives, and IV Solutions that are
+                                matched to the Pharmacy Orderable Item. This information includes Inactivation Date status, Non-Formulary status, Supply status, and Usage status. This information is also sent to CPRS (Computerized Patient Record System)
+                                by using the "PS MFSEND OR" protocol to update the corresponding Orderable Item entry in the ORDERABLE ITEMS file (#101.43).  
+
+
+
+52.7,9        PHARMACY ORDERABLE ITEM 0;11 POINTER TO PHARMACY ORDERABLE ITEM FILE (#50.7)
+
+              LAST EDITED:      OCT 17, 2000 
+              DESCRIPTION:      This field is a pointer to the PHARMACY ORDERABLE ITEM (#50.7) File. This field is not editable. It is controlled by the software. Every IV Solution has a Generic Drug pointer to the DRUG (#50) File, and every Drug entry 
+                                has a pointer to the PHARMACY ORDERABLE ITEM (#50.7) File. The software will automatically keep this field updated with the Pharmacy Orderable Item that the Generic Drug points to.  
+
+              TECHNICAL DESCR:
+                                This field is a pointer the Pharmacy Orderable Item (#50.7) File.  
+
+              SCREEN:           S DIC("S")="I $P(^PS(52.7,DA,0),U,4)="""""
+              EXPLANATION:      Only solutions with no data in the PRINT NAME {2} field may be selected.
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52.7^AOI 
+                                1)= S ^PS(52.7,"AOI",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.7,"AOI",$E(X,1,30),DA)
+                                Cross-reference on PHARMACY ORDERABLE ITEM, field #50.7.  
+
+
+
+52.7,16       *PRIMARY DRUG          0;12 POINTER TO PRIMARY DRUG FILE (#50.3) (Required)
+
+              LAST EDITED:      JAN 25, 1996 
+              DESCRIPTION:
+                                  Links the solution in the IV SOLUTIONS file (52.7) to a primary drug in the PRIMARY DRUG file (50.3).  
+
+              TECHNICAL DESCR:
+                                  When the GENERIC DRUG field is edited, the primary drug linked to the generic drug entered for the solution is triggered into this field.  
+
+              NOTES:            TRIGGERED by the *PRIMARY DRUG field of the DRUG File 
+                                TRIGGERED by the GENERIC DRUG field of the IV SOLUTIONS File 
+
+              CROSS-REFERENCE:  52.7^APD 
+                                1)= S ^PS(52.7,"APD",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.7,"APD",$E(X,1,30),DA)
+                                  Used to check if a solution is linked to an order's primary drug if the order is a "non-fluid" type.  
+
+
+
+52.7,17       USED IN IV FLUID ORDER ENTRY 0;13 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      OCT 17, 2000 
+              DESCRIPTION:
+                                Allows Pharmacy to limit the solutions available in IV Fluid order entry.  Solutions having data in the PRINT NAME {2} field are assumed to be multi-ingredient drugs, and are not selectable.  
+
+              TECHNICAL DESCR:
+                                Limits solutions used in clinician IV Fluid order entry to single ingredient drugs only. Solutions with data in the PRINT NAME {2} field (.02) are now allowed to be marked.  
+
+              SCREEN:           S DIC("S")="I $P(^PS(52.7,DA,0),U,4)="""""
+              EXPLANATION:      Only solutions with no data in the PRINT NAME {2} field may be selected.
+              CROSS-REFERENCE:  52.7^AF^MUMPS 
+                                1)= I '$D(DIU(0)) N PSSTEST S PSSTEST=$P($G(^PS(52.7,DA,0)),"^",11) Q:'PSSTEST  S PSSCROSS=1 D EN1^PSSPOIDT K PSSCROSS Q
+                                2)= I '$D(DIU(0)) N PSSTEST S PSSTEST=$P($G(^PS(52.7,DA,0)),"^",11) Q:'PSSTEST  S PSSCROSS=1 D EN1^PSSPOIDT K PSSCROSS Q
+                                This cross reference is used to keep the Pharmacy Orderable Item entry in the PHARMACY ORDERABLE ITEM file (#50.7) up to date with current information, based on all active Drugs, IV Additives, and IV Solutions that are
+                                matched to the Pharmacy Orderable Item. This information includes Inactivation Date status, Non-Formulary status, Supply status, and Usage status. This information is also sent to CPRS (Computerized Patient Record System)
+                                by using the "PS MFSEND OR" protocol to update the corresponding Orderable Item entry in the ORDERABLE ITEMS file (#101.43).  
+
+
+
+52.7,18       PREMIX                 0;14 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      NOV 29, 2007 
+              HELP-PROMPT:      Enter 1 if this Solution is a PreMix IV, enter 0 if this Solution is not a PreMix IV. 
+              DESCRIPTION:
+                                This field is used to identify an IV Solution as a PreMix IV. This indication will be used to identify which entries will have order checks performed against them.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DRUG (#50)                        GENERIC DRUG (#1)
+
+DRUG ELECTROLYTES (#50.4)         ELECTROLYTES:ELECTROLYTES (#.01)
+
+PHARMACY ORDERABLE ITEM (#50.7)   PHARMACY ORDERABLE ITEM (#9)
+
+PRIMARY DRUG (#50.3)              *PRIMARY DRUG (#16)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,589 @@
+STANDARD DATA DICTIONARY #344 -- AR BATCH PAYMENT FILE                                                                                                                                                                            MAY 20,2014@15:30:03  PAGE 1
+STORED IN ^RCY(344,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 4.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds batch payments information.  Payments no longer are posted directly to patient bills, but rather, entered into this file.  Once the entries in this file are reconciled with cash on-hand and verified to be correct, they are then 'posted'
+to the patient bills.  
+ 
+NOTICE: This file SHOULD NOT be edited directly via FileMan.  Information in this file should only be modified via the AR package options.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+IDENTIFIED BY: 
+        "WR1": S %I=Y,Y=$S('$D(^(0)):"",$D(^VA(200,+$P(^(0),U,2),0))#2:$P(^(0),U,1),1:""),C=$P(^DD(200,.01,0),U,2) D Y^DIQ:Y]"" W "   ",Y,@("$E("_DIC_"%I,0),0)") S Y=%I K %I
+        "WR2": W "   ",$E($P(^(0),U,3),4,5)_"-"_$E($P(^(0),U,3),6,7)_"-"_$E($P(^(0),U,3),2,3)
+        "WR3": S %I=Y,Y=$S('$D(^(0)):"",$D(^RC(341.1,+$P(^(0),U,4),0))#2:$P(^(0),U,1),1:""),C=$P(^DD(341.1,.01,0),U,2) D Y^DIQ:Y]"" W "   ",Y,@("$E("_DIC_"%I,0),0)") S Y=%I K %I
+
+POINTED TO BY: RECEIPT # field (#.09) of the EDI THIRD PARTY EFT DETAIL File (#344.31) 
+               RECEIPT field (#.08) of the ELECTRONIC REMITTANCE ADVICE File (#344.4) 
+               RECEIPT # field (#.02) of the EDI LOCKBOX EOB WORKLIST File (#344.49) 
+               RECEIPT # field (#1.03) of the AR FMS DOCUMENT File (#347) 
+               AR BATCH PAYMENT field (#.01) of the AR BATCH PAYMENT sub-field (#348.42) of the AR DATA QUEUE File (#348.4) 
+               
+
+CROSS
+REFERENCED BY: TYPE OF PAYMENT(AA), OPENED BY(AA1), ACCOUNT(AACCT), ACCOUNT(AC), DEPOSIT TICKET(AD), FMS DOCUMENT NUMBER(ADOC), EFT RECORD(AEFT), TRANSACTION(AN01), ACCOUNT(AN03), STATUS(ASTAT), RECEIPT #(B)
+
+344,.01       RECEIPT #              0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>10!($L(X)<7) X D:$D(X) DUPLCATE^RCDPURED
+              LAST EDITED:      APR 05, 2004 
+              HELP-PROMPT:      Answer must be 7-10 characters in length. 
+              DESCRIPTION:      This field should reflect the field service receipt number.  This field is assigned during entry of payments and will separate different types of payment (cash, check, or credit card) for a particular user for a given
+                                time-frame.  
+
+              PRE-LOOKUP:       D LOOKUP^RCDPUREC
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  344^B 
+                                1)= S ^RCY(344,"B",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344,"B",$E(X,1,30),DA)
+                                3)= Needed to look-up Batch Payment entries by RECEIPT NUMBER
+                                This cross-reference is used for sorting and file look-up by receipt 
+                                #.
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^344.4^.08 
+                                1)= Q
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 X ^DD(344,.01,1,2,89.2) S X=$P($G(^RCY(344,+$P(Y(101),U,8),0)),U) S D0=I(0,0) S DIU=X K Y S X="" S DIH=$G(^RCY(344.4,DIV(0),0)),DIV=X I $D(^(0)) S $P(^(0),U,8)=DIV,DIH=344.4,DIG=.08 D ^DIC
+                                R
+                                3)= Do not delete
+                                89.2)= S I(0,0)=$G(D0),Y(1)=$S($D(^RCY(344,D0,0)):^(0),1:""),D0=$P(Y(1),U,18) S:'D0!'$D(^RCY(344.4,+D0,0)) D0=-1 S DIV(0)=D0 S Y(101)=$S($D(^RCY(344.4,D0,0)):^(0),1:"")
+                                CREATE VALUE)= NO EFFECT
+                                DELETE VALUE)= @
+                                FIELD)= ERA REFERENCE:RECEIPT
+
+
+344,.02       OPENED BY              0;2 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      JUN 22, 1992 
+              DESCRIPTION:
+                                This field contains the name of the person who created the receipt.  
+
+              CROSS-REFERENCE:  344^AA1^MUMPS 
+                                1)= I $P(^RCY(344,DA,0),"^",4)]"" K ^RCY(344,"AA",X,$P(^(0),"^",4)) S ^RCY(344,"AA",X,$P(^RCY(344,DA,0),"^",4),DA)=""
+                                2)= I $P(^RCY(344,DA,0),"^",4)]"",$O(^RCY(344,"AA",X,$P(^(0),"^",4),""))=DA K ^RCY(344,"AA",X,$P(^RCY(344,DA,0),"^",4),DA)
+                                3)= NEEDED TO STORE LAST RECEIPT NUMBER USED
+                                This cross-reference stores the last receipt number used by a user specific to type of payment.  
+                                 
+                                This cross-reference is used to show the default Receipt # when using the payment options in the Agent Cashier module.  
+
+
+
+344,.03       DATE OPENED            0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 01, 1998 
+              DESCRIPTION:
+                                This field contains the date/time the receipt was created.  
+
+
+344,.04       TYPE OF PAYMENT        0;4 POINTER TO AR EVENT TYPE FILE (#341.1) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,6)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAY 06, 1998 
+              DESCRIPTION:
+                                A receipt is created for different types of payments, such as, Cash, Credit Card, or Check/Money Order.  This field defines the types of payments that are stored under this receipt.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,6)=1"
+              EXPLANATION:      You can only select payment event types.
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  344^AA^MUMPS 
+                                1)= I $P(^RCY(344,DA,0),"^",2)]"" K ^RCY(344,"AA",$P(^(0),"^",2),X) S ^RCY(344,"AA",$P(^RCY(344,DA,0),"^",2),X,DA)=""
+                                2)= I $P(^RCY(344,DA,0),"^",2)]"",$O(^RCY(344,"AA",$P(^(0),"^",2),X,""))=DA K ^RCY(344,"AA",$P(^RCY(344,DA,0),"^",2),X,DA)
+                                3)= NEEDED TO STORE LAST RECEIPT NUMBER USED
+                                This cross-reference stores the last receipt number used by a user specific to type of payment.  
+                                 
+                                This cross-reference supports the cross-reference in field "OPENED BY".  
+
+
+
+344,.05       *QUEUED TO POST        0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 27, 1998 
+              DESCRIPTION:
+                                *****  This field is no longer used. ***** 
+
+
+344,.06       DEPOSIT TICKET         0;6 POINTER TO AR DEPOSIT FILE (#344.1)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),""^"",12)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 04, 1997 
+              DESCRIPTION:
+                                The Date of Deposit defines the date that the payments received under this batch will be deposited to the bank.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),""^"",12)=1"
+              EXPLANATION:      Select only OPENED deposit tickets
+              CROSS-REFERENCE:  344^AD 
+                                1)= S ^RCY(344,"AD",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344,"AD",$E(X,1,30),DA)
+
+
+344,.07       PROCESSED BY           0;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 27, 1998 
+              DESCRIPTION:
+                                When a receipt is processed, the AR accounts are updated with the payments and the Cash Receipt documents are sent to FMS.  This field tracks the user processing the receipt.  
+
+
+344,.08       DATE/TIME PROCESSED    0;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 27, 1998 
+              DESCRIPTION:
+                                When a receipt is processed, the AR accounts are updated with the payments and the Cash Receipt documents are sent to FMS.  This field tracks the date and time the receipt was processed.  
+
+
+344,.09       *START DATE/TIME       0;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 27, 1998 
+              DESCRIPTION:
+                                *****  This field is no longer used. ***** 
+
+
+344,.1        *END DATE/TIME         0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 27, 1998 
+              DESCRIPTION:
+                                *****  This field is no longer used. ***** 
+
+
+344,.11       LAST EDITED BY         0;11 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 21, 1991 
+              DESCRIPTION:
+                                This contains the name of the person who last edited the receipt entry.  This field is automatically entered each time a person edits the receipt.  
+
+
+344,.12       DATE/TIME LAST EDIT    0;12 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 14, 1991 
+              DESCRIPTION:
+                                This field contains the date/time the receipt was last edited.  
+
+
+344,.14       STATUS                 0;14 SET (Required)
+
+                                '0' FOR CLOSED; 
+                                '1' FOR OPEN; 
+              LAST EDITED:      SEP 12, 1994 
+              DESCRIPTION:
+                                This field stores the status of the receipt.  An open receipt can be modified (payments added, cancelled, or edited).  A closed receipt cannot be changed.  
+
+              CROSS-REFERENCE:  344^ASTAT 
+                                1)= S ^RCY(344,"ASTAT",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344,"ASTAT",$E(X,1,30),DA)
+
+
+344,.15       TOTAL AMOUNT OF RECEIPTS  ;  COMPUTED
+
+              MUMPS CODE:       S X=$$PAYTOTAL^RCDPURED(D0)
+              ALGORITHM:        S X=$$PAYTOTAL^RCDPURED(D0)
+              LAST EDITED:      MAY 07, 1999 
+              DESCRIPTION:
+                                Total of all payments in the receipt.  
+
+
+344,.16       LOCKBOX ACH NUMBER     0;16 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>9!($L(X)<1) X
+              LAST EDITED:      MAR 13, 2003 
+              HELP-PROMPT:      Answer must be 1-9 characters in length. 
+              DESCRIPTION:
+                                Number assigned by banking institution to track their electronic deposit for the V.A.  
+
+
+344,.17       EFT RECORD             0;17 POINTER TO EDI THIRD PARTY EFT DETAIL FILE (#344.31) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $S('$O(^RCY(344,""AEFT"",+Y,0)):1,1:$O(^(0))=DA),$P($G(^RCY(344.31,+Y,0)),U,8)=0" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      MAR 07, 2012 
+              HELP-PROMPT:      Enter the EFT from which this receipt detail record was generated 
+              DESCRIPTION:
+                                If this is the detail receipt for a payment made via an EFT, this is the pointer to the individual EFT that was received.  
+
+              SCREEN:           S DIC("S")="I $S('$O(^RCY(344,""AEFT"",+Y,0)):1,1:$O(^(0))=DA),$P($G(^RCY(344.31,+Y,0)),U,8)=0"
+              EXPLANATION:      1. An EFT record can only be associated with 1 EDI Lockbox type receipt.  2. Selection of a matched EFT cannot occur.  
+              NOTES:            TRIGGERED by the TYPE OF PAYMENT field of the AR BATCH PAYMENT File 
+
+              CROSS-REFERENCE:  344^AEFT 
+                                1)= S ^RCY(344,"AEFT",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344,"AEFT",$E(X,1,30),DA)
+                                3)= Do not delete
+
+
+344,.18       ERA REFERENCE          0;18 POINTER TO ELECTRONIC REMITTANCE ADVICE FILE (#344.4)
+
+              INPUT TRANSFORM:  S DIC("S")="N Z S Z=$O(^RCY(344.4,""ARCT"",+DA,0)) I 'Z!(Z=+Y)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 14, 2003 
+              HELP-PROMPT:      Enter the ERA record that will be used to populate this receipt detail. 
+              DESCRIPTION:
+                                This is the pointer to the ERA record that will be associated with this receipt.  
+
+              SCREEN:           S DIC("S")="N Z S Z=$O(^RCY(344.4,""ARCT"",+DA,0)) I 'Z!(Z=+Y)"
+              EXPLANATION:      Only 1 receipt can be associated with an ERA record
+
+344,1         TRANSACTION            1;0 Multiple #344.01 (Add New Entry without Asking)
+
+              LAST EDITED:      JUN 19, 1992 
+              DESCRIPTION:
+                                This multiple contains all the payment transactions within a receipt.  
+
+
+344.01,.01      TRANSACTION            0;1 NUMBER (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X S:$D(X) DINUM=X
+                LAST EDITED:      MAR 13, 2003 
+                HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This DINUM field is the entry number for each transaction within a receipt.  This field is sequentially assigned by the computer.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  344.01^B 
+                                  1)= S ^RCY(344,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^RCY(344,DA(1),1,"B",$E(X,1,30),DA)
+                                  This x-ref is used for look-up and sorting by FileMan.  
+
+
+                CROSS-REFERENCE:  344^AN01^MUMPS 
+                                  1)= I '$P($G(^RCY(344,DA(1),1,DA,0)),"^",3),$$EDILB^RCDPEU(DA(1))'=1 S ^RCY(344,"AN",DA(1),DA)=""
+                                  2)= K ^RCY(344,"AN",DA(1),DA)
+                                  This cross reference is used to build the list of payments that are unlinked.  An unlinked payment does not have an entry in field .03.  The cross reference for field .03 will remove the cross reference when the field is
+                                  populated.  EDI Lockbox deposit receipts will not have an entry in the .03 field, but are excluded from this xref since the funds are not deposited into suspense but are instead placed in FUND 5287/revenue source code
+                                  8NZZ.  
+
+
+
+344.01,.02      CONFIRMATION #         0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      FEB 22, 1992 
+                HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                DESCRIPTION:
+                                  This data should reflect the confirmation number that the credit card machine returns when entering credit card payments.  
+
+
+344.01,.03      ACCOUNT                0;3        VARIABLE POINTER (Required)
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   430  2    B            n   BILL NUMBER 
+                   2    1    P            n   PATIENT NAME 
+                                         
+                LAST EDITED:      APR 26, 1999 
+                DESCRIPTION:      This field is used to store where the payment should be applied.  If the payment is associated to a specific bill, then the payment will be applied to the bill first and any money left over will be applied to any other
+                                  bills the patient has remaining.  If the bill is not a patient bill, then the money will be applied to the specific bill and any money left over will be refunded.  
+                                   
+                                  If this field is associated with a Patient, then the program will automatically search the patient bills and apply payments to their respective bills until the payment is exhausted.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                  TRIGGERED by the PATIENT NAME OR BILL NUMBER field of the TRANSACTION sub-field of the AR BATCH PAYMENT File 
+
+                CROSS-REFERENCE:  344^AC^MUMPS 
+                                  1)= S:X[";DPT(" ^RCY(344,"AC",X,DA(1),DA)="" I X[";PRCA(430,",$D(^RCD(340,+$P(^PRCA(430,+X,0),"^",9),0)) S ^RCY(344,"AC",$P(^RCD(340,+$P(^PRCA(430,+X,0),"^",9),0),"^"),DA(1),DA)=""
+                                  2)= K:X[";DPT(" ^RCY(344,"AC",X,DA(1),DA) I X[";PRCA(430,",$D(^RCD(340,+$P(^PRCA(430,+X,0),"^",9),0)) K ^RCY(344,"AC",$P(^RCD(340,+$P(^PRCA(430,+X,0),"^",9),0),"^"),DA(1),DA)
+                                  3)= NEEDED FOR ACCOUNT PROFILE
+                                  This cross-reference is needed to display payments not yet posted to patient accounts during the use of the "Account Profile" option.  
+
+
+                CROSS-REFERENCE:  344^AACCT 
+                                  1)= S ^RCY(344,"AACCT",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RCY(344,"AACCT",$E(X,1,30),DA(1),DA)
+                                  This cross reference is used to lookup payments by account.  This is especially useful when determining the pending payments for an account.  
+
+
+                CROSS-REFERENCE:  344^AN03^MUMPS 
+                                  1)= K ^RCY(344,"AN",DA(1),DA)
+                                  2)= S ^RCY(344,"AN",DA(1),DA)=""
+                                  This cross reference is used to build the list of payments that are unlinked.  An unlinked payment does not have an entry in field .03.  This cross reference is initially set when the .01 entry is added to the file.  
+
+
+
+344.01,.04      PAYMENT AMOUNT         0;4 NUMBER (Required)
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(+X'>0) X S:$D(X) X=$J(X,0,2) I $D(X) D CHGAMT^RCDPURED I $D(X) D PAYCHK^RCDPURED
+                LAST EDITED:      MAY 07, 1999 
+                HELP-PROMPT:      Type a Dollar Amount between .01 and 999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This field is the amount of payment to be posted to A/R.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+344.01,.05      AMOUNT PROCESSED       0;5 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+                LAST EDITED:      MAR 05, 1992 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:      Once payments begin to post to bills, this field will reflect the amount of payment actually processed.  For example, if the payment amount is $20.00 and only $15.00 of the payment could be applied, this field would
+                                  reflect the $15.00 processed.  
+
+
+344.01,.06      DATE OF PAYMENT        0;6 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X D:$D(X) PAYDATE^RCDPURED
+                LAST EDITED:      MAY 11, 1999 
+                HELP-PROMPT:      Type a valid date for payment.  Cannot be in future or over a month in past. 
+                DESCRIPTION:      Date of Payment represents the date the payment was received and should be credited to the account.  For example, if the payment was received yesterday, but due to time-delays is being input today, this field should be
+                                  set to T-1 (yesterday).  This is necessary so the patient will get credit for paying bills on time.  If the patients' payment date was, for example, 5/10/92 and the payment was received 5/9/92 but is being input on
+                                  5/12/92, this field should have 5/9/92.  If 5/12/92 is entered, the patient will be incorrectly charged interest and administrative charges.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+344.01,.07      CHECK #                0;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                LAST EDITED:      MAY 23, 2011 
+                HELP-PROMPT:      Answer must be 1-50 characters in length. 
+                DESCRIPTION:      If available the check # should be entered for check payments.  This information will be valuable for tracking 'lost' payments or to provide information for patient inquiries.  The check number will be logged with the
+                                  payment transaction for each bill to which the payment is applied.  
+
+
+344.01,.08      CHECK BANK/ROUTING #   0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      DEC 23, 1998 
+                HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                DESCRIPTION:      If available, the bank # should be entered for check payments.  This information will be valuable for tracking 'lost' payments or to provide information for patient inquiries.  The check number will be logged with the
+                                  payment transaction for each bill to which the payment is applied.  
+
+
+344.01,.09      PATIENT NAME OR BILL NUMBER 0;9 FREE TEXT
+
+                INPUT TRANSFORM:  D PNORBILL^RCDPURED
+                OUTPUT TRANSFORM: S Y=$P(@("^"_$P(Y,";",2)_+Y_",0)"),"^")
+                LAST EDITED:      SEP 26, 2003 
+                HELP-PROMPT:      Enter one of following: Patient Name, Bill No, TRICARE Authorization No, ECME Rx Reference Number or Prescription Number. 
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  ^^TRIGGER^344.01^.03 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^RCY(344,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=DIV,X=X X ^DD(344.01,.09,1,1,1.4)
+                                  1.4)= S DIH=$S($D(^RCY(344,DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=344.01,DIG=.03 D ^DICR:$O(^DD(DIH,DIG,1,0))
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^RCY(344,D0,1,D1,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(344.01,.09,1,1,2.4)
+                                  2.4)= S DIH=$S($D(^RCY(344,DIV(0),1,DIV(1),0)):^(0),1:""),DIV=X S $P(^(0),U,3)=DIV,DIH=344.01,DIG=.03 D ^DICR:$O(^DD(DIH,DIG,1,0))
+                                  3)= Needed to set Account field
+                                  CREATE VALUE)= INTERNAL(#.09)
+                                  DELETE VALUE)= @
+                                  FIELD)= ACCOUNT
+                                  This field allows a customized look-up to the Patient file and Bill number file when prompting the user for "PATIENT NAME OR BILL NUMBER" during payment entry.  Once the user selects the Patient or Bill Number, this data
+                                  is then moved to the "Account" field for VA FileMan Compatiblity for printing.  
+
+
+
+344.01,.1       DATE OF CHECK          0;10 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 29, 1992 
+                DESCRIPTION:      If available, the date appearing at the top of the check should be entered for check payments.  This information will be valuable for tracking 'lost' payments or to provide information for patient inquiries.  The Date of
+                                  Check will be logged with the payment transaction for each bill to which payment is applied.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+344.01,.11      CREDIT CARD #          0;11 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>16!($L(X)<10)!'(X?1N.N) X
+                LAST EDITED:      DEC 10, 1998 
+                HELP-PROMPT:      Answer must be 10-16 characters in length. 
+                DESCRIPTION:      If available, the credit card # should be entered for credit card payments.  This information will be valuable for tracking 'lost' payments or to provide information for patient inquiries.  The Credit Card number will be
+                                  logged with the payment transaction for each bill to which payment is applied.  
+
+
+344.01,.12      ENTERED BY             0;12 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      FEB 25, 1993 
+                DESCRIPTION:
+                                  This field contains the person who entered the payment into the AR system.  
+
+
+344.01,.13      CHECK ACCOUNT #        0;13 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>9!($L(X)<1) X
+                LAST EDITED:      JAN 07, 1999 
+                HELP-PROMPT:      Answer must be 1-9 characters in length. 
+                DESCRIPTION:
+                                  This field is used to store the account number from a check.  
+
+
+344.01,.14      EDITED BY              0;14 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      OCT 16, 2003 
+                DESCRIPTION:
+                                  This field contains the person who edited the payment entry into the AR system.  
+
+
+344.01,.21      ACCOUNT LOOKUP         2;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      SEP 02, 1998 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                DESCRIPTION:      This field is used to store the account lookup information.  The account lookup information is obtained from automatic payment processing.  The account lookup information may not be successful in finding the correct 
+                                  account and is stored for manual linking of the account by the user.  
+
+
+344.01,.22      BATCH NUMBER           2;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      SEP 02, 1998 
+                HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  The batch number in combination with the sequence number is supplied by automatic payment processing and is used to identify the payment at the central bank.  
+
+
+344.01,.23      SEQUENCE NUMBER        2;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      SEP 02, 1998 
+                HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  The sequence number in combination with the batch number is supplied by automatic payment processing and is used to identify the payment at the central bank.  
+
+
+344.01,.24      PAYMENT TYPE           2;4 SET
+
+                                  '1' FOR CASH; 
+                                  '2' FOR CHECK; 
+                                  '3' FOR CREDIT CARD; 
+                LAST EDITED:      DEC 23, 1998 
+                DESCRIPTION:
+                                  This field is used to identify the type of payment used by automatic payment processing.  
+
+
+344.01,.25      UNAPPLIED DEPOSIT NUMBER 2;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+                LAST EDITED:      JAN 20, 1999 
+                HELP-PROMPT:      Answer must be 13 characters in length. 
+                DESCRIPTION:
+                                  This field stores the unapplied deposit number used on the Cash Receipt document when referencing the suspense fund.  
+
+
+344.01,.26      CLEAR SUSPENSE FMS DOC ID# 2;6 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      APR 28, 1999 
+                HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                DESCRIPTION:
+                                  This field is used to enter the FMS Document ID Number used to clear a payment from suspense in FMS.  
+
+                DELETE TEST:      1,0)= I 1 W !,"You cannot delete this value.  Use lowercase x to override current value."
+
+
+344.01,.27      ERA WORKLIST SEQUENCE  0;27 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 29, 2003 
+                HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the ien of the entry in file 344.491 that was used to create this line in the receipt.  
+
+
+344.01,.28      AUTO DECREASE ADJUSTMENT 0;28 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      MAY 09, 2003 
+                HELP-PROMPT:      Enter 1 if there is a decrease adjustment from EOB Worklist for this payment. 
+                DESCRIPTION:
+                                  This is the flag that indicates the EOB Worklist has a pending decrease adjustment for this payment.  
+
+
+344.01,1.01     POSTING ERROR          1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      FEB 22, 1992 
+                HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                DESCRIPTION:
+                                  If a payment transaction cannot be posted to a bill, this field will contain the type of problem encountered.  
+
+
+344.01,1.02     COMMENT                1;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      JAN 21, 1999 
+                HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                DESCRIPTION:
+                                  This field is used to enter comments for payments cancelled or unapplied.  
+
+
+
+
+344,100       *PROGRESS               ;  COMPUTED
+
+              MUMPS CODE:       S X=""
+              ALGORITHM:        S X=""
+              LAST EDITED:      MAY 07, 1999 
+              DESCRIPTION:
+                                *****  This field is no longer used. ***** 
+
+
+344,101       NUMBER OF TRANSACTIONS  ;  COMPUTED
+
+              MUMPS CODE:       S X=$$PAYCOUNT^RCDPURED(D0)
+              ALGORITHM:        S X=$$PAYCOUNT^RCDPURED(D0)
+              LAST EDITED:      MAY 07, 1999 
+              DESCRIPTION:
+                                Total number of payment transactions recorded on a receipt.  
+
+
+344,200       FMS DOCUMENT NUMBER    2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      JAN 28, 1999 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This field is used to store the FMS document number used to create the CR code sheets for this receipt.  
+
+              CROSS-REFERENCE:  344^ADOC 
+                                1)= S ^RCY(344,"ADOC",$E(X,1,30),DA)=""
+                                2)= K ^RCY(344,"ADOC",$E(X,1,30),DA)
+                                This cross reference is used to lookup up the receipt number if the cash receipt document is known.  
+
+
+
+344,201       CR DOCUMENT ENTERED ON LINE 2;2 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 27, 2001 
+              DESCRIPTION:
+                                This field will override the status of a cash receipt document.  If a cash receipt document is rejected, you can set this field to a 1 to show the document is entered on line.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+AR DEPOSIT (#344.1)               DEPOSIT TICKET (#.06)
+
+AR EVENT TYPE (#341.1)            TYPE OF PAYMENT (#.04)
+
+EDI THIRD PARTY EFT DETAIL 
+                   (#344.31)      EFT RECORD (#.17)
+
+ELECTRONIC REMITTANCE ADVICE 
+                   (#344.4)       RECEIPT # (#.01)
+                                  ERA REFERENCE (#.18)
+
+NEW PERSON (#200)                 OPENED BY (#.02)
+                                  PROCESSED BY (#.07)
+                                  LAST EDITED BY (#.11)
+                                  TRANSACTION:ENTERED BY (#.12)
+                                  EDITED BY (#.14)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

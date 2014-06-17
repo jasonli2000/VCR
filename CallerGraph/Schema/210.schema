@@ -1,0 +1,1243 @@
+STANDARD DATA DICTIONARY #210 -- NURS STAFF FILE                                                                                                                                                                                  MAY 20,2014@15:38:30  PAGE 1
+STORED IN ^NURSF(210,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The Nursing Staff file contains information on nursing employees.  Data includes staff demographics, title/position(s) held, FTEE, assignment locations, primary tour of duty, nursing grade/step code, salary, license information, emergency contact, dates
+employed, promotion date, Nursing Professional Standards Board/proficiency due dates, professional education, highest nursing and/or academic degree, faculty appointments, certification information, military experience, MI review group information, and
+medical center privileges.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+IDENTIFIED BY: PRIMARY SERVICE POSITION (#2), TOTAL ASSIGNMENT FTEE (#5), STATUS (#5.5)[R], MI REVIEW GROUP (#28.1)
+
+CROSS
+REFERENCED BY: STATUS(AC), EMPLOYEE NAME(B), PROFESSIONAL EXPERIENCE(B), GRADE/STEP CODE(D)
+
+210,.01       EMPLOYEE NAME          0;1 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      AUG 07, 1990 
+              HELP-PROMPT:      Name of employee (Last,First MI) 
+              DESCRIPTION:
+                                Pointer to NEW PERSON FILE (#200).  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  210^B 
+                                1)= S ^NURSF(210,"B",$E(X,1,30),DA)=""
+                                2)= K ^NURSF(210,"B",$E(X,1,30),DA)
+                                This is the main index on the NURS STAFF file on the Employee Name Field.  
+
+
+
+210,1         SOCIAL SECURITY NUMBER  ;  COMPUTED
+
+              MUMPS CODE:       S:$D(^VA(200,$P(^NURSF(210,D0,0),"^"),1)) NSSN=$P(^(1),"^",9),X=$E(NSSN,1,3)_"-"_$E(NSSN,4,5)_"-"_$E(NSSN,6,9) K NSSN
+              ALGORITHM:        S:$D(^VA(200,$P(^NURSF(210,D0,0),"^"),1)) NSSN=$P(^(1),"^",9),X=$E(NSSN,1,3)_"-"_$E(NSSN,4,5)_"-"_$E(NSSN,6,9) K NSSN
+              LAST EDITED:      MAY 18, 1990 
+              DESCRIPTION:
+                                Extended pointer to NEW PERSON FILE (field 9 of FILE #200).  Employee's SSN.  
+
+
+210,2         PRIMARY SERVICE POSITION  ;  COMPUTED
+
+              MUMPS CODE:       S DA=D0 D EN2^NURSUT0 S X=$S($G(NPSPOS)="":"",1:$G(NPSPOS)) K DA,NPSPOS,NOD1,NOD2
+              ALGORITHM:        S DA=D0 D EN2^NURSUT0 S X=$S($G(NPSPOS)="":"",1:$G(NPSPOS)) K DA,NPSPOS,NOD1,NOD2
+              LAST EDITED:      MAR 22, 1995 
+              DESCRIPTION:
+                                This field indicates the employee's primary SERVICE POSITION.  
+
+
+210,3         LOCATION PRIMARY PRODUCT LINE  ;  COMPUTED
+
+              MUMPS CODE:       S DA=+D0 D EN2^NURSUT0 S X=$P($G(^NURSF(212.7,+$P($G(^NURSF(211.4,+$O(^NURSF(211.4,"B",+$G(^NURSF(211.8,+$G(NOD1),0)),0)),1)),"^",4),0)),"^")
+              ALGORITHM:        S DA=+D0 D EN2^NURSUT0 S X=$P($G(^NURSF(212.7,+$P($G(^NURSF(211.4,+$O(^NURSF(211.4,"B",+$G(^NURSF(211.8,+$G(NOD1),0)),0)),1)),"^",4),0)),"^")
+              LAST EDITED:      JUL 29, 1996 
+              DESCRIPTION:
+                                This field indicates the service/program/product line associated with the employee's primary assignment.  
+
+
+210,3.1       SVC POS PRIMARY PRODUCT LINE  ;  COMPUTED
+
+              MUMPS CODE:       S DA=+D0 D EN2^NURSUT0 S X=$G(NPSPOS(2))
+              ALGORITHM:        S DA=+D0 D EN2^NURSUT0 S X=$G(NPSPOS(2))
+              DESCRIPTION:
+                                This field indicates the service/program/product line associated with the employee's primary service position.  
+
+
+210,4         PRIMARY FACILITY        ;  COMPUTED
+
+              MUMPS CODE:       S DA=+D0 D EN2^NURSUT0 Q:'NOD1  S X=$$GET1^DIQ(4,+$P($G(^SC(+$G(^NURSF(211.8,NOD1,0)),0)),U,4),.01,"I")
+              ALGORITHM:        S DA=+D0 D EN2^NURSUT0 Q:'NOD1  S X=$$GET1^DIQ(4,+$P($G(^SC(+$G(^NURSF(211.8,NOD1,0)),0)),U,4),.01,"I")
+              LAST EDITED:      MAR 04, 2003 
+              DESCRIPTION:
+                                This field indicates the Institution/Division associated with the employee's primary assignment.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210,5         TOTAL ASSIGNMENT FTEE   ;  COMPUTED
+
+              MUMPS CODE:       S NUR("DA")=D0 D EN1^NURSUT2 S X=+$J(NURTFTEE,5,3) K NURTFTEE
+              ALGORITHM:        S NUR("DA")=D0 D EN1^NURSUT2 S X=$J(NURTFTEE,5,3) K NURTFTEE
+              LAST EDITED:      MAY 22, 1997 
+              DESCRIPTION:
+                                This is the employee's actual FTEE.  
+
+              EXECUTABLE HELP:  W:$D(NURSEP) !,?5,"TYPE A NUMBER BETWEEN 0 AND 1 (e.g. 0,.2,.5,1)."
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210,5.5       STATUS                 0;2 SET (Required)
+
+                                'A' FOR ACTIVE; 
+                                'I' FOR INTERMITTENT; 
+                                'R' FOR INACTIVE; 
+              LAST EDITED:      FEB 12, 1991 
+              DESCRIPTION:
+                                Indicates if the individual is currently employed in Nursing Service.  IDENTIFIER 
+
+              CROSS-REFERENCE:  210^AC 
+                                1)= S ^NURSF(210,"AC",$E(X,1,30),DA)=""
+                                2)= K ^NURSF(210,"AC",$E(X,1,30),DA)
+                                This index is used to identify the employee's status.  
+
+
+
+210,6         LOCATION                ;  COMPUTED
+
+              MUMPS CODE:       D EN2^NURSUT2
+              ALGORITHM:        D EN2^NURSUT2
+              LAST EDITED:      AUG 18, 1988 
+              DESCRIPTION:
+                                Employee's Primary Assignment Location.  
+
+
+210,6.3       ASSIGN TOUR OF DUTY     ;  COMPUTED
+
+              ASSIGN TOUR OF DUTY                                                                                              
+              MUMPS CODE:       S DA=D0 D EN3^NURSUT0 S NUR=$S($D(^NURSF(211.8,+NOD1,1,+NOD2,0)):$P(^(0),U,10),1:""),X=$S($D(^NURSF(211.6,+NUR,0)):$P(^(0),U),1:"") K NUR,NOD1,NOD2
+              ALGORITHM:        S DA=D0 D EN3^NURSUT0 S NUR=$S($D(^NURSF(211.8,+NOD1,1,+NOD2,0)):$P(^(0),U,10),1:""),X=$S($D(^NURSF(211.6,+NUR,0)):$P(^(0),U),1:"") K NUR,NOD1,NOD2
+              LAST EDITED:      AUG 18, 1992 
+              DESCRIPTION:
+                                Employee's primary assignment location.  
+
+
+210,6.5       GRADE/STEP CODE        7;1 POINTER TO NURS PAY SCALE FILE (#211.1) (Required)
+
+              LAST EDITED:      FEB 25, 1986 
+              DESCRIPTION:
+                                Indicates employee's service category, grade, and step level.  Pointer to NURS PAY SCALE FILE (#211.1).  
+
+              EXECUTABLE HELP:  S MSG(1)="Examples of Grade/Step Code:",MSG(2)="R/A/5 = Registered Nurse,Associate Grade,Step 5",MSG(3)="N/4/7 = Nursing Assistant,GS4,Step 7" D EN^DDIOL(.MSG) K MSG
+              CROSS-REFERENCE:  210^D 
+                                1)= S ^NURSF(210,"D",$E(X,1,30),DA)=""
+                                2)= K ^NURSF(210,"D",$E(X,1,30),DA)
+                                This index is used to identify the employee's grade/step.  
+
+
+
+210,6.7       UNIFORM ALLOWANCE      13;3 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              DESCRIPTION:
+                                Indicates whether or not an employee is receiving a uniform allowance.  
+
+
+210,7         DATE OF BIRTH           ;  COMPUTED DATE
+
+              MUMPS CODE:       X ^DD(210,7,9.2) S X=$P(Y(210,7,101),U,3) S D0=Y(210,7,80)
+                                9.2 = S Y(210,7,80)=$S($D(D0):D0,1:""),Y(210,7,1)=$S($D(^NURSF(210,D0,0)):^(0),1:""),D0=$P(Y(210,7,1),U,1) S:'$D(^VA(200,+D0,1)) D0=-1 S Y(210,7,101)=$S($D(^VA(200,D0,1)):^(1),1:"")
+              ALGORITHM:        .01:5
+              LAST EDITED:      MAR 20, 1990 
+              DESCRIPTION:
+                                Extended pointer to NEW PERSON FILE (field 5 of File #200).  
+
+
+210,7.5       AGE                     ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(210,7.5,9.6) S X=$S(Y(210,7.5,2):Y(210,7.5,18),Y(210,7.5,19):X)
+                                9.2 = X $P(^DD(210,7,0),U,5,99) S Y(210,7.5,1)=X S X=Y(210,7.5,1)>0,Y(210,7.5,2)=X,Y(210,7.5,3)=X,Y(210,7.5,4)=X,X=DT S X=X,Y(210,7.5,5)=X S X=1,Y(210,7.5,6)=X S X=3
+                                9.3 = X ^DD(210,7.5,9.2) S X=$E(Y(210,7.5,5),Y(210,7.5,6),X),Y(210,7.5,7)=X S X=Y(210,7.5,1),Y(210,7.5,8)=X S X=1,Y(210,7.5,9)=X S X=3
+                                9.4 = X ^DD(210,7.5,9.3) S X=$E(Y(210,7.5,8),Y(210,7.5,9),X) S Y=X,X=Y(210,7.5,7),X=X-Y,Y(210,7.5,10)=X,Y(210,7.5,11)=X,Y(210,7.5,12)=X,X=DT S X=X,Y(210,7.5,13)=X S X=4
+                                9.5 = X ^DD(210,7.5,9.4) S Y(210,7.5,14)=X S X=7,X=$E(Y(210,7.5,13),Y(210,7.5,14),X),Y(210,7.5,15)=X S X=Y(210,7.5,1),Y(210,7.5,16)=X S X=4,Y(210,7.5,17)=X S X=7
+                                9.6 = X ^DD(210,7.5,9.5) S X=$E(Y(210,7.5,16),Y(210,7.5,17),X) S Y=X,X=Y(210,7.5,15),X=X<Y,Y=X,X=Y(210,7.5,10),X=X-Y,Y(210,7.5,18)=X S X=1,Y(210,7.5,19)=X S X=0
+              ALGORITHM:        $S(#7>0:$E(TODAY,1,3)-$E(#7,1,3)-($E(TODAY,4,7)<$E(#7,4,7)),1:0)
+              LAST EDITED:      MAR 20, 1990 
+              DESCRIPTION:
+                                Computed age of employee.  
+
+
+210,8         SEX                     ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(210,8,9.3) S X=$P($P(Y(210,8,102),$C(59)_$P(Y(210,8,101),U,2)_":",2),$C(59),1) S D0=Y(210,8,80)
+                                9.2 = S Y(210,8,80)=$S($D(D0):D0,1:""),Y(210,8,1)=$S($D(^NURSF(210,D0,0)):^(0),1:""),D0=$P(Y(210,8,1),U,1) S:'$D(^VA(200,+D0,0)) D0=-1
+                                9.3 = X ^DD(210,8,9.2) S Y(210,8,102)=$C(59)_$S($D(^DD(200,4,0)):$P(^(0),U,3),1:""),Y(210,8,101)=$S($D(^VA(200,D0,1)):^(1),1:"")
+              ALGORITHM:        .01:4
+              LAST EDITED:      MAR 20, 1990 
+              DESCRIPTION:
+                                Extended pointer to NEW PERSON FILE (field 4 of FILE #200).  
+
+
+210,9         HOME ADDRESS            ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(210,9,9.2) S X=$P(Y(210,9,101),U,1) S D0=Y(210,9,80)
+                                9.2 = S Y(210,9,80)=$S($D(D0):D0,1:""),Y(210,9,1)=$S($D(^NURSF(210,D0,0)):^(0),1:""),D0=$P(Y(210,9,1),U,1) S:'$D(^VA(200,+D0,0)) D0=-1 S Y(210,9,101)=$S($D(^VA(200,D0,.11)):^(.11),1:"")
+              ALGORITHM:        .01:.111
+              LAST EDITED:      MAR 20, 1990 
+              DESCRIPTION:
+                                Street number and street name of current residence.  
+
+
+210,11        HOME CITY               ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(210,11,9.2) S Y(210,11,101)=$S($D(^VA(200,D0,.11)):^(.11),1:"") S X=$P(Y(210,11,101),U,4) S D0=Y(210,11,80)
+                                9.2 = S Y(210,11,80)=$S($D(D0):D0,1:""),Y(210,11,1)=$S($D(^NURSF(210,D0,0)):^(0),1:""),D0=$P(Y(210,11,1),U,1) S:'$D(^VA(200,+D0,0)) D0=-1
+              ALGORITHM:        .01:.114
+              LAST EDITED:      MAR 20, 1990 
+              DESCRIPTION:
+                                City where employee is currently residing.  
+
+
+210,12        HOME STATE              ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(210,12,9.2) S Y(210,12,101)=$S($D(^VA(200,D0,.11)):^(.11),1:"") S X=$S('$D(^DIC(5,+$P(Y(210,12,101),U,5),0)):"",1:$P(^(0),U,1)) S D0=Y(210,12,80)
+                                9.2 = S Y(210,12,80)=$S($D(D0):D0,1:""),Y(210,12,1)=$S($D(^NURSF(210,D0,0)):^(0),1:""),D0=$P(Y(210,12,1),U,1) S:'$D(^VA(200,+D0,0)) D0=-1
+              ALGORITHM:        .01:.115
+              LAST EDITED:      MAR 20, 1990 
+              DESCRIPTION:
+                                Pointer to the STATE FILE (#5).  
+
+
+210,12.1      HOME ZIP CODE           ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(210,12.1,9.2) S Y(210,12.1,101)=$S($D(^VA(200,D0,.11)):^(.11),1:"") S X=$P(Y(210,12.1,101),U,6) S D0=Y(210,12.1,80)
+                                9.2 = S Y(210,12.1,80)=$S($D(D0):D0,1:""),Y(210,12.1,1)=$S($D(^NURSF(210,D0,0)):^(0),1:""),D0=$P(Y(210,12.1,1),U,1) S:'$D(^VA(200,+D0,0)) D0=-1
+              ALGORITHM:        .01:.116
+              DESCRIPTION:
+                                Zip code for employee's home address.  
+
+
+210,13.3      MAILING ADDRESS        15;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+              LAST EDITED:      APR 06, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 2-50 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Street number and street name of current mailing address.  
+
+
+210,13.35     MAILING ADDRESS 2      15;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+              LAST EDITED:      OCT 15, 1992 
+              HELP-PROMPT:      Answer must be 2-50 characters in length. 
+              DESCRIPTION:
+                                This is the second line of the mailing address of the new person.  
+
+
+210,13.4      MAILING ADDRESS 3      15;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)<2 X S:$L(X)>35 X=$E(X,1,35)
+              LAST EDITED:      OCT 15, 1992 
+              HELP-PROMPT:      Answer must be 2-35 characters in length. 
+              DESCRIPTION:
+                                This is the third line of the mailing address of the new person.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210,13.5      MAILING CITY           15;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      APR 17, 1987 
+              HELP-PROMPT:      ANSWER MUST BE 2-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                City of mailing address.  
+
+
+210,13.7      MAILING STATE          15;5 POINTER TO STATE FILE (#5)
+
+              HELP-PROMPT:      Enter state where mailing address is located. 
+              DESCRIPTION:
+                                Pointer to STATE FILE (#5).  
+
+
+210,13.9      MAILING ZIP CODE       15;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5)!'(X?5N!(X?5N1"-"4N)) X
+              LAST EDITED:      SEP 08, 1990 
+              HELP-PROMPT:      Answer with ZIP CODE or ZIP+4. 
+              DESCRIPTION:
+                                Zip code of mailing address.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210,14        TELEPHONE NUMBER       2;0 Multiple #210.01 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Current telephone number of employee.  
+
+
+210.01,.01      TELEPHONE NUMBER       0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<4) X
+                LAST EDITED:      SEP 08, 1990 
+                HELP-PROMPT:      Answer must be 4-30 characters in length. 
+                DESCRIPTION:
+                                  Current telephone number of employee.  
+
+
+210.01,1        OWNER OF TELEPHONE NUMBER 0;2 SET (Required)
+
+                                  'S' FOR SELF; 
+                                  'R' FOR RELATIVE; 
+                                  'N' FOR NEIGHBOR; 
+                                  'O' FOR OTHER; 
+                LAST EDITED:      MAY 09, 1985 
+                DESCRIPTION:
+                                  Indicates owner of the phone number (i.e., self, relative, neighbor or other).  
+
+
+210.01,2        OTHER OWNER OF TELEPHONE NO. 0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JAN 22, 1988 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  Indicates name of 'other' phone owner. 
+
+
+
+
+210,15        NAME OF EMERGENCY CONTACT 3;0 Multiple #210.02 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Indicates name of individual to contact if employee is involved in an accident. Demographic information on the 'Emergency Contact' is also documented.  
+
+
+210.02,.01      NAME OF EMERGENCY CONTACT 0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                HELP-PROMPT:      ANSWER MUST BE 3-30 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  Name of individual to be contacted in case of an emergency.  
+
+
+210.02,1        RELATIONSHIP TO STAFF MEMBER 0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                HELP-PROMPT:      ANSWER MUST BE 1-30 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  Indicates relationship of 'emergency contact' to employee.  
+
+
+210.02,2        E-ADDRESS              0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                HELP-PROMPT:      ANSWER MUST BE 1-50 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  Street number and street name of 'emergency contact'.  
+
+
+210.02,4        E-CITY                 0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                HELP-PROMPT:      ANSWER MUST BE 1-30 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  City where 'emergency contact' resides.  
+
+
+210.02,5        E-STATE                0;6 POINTER TO STATE FILE (#5)
+
+                HELP-PROMPT:      Enter state where 'emergency contact' resides. 
+                DESCRIPTION:
+                                  Pointer to STATE FILE (#5).  
+
+
+210.02,6        E-ZIP CODE             0;7 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5)!'(X?5N!(X?5N1"-"4N)) X
+                LAST EDITED:      SEP 08, 1990 
+                HELP-PROMPT:      Answer with ZIP CODE or ZIP+4. 
+                DESCRIPTION:
+                                  Zip code of 'emergency contact'.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210.02,7        E-TELEPHONE NUMBER     1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<4) X
+                HELP-PROMPT:      ANSWER MUST BE 4-30 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  Indicates telephone number of 'emergency contact'.  
+
+
+
+
+210,16        STATE ISSUING LICENSE  4;0 POINTER Multiple #210.03 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Documents licensure information for RNs, LPNs, and LVNs.  
+
+
+210.03,.01      STATE ISSUING LICENSE  0;1 POINTER TO STATE FILE (#5) (Multiply asked)
+
+                HELP-PROMPT:      Enter name of state issuing license. 
+                DESCRIPTION:
+                                  Pointer to STATE FILE (#5).  
+
+
+210.03,1        PROFESSIONAL LICENSE NUMBER 0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<1) X
+                HELP-PROMPT:      ANSWER MUST BE 1-40 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  License number printed on state license. 
+
+
+210.03,1.6      VERIFIED BY            0;5 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      AUG 31, 1990 
+                DESCRIPTION:
+                                  Indicates the person verifying this employee's license.  
+
+
+210.03,2        EXPIRATION DATE OF LICENSE 0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:3500101<X!(2500101>X) X
+                LAST EDITED:      FEB 11, 1997 
+                HELP-PROMPT:      TYPE A DATE BETWEEN 1/1/1950 AND 1/1/2050 
+                DESCRIPTION:
+                                  Expiration date of license.  
+
+
+
+
+210,16.5      VETERAN PREFERENCE     0;8 SET
+
+                                '0' FOR NO SERVICE; 
+                                '1' FOR NONE; 
+                                '2' FOR 5 PT.; 
+                                '3' FOR 10 PT. DISAB.; 
+                                '4' FOR 10 PT. COMP.; 
+                                '5' FOR 10 PT. OTHER; 
+                                '6' FOR 10 PT./30% COMP; 
+              LAST EDITED:      DEC 29, 1988 
+              HELP-PROMPT:      Enter the Veteran Preference code for this employee. 
+              DESCRIPTION:
+                                Employee veteran preference code.  A number 0 - 6.  
+
+
+210,17        STATION ENTRY ON DUTY DATE 0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                                9.2 = S Y(210,17,80)=$S($D(D0):D0,1:""),Y(210,17,1)=$S($D(^NURSTAFF(D0,0)):^(0),1:""),D0=$P(Y(210,17,1),U,1) S:'$D(^VA(200,+D0,0)) D0=-1 S Y(210,17,180)=$S($D(D0):D0,1:"")
+                                9.3 = X ^DD(210,17,9.2) S Y(210,17,101)=$S($D(^VA(200,D0,0)):^(0),1:"") S X=$P(Y(210,17,101),U,1) K DIC S DIC="^VA(200,",DIC(0)="NMF" D ^DIC S (D,D0)=+Y
+              9.1 =             S Y=$S($G(^PRSPC(D0,0)):$P(^(0),"^",3),1:"") D:+Y D^DIQ S X=Y
+              LAST EDITED:      JUN 21, 1989 
+              DESCRIPTION:
+                                Indicates employee's EOD (entry on duty) date for this facility (i.e.  VAMC, OPC etc.).  
+
+              WRITE AUTHORITY:  ^
+
+210,18        VA EMPLOYMENT STARTING DATE 0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                                9.2 = S Y(210,18,80)=$S($D(D0):D0,1:""),Y(210,18,1)=$S($D(^NURSTAFF(D0,0)):^(0),1:""),D0=$P(Y(210,18,1),U,1) S:'$D(^VA(200,+D0,0)) D0=-1 S Y(210,18,180)=$S($D(D0):D0,1:"")
+                                9.3 = X ^DD(210,18,9.2) S Y(210,18,101)=$S($D(^VA(200,D0,0)):^(0),1:"") S X=$P(Y(210,18,101),U,1) K DIC S DIC="^VA(200,",DIC(0)="NMF" D ^DIC S (D,D0)=+Y
+              9.1 =             S Y=$S($D(^PRSPC(D0,2)):$P(^(2),"^",22),1:"") D:+Y D^DIQ S X=Y
+              LAST EDITED:      JUN 21, 1989 
+              DESCRIPTION:
+                                Indicates the employee's EOD date within the VA system.  
+
+              WRITE AUTHORITY:  ^
+
+210,19        SERVICE COMPUTATION DATE  ;  COMPUTED DATE
+
+              MUMPS CODE:       S X=$$COMPDAT^NURSUT4(D0)
+              ALGORITHM:        S X=$$COMPDAT^NURSUT4(D0)
+              LAST EDITED:      OCT 22, 1998 
+
+210,19.5      END OF PROBATIONARY PERIOD 13;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:3500101<X!(2500101>X) X
+              LAST EDITED:      FEB 11, 1997 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1/1/1950 AND 1/1/2050 
+              DESCRIPTION:
+                                Indicates date on which employee's probationary period ends.  
+
+
+210,19.61     DATE OF PROMOTION      9;0 DATE Multiple #210.17
+
+              DESCRIPTION:
+                                Date of the employee's last promotion.  
+
+
+210.17,.01      DATE OF PROMOTION      0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:3500101<X!(2500101>X) X
+                LAST EDITED:      FEB 11, 1997 
+                HELP-PROMPT:      TYPE A DATE BETWEEN 1/1/1950 AND 1/1/2050 
+                DESCRIPTION:
+                                  Indicates date of RN/LPN/LVN promotions.  
+
+                CROSS-REFERENCE:  210.17^B 
+                                  1)= S ^NURSF(210,DA(1),9,"B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),9,"B",$E(X,1,30),DA)
+                                  This is the main index on the Date field of the Date of Promotion subfile of the NURS STAFF File.  
+
+
+                CROSS-REFERENCE:  210.17^C^MUMPS 
+                                  1)= S:+X ^NURSF(210,DA(1),9,"AA",(9999999-X),DA)=""
+                                  2)= K:+X ^NURSF(210,DA(1),9,"AA",(9999999-X),DA)
+                                  This X-ref is an inverted time/date cross reference on the date of promotion subfile so that the latest promotion date can be easily obtained.  
+
+
+
+210.17,1        TYPE OF PROMOTION      0;2 SET
+
+                                  'S' FOR WITHIN GRADE STEP INCREASE; 
+                                  'G' FOR PROMOTION TO NEXT GRADE; 
+                                  'A' FOR SPECIAL ADVANCEMENT FOR ACHIEVEMENT; 
+                                  'P' FOR SPECIAL ADVANCEMENT FOR PERFORMANCE; 
+                                  'E' FOR ADVANCEMENT TO NEXT LEVEL; 
+                                  'N' FOR NOT PROMOTED AT THIS TIME; 
+                LAST EDITED:      OCT 23, 1998 
+                DESCRIPTION:
+                                  Describe type of latest promotion (i.e., Automatic Step Increase, Promotion to Next Grade, Special Advancement for Achievement, Special Advancement for Performance, or Advancement to Next Level).  
+
+                SCREEN:           X:$D(^%ZOSF("UPPERCASE")) "N Y X ^%ZOSF(""UPPERCASE"") S X=Y Q"
+                EXPLANATION:      This screen allows lower case data to be entered.
+
+
+
+210,19.86     NPSB                   14;0 DATE Multiple #210.18
+
+              DESCRIPTION:
+                                Date on which the registered nurse's proficiency/annual narrative is due.  
+
+
+210.18,.01      DATE PROFICIENCY IS DUE 0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:3500101<X!(2500101>X) X
+                LAST EDITED:      FEB 11, 1997 
+                HELP-PROMPT:      TYPE A DATE BETWEEN 1/1/1950 AND 1/1/2050 
+                DESCRIPTION:
+                                  Date on which registered nurse's proficiency/annual narrative is due.  
+
+                CROSS-REFERENCE:  210.18^B 
+                                  1)= S ^NURSF(210,DA(1),14,"B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),14,"B",$E(X,1,30),DA)
+                                  This is the main index on the Date Proficiency is Due field of the NPSB subfile.  
+
+
+
+210.18,1        NAME OF EVALUATOR      0;2 POINTER TO NEW PERSON FILE (#200)
+
+                DESCRIPTION:
+                                  Name of the supervisor responsible for completing the proficiency/annual narrative.  
+
+
+210.18,2        ACTUAL DATE OF BOARD ACTION 0;3 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                DESCRIPTION:
+                                  Date on which the standards board actually reviewed the employee.  
+
+
+210.18,3        DATE WORK COPY SENT OUT 0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 10, 1993 
+                DESCRIPTION:
+                                  This is the date the work copy/notice for the nurse's proficiency or annual narrative is sent to the evaluator.  
+
+
+210.18,4        DATE PROF RETURNED FOR TYPING 0;5 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 10, 1993 
+                DESCRIPTION:
+                                  The date on which the nurse's written proficiency/annual narrative is returned by the evaluator for typing.  
+
+
+210.18,5        TENTATIVE DATE FOR BOARD ACT 0;6 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 10, 1993 
+                DESCRIPTION:
+                                  This is the targeted date the employee is scheduled for review by the 'Nurse Professional Standards Board'.  
+
+
+210.18,6        DATE OF NEXT BOARD ACTION 0;7 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 29, 1998 
+                DESCRIPTION:
+                                  This field indicates when the next board action will be due.  
+
+
+
+
+210,21.3      PROFESSIONAL EDUCATION 6;0 POINTER Multiple #210.04 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Describes the professional education of the employee.  
+
+
+210.04,.01      PROFESSIONAL EDUCATION 0;1 POINTER TO NURS EDUCATION FILE (#212.1) (Multiply asked)
+
+                LAST EDITED:      FEB 25, 1986 
+                DESCRIPTION:
+                                  This field indicates a general type of nursing or academic degree held by an employee.  
+
+
+210.04,1        MAJOR                  0;2 POINTER TO NURS COLLEGE MAJOR FILE (#212.3)
+
+                LAST EDITED:      FEB 25, 1986 
+                DESCRIPTION:
+                                  This field contains the college major associated with the degree.  
+
+
+210.04,2        COLLEGE/UNIVERSITY     0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+                LAST EDITED:      AUG 25, 1992 
+                HELP-PROMPT:      Answer must be 2-50 characters in length. 
+                DESCRIPTION:
+                                  Name of the college/university granting the degree.  
+
+
+210.04,3        YEAR                   0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                DESCRIPTION:
+                                  Year the degree was obtained.  
+
+
+
+
+210,21.5      HIGHEST NURSING DEGREE 17;1 POINTER TO NURS EDUCATION FILE (#212.1)
+
+              LAST EDITED:      FEB 25, 1986 
+              DESCRIPTION:
+                                Indicates highest nursing degree held by the employee. Pointer to the NURS EDUCATION FILE (#212.1).  
+
+
+210,21.51     HIGHEST NURSING CODE    ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(210,21.51,9.2) S Y(210,21.51,101)=$S($D(^NURSF(212.1,D0,0)):^(0),1:"") S X=$P(Y(210,21.51,101),U,3) S D0=Y(210,21.51,80)
+                                9.2 = S Y(210,21.51,80)=$S($D(D0):D0,1:""),Y(210,21.51,1)=$S($D(^NURSF(210,D0,17)):^(17),1:""),D0=$P(Y(210,21.51,1),U,1) S:'$D(^NURSF(212.1,+D0,0)) D0=-1
+                                9.3 = X ^DD(210,21.51,9.2) S Y(210,21.51,180)=$S($D(D0):D0,1:""),Y(210,21.51,101)=$S($D(^NURSF(212.1,D0,0)):^(0),1:"")
+              ALGORITHM:        HIGHEST NURSING DEGREE:CODE
+              DESCRIPTION:
+                                Abbreviation from File 212.1 indicating the highest nursing degree for this employee.  
+
+
+210,21.7      HIGHEST ACADEMIC DEGREE 17;2 POINTER TO NURS EDUCATION FILE (#212.1)
+
+              LAST EDITED:      JAN 04, 1989 
+              HELP-PROMPT:      The highest academic degree held by this employee. 
+              DESCRIPTION:
+                                The highest academic degree held by this employee.  
+
+
+210,21.71     HIGHEST ACADEMIC CODE   ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(210,21.71,9.2) S Y(210,21.71,101)=$S($D(^NURSF(212.1,D0,0)):^(0),1:"") S X=$P(Y(210,21.71,101),U,3) S D0=Y(210,21.71,80)
+                                9.2 = S Y(210,21.71,80)=$S($D(D0):D0,1:""),Y(210,21.71,1)=$S($D(^NURSF(210,D0,17)):^(17),1:""),D0=$P(Y(210,21.71,1),U,2) S:'$D(^NURSF(212.1,+D0,0)) D0=-1
+              ALGORITHM:        HIGHEST ACADEMIC DEGREE:CODE
+              DESCRIPTION:
+                                The abbreviation of the highest academic degree for this employee.  
+
+
+210,22.5      PROFESSIONAL EXPERIENCE 20;0 Multiple #210.13 (Add New Entry without Asking)
+
+              LAST EDITED:      MAY 24, 1994 
+              DESCRIPTION:
+                                Identifies the professional experience of the employee before 'Station EOD Date'.  
+
+              TECHNICAL DESCR:
+                                Free Text Value of .01 Field in File #211.5.  
+
+              IDENTIFIED BY:    
+                    "WRITE":    D EN6^NURAED3
+
+210.13,.01      PROFESSIONAL EXPERIENCE 0;1 FREE TEXT (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E)!(X'?.ANP) X
+                LAST EDITED:      MAY 24, 1994 
+                DESCRIPTION:
+                                  This is the area of the nurse's professional experience.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  210^B 
+                                  1)= S ^NURSF(210,DA(1),20,"B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),20,"B",$E(X,1,30),DA)
+                                  This is the main index on the 'Professional Experience' subfile.  
+
+
+
+210.13,1        TITLE/POSITION         0;2 POINTER TO NURS SERVICE POSITION FILE (#211.3)
+
+                LAST EDITED:      FEB 25, 1986 
+                DESCRIPTION:
+                                  Name of title/position held during this period of employment. Pointer to NURS SERVICE POSITION FILE (211.3).  
+
+
+210.13,2.1      DATE STARTED           0;5 DATE
+
+                INPUT TRANSFORM:  S NURS=2.1 D EN8^NURSUT0
+                LAST EDITED:      OCT 23, 1991 
+                DESCRIPTION:
+                                  Beginning date of employee's assignment.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210.13,2.5      DATE ENDED             0;6 DATE
+
+                INPUT TRANSFORM:  S NURS=2.5 D EN8^NURSUT0
+                LAST EDITED:      OCT 23, 1991 
+                DESCRIPTION:
+                                  Ending date of employee's assignment.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210.13,3        LAST ASSIGNMENT LOCATION 0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+                LAST EDITED:      APR 17, 1990 
+                HELP-PROMPT:      Answer must be 2-30 characters in length. 
+                DESCRIPTION:
+                                  Name of facility, agency, or unit which employed individual.  
+
+
+210.13,4        POSITION ENTRY         0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<3)!'(X?1.N1";"1.N) X
+                LAST EDITED:      DEC 20, 1993 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                DESCRIPTION:
+                                  This field identifies the entry for the employee in the Position Control file (#211.8). The first number indicates the location entry for this employee and the second number indicates the service position.  
+
+                DELETE AUTHORITY: ^
+                WRITE AUTHORITY:  ^
+                                  UNEDITABLE
+                CROSS-REFERENCE:  210.13^APE 
+                                  1)= S ^NURSF(210,DA(1),20,"APE",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),20,"APE",$E(X,1,30),DA)
+                                  This is a regular index on the Position Entry field of the Professional Experience sub-field.  
+
+
+
+
+
+210,23.1      FACULTY                15;9 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              INPUT TRANSFORM:  S X=$$UP^XLFSTR(X)
+              LAST EDITED:      SEP 07, 1994 
+              DESCRIPTION:
+                                This field indicates if the employee is a faculty member.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210,23.2      FACULTY APPOINTMENT    1;0 Multiple #210.08
+
+              DESCRIPTION:
+                                This field indicates that the employee has a faculty appointment.  
+
+
+210.08,.01      TYPE OF APPOINTMENT    0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X Q:'$D(X)  S X=$$UP^XLFSTR(X)
+                LAST EDITED:      SEP 07, 1994 
+                HELP-PROMPT:      Answer must be 3-60 characters in length. 
+                DESCRIPTION:
+                                  This field contains the type of the employee's faculty appointment.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  210.08^B 
+                                  1)= S ^NURSF(210,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),1,"B",$E(X,1,30),DA)
+                                  This is the main index on the 'Type of Appointment' subfile.  
+
+
+
+210.08,1        INSTITUTION            0;2 FREE TEXT
+
+                INPUT TRANSFORM:  S X=$$UP^XLFSTR(X) K:$L(X)>60!($L(X)<3) X
+                LAST EDITED:      SEP 07, 1994 
+                HELP-PROMPT:      Answer must be 3-60 characters in length. 
+                DESCRIPTION:
+                                  This field contains the name of the institution where the employee has a faculty appointment.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+210,23.5      INSTITUTION            15;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                Institution at which employee is a faculty member.  
+
+
+210,24        NATIONAL CERTIFICATION 12;0 POINTER Multiple #210.024
+
+              DESCRIPTION:
+                                Documents national certification of registered nurses.  
+
+
+210.024,.01     NATIONAL CERTIFICATION 0;1 POINTER TO NURS CERTIFICATION FILE (#212.2) (Multiply asked)
+
+                LAST EDITED:      OCT 21, 1991 
+                EXECUTABLE HELP:  D EN1^NURAED3
+                CROSS-REFERENCE:  210.024^B 
+                                  1)= S ^NURSF(210,DA(1),12,"B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),12,"B",$E(X,1,30),DA)
+                                  This is the main index on the National Certification subfile.  
+
+
+
+210.024,.05     NAME OF CERTIFICATION   ;  COMPUTED
+
+                MUMPS CODE:       X ^DD(210.024,.05,9.3) S X=$P(Y(210.024,.05,101),U,2) S D0=Y(210.024,.05,80) S D1=Y(210.024,.05,81)
+                                  9.2 = S Y(210.024,.05,81)=$S($D(D1):D1,1:""),Y(210.024,.05,80)=$S($D(D0):D0,1:""),Y(210.024,.05,1)=$S($D(^NURSF(210,D0,12,D1,0)):^(0),1:"")
+                                  9.3 = X ^DD(210.024,.05,9.2) S D0=$P(Y(210.024,.05,1),U,1) S:'$D(^NURSF(212.2,+D0,0)) D0=-1 S Y(210.024,.05,101)=$S($D(^NURSF(212.2,D0,0)):^(0),1:"")
+                ALGORITHM:        .01:1
+                DESCRIPTION:
+                                  This field indicates the name of the certification for this employee.  
+
+
+210.024,1       CERTIFYING AGENCY       ;  COMPUTED
+
+                MUMPS CODE:       X ^DD(210.024,1,9.2) S D0=$P(Y(210.024,1,1),U,1) S:'$D(^NURSF(212.2,+D0,0)) D0=-1 S Y(210.024,1,101)=$S($D(^NURSF(212.2,D0,0)):^(0),1:"") S X=$P(Y(210.024,1,101),U,3) S D0=Y(210.024,1,80) S D1=Y(210.024,1,81)
+                                  9.2 = S Y(210.024,1,81)=$S($D(D1):D1,1:""),Y(210.024,1,80)=$S($D(D0):D0,1:""),Y(210.024,1,1)=$S($D(^NURSF(210,D0,12,D1,0)):^(0),1:"")
+                ALGORITHM:        .01:2
+                DESCRIPTION:
+                                  This field indicates the name of the certifying agency for this employee.  
+
+
+210.024,2       ORIGINAL CERTIFICATION DATE 0;3 DATE
+
+                INPUT TRANSFORM:  S NURS=2 D EN5^NURSUT3
+                LAST EDITED:      NOV 12, 1992 
+                DESCRIPTION:
+                                  This field indicates the original date for this certification.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210.024,3       DATE CERTIFICATION EXPIRES 0;4 DATE
+
+                INPUT TRANSFORM:  S NURS=3 D EN5^NURSUT3
+                LAST EDITED:      NOV 08, 1991 
+                DESCRIPTION:
+                                  This field indicates the expiration date of the employee's certification.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+210,25        MILITARY EXPERIENCE     ;  COMPUTED
+
+              MUMPS CODE:       S X=$S('$D(^NURSF(210,D0,0)):"",$P(^(0),U,8)="":"",'$P(^(0),U,8):"NO",1:"YES")
+              ALGORITHM:        S X=$S('$D(^NURSF(210,D0,0)):"",$P(^(0),U,8)="":"",'$P(^(0),U,8):"NO",1:"YES")
+              LAST EDITED:      DEC 29, 1988 
+              DESCRIPTION:
+                                Indicates military experience for this employee.  
+
+
+210,26        MILITARY STATUS        10;0 SET Multiple #210.06 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Documents active and/or inactive status of military experience.  
+
+
+210.06,.01      MILITARY STATUS        0;1 SET (Multiply asked)
+
+                                  'R' FOR RETIRED/DISCHARGED; 
+                                  'A' FOR ACTIVE RESERVE; 
+                                  'IRR' FOR INDIVIDUAL READY RESERVE; 
+                                  'IMA' FOR INDIVIDUAL MOBILIZATION AUGMENTEE; 
+                LAST EDITED:      AUG 25, 1992 
+                DESCRIPTION:
+                                  Indicates military status.  
+
+                SCREEN:           X:$D(^%ZOSF("UPPERCASE")) "N Y X ^%ZOSF(""UPPERCASE"") S X=Y Q"
+                EXPLANATION:      This screen allows lower case data to be entered.
+                PRE-LOOKUP:       X:$D(^%ZOSF("UPPERCASE")) "N Y X ^%ZOSF(""UPPERCASE"") S X=Y Q"
+
+210.06,1        BRANCH OF SERVICE      0;2 POINTER TO BRANCH OF SERVICE FILE (#23)
+
+                LAST EDITED:      APR 15, 1988 
+                DESCRIPTION:
+                                  Name of 'service branch' if active-reservist. Pointer to BRANCH OF SERVICE FILE (#23).  
+
+
+210.06,2        VA PREFERENCE          0;3 SET
+
+                                  '0' FOR NO SERVICE; 
+                                  '1' FOR NONE; 
+                                  '2' FOR 5 PT.; 
+                                  '3' FOR 10 PT. DISAB.; 
+                                  '4' FOR 10 PT. COMP.; 
+                                  '5' FOR 10 PT. OTHER; 
+                                  '6' FOR 10 PT./30% COMP; 
+                LAST EDITED:      DEC 20, 1988 
+                DESCRIPTION:
+                                  Employee veteran preference for this military experience.  
+
+
+
+
+210,27        *CONTINUING EDUCATION PROGRAM 18;0 Multiple #210.12
+
+              LAST EDITED:      APR 15, 1993 
+              DESCRIPTION:
+                                Continuing education programs attended by employee.  
+
+
+210.12,.01      *CONTINUING EDUCATION PROGRAM 0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<1)!'(X'?1P.E) X
+                LAST EDITED:      APR 15, 1993 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  Name of the continuing education program.  
+
+                CROSS-REFERENCE:  210.12^B 
+                                  1)= S ^NURSF(210,DA(1),18,"B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),18,"B",$E(X,1,30),DA)
+                                  This is the main index for the 'Continuing Education Program' subfile.  
+
+
+
+210.12,1        *DATE ATTENDED FROM    0;2 DATE (Required)
+
+                INPUT TRANSFORM:  S NURS=1 D EN2^NURSUT3
+                LAST EDITED:      APR 15, 1993 
+                DESCRIPTION:
+                                  Date the continuing education program began.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210.12,1.5      *DATE ATTENDED TO      0;4 DATE (Required)
+
+                INPUT TRANSFORM:  S NURS=1.5 D EN2^NURSUT3
+                LAST EDITED:      SEP 22, 1995 
+                DESCRIPTION:
+                                  Date the continuing education program ended.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210.12,2        *NUMBER OF C.E.U.s     0;3 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999.99)!(X<0)!(X?.E1"."3N.N) X
+                LAST EDITED:      APR 15, 1993 
+                HELP-PROMPT:      TYPE A NUMBER BETWEEN 0 AND 9999.99 
+                DESCRIPTION:
+                                  Total number of C.E.U.s received by attendee.  
+
+
+210.12,3        *LOCATION OF PROGRAM   0;5 FREE TEXT
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      APR 15, 1993 
+                HELP-PROMPT:      ANSWER MUST BE 3-30 CHARACTERS IN LENGTH 
+                DESCRIPTION:
+                                  City/state/institution where program is being held.  
+
+
+210.12,3.5      *HOURS OF A/A REQUESTED 0;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 15, 1993 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  Hours of authorized absence requested by employee.  
+
+
+210.12,4        *HOURS OF A/A GRANTED  0;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 15, 1993 
+                HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Total hours of authorized absence granted by Nursing Service.  
+
+
+210.12,5        *FUNDS REQUESTED       1;0 SET Multiple #210.14 (Add New Entry without Asking)
+
+                LAST EDITED:      APR 15, 1993 
+                DESCRIPTION:
+                                  Program funding requested by employee.  
+
+
+210.14,.01        *FUNDS REQUESTED       0;1 SET (Multiply asked)
+
+                                    'A' FOR AIRFARE; 
+                                    'P' FOR PER DIEM; 
+                                    'R' FOR REGISTRATION; 
+                                    'H' FOR HOTEL; 
+                                    'T' FOR TRAVEL; 
+                                    'N' FOR NONE REQUESTED; 
+                  LAST EDITED:      APR 15, 1993 
+                  DESCRIPTION:
+                                    Indicates intended use of requested funds (e.g., hotel, registration).  
+
+
+210.14,1          *AMOUNT REQUESTED      0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      APR 15, 1993 
+                  HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                  DESCRIPTION:
+                                    Total funding (dollar amount) requested by employee.  
+
+
+
+
+210.12,5.5      *FUNDS AUTHORIZED        2;0 SET Multiple #210.15 (Add New Entry without Asking)
+
+                  LAST EDITED:      APR 15, 1993 
+                  DESCRIPTION:
+                                    Program funding authorized by the service to the employee.  
+
+
+210.15,.01        *FUNDS AUTHORIZED        0;1 SET (Multiply asked)
+
+                                      'A' FOR AIRFARE; 
+                                      'P' FOR PER DIEM; 
+                                      'R' FOR REGISTRATION; 
+                                      'H' FOR HOTEL; 
+                                      'T' FOR TRAVEL; 
+                                      'N' FOR NONE REQUESTED; 
+                    INPUT TRANSFORM:  D EN3^NURSUT3
+                    LAST EDITED:      APR 15, 1993 
+                    DESCRIPTION:
+                                      Indicates intended use of authorized funds (e.g., hotel, airfare).  
+
+                    NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+210.15,1          *AMOUNT AUTHORIZED       0;2 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      APR 15, 1993 
+                    HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                    DESCRIPTION:
+                                      Dollar amount authorized by service to employee.  
+
+
+
+
+210.12,6        *C.E.U. COMMENTS           3;0   WORD-PROCESSING #210.16
+
+                    LAST EDITED:      APR 15, 1993 
+                    DESCRIPTION:
+                                      Enter additional comments regarding program/funding.  
+
+
+
+
+210,28        *MANDATORY INSERVICE PROGRAM 8;0 DATE Multiple #210.05
+
+              LAST EDITED:      APR 15, 1993 
+              DESCRIPTION:
+                                Tracks employee attendance at mandatory inservices.  
+
+              IDENTIFIED BY:    *CLASS(#1)[R]
+
+210.05,.01      *DATE ATTENDED         0;1 DATE (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      APR 15, 1993 
+                DESCRIPTION:
+                                  Date on which employee attended inservice.  
+
+                CROSS-REFERENCE:  210.05^B 
+                                  1)= S ^NURSF(210,DA(1),8,"B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),8,"B",$E(X,1,30),DA)
+                                  This is the main index on the 'Date Attended' field of the Mandatory Inservice Program subfile.  
+
+
+                CROSS-REFERENCE:  210.05^AA^MUMPS 
+                                  1)= S NURS=$S($D(^NURSF(210,DA(1),8,DA,0)):$P(^(0),"^",2),1:"") S:NURS'="" ^NURSF(210,DA(1),8,"AA",NURS,9999999-X,DA)="" K NURS
+                                  2)= S NURS=$S($D(^NURSF(210,DA(1),8,DA,0)):$P(^(0),"^",2),1:"") K:NURS'="" ^NURSF(210,DA(1),8,"AA",NURS,9999999-X,DA) K NURS
+                                  This index is an inverted time/date cross reference on the date attended subfile.  
+
+
+
+210.05,1        *CLASS                 0;2 POINTER TO *NURS MANDATORY INSERVICE FILE (#212.4) (Required)
+
+                LAST EDITED:      APR 15, 1993 
+                DESCRIPTION:
+                                  Name of inservice program.  Pointer to Nurs Mandatory Inservice (#212.4) file.  
+
+                CROSS-REFERENCE:  210.05^C 
+                                  1)= S ^NURSF(210,DA(1),8,"C",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),8,"C",$E(X,1,30),DA)
+                                  This is a regular index on the class field of the mandatory inservice program subfile.  
+
+
+                CROSS-REFERENCE:  210.05^AA1^MUMPS 
+                                  1)= S NURS=$S($D(^NURSF(210,DA(1),8,DA,0)):$P(^(0),"^"),1:"") S:NURS'="" ^NURSF(210,DA(1),8,"AA",X,9999999-NURS,DA)="" K NURS
+                                  2)= S NURS=$S($D(^NURSF(210,DA(1),8,DA,0)):$P(^(0),"^"),1:"") K:NURS'="" ^NURSF(210,DA(1),8,"AA",X,9999999-NURS,DA) K NURS
+                                  This is an inverted time/date cross-reference on the Date Attended subfile which is used to identify the latest date the class was attended.  
+
+
+
+
+
+210,28.1      MI REVIEW GROUP         ;  COMPUTED
+
+              MUMPS CODE:       D EN11^NURSUT0($G(D0))
+              ALGORITHM:        D EN11^NURSUT0($G(D0))
+              LAST EDITED:      JAN 06, 1989 
+              HELP-PROMPT:      Enter the name of the group of mandatory inservices that this employee is to attend. 
+              DESCRIPTION:
+                                The name of the mandatory inservice/training group(s) associated with this employee.  
+
+
+210,29        PRIVILEGES             16;0 POINTER Multiple #210.19
+
+              DESCRIPTION:
+                                Indicates the privileges granted to an employee.  
+
+
+210.19,.01      PRIVILEGES             0;1 POINTER TO NURS PRIVILEGE FILE (#212.6) (Multiply asked)
+
+                LAST EDITED:      SEP 08, 1990 
+                DESCRIPTION:
+                                  Indicates a specific privilege.  
+
+                CROSS-REFERENCE:  210.19^B 
+                                  1)= S ^NURSF(210,DA(1),16,"B",$E(X,1,30),DA)=""
+                                  2)= K ^NURSF(210,DA(1),16,"B",$E(X,1,30),DA)
+                                  This is the main index on the 'Privileges' subfile.  
+
+
+
+210.19,1        DATE GRANTED           0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                DESCRIPTION:
+                                  Indicates the date the privilege was granted.  
+
+
+210.19,2        COMMENTS               1;0   WORD-PROCESSING #210.192
+
+                DESCRIPTION:
+                                  This field contains additional comments regarding an employee's privileges.  
+
+
+
+
+210,41        SERVICE CATEGORY        ;  COMPUTED
+
+              MUMPS CODE:       S DA=D0 D EN2^NURSUT0 S X=$S('$D(NPSPOS(1)):"",NPSPOS(1)="":"",1:NPSPOS(1)) K DA,NPSPOS,NOD1,NOD2
+              ALGORITHM:        S DA=D0 D EN2^NURSUT0 S X=$S('$D(NPSPOS(1)):"",NPSPOS(1)="":"",1:NPSPOS(1)) K DA,NPSPOS,NOD1,NOD2
+              DESCRIPTION:
+                                This field indicates the service category of the employee.  
+
+              TECHNICAL DESCR:
+                                This field contains the name of the service category associated with the FTEE.  The category is computed from File #211.3.  
+
+
+210,42        SALARY                  ;  COMPUTED
+
+              MUMPS CODE:       S DA=D0,Z=$$EN12^NURSUT0(DA),X=$J(+Z,6,2)
+              ALGORITHM:        S DA=D0,Z=$$EN12^NURSUT0(DA),X=$J(+Z,6,2)
+              LAST EDITED:      MAR 08, 1994 
+              DESCRIPTION:
+                                This field indicates the employee's salary which is stored in the PAID Employee (#450) file.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+*NURS MANDATORY INSERVICE 
+                   (#212.4)       *MANDATORY INSERVICE PROGRAM:*CLASS (#1)
+
+BRANCH OF SERVICE (#23)           MILITARY STATUS:BRANCH OF SERVICE (#1)
+
+NEW PERSON (#200)                 EMPLOYEE NAME (#.01)
+                                  STATE ISSUING LICENSE:VERIFIED BY (#1.6)
+                                  NPSB:NAME OF EVALUATOR (#1)
+
+NURS CERTIFICATION (#212.2)       NATIONAL CERTIFICATION:NATIONAL CERTIFICATION (#.01)
+
+NURS COLLEGE MAJOR (#212.3)       PROFESSIONAL EDUCATION:MAJOR (#1)
+
+NURS EDUCATION (#212.1)           HIGHEST NURSING DEGREE (#21.5)
+                                  HIGHEST ACADEMIC DEGREE (#21.7)
+                                  PROFESSIONAL EDUCATION:PROFESSIONAL EDUCATION (#.01)
+
+NURS PAY SCALE (#211.1)           GRADE/STEP CODE (#6.5)
+
+NURS PRIVILEGE (#212.6)           PRIVILEGES:PRIVILEGES (#.01)
+
+NURS SERVICE POSITION (#211.3)    PROFESSIONAL EXPERIENCE:TITLE/POSITION (#1)
+
+STATE (#5)                        MAILING STATE (#13.7)
+                                  NAME OF EMERGENCY CONTACT:E-STATE (#5)
+                                  STATE ISSUING LICENSE:STATE ISSUING LICENSE (#.01)
+
+
+
+INPUT TEMPLATE(S):
+NURSAED-I-CED                 APR 29, 1992@16:07  USER #0    
+      ROUTINE: NURSAED0 (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-EDUCATION           NOV 23, 1988        USER #0    
+NURSAED-I-STAFF1              APR 26, 1990@08:33  USER #0    
+NURSAED-I-STAFF10             APR 26, 1990@08:33  USER #0    
+      ROUTINE: NURSAED0 (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-STAFF11             DEC 14, 1998@09:22  USER #0    
+      ROUTINE: NURSAEDO (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-STAFF2              SEP 07, 1995@10:00  USER #0    
+NURSAED-I-STAFF3              APR 26, 1990@08:35  USER #0    
+      ROUTINE: NURSAED0 (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-STAFF4              SEP 07, 1994@08:52  USER #0    
+      ROUTINE: NURSAED0 (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-STAFF5              NOV 19, 1993@14:26  USER #0    
+      ROUTINE: NURSAED0 (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-STAFF6              APR 26, 1990@08:37  USER #0    
+      ROUTINE: NURSAED0 (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-STAFF7              DEC 09, 1991@15:48  USER #0    
+      ROUTINE: NURSADE0 (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-STAFF8              OCT 01, 1993@11:50  USER #0    
+      ROUTINE: (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-STAFFPD             OCT 15, 1990@15:05  USER #0    
+      ROUTINE: NURSAED0 (UNDER OPTION NURAED-STF-MENU)
+NURSAED-I-STAFFPR             NOV 25, 1991@08:05  USER #0    
+
+PRINT TEMPLATE(S):
+NURS-P-STF                    DEC 14, 1998@10:57  USER #0    ^NURSPA                                                                                                                                                                                         @
+
+SORT TEMPLATE(S):
+NURS-NAME-SORT                MAR 16, 1990@11:51  USER #0    
+
+
+FORM(S)/BLOCK(S):

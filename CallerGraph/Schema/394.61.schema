@@ -1,0 +1,458 @@
+STANDARD DATA DICTIONARY #394.61 -- VAQ - TRANSACTION FILE                                                                                                                                                                        MAY 20,2014@15:39:51  PAGE 1
+STORED IN ^VAT(394.61,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 1.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds information describing each PDX transaction.  A PDX transaction is created when one of the following events occur.  
+ 
+  (1) A PDX Request is defined and sent 
+  (2) A PDX Request is received from a remote facility 
+  (3) An Unsolicited PDX is defined and sent 
+  (4) An Unsolicited PDX is received from a remote facility 
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: 
+     "WRITE1": S VAQXRF=$P($G(^("QRY")),U,4) S:(VAQXRF="") VAQXRF="NOT ON FILE" W "  (PID: ",VAQXRF,")" K VAQXRF
+
+POINTED TO BY: Transaction Number field (#40) of the VAQ - DATA File (#394.62) 
+               
+
+CROSS
+REFERENCED BY: Requestor(AC), Transaction Number(B), Patient's Name(BS51), Patient's SSN(BS52), Patient's Name(NAME), Patient Ptr(PATPTR), Current Status(PPP), Purge(PURGE), Patient's SSN(SSN), Current Status(STATUS)
+
+394.61,.01    Transaction Number     0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 08, 1992 
+              HELP-PROMPT:      Type a Number between 1 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                 Unique number identifying the transaction.  
+
+              PRE-LOOKUP:       I X="+" S X=$$AUTO^VAQXRF2(1) K:(X<0) X
+              CROSS-REFERENCE:  394.61^B 
+                                1)= S ^VAT(394.61,"B",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.61,"B",$E(X,1,30),DA)
+
+
+394.61,.02    Current Status         0;2 POINTER TO VAQ - STATUS FILE (#394.85)
+
+              LAST EDITED:      FEB 15, 1994 
+              DESCRIPTION:
+                                Current status of the transaction.  
+
+              CROSS-REFERENCE:  394.61^STATUS 
+                                1)= S ^VAT(394.61,"STATUS",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.61,"STATUS",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  394.61^PPP^MUMPS 
+                                1)= S VAQXRF=X S X="PPPFMX2" X ^%ZOSF("TEST") D:($T) PDXTRIG^PPPFMX2(DA,1) S X=VAQXRF K VAQXRF
+                                2)= S VAQXRF=X S X="PPPFMX2" X ^%ZOSF("TEST") D:($T) PDXTRIG^PPPFMX2(DA,0) S X=VAQXRF K VAQXRF
+                                Updates information in the PPP FOREIGN FACILITY XREF file (#1020.2).  This is only executed if Prescription Practices has been installed at the local facility.  
+
+
+
+394.61,.03    Patient Ptr            0;3 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      DEC 07, 1992 
+              DESCRIPTION:
+                                Link to where the patient is stored locally.  
+
+              CROSS-REFERENCE:  394.61^PATPTR 
+                                1)= S ^VAT(394.61,"PATPTR",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.61,"PATPTR",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^394.61^10 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VAT(394.61,D0,"QRY")):^("QRY"),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y X ^DD(394.61,.03,1,2,1.1) X ^DD(394.61,.03,1,2,1.4)
+                                1.1)= S X=DIV S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^DPT(+D0,0)) D0=-1 S Y(101)=$S($D(^DPT(D0,0)):^(0),1:"") S X=$P(Y(101),U,1) S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^VAT(394.61,DIV(0),"QRY")):^("QRY"),1:""),DIV=X S $P(^("QRY"),U,1)=DIV,DIH=394.61,DIG=10 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VAT(394.61,D0,"QRY")):^("QRY"),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X="" X ^DD(394.61,.03,1,2,2.4)
+                                2.4)= S DIH=$S($D(^VAT(394.61,DIV(0),"QRY")):^("QRY"),1:""),DIV=X S $P(^("QRY"),U,1)=DIV,DIH=394.61,DIG=10 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= Patient Ptr:NAME
+                                DELETE VALUE)= @
+                                FIELD)= #10
+
+              CROSS-REFERENCE:  ^^TRIGGER^394.61^11 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VAT(394.61,D0,"QRY")):^("QRY"),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y X ^DD(394.61,.03,1,3,1.1) X ^DD(394.61,.03,1,3,1.4)
+                                1.1)= S X=DIV S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^DPT(+D0,0)) D0=-1 S Y(101)=$S($D(^DPT(D0,0)):^(0),1:"") S X=$P(Y(101),U,9) S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^VAT(394.61,DIV(0),"QRY")):^("QRY"),1:""),DIV=X S $P(^("QRY"),U,2)=DIV,DIH=394.61,DIG=11 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VAT(394.61,D0,"QRY")):^("QRY"),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X="" X ^DD(394.61,.03,1,3,2.4)
+                                2.4)= S DIH=$S($D(^VAT(394.61,DIV(0),"QRY")):^("QRY"),1:""),DIV=X S $P(^("QRY"),U,2)=DIV,DIH=394.61,DIG=11 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= Patient Ptr:SOCIAL SECURITY NUMBER
+                                DELETE VALUE)= @
+                                FIELD)= #11
+
+              CROSS-REFERENCE:  ^^TRIGGER^394.61^12 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VAT(394.61,D0,"QRY")):^("QRY"),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y X ^DD(394.61,.03,1,4,1.1) X ^DD(394.61,.03,1,4,1.4)
+                                1.1)= S X=DIV S I(0,0)=$S($D(D0):D0,1:""),D0=DIV S:'$D(^DPT(+D0,0)) D0=-1 S Y(101)=$S($D(^DPT(D0,0)):^(0),1:"") S X=$P(Y(101),U,3) S D0=I(0,0)
+                                1.4)= S DIH=$S($D(^VAT(394.61,DIV(0),"QRY")):^("QRY"),1:""),DIV=X S $P(^("QRY"),U,3)=DIV,DIH=394.61,DIG=12 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VAT(394.61,D0,"QRY")):^("QRY"),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(394.61,.03,1,4,2.4)
+                                2.4)= S DIH=$S($D(^VAT(394.61,DIV(0),"QRY")):^("QRY"),1:""),DIV=X S $P(^("QRY"),U,3)=DIV,DIH=394.61,DIG=12 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= Patient Ptr:DATE OF BIRTH
+                                DELETE VALUE)= @
+                                FIELD)= #12
+
+
+394.61,.04    Sensitive Patient      0;4 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      NOV 24, 1992 
+              DESCRIPTION:
+                                Set to YES if the patient was flagged as sensitive at the remote facility.  
+
+
+394.61,.05    Release Status         0;5 POINTER TO VAQ - STATUS FILE (#394.85)
+
+              LAST EDITED:      MAR 26, 1993 
+              DESCRIPTION:
+                                This is used when a PDX Request has been processed and requires transmission.  The status placed here will be used when building the resulting message (i.e. background job building message will use this status).  
+
+
+394.61,.06    Remote Transaction Number 0;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 06, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 999999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is used to store the transaction number of this transaction on the remote system.  This field will primarily be used for PDX Requests and Unsolicited PDXs that have been received from a remote facility.  
+
+
+394.61,.07    Remote Version Number  0;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."4N.N) X
+              LAST EDITED:      APR 21, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 999, 3 Decimal Digits 
+              DESCRIPTION:
+                                This is used to store the version of PDX that the remote site is using.  This field will primarily be used when requests are processed and returned and when a message must be retransmitted.  
+
+
+394.61,10     Patient's Name         QRY;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      FEB 04, 1993 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                Name of the patient.  
+
+              NOTES:            TRIGGERED by the Patient Ptr field of the VAQ - TRANSACTION File 
+
+              CROSS-REFERENCE:  394.61^NAME 
+                                1)= S ^VAT(394.61,"NAME",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.61,"NAME",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  394.61^BS51^MUMPS 
+                                1)= S VAQXRF=$$BS5^VAQXRF2(DA,1) K VAQXRF
+                                2)= S VAQXRF=$$BS5^VAQXRF2(DA,0,10,X) K VAQXRF
+                                Creates a cross reference based on the first letter of the patient's last name concatenated with the last 4 digits (plus pseudo indicator) of the patient's social security number.  
+                                 
+                                Resulting node ==>  ^VAT(394.61,"BS5",($E([10],1)_$E([11],6,10)),DA) 
+                                   Where:  [10] is field number 10 
+                                           [11] is field number 11 
+                                           DA is the entry number 
+                                 
+                                The resulting node is created by the BS51 and BS52 cross references.  Re-indexing either of these cross references will correctly update/create the resulting node.  
+
+
+
+394.61,11     Patient's SSN          QRY;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>10!($L(X)<9)!'((X?9N)!(X?9N1"P")) X
+              LAST EDITED:      FEB 04, 1993 
+              HELP-PROMPT:      Answer must be 9-10 characters in length. 
+              DESCRIPTION:
+                                Social Security Number of the patient.  
+
+              NOTES:            TRIGGERED by the Patient Ptr field of the VAQ - TRANSACTION File 
+
+              CROSS-REFERENCE:  394.61^SSN 
+                                1)= S ^VAT(394.61,"SSN",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.61,"SSN",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  394.61^BS52^MUMPS 
+                                1)= S VAQXRF=$$BS5^VAQXRF2(DA,1) K VAQXRF
+                                2)= S VAQXRF=$$BS5^VAQXRF2(DA,0,11,X) K VAQXRF
+                                Creates a cross reference based on the first letter of the patient's last name concatenated with the last 4 digits (plus pseudo indicator) of the patient's social security number.  
+                                 
+                                Resulting node ==>  ^VAT(394.61,"BS5",($E([10],1)_$E([11],6,10)),DA) 
+                                   Where:  [10] is field number 10 
+                                           [11] is field number 11 
+                                           DA is the entry number 
+                                 
+                                The resulting node is created by the BS51 and BS52 cross references.  Re-indexing either of these cross references will correctly update/create the resulting node.  
+
+
+
+394.61,12     Patient's DOB          QRY;3 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 24, 1992 
+              DESCRIPTION:
+                                Date the patient was born.  
+
+              NOTES:            TRIGGERED by the Patient Ptr field of the VAQ - TRANSACTION File 
+
+
+394.61,13     Patient ID             QRY;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      NOV 24, 1992 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                A unique identifier of the patient.  
+
+
+394.61,20     Date/Time of Request   RQST1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 24, 1992 
+              DESCRIPTION:
+                                Date and time the request was made.  
+
+
+394.61,21     Requestor              RQST1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      MAY 03, 1993 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                Person who initiated the request.  
+
+              CROSS-REFERENCE:  394.61^AC 
+                                1)= S ^VAT(394.61,"AC",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.61,"AC",$E(X,1,30),DA)
+
+
+394.61,30     Requesting Site        RQST2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      NOV 24, 1992 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                From where the request was initiated.  
+
+
+394.61,31     Requesting Address     RQST2;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>120!($L(X)<1) X
+              LAST EDITED:      NOV 24, 1992 
+              HELP-PROMPT:      Answer must be 1-120 characters in length. 
+              DESCRIPTION:
+                                Network address of the requesting site.  
+
+
+394.61,40     Encrypted              NCRPT;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      NOV 24, 1992 
+              DESCRIPTION:
+                                Set to YES if data was encrypted for transmission.  
+
+
+394.61,41     Encryption Method      NCRPT;2 POINTER TO VAQ - ENCRYPTION METHOD FILE (#394.72)
+
+              LAST EDITED:      NOV 24, 1992 
+              DESCRIPTION:
+                                Type of encryption used.  
+
+
+394.61,50     Date/Time of Reply     ATHR1;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 12, 1993 
+              DESCRIPTION:
+                                Date and time the reply was received.  
+
+
+394.61,51     Authorizer             ATHR1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      NOV 25, 1992 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                Person who released the patient information.  
+
+
+394.61,60     Authorizing Site       ATHR2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      NOV 25, 1992 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                From where the patient information came.  
+
+
+394.61,61     Authorizing Address    ATHR2;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>120!($L(X)<1) X
+              LAST EDITED:      NOV 25, 1992 
+              HELP-PROMPT:      Answer must be 1-120 characters in length. 
+              DESCRIPTION:
+                                Network address of the authorizing site.  
+
+
+394.61,70     Data in Notification   NTFY1;1 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      NOV 25, 1992 
+              DESCRIPTION:
+                                Set to YES if requested data is included in the return of data notification(s).  
+
+
+394.61,71     Notify                 NTFY2;0 POINTER Multiple #394.6171
+
+              DESCRIPTION:
+                                Multiple containing all people to notify upon return of data.  
+
+
+394.6171,.01    Notify                 0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                LAST EDITED:      NOV 25, 1992 
+                DESCRIPTION:
+                                  Who to notify upon return of data.  
+
+                CROSS-REFERENCE:  394.6171^B 
+                                  1)= S ^VAT(394.61,DA(1),"NTFY2","B",$E(X,1,30),DA)=""
+                                  2)= K ^VAT(394.61,DA(1),"NTFY2","B",$E(X,1,30),DA)
+
+
+
+
+394.61,80     Data Segment           SEG;0 POINTER Multiple #394.618
+
+              DESCRIPTION:
+                                Multiple containing the data segments contained in the transaction.  
+
+
+394.618,.01     Data Segment           0;1 POINTER TO VAQ - DATA SEGMENT FILE (#394.71) (Multiply asked)
+
+                LAST EDITED:      AUG 12, 1993 
+                DESCRIPTION:
+                                  A data segment contained in the transaction.  
+
+                CROSS-REFERENCE:  394.618^B 
+                                  1)= S ^VAT(394.61,DA(1),"SEG","B",$E(X,1,30),DA)=""
+                                  2)= K ^VAT(394.61,DA(1),"SEG","B",$E(X,1,30),DA)
+
+
+394.618,.02     Time Limit             0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>6!($L(X)<2)!($$VALOCC^VAQDBIH2(X,0)<0) X
+                LAST EDITED:      SEP 15, 1993 
+                HELP-PROMPT:      Enter a valid time limit (1-5 digits followed by 'Y' or 'M' or 'D') 
+                DESCRIPTION:
+                                   Time limit to use when extracting the data segment (if applicable) 
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+394.618,.03     Occurrence Limit       0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      SEP 02, 1993 
+                HELP-PROMPT:      Enter a valid occurrence limit (1-5 digits) 
+                DESCRIPTION:
+                                   Occurrence limit to use when extracting the data segment (if applicable) 
+
+
+
+
+394.61,90     Purge                  PRG;1 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      NOV 25, 1992 
+              DESCRIPTION:
+                                Flag indicating if the transaction should be deleted.  
+
+              CROSS-REFERENCE:  394.61^PURGE 
+                                1)= S ^VAT(394.61,"PURGE",$E(X,1,30),DA)=""
+                                2)= K ^VAT(394.61,"PURGE",$E(X,1,30),DA)
+
+
+394.61,100    Comment                CMNT;0   WORD-PROCESSING #394.611   (NOWRAP)
+
+              DESCRIPTION:
+                                Comment that was associated with the transaction.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 Notify:Notify (#.01)
+
+PATIENT (#2)                      Patient Ptr (#.03)
+
+VAQ - DATA SEGMENT (#394.71)      Data Segment:Data Segment (#.01)
+
+VAQ - ENCRYPTION METHOD (#394.72)  Encryption Method (#41)
+
+VAQ - STATUS (#394.85)            Current Status (#.02)
+                                  Release Status (#.05)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+VAQ CUR. TRANSACTIONS REPORT  JAN 27, 1993@08:31  USER #0                                                                                                                                                                   PDX Transactions Currently On File
+VAQ REQUIRES PROCESSING REPORTSEP 30, 1993@10:31  USER #1934                                                                                                                                                       PDX Requests That Require Manual Processing
+
+SORT TEMPLATE(S):
+VAQ REQUIRES PROCESSING       SEP 30, 1993@16:22  USER #1934 
+SORT BY: @Current Status="VAQ-PROC";L1//     From '0'  To '1'
+  WITHIN Current Status="VAQ-PROC", SORT BY: @Release Status="VAQ-RQACK";L1//     From '0'  To '1'
+    WITHIN Release Status="VAQ-RQACK", SORT BY: @Date/Time of Request//
+      WITHIN Date/Time of Request, SORT BY: @Transaction Number//
+        WITHIN Transaction Number, SORT BY: @RANGEDATE(#20,NOW,#20,NOW)<VAQ GET LIFE;L1//     From '0'  To '1'
+          WITHIN RANGEDATE(#20,NOW,#20,NOW)<VAQ GET LIFE, SORT BY: @(Purge'="YES");L1//     From '0'  To '1'
+
+VAQ TRANSACTIONS BY AUTHORIZERJAN 27, 1993@11:23  USER #0    
+SORT BY: Authorizer//
+  WITHIN Authorizer, SORT BY: Transaction Number//
+    WITHIN Transaction Number, SORT BY: (Current Status'="VAQ-AUTO")&(Current Status'="VAQ-PROC")&(Current Status'="VAQ-UNACK");L1//     From '0'  To '1'
+
+VAQ TRANSACTIONS BY DATE SENT JAN 27, 1993@11:25  USER #0    
+SORT BY: 'Date/Time of Request//    (User is asked range)
+  WITHIN Date/Time of Request, SORT BY: Transaction Number//
+    WITHIN Transaction Number, SORT BY: (Current Status'="VAQ-AUTO")&(Current Status'="VAQ-PROC")&(Current Status'="VAQ-UNACK");L1//     From '0'  To '1'
+
+VAQ TRANSACTIONS BY FACILITY  JAN 27, 1993@11:26  USER #0    
+SORT BY: Authorizing Site//
+  WITHIN Authorizing Site, SORT BY: Transaction Number//
+    WITHIN Transaction Number, SORT BY: (Current Status'="VAQ-AUTO")&(Current Status'="VAQ-PROC")&(Current Status'="VAQ-UNACK");L1//     From '0'  To '1'
+
+VAQ TRANSACTIONS BY PATIENT   JAN 27, 1993@11:27  USER #0    
+SORT BY: Patient's Name//
+  WITHIN Patient's Name, SORT BY: Patient ID//
+    WITHIN Patient ID, SORT BY: Authorizing Site//
+      WITHIN Authorizing Site, SORT BY: Transaction Number//
+        WITHIN Transaction Number, SORT BY: (Current Status'="VAQ-AUTO")&(Current Status'="VAQ-PROC")&(Current Status'="VAQ-UNACK");L1//     From '0'  To '1'
+
+VAQ TRANSACTIONS BY RECEIPT   JAN 27, 1993@11:28  USER #0    
+SORT BY: 'Date/Time of Reply//    (User is asked range)
+  WITHIN Date/Time of Reply, SORT BY: Transaction Number//
+    WITHIN Transaction Number, SORT BY: (Current Status'="VAQ-AUTO")&(Current Status'="VAQ-PROC")&(Current Status'="VAQ-UNACK");L1//     From '0'  To '1'
+
+VAQ TRANSACTIONS BY REQUESTOR JAN 27, 1993@11:29  USER #0    
+SORT BY: Requestor//
+  WITHIN Requestor, SORT BY: Transaction Number//
+    WITHIN Transaction Number, SORT BY: (Current Status'="VAQ-AUTO")&(Current Status'="VAQ-PROC")&(Current Status'="VAQ-UNACK");L1//     From '0'  To '1'
+
+VAQ TRANSACTIONS BY STATUS    JAN 27, 1993@11:31  USER #0    
+SORT BY: (Current Status'="VAQ-AUTO")&(Current Status'="VAQ-PROC")&(Current Status'="VAQ-UNACK");L1//     From '0'  To '1'
+  WITHIN (Current Status'="VAQ-AUTO")&(Current Status'="VAQ-PROC")&(Current Status'="VAQ-UNACK"), SORT BY: @Current Status//
+    WITHIN Current Status, SORT BY: Transaction Number//
+
+
+FORM(S)/BLOCK(S):

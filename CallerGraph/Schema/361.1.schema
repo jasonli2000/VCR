@@ -1,0 +1,1874 @@
+STANDARD DATA DICTIONARY #361.1 -- EXPLANATION OF BENEFITS FILE                                                                                                                                                                   MAY 20,2014@15:35:55  PAGE 1
+STORED IN ^IBM(361.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the explanation of benefits results (EOB) for bills as well as MEDICARE remittance advice data.  The data in this file may be appended to any subsequent claims in the COB process.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: 
+          "W": N %Y S %Y=$G(^(0)) D EN^DDIOL($$EXTERNAL^DILFD(361.1,.02,,$P(%Y,U,2))_" ("_$$EXTERNAL^DILFD(361.1,.15,,$P(%Y,U,15))_")")
+
+POINTED TO BY: EOB DETAIL field (#.02) of the ERA DETAIL sub-field (#344.41) of the ELECTRONIC REMITTANCE ADVICE File (#344.4) 
+               
+
+CROSS
+REFERENCED BY: BILL(ABB), RETURN MESSAGE ID(AC), DATE/TIME EOB MOVED(AEOB), TRANSMIT BILL(AERR), REVIEW STATUS(AREV), BILL(B), BILL #(C), BILL REFERENCE(C)
+
+INDEXED BY:    BILL & EOB PAID DATE (ABD), BILL & INSURANCE SEQUENCE (ABS), EOB TYPE & ENTRY DATE/TIME (AEDT), EOB TYPE & REVIEW STATUS (AMRA), ENTRY DATE/TIME & TRANSFERRED IN (ATIN), TRACE NUMBER & PAYER ID & EOB TYPE (ATRID)
+
+
+361.1,.01     BILL                   0;1 POINTER TO BILL/CLAIMS FILE (#399) (Required)
+
+              LAST EDITED:      NOV 15, 1999 
+              HELP-PROMPT:      ENTER THE BILL # THAT THIS EOB IS FOR 
+              DESCRIPTION:
+                                This is the pointer to the bill # to which this EOB is associated.  
+
+              CROSS-REFERENCE:  361.1^B 
+                                1)= S ^IBM(361.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBM(361.1,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  361.1^ABB^MUMPS 
+                                1)= N Z S Z=+$G(^IBM(361.1,DA,100)) I Z S ^IBM(361.1,"ABB",$E(X,1,30),Z,DA)=""
+                                2)= S Z=+$G(^IBM(361.1,DA,100)) I Z K ^IBM(361.1,"ABB",$E(X,1,30),Z,DA)
+                                3)= Do not delete
+                                Compound cross reference by batch and bill # 
+
+
+              RECORD INDEXES:   ABD (#131), ABS (#132)
+
+361.1,.02     PAYER NAME             0;2 POINTER TO INSURANCE COMPANY FILE (#36)
+
+              LAST EDITED:      MAY 28, 1999 
+              HELP-PROMPT:      Enter the name of the payer who returned this EOB. 
+              DESCRIPTION:
+                                This is the name of the insurance company that provided this EOB for the bill.  
+
+              NOTES:            TRIGGERED by the INSURANCE SEQUENCE field of the EXPLANATION OF BENEFITS File 
+
+
+361.1,.03     PAYER ID               0;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This is the payer ID provided for the insurance co that returned this EOB.  
+
+              RECORD INDEXES:   ATRID (#297)
+
+361.1,.04     EOB TYPE               0;4 SET
+
+                                '0' FOR NORMAL EOB; 
+                                '1' FOR MEDICARE MRA; 
+              OUTPUT TRANSFORM: S Y=$S(Y=0:"NORMAL EOB",1:"MRA") N Z S Z=$O(^(8,0)) I $O(^IBM(361.1,D0,8,Z),-1)'=Z S Y=Y_" (SPLIT TO MORE CLAIMS)"
+              LAST EDITED:      JUN 06, 2011 
+              HELP-PROMPT:      Enter 1 if an MRA from MEDICARE 
+              DESCRIPTION:
+                                This field indicates whether this EOB contains actual payment data or is simply an MRA received from MEDICARE.  
+
+              RECORD INDEXES:   AEDT (#988), AMRA (#307), ATRID (#297)
+
+361.1,.05     ENTRY DATE/TIME        0;5 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 06, 2011 
+              HELP-PROMPT:      Enter the date and time this entry is added to the file 
+              DESCRIPTION:
+                                This is the date and time that this EOB entry was added to the Vista file.  This is not mapped from the 835 transmission.  
+
+              RECORD INDEXES:   AEDT (#988), ATIN (#184)
+
+361.1,.06     EOB PAID DATE          0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      OCT 14, 2003 
+              HELP-PROMPT:      Enter the date the payer paid the claim 
+              DESCRIPTION:
+                                This is the effective date of money movement (paid date) from the payer, as indicated in the 835 transmission.  
+
+              RECORD INDEXES:   ABD (#131)
+
+361.1,.07     TRACE NUMBER           0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      OCT 04, 2010 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                This is the TRACE NUMBER from the 835 transaction for this EOB 
+
+              TECHNICAL DESCR:
+                                This is the data from the 835 data field (TRN-02) 
+
+              RECORD INDEXES:   ATRID (#297)
+
+361.1,.08     CROSSED OVER NAME      51;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      JUN 19, 2010 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This is the name of the insurance company to which this claim was sent for COB purposes automatically.  
+
+              TECHNICAL DESCR:
+                                This is the data from the 835 data field (NM-103/Qualifier='DC') 
+
+
+361.1,.09     CROSSED OVER ID        0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      OCT 07, 1998 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This is the ID returned on the 835 for the CROSS-OVER payer.  
+
+              TECHNICAL DESCR:
+                                This is the data from the 835 data field (NM-109) 
+
+
+361.1,.1      DRG CODE USED          0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+              LAST EDITED:      OCT 07, 1998 
+              HELP-PROMPT:      Answer must be 1-4 characters in length. 
+              DESCRIPTION:
+                                This is the DRG code used for pricing as reported from the payer for institutional claims only.  
+
+              TECHNICAL DESCR:
+                                This is the data from the 835 data field (CLP-11) or from manual entry of the amount 
+
+
+361.1,.11     DRG WEIGHT USED        0;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."5N.N) X
+              LAST EDITED:      MAR 03, 1999 
+              HELP-PROMPT:      Type a Number between 0 and 9999999999, 4 Decimal Digits 
+              DESCRIPTION:
+                                This is the DRG weight used for pricing as reported from the payer for institutional claims only.  
+
+              TECHNICAL DESCR:
+                                This is the data from the 835 data field (CLP-12) or from manual entry of the amount 
+
+
+361.1,.12     DISCHARGE FRACTION     0;12 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."3N.N) X
+              LAST EDITED:      OCT 07, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the DISCHARGE FRACTION field as reported by the payer for institutional claims only.  
+
+              TECHNICAL DESCR:
+                                This is the data from the 835 data field (CLP-13) or from manual entry of the amount 
+
+
+361.1,.13     CLAIM STATUS           0;13 SET
+
+                                '1' FOR PROCESSED; 
+                                '2' FOR DENIED; 
+                                '3' FOR PENDED; 
+                                '4' FOR REVERSAL; 
+                                '5' FOR OTHER; 
+              LAST EDITED:      OCT 07, 1998 
+              HELP-PROMPT:      Enter the status of this EOB. 
+              DESCRIPTION:
+                                This is the status of this EOB.  Only PROCESSED and DENIED claims will be sent to subsequent payers for COB purposes.  
+
+              TECHNICAL DESCR:
+                                This is the data from the 835 data field (CLP-02) or from manual entry of the amount 
+
+
+361.1,.14     ICN                    0;14 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      JUN 19, 2010 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                This is the ICN as reported on the EOB from the payer.  
+
+              TECHNICAL DESCR:
+                                This data is found on the 835 in the CLP-07 data element.  
+
+
+361.1,.15     INSURANCE SEQUENCE     0;15 SET (Required)
+
+                                '1' FOR PRIMARY; 
+                                '2' FOR SECONDARY; 
+                                '3' FOR TERTIARY; 
+              LAST EDITED:      NOV 15, 1999 
+              HELP-PROMPT:      Enter the sequence for this insurance for this bill 
+              DESCRIPTION:
+                                This is the sequence for the insurance for this bill.  
+
+              CROSS-REFERENCE:  ^^TRIGGER^361.1^.02 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBM(361.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y X ^DD(361.1,.15,1,2,1.1) X ^DD(361.1,.15,1,2,1.4)
+                                1.1)= S X=DIV S X=+$P(^DGCR(399,+$G(^IBM(361.1,DA,0)),"M"),U,X),X=$S(X:X,1:"")
+                                1.4)= S DIH=$S($D(^IBM(361.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=361.1,DIG=.02 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBM(361.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X="" X ^DD(361.1,.15,1,2,2.4)
+                                2.4)= S DIH=$S($D(^IBM(361.1,DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,2)=DIV,DIH=361.1,DIG=.02 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                3)= Please do not delete
+                                CREATE VALUE)= S X=+$P(^DGCR(399,+$G(^IBM(361.1,DA,0)),"M"),U,X),X=$S(X:X,1:"")
+                                DELETE VALUE)= @
+                                FIELD)= PAYER NAME
+                                This trigger forces the insurance company pointer into the PAYER NAME field when the COB sequence for the bill is entered.  
+
+
+              RECORD INDEXES:   ABS (#132)
+
+361.1,.16     REVIEW STATUS          0;16 SET
+
+                                '0' FOR NOT REVIEWED; 
+                                '1' FOR REVIEW IN PROCESS; 
+                                '1.5' FOR COB PROCESSED, NOT AUTHORIZED; 
+                                '2' FOR ACCEPTED-INTERIM EOB; 
+                                '3' FOR ACCEPTED-COMPLETE EOB; 
+                                '4' FOR REJECTED; 
+                                '9' FOR CLAIM CANCELLED; 
+              LAST EDITED:      SEP 15, 2004 
+              DESCRIPTION:
+                                This is the current processing status of the EOB/MRA.  Only MRA claims can be in a REJECTED status.  
+
+              CROSS-REFERENCE:  361.1^AREV 
+                                1)= S ^IBM(361.1,"AREV",$E(X,1,30),DA)=""
+                                2)= K ^IBM(361.1,"AREV",$E(X,1,30),DA)
+                                3)= Do not delete
+                                This xref is used to pull out EOB's that are in various stages of review.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^361.1^100.03 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBM(361.1,D0,100)):^(100),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=$G(DUZ) S DIH=$G(^IBM(361.1,DIV(0),100)),DIV=X S $P(^(100),U,3)=DIV,DIH=361.1,DIG=100.03 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=$G(DUZ)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= LAST EDITED BY
+
+              CROSS-REFERENCE:  ^^TRIGGER^361.1^100.04 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBM(361.1,D0,100)):^(100),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X=$$NOW^XLFDT() S DIH=$G(^IBM(361.1,DIV(0),100)),DIV=X S $P(^(100),U,4)=DIV,DIH=361.1,DIG=100.04 D 
+                                ^DICR
+
+                                2)= Q
+
+                                CREATE VALUE)= S X=$$NOW^XLFDT()
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= LAST EDITED DATE
+
+              RECORD INDEXES:   AMRA (#307)
+
+361.1,.17     MANUAL ENTRY?          0;17 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 10, 1999 
+              HELP-PROMPT:      Enter a 1 if this EOB was manually entered or 0 if it was entered electronically 
+              DESCRIPTION:
+                                This field indicates whether the EOB was added electronically or manually.  
+
+
+361.1,.18     MANUALLY ENTERED BY    0;18 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 28, 1999 
+              HELP-PROMPT:      Enter the name of the person entering the EOB 
+              DESCRIPTION:
+                                This is the name of the person responsible for the entry of this EOB.  
+
+
+361.1,.19     TRANSMIT BILL          0;19 POINTER TO EDI TRANSMIT BILL FILE (#364)
+
+              INPUT TRANSFORM:  S DIC("S")="N Z S Z=$G(^(0)) I +Z=+$G(^IBM(361.1,DA,0)),$TR($P(Z,U,8),""PST"",""123"")=$P(^(0),U,15)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 10, 1999 
+              HELP-PROMPT:      Enter the transmit bill that generated this EOB. 
+              DESCRIPTION:
+                                This is the transmit bill entry that was responsible for this EOB.  
+
+              SCREEN:           S DIC("S")="N Z S Z=$G(^(0)) I +Z=+$G(^IBM(361.1,DA,0)),$TR($P(Z,U,8),""PST"",""123"")=$P(^(0),U,15)"
+              EXPLANATION:      Only for same bill entry and ins sequence
+              CROSS-REFERENCE:  361.1^AERR 
+                                1)= S ^IBM(361.1,"AERR",$E(X,1,30),DA)=""
+                                2)= K ^IBM(361.1,"AERR",$E(X,1,30),DA)
+                                3)= Do not delete
+
+
+361.1,.2      FINAL REVIEW ACTION    0;20 SET
+
+                                'C' FOR BILL CANCELLED - NO FURTHER ACTION; 
+                                'F' FOR FILED - NO ACTION; 
+                                'R' FOR CORRECTED/RESUBMITTED; 
+                                'P' FOR COB PROCESSED; 
+                                'O' FOR OTHER ACTION; 
+              LAST EDITED:      JUL 03, 2003 
+              HELP-PROMPT:      Enter the final review action for this EOB 
+              DESCRIPTION:
+                                This is the action that was taken to complete the review of this EOB.  
+
+
+361.1,.21     CLAIM STATUS CODE      0;21 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>2!($L(X)<1) X
+              LAST EDITED:      MAR 25, 2003 
+              HELP-PROMPT:      Answer must be 1-2 characters in length. 
+              DESCRIPTION:
+                                This is the actual X12 claim status code that was received for this EOB.  
+
+
+361.1,1.01    PAYER PAID AMT         1;1 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount that was paid on this claim for this EOB 
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (CLP-04) or from manual entry of the amount 
+
+
+361.1,1.02    PATIENT RESPONSIBILITY AMT 1;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999999.99)!(X<0) X
+              LAST EDITED:      JAN 22, 1999 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount the insurance company/MRA dictates is the responsibility of the patient for this claim.  
+
+              TECHNICAL DESCR:
+                                This field is found from the data on the 835 in the CAS segment when the qualifier = 'PR'.  
+
+
+361.1,1.03    COVERED AMT            1;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount as reported by the payer.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (AMT-02/Qualifier='AU') or from manual entry of the amount 
+
+
+361.1,1.04    DISCOUNT AMT           1;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the prompt pay discount amount as reported by the payer.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (AMT-02/Qualifier='D8') or from manual entry of the amount 
+
+
+361.1,1.05    PER DAY LIMIT AMT      1;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount as reported by the payer.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (AMT-02/Qualifier='DY') or from manual entry of the amount 
+
+
+361.1,1.07    INTEREST AMT           1;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount as reported by the payer.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (AMT-02/Qualifier='I') or from manual entry of the amount 
+
+
+361.1,1.08    TAX AMT                1;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount as reported by the payer.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (AMT-02/Qualifier='T') or from manual entry of the amount 
+
+
+361.1,1.09    TOTAL BEFORE TAXES AMT 1;9 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount as reported by the payer.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (AMT-02/Qualifier='T2') or from manual entry of the amount 
+
+
+361.1,1.1     STATEMENT START DATE   1;10 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 28, 2004 
+              HELP-PROMPT:      Enter the date the payer reported as the starting date of service. 
+              DESCRIPTION:
+                                This is the date the payer reported as the starting date of service for the claim.  
+
+
+361.1,1.11    STATEMENT END DATE     1;11 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 28, 2004 
+              HELP-PROMPT:      Enter the date the payer reported as the ending date of service. 
+              DESCRIPTION:
+                                This is the date the payer reported as the ending date of service for the claim.  
+
+
+361.1,1.12    CLAIM RECEIVED DATE    50;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 18, 2010 
+              HELP-PROMPT:      Enter the date the payer received the claim. 
+              DESCRIPTION:
+                                This is the date the payer received the claim.  
+
+              TECHNICAL DESCR:
+                                From 835 record: 2100 DTM02 where DTM01 = "050" 
+
+
+361.1,1.13    COVERAGE EXPIRATION DATE 50;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 21, 2010 
+              HELP-PROMPT:      Enter the date the insurance coverage expires. 
+              DESCRIPTION:
+                                This is the date the insurance coverage expires.  
+
+              TECHNICAL DESCR:
+                                From 835 record: 2100 DTM02 where DTM01= "036" 
+
+
+361.1,1.14    CORRECTED PRIORITY PAYER NAME 50;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      JUN 21, 2010 
+              HELP-PROMPT:      Enter the corrected name (1-60 characters) of the priority payer. 
+              DESCRIPTION:
+                                This is the corrected name of the priority payer for this claim.  
+
+              TECHNICAL DESCR:
+                                From 835 record: 2100NM103 where NM101 = "PR" 
+
+
+361.1,1.15    CORRECTED PRIORITY PAYER TYPE 50;4 SET
+
+                                'AD' FOR BLUE CROSS/BLUE SHIELD ASSOC; 
+                                'FI' FOR FEDERAL TAXPAYER; 
+                                'NI' FOR NAIC; 
+                                'PP' FOR PHARMACY PROCESSOR NUMBER; 
+                                'XV' FOR CENTERS FOR MEDICARE/MEDICAID; 
+              LAST EDITED:      JUN 14, 2010 
+              HELP-PROMPT:      Enter code for type of corrected priority payer. 
+              DESCRIPTION:
+                                This is the type of the corrected priority payer.  
+
+              TECHNICAL DESCR:
+                                From 835 record: 2100 NM108 where NM101 = "PR" 
+
+
+361.1,1.16    CORRECTED PRIORITY PAYER ID 50;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      JUN 21, 2010 
+              HELP-PROMPT:      Enter the ID (1-80 characters) of the corrected priority payer. 
+              DESCRIPTION:
+                                This is the ID of the corrected priority payer.  
+
+              TECHNICAL DESCR:
+                                From 835 record: 2100 NM109 where NM101= "PR" 
+
+
+361.1,1.17    OTHER SUBSCRIBER NAME  51;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>122!($L(X)<1) X
+              LAST EDITED:      JUN 14, 2010 
+              HELP-PROMPT:      Enter the name (1-122 characters) of the other subscriber for this claim. 
+              DESCRIPTION:
+                                This is the name of the other subscriber for this claim.  
+
+              TECHNICAL DESCR:
+                                From 835 record: 2100 NM104 where NM101 = "GB" or NM101 = "GN" 
+
+
+361.1,2.03    TOTAL ALLOWED AMT      2;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (AMT-02/Qualifier='B6') 
+
+
+361.1,2.04    TOTAL SUBMITTED CHARGES 2;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (AMT-02/Qualifier='T3') 
+
+
+361.1,2.05    NEGATIVE REIMBURSEMENT AMT 2;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999999)!(X<-9999999999)!(X?.E1"."3.N) X
+              LAST EDITED:      AUG 15, 2003 
+              HELP-PROMPT:      Type a Dollar amount between -9999999999 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the amount of negative reimbursement on a claim as reported by MEDICARE.  
+
+              TECHNICAL DESCR:
+                                This data can be found on the electronic EOB (835) in the AMT-02 (qualifier 'NL') data element.  
+
+
+361.1,3.01    M-CARE OUTP REIMBURS. RATE 3;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>1)!(X<0)!(X?.E1"."5.N) X
+              LAST EDITED:      JUN 25, 2003 
+              HELP-PROMPT:      Type a number between 0 and 1, 4 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MOA-01) 
+
+
+361.1,3.02    M-CARE OUTP HCPCS PAYMNT AMT 3;2 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MOA-02) 
+
+
+361.1,3.03    M-CARE OUTP REMARKS CODE-1 3;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MOA-03) 
+
+
+361.1,3.04    M-CARE OUTP REMARKS CODE-2 3;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MOA-04) 
+
+
+361.1,3.05    M-CARE OUTP REMARKS CODE-3 3;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MOA-05) 
+
+
+361.1,3.06    M-CARE OUTP REMARKS CODE-4 3;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MOA-06) 
+
+
+361.1,3.07    M-CARE OUTP REMARKS CODE-5 3;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MOA-07) 
+
+
+361.1,3.08    M-CARE ESRD PAID AMT   3;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      JAN 12, 1999 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MOA-08) 
+
+
+361.1,3.09    M-CARE NON-PAYABLE PROF COMP 3;9 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      JAN 12, 1999 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MOA-09) 
+
+
+361.1,4.01    M-CARE INP COV. DAYS/VISIT CT 4;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-01) 
+
+
+361.1,4.02    M-CARE INP LIFETM PSYCH DY CT 4;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-03) 
+
+
+361.1,4.03    M-CARE INP CLAIM DRG AMT 4;3 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-04) 
+
+
+361.1,4.04    M-CARE INP CAP EXCEPTION AMT 4;4 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-24) 
+
+
+361.1,4.05    M-CARE INP DISPROP. SHARE AMT 4;5 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-06) 
+
+
+361.1,4.06    M-CARE INP MSP PASS THRU AMT 4;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                MIA-07 
+
+
+361.1,4.07    M-CARE INP PPS CAPITAL AMT 4;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-08) 
+
+
+361.1,4.08    M-CARE INP PPS CAP FSP-DRG AMT 4;8 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-09) 
+
+
+361.1,4.09    M-CARE INP PPS CAP HSP-DRG AMT 4;9 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-10) 
+
+
+361.1,4.1     M-CARE INP PPS CAP DSH-DRG AMT 4;10 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-11) 
+
+
+361.1,4.11    M-CARE INP OLD CAPITAL AMT 4;11 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-12) 
+
+
+361.1,4.12    M-CARE INP PPS CAPITAL IME AMT 4;12 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-13) 
+
+
+361.1,4.13    M-CARE INP PPS OP HOS DRG AMT 4;13 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-14) 
+
+
+361.1,4.14    M-CARE INP COST REPORT DAY CT 4;14 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-15) 
+
+
+361.1,4.15    M-CARE INP PPS OP FED DRG AMT 4;15 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-16) 
+
+
+361.1,4.16    M-CARE INP PPS CAP OUTLIER AMT 4;16 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-17) 
+
+
+361.1,4.17    M-CARE INP INDIRECT TEACH AMT 4;17 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-18) 
+
+
+361.1,4.18    M-CARE INP NON-PAY PROF COMP 4;18 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-19) 
+
+
+361.1,4.19    MEDICARE NON-COVERED DAYS 4;19 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 12, 2001 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice 
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (QTY with qualifier 'NA') 
+
+
+361.1,5.01    M-CARE INP PYMNT REMARK CODE-1 5;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-05) 
+
+
+361.1,5.011   REMARK CODE-1 SHORT TEXT RM1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+              LAST EDITED:      FEB 05, 1999 
+              HELP-PROMPT:      Answer must be 1-190 characters in length. 
+              DESCRIPTION:
+                                This is the abbreviated text for remark code # 1, if available This applies to EITHER inpatient or outpatient remark codes from MEDICARE.  
+
+
+361.1,5.02    M-CARE INP PYMNT REMARK CODE-2 5;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-20) 
+
+
+361.1,5.021   REMARK CODE-2 SHORT TEXT RM2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+              LAST EDITED:      FEB 05, 1999 
+              HELP-PROMPT:      Answer must be 1-190 characters in length. 
+              DESCRIPTION:
+                                This is the abbreviated text for remark code # 2, if available This applies to EITHER inpatient or outpatient remark codes from MEDICARE.  
+
+
+361.1,5.03    M-CARE INP PYMNT REMARK CODE-3 5;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-21) 
+
+
+361.1,5.031   REMARK CODE-3 SHORT TEXT RM3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+              LAST EDITED:      FEB 05, 1999 
+              HELP-PROMPT:      Answer must be 1-190 characters in length. 
+              DESCRIPTION:
+                                This is the abbreviated text for remark code # 3, if available This applies to EITHER inpatient or outpatient remark codes from MEDICARE.  
+
+
+361.1,5.04    M-CARE INP PYMNT REMARK CODE-4 5;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-22) 
+
+
+361.1,5.041   REMARK CODE-4 SHORT TEXT RM4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+              LAST EDITED:      FEB 05, 1999 
+              HELP-PROMPT:      Answer must be 1-190 characters in length. 
+              DESCRIPTION:
+                                This is the abbreviated text for remark code # 4, if available This applies to EITHER inpatient or outpatient remark codes from MEDICARE.  
+
+
+361.1,5.05    M-CARE INP PYMNT REMARK CODE-5 5;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      OCT 06, 1998 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:
+                                This is a data element from a MEDICARE electronic remittance advice.  
+
+              TECHNICAL DESCR:
+                                This is the amount from the 835 data field (MIA-23) 
+
+
+361.1,5.051   REMARK CODE-5 SHORT TEXT RM5;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+              LAST EDITED:      FEB 05, 1999 
+              HELP-PROMPT:      Answer must be 1-190 characters in length. 
+              DESCRIPTION:
+                                This is the abbreviated text for remark code # 5, if available This applies to EITHER inpatient or outpatient remark codes from MEDICARE.  
+
+
+361.1,6.01    NEW PATIENT NAME       6;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      FEB 08, 1999 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is the 'new' patient name as reported on the electronic EOB.  
+
+
+361.1,6.02    NEW PATIENT ID         6;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 08, 1999 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This is the 'new' patient ID as reported on the electronic EOB.  
+
+
+361.1,6.03    CORRECTED DATA MESSAGE 6;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+              LAST EDITED:      JAN 16, 2008 
+              HELP-PROMPT:      Answer must be 1-190 characters in length 
+              DESCRIPTION:      This is a free text message describing the results of the processing of the "06" record type on the incoming 835 transmission.  The "06" record type is where the payer can send back the corrected patient name and/or the
+                                corrected patient ID#.  VistA will accept this information and attempt to the update the patient insurance files with this data.  
+
+
+361.1,7.01    TRANSFERRED IN         7;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>64!($L(X)<1) X
+              LAST EDITED:      JAN 13, 2003 
+              HELP-PROMPT:      Answer must be 1-64 characters in length. 
+              DESCRIPTION:
+                                This is the site that this EOB was transferred into this site from.  
+
+              RECORD INDEXES:   ATIN (#184)
+
+361.1,8       AR AMOUNTS DISTRIBUTION 8;0 Multiple #361.18 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is the list of bills that AR has determined will apply to this ERA along with the amount that was paid/retracted.  
+
+
+361.18,.01      BILL #                 0;1 FREE TEXT (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      MAR 18, 2003 
+                HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                DESCRIPTION:
+                                  This is the free text bill # that AR has determined this ERA has referenced.  
+
+                CROSS-REFERENCE:  361.18^B 
+                                  1)= S ^IBM(361.1,DA(1),8,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.1,DA(1),8,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  361.1^C 
+                                  1)= S ^IBM(361.1,"C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBM(361.1,"C",$E(X,1,30),DA(1),DA)
+                                  3)= Do not delete
+
+
+361.18,.02      AMOUNT                 0;2 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999999999)!(X<-9999999999999) X
+                LAST EDITED:      MAR 13, 2003 
+                HELP-PROMPT:      Type a Dollar Amount between -9999999999999 and 9999999999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the amount of money from this ERA that AR has determined applies to the corresponding bill.  
+
+
+361.18,.03      BILL REFERENCE         0;3 POINTER TO BILL/CLAIMS FILE (#399)
+
+                LAST EDITED:      MAR 18, 2003 
+                HELP-PROMPT:      Enter the IB bill reference for this distribution amount 
+                DESCRIPTION:
+                                  This is the actual pointer to file 399 for the bill referenced in this distribution record.  If this data is missing, the amount was posted to suspense.  
+
+                CROSS-REFERENCE:  361.1^C 
+                                  1)= S ^IBM(361.1,"C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBM(361.1,"C",$E(X,1,30),DA(1),DA)
+                                  3)= Do not delete
+
+                CROSS-REFERENCE:  361.18^AC 
+                                  1)= S ^IBM(361.1,DA(1),8,"AC",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.1,DA(1),8,"AC",$E(X,1,30),DA)
+                                  3)= Do not delete
+
+
+
+
+361.1,10      835 CLAIM LEVEL ADJUSTMENTS 10;0 SET Multiple #361.11
+
+              LAST EDITED:      OCT 06, 1998 
+              DESCRIPTION:
+                                This is the list of claim level adjustments, including general category of adjustment, reason code, amount and quantity.  
+
+              TECHNICAL DESCR:
+                                This data is received from the EOB on the 835 data segment 'CAS' on a claim level basis.  
+
+
+361.11,.01      ADJUSTMENT CATEGORY (GRP CODE) 0;1 SET (Required) (Multiply asked)
+
+                                  'CO' FOR Contractual Obligations; 
+                                  'CR' FOR Corrections and Reversals; 
+                                  'OA' FOR Other Adjustments; 
+                                  'PI' FOR Payor Initiated Reductions; 
+                                  'PR' FOR Patient Responsibility; 
+                                  'MM' FOR Medicare Message; 
+                LAST EDITED:      JAN 19, 1999 
+                HELP-PROMPT:      Enter the group code associated with the adjustment 
+                DESCRIPTION:
+                                  This is the group code as reported on the EOB for the adjustment 
+
+                TECHNICAL DESCR:
+                                  This data is found in the electronic eob (835) in the data element CAS-01 
+
+                CROSS-REFERENCE:  361.11^B 
+                                  1)= S ^IBM(361.1,DA(1),10,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.1,DA(1),10,"B",$E(X,1,30),DA)
+
+
+361.11,1        REASONS                1;0 Multiple #361.111
+
+                DESCRIPTION:
+                                  This is the list of reasons returned for claim-level adjustments to the claim.  
+
+
+361.111,.01       REASON CODE            0;1 FREE TEXT (Multiply asked)
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                  LAST EDITED:      OCT 06, 1998 
+                  HELP-PROMPT:      Answer must be 1-20 characters in length. 
+                  DESCRIPTION:
+                                    This is the reason code for the adjustment 
+
+                  TECHNICAL DESCR:
+                                    This data is found in the electronic eob (835) in the data elements CAS-02,5,8,11,14,17 
+
+                  CROSS-REFERENCE:  361.111^B 
+                                    1)= S ^IBM(361.1,DA(2),10,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^IBM(361.1,DA(2),10,DA(1),1,"B",$E(X,1,30),DA)
+
+
+361.111,.02       AMOUNT                 0;2 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999999)!(X<-9999999999)!(X?.E1"."3.N) X
+                  LAST EDITED:      OCT 14, 2003 
+                  HELP-PROMPT:      Type a Dollar amount between -9999999999 and 9999999999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the adjusted amount for the reason code 
+
+                  TECHNICAL DESCR:
+                                    This data is found in the electronic eob (835) in the data elements CAS-03,6,9,12,15,18 
+
+
+361.111,.03       QUANTITY               0;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<-99999)!(X?.E1"."1.N) X
+                  LAST EDITED:      AUG 22, 2003 
+                  HELP-PROMPT:      Type a number between -99999 and 99999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is the quantity for the item adjusted 
+
+                  TECHNICAL DESCR:
+                                    This data is found in the electronic eob (835) in the data elements CAS-04,7,10,13,16,19 
+
+
+361.111,.04       REASON TEXT            0;4 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+                  LAST EDITED:      OCT 07, 1998 
+                  HELP-PROMPT:      Answer must be 1-190 characters in length. 
+                  DESCRIPTION:
+                                    This is the free text interpretation of the reason code, if available 
+
+                  TECHNICAL DESCR:
+                                    This is provided by the Austin AAC to accelerate the recognition of these codes.  It may be an abbreviated version of the actual message.  
+
+
+
+
+
+
+361.1,15      835 LINE LEVEL ADJUSTMENTS 15;0 Multiple #361.115 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is the list of line level adjustments, including general category of adjustment, reason code, amount and quantity.  
+
+              TECHNICAL DESCR:
+                                This data is received from the EOB on the 835 data segment 'CAS' on a line level basis.  
+
+
+361.115,.01     ADJUSTMENT SEQUENCE #  0;1 NUMBER (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 01, 1999 
+                HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is a sequence # for the adjustment. It has no value to the COB process.  
+
+                CROSS-REFERENCE:  361.115^B 
+                                  1)= S ^IBM(361.1,DA(1),15,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.1,DA(1),15,"B",$E(X,1,30),DA)
+
+
+361.115,.02     PAYER ID CODE          0;2 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+                LAST EDITED:      OCT 06, 1998 
+                HELP-PROMPT:      Answer must be 1-20 characters in length. 
+
+361.115,.03     AMOUNT PAID            0;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999999)!(X<-9999999999)!(X?.E1"."3.N) X
+                LAST EDITED:      SEP 12, 2003 
+                HELP-PROMPT:      Type a Dollar amount between -9999999999 and 9999999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the amount that was actually paid on this procedure.  
+
+                TECHNICAL DESCR:
+                                  This data is found in the electronic 835 at the SVC03 data element.  
+
+
+361.115,.04     PROCEDURE              0;4 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<3) X
+                LAST EDITED:      OCT 06, 2003 
+                HELP-PROMPT:      Answer must be 3-15 characters in length. 
+                DESCRIPTION:
+                                  This is the procedure for which payment was considered.  
+
+                TECHNICAL DESCR:
+                                  This data is found in the electronic 835 at the SVC01-02 data element.  
+
+
+361.115,.09     DESCRIPTION            0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+                LAST EDITED:      OCT 06, 1998 
+                HELP-PROMPT:      Answer must be 1-80 characters in length. 
+                DESCRIPTION:
+                                  This is the procedure description as reported on the EOB.  
+
+                TECHNICAL DESCR:
+                                  This data is found in the electronic 835 at the SVC01-07 data element.  
+
+
+361.115,.1      REVENUE CODE           0;10 POINTER TO REVENUE CODE FILE (#399.2)
+
+                LAST EDITED:      OCT 06, 1998 
+                DESCRIPTION:
+                                  This is the revenue code that is associated with the procedure being billed.  
+
+                TECHNICAL DESCR:
+                                  This data element is used only for Institutional claims and can be found in the electronic EOB (835) in the SVC-04 data element.  
+
+
+361.115,.11     PAID UNITS OF SERVICE  0;11 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<0)!(X?.E1"."2.N) X
+                LAST EDITED:      AUG 23, 2004 
+                HELP-PROMPT:      Type a number between 0 and 99999999, 1 Decimal Digit 
+                DESCRIPTION:
+                                  This is the number of units of service that were actually reimbursed.  
+
+                TECHNICAL DESCR:
+                                  This data is found in the electronic 835 at the SVC05 data element.  
+
+
+361.115,.12     REFERENCED LINE #      0;12 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 02, 1999 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is the line # on the original bill that is referenced by this adjustment.  If bundling or unbundling has occurred, this is the line # that has the actual adjustment information attached to it.  
+
+                TECHNICAL DESCR:
+                                  This data is calculated from the results of the 835 or EOB.  
+
+                CROSS-REFERENCE:  361.115^AC 
+                                  1)= S ^IBM(361.1,DA(1),15,"AC",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.1,DA(1),15,"AC",$E(X,1,30),DA)
+                                  3)= Please do not delete
+                                  This xref is the 'key' field for sorting the lines level adjustments by VISTA line number so the adjustments can be placed in the proper sequence when the 837 COB data is assembled.  
+
+
+
+361.115,.13     ALLOWED AMOUNT         0;13 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+                LAST EDITED:      FEB 02, 1999 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the amount MEDICARE will allow for this service line 
+
+                TECHNICAL DESCR:
+                                  This data can be found in the electronic EOB (835) at the AMT-02 (qualifier 'B6') data element at the line item level.  
+
+
+361.115,.14     PER DIEM AMOUNT        0;14 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999999)!(X<0) X
+                LAST EDITED:      FEB 02, 1999 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999999, 2 Decimal Digits 
+                DESCRIPTION:
+                                  This is the per diem amount reported by MEDICARE for this service line.  
+
+                TECHNICAL DESCR:
+                                  This data can be found in the electronic EOB (835) at the AMT-02 (qualifier 'DY') data element at the line item level.  
+
+
+361.115,.15     ORIGINAL PROCEDURE     0;15 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>15!($L(X)<1) X
+                LAST EDITED:      OCT 28, 1999 
+                HELP-PROMPT:      Answer must be 1-15 characters in length. 
+                DESCRIPTION:      If this adjustment indicates bundling or unbundling occurred (paid procedure was not the original submitted procedure), this is the procedure that was originally sent for payment on the claim.  This field will only have
+                                  data in it if the procedure was part of a bundling or unbundling process.  
+
+                TECHNICAL DESCR:
+                                  If there is data in this field, there will be one or more procedures that will need additional line items output for 837 COB due to bundling/unbundling of procedures by the payer.  
+
+
+361.115,.16     SERVICE DATE FROM      0;16 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAR 24, 2003 
+                HELP-PROMPT:      Enter the date the service was performed 
+                DESCRIPTION:
+                                  This is the first date of service for the claim.  
+
+
+361.115,.17     SERVICE DATE TO        0;17 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      MAR 24, 2003 
+                HELP-PROMPT:      Enter the date the service was performed 
+                DESCRIPTION:
+                                  This is the last date of service for the claim.  
+
+
+361.115,.18     PROCEDURE TYPE         0;18 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>2!($L(X)<1) X
+                LAST EDITED:      MAR 25, 2003 
+                HELP-PROMPT:      Answer must be 1-2 characters in length. 
+                DESCRIPTION:
+                                  This is the code representing the type of procedure as reported in this record.  
+
+
+361.115,1       ADJUSTMENTS            1;0 SET Multiple #361.1151 (Add New Entry without Asking)
+
+                DESCRIPTION:
+                                  This is the list of line level adjustments, including general category of adjustment, reason code, amount and quantity.  
+
+
+361.1151,.01      GROUP CODE             0;1 SET (Multiply asked)
+
+                                    'CO' FOR Contractual Obligations; 
+                                    'CR' FOR Corrections and Reversals; 
+                                    'OA' FOR Other Adjustments; 
+                                    'PI' FOR Payor Initiated Reductions; 
+                                    'PR' FOR Patient Responsibility; 
+                                    'LQ' FOR Line Item Remark Code WebMD Kludge; 
+                  LAST EDITED:      OCT 30, 2003 
+                  CROSS-REFERENCE:  361.1151^B 
+                                    1)= S ^IBM(361.1,DA(2),15,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^IBM(361.1,DA(2),15,DA(1),1,"B",$E(X,1,30),DA)
+
+
+361.1151,1        REASONS                1;0 Multiple #361.11511 (Add New Entry without Asking)
+
+                  DESCRIPTION:
+                                    This is the list of reasons returned for line-level adjustments to the claim.  
+
+
+361.11511,.01       REASON CODE            0;1 FREE TEXT (Multiply asked)
+
+                    INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                    LAST EDITED:      OCT 06, 1998 
+                    HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                    DESCRIPTION:
+                                      This is the reason code for the adjustment 
+
+                    TECHNICAL DESCR:
+                                      This data is found in the electronic eob (835) in the data elements CAS-02,5,8,11,14,17 
+
+                    CROSS-REFERENCE:  361.11511^B 
+                                      1)= S ^IBM(361.1,DA(3),15,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)=""
+                                      2)= K ^IBM(361.1,DA(3),15,DA(2),1,DA(1),1,"B",$E(X,1,30),DA)
+
+
+361.11511,.02       AMOUNT                 0;2 NUMBER
+
+                    INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?."-".N.1".".2N!(X>9999999999)!(X<-9999999999) X
+                    LAST EDITED:      APR 11, 2003 
+                    HELP-PROMPT:      Type a Dollar Amount between -9999999999 and 9999999999, 2 Decimal Digits 
+                    DESCRIPTION:
+                                      This is the adjusted amount for the reason code 
+
+                    TECHNICAL DESCR:
+                                      This data is found in the electronic eob (835) in the data elements CAS-03,6,9,12,15,18 
+
+
+361.11511,.03       QUANTITY               0;3 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<-9999999)!(X?.E1"."1.N) X
+                    LAST EDITED:      AUG 22, 2003 
+                    HELP-PROMPT:      Type a number between -9999999 and 9999999, 0 Decimal Digits 
+                    DESCRIPTION:
+                                      This is the quantity for the item adjusted 
+
+                    TECHNICAL DESCR:
+                                      This data is found in the electronic eob (835) in the data elements CAS-04,7,10,13,16,19 
+
+
+361.11511,.04       REASON TEXT            0;4 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+                    LAST EDITED:      OCT 07, 1998 
+                    HELP-PROMPT:      Answer must be 1-190 characters in length. 
+                    DESCRIPTION:
+                                      This is the free text interpretation of the reason code, if available 
+
+                    TECHNICAL DESCR:
+                                      This is provided by the Austin AAC to accelerate the recognition of these codes.  It may be an abbreviated version of the actual message.  
+
+
+
+
+361.1151,2        PAYER POLICY REFERENCE   2;0 Multiple #361.11512 (Add New Entry without Asking)
+
+                    DESCRIPTION:
+                                      These are the payer policy references listed on the payer web site. Up to 5 payer policy references are allowed on the 835 record.  
+
+
+361.11512,.01       PAYER POLICY REFERENCE   0;1 FREE TEXT
+
+                      INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+                      LAST EDITED:      AUG 26, 2010 
+                      HELP-PROMPT:      Enter the payer policy reference (1-50characters) used on the payer web site. 
+                      DESCRIPTION:
+                                        This is the payer policy reference used on the payer web site.  
+
+                      TECHNICAL DESCR:
+                                        From 835 record: 2110 REF02 where REF01 = "OK" 
+
+                      CROSS-REFERENCE:  361.11512^B 
+                                        1)= S ^IBM(361.1,DA(3),15,DA(2),1,DA(1),2,"B",$E(X,1,30),DA)=""
+                                        2)= K ^IBM(361.1,DA(3),15,DA(2),1,DA(1),2,"B",$E(X,1,30),DA)
+
+
+
+
+
+
+361.115,2       PAID MODIFIERS               2;0 Multiple #361.1152 (Add New Entry without Asking)
+
+
+361.1152,.01      PAID MODIFIERS               0;1 FREE TEXT (Multiply asked)
+
+                        INPUT TRANSFORM:  K:$L(X)>2!($L(X)<2) X
+                        LAST EDITED:      JUN 18, 2003 
+                        HELP-PROMPT:      Answer must be 2 characters in length. 
+                        DESCRIPTION:
+                                          This field contains the procedure modifiers used to pay on this line item.  
+
+                        CROSS-REFERENCE:  361.1152^B 
+                                          1)= S ^IBM(361.1,DA(2),15,DA(1),2,"B",$E(X,1,30),DA)=""
+                                          2)= K ^IBM(361.1,DA(2),15,DA(1),2,"B",$E(X,1,30),DA)
+
+
+
+
+361.115,4       LINE ITEM REMARK               4;0 Multiple #361.1154 (Add New Entry without Asking)
+
+
+361.1154,.01      LINE ITEM REMARK               0;1 NUMBER
+
+                          INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+                          LAST EDITED:      AUG 17, 2004 
+                          HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+                          DESCRIPTION:
+                                            This is the sequential number used to enumerate the line item remarks in the ERA.  
+
+                          CROSS-REFERENCE:  361.1154^B 
+                                            1)= S ^IBM(361.1,DA(2),15,DA(1),4,"B",$E(X,1,30),DA)=""
+                                            2)= K ^IBM(361.1,DA(2),15,DA(1),4,"B",$E(X,1,30),DA)
+
+
+361.1154,.02      LINE ITEM REMARK CODE          0;2 FREE TEXT
+
+                          INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                          LAST EDITED:      AUG 17, 2004 
+                          HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                          DESCRIPTION:
+                                            This is the remark code provided by MEDICARE for this line item.  
+
+
+361.1154,.03      LINE ITEM REMARK CODE TEXT     0;3 FREE TEXT
+
+                          INPUT TRANSFORM:  K:$L(X)>190!($L(X)<1) X
+                          LAST EDITED:      AUG 17, 2004 
+                          HELP-PROMPT:      Answer must be 1-190 characters in length. 
+                          DESCRIPTION:
+                                            This is the free text explanation of the remark code in this record.  
+
+
+
+
+
+
+361.1,20      MESSAGE STORAGE ERRORS ERR;0   WORD-PROCESSING #361.12   (NOWRAP)
+
+
+361.1,21      REVIEW DATE/TIME       21;0 DATE Multiple #361.121 (Add New Entry without Asking)
+
+              LAST EDITED:      AUG 25, 1999 
+
+361.121,.01     REVIEW DATE/TIME       0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 25, 1999 
+                HELP-PROMPT:      Enter the date/time this EOB is being reviewed. 
+                DESCRIPTION:
+                                  This is the date/time that this EOB was selected for review.  
+
+                CROSS-REFERENCE:  361.121^B 
+                                  1)= S ^IBM(361.1,DA(1),21,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.1,DA(1),21,"B",$E(X,1,30),DA)
+
+
+361.121,.02     REVIEWED BY            0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      AUG 02, 1999 
+                HELP-PROMPT:      Enter the name of the person reviewing this EOB. 
+                DESCRIPTION:
+                                  This is the name of the person who is reviewing this EOB.  
+
+
+361.121,1       COMMENTS               1;0   WORD-PROCESSING #361.1211
+
+
+
+
+361.1,25.01   PAYER CONTACT NAME     25;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAR 24, 2003 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This is the name of the contact the payer has provided for questions concerning this particular claim's adjudication.  
+
+
+361.1,25.02   CONTACT NUMBER 1       25;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 02, 2010 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This is a phone #/telephone extension or email address for the contact.  
+
+
+361.1,25.03   CONTACT TYPE 1         25;3 SET
+
+                                'EM' FOR E-MAIL; 
+                                'FX' FOR FAX; 
+                                'TE' FOR TELEPHONE; 
+                                'EX' FOR TELEPHONE EXTENSION; 
+              LAST EDITED:      MAR 24, 2003 
+              HELP-PROMPT:      Enter the code for the type of contact information. 
+              DESCRIPTION:
+                                This is the code that describes the type of contact information provided in the CONTACT NUMBER 1 field.  
+
+
+361.1,25.04   CONTACT NUMBER 2       25;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 02, 2010 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This is a phone #/telephone extension or email address for the contact.  
+
+
+361.1,25.05   CONTACT TYPE 2         25;5 SET
+
+                                'EM' FOR E-MAIL; 
+                                'FX' FOR FAX; 
+                                'TE' FOR TELEPHONE; 
+                                'EX' FOR TELEPHONE EXTENSION; 
+              LAST EDITED:      MAR 24, 2003 
+              HELP-PROMPT:      Enter the code for the type of contact information. 
+              DESCRIPTION:
+                                This is the code that describes the type of contact information provided in the CONTACT NUMBER 2 field.  
+
+
+361.1,25.06   CONTACT NUMBER 3       25;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      AUG 02, 2010 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This is a phone #/telephone extension or email address for the contact.  
+
+
+361.1,25.07   CONTACT TYPE 3         25;7 SET
+
+                                'EM' FOR E-MAIL; 
+                                'FX' FOR FAX; 
+                                'TE' FOR TELEPHONE; 
+                                'EX' FOR TELEPHONE EXTENSION; 
+              LAST EDITED:      MAR 24, 2003 
+              HELP-PROMPT:      Enter the code for the type of contact information. 
+              DESCRIPTION:
+                                This is the code that describes the type of contact information provided in the CONTACT NUMBER 3 field.  
+
+
+361.1,30.01   AUTO BILL MESSAGE      30;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<2) X
+              LAST EDITED:      MAY 15, 2003 
+              HELP-PROMPT:      Answer must be 2-200 characters in length 
+              DESCRIPTION:
+                                This field contains reason messages or error messages that describe why this EOB record was not automatically turned into a secondary or tertiary bill.  
+
+
+361.1,30.02   AUTO BILL MESSAGE DATE/TIME 30;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      MAY 15, 2003 
+              DESCRIPTION:
+                                This is the date/time that the automatic bill generation failure message was filed.  
+
+
+361.1,61.01   ORIGINAL 06 RECORD DATA 6.1;E1,200 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+              LAST EDITED:      JAN 17, 2008 
+              HELP-PROMPT:      Answer must be 1-200 characters in length 
+              DESCRIPTION:
+                                This field contains the original "06" record type on the 835 transmission from Austin.  It contains the corrected patient name and/or the corrected patient ID directly from the payer.  
+
+
+361.1,62.01   MAILMAN HEADER INFORMATION 6.2;E1,200 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+              LAST EDITED:      JAN 17, 2008 
+              HELP-PROMPT:      Answer must be 1-200 characters in length 
+              DESCRIPTION:
+                                This field contains MailMan header data which is returned from the MailMan utility $$NET^XMRENT.  
+
+
+361.1,100.01  BATCH NUMBER           100;1 POINTER TO EDI TRANSMISSION BATCH FILE (#364.1)
+
+              LAST EDITED:      JUL 08, 1999 
+              HELP-PROMPT:      Enter the batch number the bill was in when the EOB was received 
+              DESCRIPTION:
+                                This is the number of the batch the bill was in when the EOB message was received.  
+
+
+361.1,100.02  RETURN MESSAGE ID      100;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      FEB 11, 1999 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This is the ID of the return message that this EOB was delivered in.  It is used to ensure these EOB messages don't get added to this file more than once.  
+
+              CROSS-REFERENCE:  361.1^AC 
+                                1)= S ^IBM(361.1,"AC",$E(X,1,30),DA)=""
+                                2)= K ^IBM(361.1,"AC",$E(X,1,30),DA)
+                                3)= Please do not delete
+                                Used to assure messages only update this file once.  
+
+
+
+361.1,100.03  LAST EDITED BY         100;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 28, 1999 
+              HELP-PROMPT:      Enter the name of the person who last edited this EOB record. 
+              DESCRIPTION:
+                                This is the name of the person who last edited this EOB record.  
+
+              NOTES:            TRIGGERED by the REVIEW STATUS field of the EXPLANATION OF BENEFITS File 
+
+
+361.1,100.04  LAST EDITED DATE       100;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 28, 1999 
+              HELP-PROMPT:      Enter the last date/time this EOB record was edited. 
+              DESCRIPTION:
+                                This is the last date/time this EOB record was edited.  
+
+              NOTES:            TRIGGERED by the REVIEW STATUS field of the EXPLANATION OF BENEFITS File 
+
+
+361.1,100.05  MESSAGE CHECKSUM       100;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+              LAST EDITED:      MAY 08, 2003 
+              HELP-PROMPT:      Answer must be 1-10 characters in length. 
+              DESCRIPTION:      This field contains the calculated checksum value of the X12 835 transaction data from the payer.  It is a unique number which is mathematically generated based on the actual data in the 835 flat file received from Austin.  
+                                 
+                                This number will be used to identify and eliminate duplicate 835 transmissions into VistA.  
+
+              TECHNICAL DESCR:
+                                This field should not be set manually.  
+
+
+361.1,101     MOVE/COPY HISTORY      101;0 DATE Multiple #361.1101 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple contains a record for each time an EOB is moved or copied.  
+
+              TECHNICAL DESCR:
+                                Updated from EOB Move/Copy option and Worklist Split/Edit Line protocol.  
+
+
+361.1101,.01    DATE/TIME EOB MOVED    0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      SEP 07, 2011 
+                HELP-PROMPT:      Enter date/time EOB was moved or copied to a different claim. 
+                DESCRIPTION:
+                                  Date/Time the move/copy transaction was performed.  
+
+                CROSS-REFERENCE:  361.1101^B 
+                                  1)= S ^IBM(361.1,DA(1),101,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBM(361.1,DA(1),101,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  361.1^AEOB 
+                                  1)= S ^IBM(361.1,"AEOB",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^IBM(361.1,"AEOB",$E(X,1,30),DA(1),DA)
+                                  This cross reference is used by the RCDPE EEOB MOVE/COPY AUDIT REPORT option.  
+
+
+
+361.1101,.02    EOB MOVE/COPY BY       0;2 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      SEP 05, 2011 
+                HELP-PROMPT:      Select the person who moved the EOB to a new claim. 
+                DESCRIPTION:
+                                  This is person who moved EOB to a new claim.  
+
+
+361.1101,.03    MOVE/COPY REASON       0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1)!($TR(X," ","")="") X
+                LAST EDITED:      SEP 12, 2011 
+                HELP-PROMPT:      Answer must be 1-100 characters in length. 
+                DESCRIPTION:
+                                  Justification for moving EOB to new claim or claims.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+361.1101,.04    ORIGINAL BILL NUMBER   0;4 POINTER TO BILL/CLAIMS FILE (#399)
+
+                LAST EDITED:      SEP 05, 2011 
+                HELP-PROMPT:      Enter original claim number for this EOB. 
+                DESCRIPTION:
+                                  Original claim number for this EOB.  
+
+
+361.1101,.05    MOVE/COPY EVENT        0;5 SET
+
+                                  'M' FOR Move; 
+                                  'C' FOR Copy; 
+                LAST EDITED:      SEP 09, 2011 
+                HELP-PROMPT:      Indicate whether the EOB was moved or copied. 
+                DESCRIPTION:
+                                  This field indicates whether a move or a copy action was performed. It is automatically updated by the Move/Copy option or the Split/Edit a Line option.  
+
+
+361.1101,.06    OTHER CLAIM NUMBERS    1;0 POINTER Multiple #361.11016 (Add New Entry without Asking)
+
+                DESCRIPTION:
+                                  This multiple contains the other claim numbers that the EOB was copied to.  
+
+
+361.11016,.01     OTHER CLAIM NUMBERS    0;1 POINTER TO BILL/CLAIMS FILE (#399) (Required)
+
+                  LAST EDITED:      SEP 05, 2011 
+                  HELP-PROMPT:      Enter other claim number the EOB was copied to. 
+                  DESCRIPTION:
+                                    This is another claim number that the EOB was copied to.  
+
+                  CROSS-REFERENCE:  361.11016^B 
+                                    1)= S ^IBM(361.1,DA(2),101,DA(1),1,"B",$E(X,1,30),DA)=""
+                                    2)= K ^IBM(361.1,DA(2),101,DA(1),1,"B",$E(X,1,30),DA)
+
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+BILL/CLAIMS (#399)                BILL (#.01)
+                                  MOVE/COPY HISTORY:ORIGINAL BILL NUMBER (#.04)
+                                  OTHER CLAIM NUMBERS:OTHER CLAIM NUMBERS (#.01)
+                                  AR AMOUNTS DISTRIBUTION:BILL REFERENCE (#.03)
+
+EDI TRANSMISSION BATCH (#364.1)   BATCH NUMBER (#100.01)
+
+EDI TRANSMIT BILL (#364)          TRANSMIT BILL (#.19)
+
+INSURANCE COMPANY (#36)           PAYER NAME (#.02)
+
+NEW PERSON (#200)                 MANUALLY ENTERED BY (#.18)
+                                  LAST EDITED BY (#100.03)
+                                  MOVE/COPY HISTORY:EOB MOVE/COPY BY (#.02)
+                                  REVIEW DATE/TIME:REVIEWED BY (#.02)
+
+REVENUE CODE (#399.2)             835 LINE LEVEL ADJUSTMENTS:REVENUE CODE (#.1)
+
+
+File #361.1
+
+  Record Indexes:
+
+  ABD (#131)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  This xref provides an index by bill # and EOB date
+        Set Logic:  S ^IBM(361.1,"ABD",X2(1),X2(2),DA)=""
+         Set Cond:  I X2(1)=""!(X2(2)="") S X=0
+       Kill Logic:  K ^IBM(361.1,"ABD",X1(1),X1(2),DA)
+        Kill Cond:  I X1(1)=""!(X1(2)="") S X=0
+       Whole Kill:  K ^IBM(361.1,"ABD")
+             X(1):  BILL  (361.1,.01)  (Subscr 1)  (forwards)
+             X(2):  EOB PAID DATE  (361.1,.06)  (Subscr 2)  (forwards)
+
+  ABS (#132)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Cross reference bill # and insurance company sequence.
+        Set Logic:  S ^IBM(361.1,"ABS",X2(1),X2(2),DA)=""
+         Set Cond:  I X2(1)=""!(X2(2)="") S X=0
+       Kill Logic:  K ^IBM(361.1,"ABS",X1(1),X1(2),DA)
+        Kill Cond:  I X1(1)=""!(X1(2)="") S X=0
+       Whole Kill:  K ^IBM(361.1,"ABS")
+             X(1):  BILL  (361.1,.01)  (Subscr 1)  (forwards)
+             X(2):  INSURANCE SEQUENCE  (361.1,.15)  (Subscr 2)  (forwards)
+
+  AEDT (#988)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  EOB TYPE / DATE AND TIME
+      Description:  Creates an index by EOB TYPE and DATE/TIME.  
+        Set Logic:  S ^IBM(361.1,"AEDT",X(1),X(2),DA)=""
+       Kill Logic:  K ^IBM(361.1,"AEDT",X(1),X(2),DA)
+       Whole Kill:  K ^IBM(361.1,"AEDT")
+             X(1):  EOB TYPE  (361.1,.04)  (Subscr 1)  (forwards)
+             X(2):  ENTRY DATE/TIME  (361.1,.05)  (Subscr 2)  (forwards)
+
+  AMRA (#307)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Index by EOB type and Review Status
+        Set Logic:  S ^IBM(361.1,"AMRA",X(1),X(2),DA)=""
+       Kill Logic:  K ^IBM(361.1,"AMRA",X(1),X(2),DA)
+       Whole Kill:  K ^IBM(361.1,"AMRA")
+             X(1):  EOB TYPE  (361.1,.04)  (Subscr 1)  (forwards)
+             X(2):  REVIEW STATUS  (361.1,.16)  (Subscr 2)  (forwards)
+
+  ATIN (#184)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Xref by date filed and transferred from
+        Set Logic:  S ^IBM(361.1,"ATIN",X(1),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^IBM(361.1,"ATIN",X(1),$E(X(2),1,30),DA)
+       Whole Kill:  K ^IBM(361.1,"ATIN")
+             X(1):  ENTRY DATE/TIME  (361.1,.05)  (Subscr 1)  (forwards)
+             X(2):  TRANSFERRED IN  (361.1,7.01)  (Subscr 2)  (Len 30)  (forwards)
+
+  ATRID (#297)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Xref by bank trace # and ins co id for uniqueness
+        Set Logic:  S ^IBM(361.1,"ATRID",$E(X(1),1,50),$E(X(2),1,30),DA)=""
+         Set Cond:  I 'X(3)
+       Kill Logic:  K ^IBM(361.1,"ATRID",$E(X(1),1,50),$E(X(2),1,30),DA)
+       Whole Kill:  K ^IBM(361.1,"ATRID")
+             X(1):  TRACE NUMBER  (361.1,.07)  (Subscr 1)  (Len 50)  (forwards)
+             X(2):  PAYER ID  (361.1,.03)  (Subscr 2)  (Len 30)  (forwards)
+             X(3):  EOB TYPE  (361.1,.04)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

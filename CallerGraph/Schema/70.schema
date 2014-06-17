@@ -1,0 +1,1762 @@
+STANDARD DATA DICTIONARY #70 -- RAD/NUC MED PATIENT FILE                                                                                                                                                                          MAY 20,2014@15:40:27  PAGE 1
+STORED IN ^RADPT(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                (VERSION 5.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains imaging information for patients.  This file is the focal point of the entire radiology/nuclear medicine module.  
+ 
+The file has four basic sections.  They are the following: 
+ 
+    I. General Patient demographics 
+   II. Patient demographics that are imaging related 
+  III. Registered exam information 
+   IV. Outside films registry; where films received from other hospitals 
+       are recorded into the system 
+ 
+ Data Storage 
+ ------------
+The data for the 'RAD/NUC MED PATIENT' file is stored under the ^RADPT global. This file is very volatile and should be journaled and translated if the operating system supports these two functions.  
+ 
+ Input Templates 
+ ---------------
+The following is a list of input templates used by the package and the entry in the OPTIONS file (#19) that uses the template: 
+ 
+                       Compiled 
+ Name                  Routine    Description; Option(s) 
+ ----                  --------   ----------------------
+ RA DIAGNOSTIC BY CASE            Used to input interpreting physicians 
+                                  and diagnostic code; 
+                                  RA DIAGCN 
+ 
+ RA OUTSIDE ADD                   Add outside films into system; 
+                                  RA ADDEXAM 
+ 
+ RA OUTSIDE EDIT                  Edit outside film registry; 
+                                  RA OUTEDIT 
+ 
+ RA OUTSIDE SUPEROK               Indicate outside film to require 
+                                  supervisor 'ok' before returning; 
+                                  RA OUTFLAG 
+ 
+ 
+ RA CANCEL                        Cancel a registered exam; 
+                                  RA CANCEL 
+ 
+ RA EXAM EDIT                     Edit a registered exam; 
+                                  RA EDITCN, RA EDITPT 
+ 
+ RA LAST PAST VISIT               Allows entry of the last visit by a 
+                                  patient to the department 
+                                  before this module was installed; 
+                                  RA PAST 
+ 
+ RA NO PURGE SPEC IFICATION       Indicates no purging of an exam report.  
+                                  RA NOPURGE 
+ 
+ RA OVERRIDE                      Exam status is made complete without 
+                                  doing a requirements check; 
+                                  RA OVERRIDE 
+ 
+ RA REGISTER           ^RACTRG*   Initial registered exam entry; 
+                                  RA REG 
+ 
+ RA STATUS CHANGE                 Status Tracking input; 
+                                  RA STATRACK 
+ 
+If any modifications to these input templates are needed for local purposes, then great care should be taken not to degrade any branching logic in the template.  Making modifications is not recommended.  
+ 
+The following templates contain a large amount of branching and MUMPS code and as a result they are uneditable: 
+ 
+   - RA REGISTER 
+   - RA STATUS CHANGE 
+   - RA EXAM EDIT 
+ 
+ 
+ Print Templates 
+ ---------------
+ The following is a list of print templates used by the package: 
+ 
+ Name                 Description; Option(s) 
+ ----                 ----------------------
+ 
+ RA DAILY LOG         Prints an informational report for all 
+                      exams for a specified date.  
+                      RA LOG 
+ 
+ RA OUTSIDE LIST      Prints list of outside films needing to be 
+                      returned by a specified date; 
+                      RA OUTSIDERPT 
+ 
+ Sort Templates 
+ --------------
+ The following is a list of sort templates associated with this file: 
+ 
+ Name                 Related Print Template 
+ ----                 ----------------------
+ 
+  RA DAILY LOG        RA DAILY LOG 
+ 
+  RA OUTSIDE LIST     RA OUTSIDE LIST 
+ 
+Also, the modification of the other sort templates is not recommended.  
+
+
+IDENTIFIED BY: USUAL CATEGORY (#.04)[R], 
+
+CROSS
+REFERENCED BY: PREVENT PURGE(AC), CASE NUMBER(ADC), EXAM STATUS(AE), IMAGING ORDER(AO), EXAM DATE(AR), SECONDARY INTERPRET'G RESIDENT(ARES), EXAM STATUS(AS), SECONDARY INTERPRETING STAFF(ASTF), VISIT(AVSIT), NAME(B)
+
+INDEXED BY:    PROCEDURE (ACR), PRIMARY DIAGNOSTIC CODE (AD), SITE ACCESSION NUMBER (ADC1), STUDY INSTANCE UID (ASIUID)
+
+
+70,.01        NAME                   0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              NAME OF THIS RAD/NUC MED PATIENT                                                                                 
+              INPUT TRANSFORM:  S DINUM=X
+              LAST EDITED:      MAY 25, 1994 
+              HELP-PROMPT:      Enter the name of the appropriate Radiology/Nuclear Medicine patient. 
+              DESCRIPTION:      This field gives the name of this Radiology/Nuclear Medicine patient.  The system obtains this information from the main 'PATIENT' file (#2).  It is not stored in the 'RAD/NUC MED PATIENT' file (#70).  
+                                 
+                                         ALLOWABLE WAYS TO ENTER PATIENT NAME: 
+                                         -------------------------------------
+                                           -Patient's last name (to reduce typing errors, 
+                                            enter only first few letters of last name) 
+                                           -Last 4 digits of patient's Social Security Number 
+                                           -First letter of patient's last name and last 4 
+                                            digits of patient's Social Security Number.  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  70^B 
+                                1)= S ^RADPT("B",$E(X,1,30),DA)=""
+                                2)= K ^RADPT("B",$E(X,1,30),DA)
+                                     Regular cross reference assigned to the '.01' field.  
+
+
+
+70,.03        DATE OF BIRTH           ;  COMPUTED DATE
+
+              DATE OF BIRTH OF THIS RAD/NUC MED PATIENT                                                                        
+              MUMPS CODE:       X ^DD(70,.03,9.2) S X=$P(Y(70,.03,101),U,3) S D0=Y(70,.03,2)
+                                9.2 = S Y(70,.03,2)=$S($D(D0):D0,1:""),Y(70,.03,1)=$S($D(^RADPT(D0,0)):^(0),1:""),D0=$P(Y(70,.03,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(70,.03,101)=$S($D(^DPT(D0,0)):^(0),1:"")
+              ALGORITHM:        #.01:#.03
+              LAST EDITED:      MAY 25, 1994 
+              DESCRIPTION:      This field is computed by the system to be the date of birth of this Radiology/Nuclear Medicine patient.  The system obtains this information from the main 'PATIENT' file (#2).  It is not stored in the 'RAD/NUC MED 
+                                PATIENT' file (#70).  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE
+
+70,.033       AGE                     ;  COMPUTED
+
+              AGE OF THIS RAD/NUC MED PATIENT                                                                                  
+              MUMPS CODE:       X ^DD(70,.033,9.2) S X=Y(70,.033,101) S D0=Y(70,.033,2)
+                                9.2 = S Y(70,.033,2)=$S($D(D0):D0,1:""),Y(70,.033,1)=$S($D(^RADPT(D0,0)):^(0),1:""),D0=$P(Y(70,.033,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 X $P(^DD(2,.033,0),U,5,99) S Y(70,.033,101)=X
+              ALGORITHM:        #.01:#.033
+              LAST EDITED:      MAY 25, 1994 
+              DESCRIPTION:
+                                This field is computed by the system to the age of this Radiology/Nuclear Medicine patient. The system obtains this information from the main 'PATIENT' file (#2).  It is not stored in the 'RAD/NUC MED PATIENT' file (#70).  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE
+
+70,.04        USUAL CATEGORY         0;4 SET (Required)
+
+              USUAL CATEGORY OF THIS RAD/NUC MED EXAM                                                                          
+                                'O' FOR OUTPATIENT; 
+                                'C' FOR CONTRACT; 
+                                'S' FOR SHARING; 
+                                'R' FOR RESEARCH; 
+                                'E' FOR EMPLOYEE; 
+              LAST EDITED:      MAY 25, 1994 
+              HELP-PROMPT:      This is the usual category of exam (Outpatient, Contract, Sharing, Research, or Employee) for this Radiology/Nuclear Medicine patient. 
+              DESCRIPTION:      This field contains a default value used during the exam registration process to indicate the category of exam for this Radiology/Nuclear Medicine patient. Available categories are: 'O' for OUTPATIENT, 'C' for CONTRACT,
+                                'S' for SHARING, 'R' for RESEARCH, and 'E' for EMPLOYEE.  
+
+              SOURCE OF DATA:   RAD/NUC MED SERVICE
+
+70,.06        USER WHO ENTERED PATIENT 0;6 POINTER TO NEW PERSON FILE (#200)
+
+              THE USER WHO ENTERED THIS PATIENT INTO THE RAD/NUC MED SYSTEM                                                    
+              LAST EDITED:      MAY 25, 1994 
+              HELP-PROMPT:      This field contains the name of the person who entered this patient into the Radiology/Nuclear Medicine system. 
+              DESCRIPTION:
+                                This field points to the 'NEW PERSON' file (#200) to indicate the person who entered this patient into the Radiology/Nuclear Medicine system.  It is filled in by the system from information the user entered at sign-on.  
+
+              SOURCE OF DATA:   SYSTEM GENERATED
+
+70,.09        SSN                     ;  COMPUTED
+
+              SOCIAL SECURITY NUMBER OF THIS RAD/NUC MED PATIENT                                                               
+              MUMPS CODE:       X ^DD(70,.09,9.2) S X=$P(Y(70,.09,101),U,9) S D0=Y(70,.09,2)
+                                9.2 = S Y(70,.09,2)=$S($D(D0):D0,1:""),Y(70,.09,1)=$S($D(^RADPT(D0,0)):^(0),1:""),D0=$P(Y(70,.09,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(70,.09,101)=$S($D(^DPT(D0,0)):^(0),1:"")
+              ALGORITHM:        #.01:#.09
+              LAST EDITED:      MAY 25, 1994 
+              DESCRIPTION:      This field is computed by the system to the social security number of this Radiology/Nuclear Medicine patient.  The system obtains this information from the main 'PATIENT' file (#2).  It is not stored in the 'RAD/NUC MED
+                                PATIENT' file (#70).  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE
+
+70,.361       ELIGIBILITY CODE        ;  COMPUTED
+
+              ELIGIBILITY CODE OF THIS RAD/NUC MED PATIENT                                                                     
+              MUMPS CODE:       X ^DD(70,.361,9.2) S X=$S('$D(^DIC(8,+$P(Y(70,.361,101),U,1),0)):"",1:$P(^(0),U,1)) S D0=Y(70,.361,2)
+                                9.2 = S Y(70,.361,2)=$S($D(D0):D0,1:""),Y(70,.361,1)=$S($D(^RADPT(D0,0)):^(0),1:""),D0=$P(Y(70,.361,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(70,.361,101)=$S($D(^DPT(D0,.36)):^(.36),1:"")
+              ALGORITHM:        #.01:#.361
+              LAST EDITED:      MAY 25, 1994 
+              DESCRIPTION:      This field is computed by the system to the eligibility code of this Radiology/Nuclear Medicine patient from information obtained from the main 'PATIENT' file (#2).  It is not stored in the 'RAD/NUC MED PATIENT' file
+                                (#70).  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE
+
+70,1          NARRATIVE              1;1 FREE TEXT
+
+              NARRATIVE ABOUT THIS RAD/NUC MED PATIENT                                                                         
+              INPUT TRANSFORM:  K:$L(X)>250!($L(X)<3) X
+              LAST EDITED:      MAY 25, 1994 
+              HELP-PROMPT:      Enter a brief description, between 3 and 250 characters in length, about this Radiology/Nuclear Medicine patient. 
+              DESCRIPTION:
+                                This field may contain a brief note (up to 250 characters) about this Radiology/Nuclear Medicine patient. It may describe the personality or any unusual characteristic to identify this Radiology/Nuclear Medicine patient.  
+
+              SOURCE OF DATA:   RAD/NUC MED RECEPTIONIST 
+
+70,2          REGISTERED EXAMS       DT;0 DATE Multiple #70.02 (Add New Entry without Asking)
+
+              REGISTERED EXAMS SUB-FIELD                                                                                       
+              LAST EDITED:      APR 14, 2009 
+              DESCRIPTION:
+                                This is a multiple field containing information about the patient's registered Radiology/Nuclear Medicine exams.  
+
+
+70.02,.01       EXAM DATE              0;1 DATE
+
+                DATE AND TIME OF THIS EXAM.                                                                                    
+                INPUT TRANSFORM:  X ^DD(70.02,.01,9.2) S %DT="RET",%DT(0)=-$$FMADD^XLFDT($$NOW^XLFDT,0,$S($D(RAHRS):RAHRS,1:168),0,0) D ^%DT K %DT S X=Y K:Y<0 X S:$D(X) DINUM=9999999.9999-X
+                                  9.2 = I $D(RAMDIV) N RAHRS S RAHRS=+$P($G(^RA(79,+RAMDIV,.1)),"^",24)
+                LAST EDITED:      APR 23, 2009 
+                HELP-PROMPT:      Enter the date of the examination. 
+                DESCRIPTION:
+                                  This field contains the date and also the time of this Imaging exam.  The system stores the exam dates in reverse chronological order to produce reports efficiently.  
+
+                SOURCE OF DATA:   RECEPTIONIST 
+                                  UNEDITABLE
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  70.02^B 
+                                  1)= S ^RADPT(DA(1),"DT","B",$E(X,1,30),DA)=""
+                                  2)= K ^RADPT(DA(1),"DT","B",$E(X,1,30),DA)
+                                       Regular cross reference on the '.01' field.  
+
+
+                CROSS-REFERENCE:  70^AR 
+                                  1)= S ^RADPT("AR",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RADPT("AR",$E(X,1,30),DA(1),DA)
+                                  This cross reference is the exam date and DFN. It is used on most work load reports including AMIS.  
+
+
+
+70.02,2         TYPE OF IMAGING        0;2 POINTER TO IMAGING TYPE FILE (#79.2)
+
+                THE TYPE OF IMAGING USED FOR THIS EXAM.                                                                        
+                LAST EDITED:      JUN 08, 1994 
+                HELP-PROMPT:      This field is automatically filled in by the program and indicates the type of imaging used for this exam. 
+                DESCRIPTION:      This field points to the 'IMAGING TYPE' file (#79.2) to indicate the type of imaging used for this exam.  It is filled in by the system with the appropriate system name.  For example, when in General Radiology, this 
+                                  field is filled in with 'GENERAL RADIOLOGY'.  Examples of other imaging types this field may use are Nuclear Medicine, Nuclear Magnetic Resonance, and Ultrasound.  
+
+                SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE
+
+70.02,3         HOSPITAL DIVISION      0;3 POINTER TO RAD/NUC MED DIVISION FILE (#79) (Required)
+
+                HOSPITAL DIVISION WHERE THIS EXAM WAS PERFORMED                                                                
+                LAST EDITED:      JUN 08, 1994 
+                HELP-PROMPT:      This field is automatically filled in by the program with the medical center division. 
+                DESCRIPTION:      This field points to the 'RAD/NUC MED DIVISION' file (#79) to indicate the name of the hospital division where this imaging exam was performed.  Normally, a hospital has only one division however, some medical centers 
+                                  have multiple divisions.  This field allows the system to compile statistics by division.  This field is filled in by the system from the information the user enters at sign-on.  
+
+                SOURCE OF DATA:   SYSTEM GENERATED
+
+70.02,4         IMAGING LOCATION       0;4 POINTER TO IMAGING LOCATIONS FILE (#79.1) (Required)
+
+                IMAGING LOCATION WHERE THE EXAM WAS PERFORMED                                                                  
+                LAST EDITED:      JUN 08, 1994 
+                HELP-PROMPT:      This field is automatically filled in by the program with the name of the imaging location. 
+                DESCRIPTION:      This field points to the 'IMAGING LOCATIONS' file (#79.1) to indicate the name of the imaging location within the hospital division where the exam was performed. Normally, a hospital has only one imaging location, 
+                                  however, some medical centers have multiple imaging locations within the division.  This field is filled in by the system from information the user enters at sign-on.  
+
+                SOURCE OF DATA:   SYSTEM GENERATED
+
+70.02,5         EXAM SET               0;5 SET
+
+                                  '1' FOR YES; 
+                LAST EDITED:      OCT 18, 1994 
+                HELP-PROMPT:      Enter YES if all the exams on this date/time are part of the same set. 
+                DESCRIPTION:      If all the exams under this date/time are considered part of the same set of exams, this field should be answered YES.  Exam sets are created when a parent type procedure is registered.  Any non-parent type procedures 
+                                  registered at the same time are also considered part of the exam set.  
+
+
+70.02,50        EXAMINATIONS           P;0 Multiple #70.03 (Add New Entry without Asking)
+
+                EXAMINATIONS SUB-FIELD                                                                                         
+                DESCRIPTION:
+                                  This is a multiple field containing information on all imaging examinations performed during this patient visit.  All exams (cases) within one exam date must be of the same imaging type.  
+
+                IDENTIFIED BY:    PROCEDURE(#2)
+
+70.03,.01         CASE NUMBER            0;1 NUMBER
+
+                  CASE NUMBER OF THIS IMAGING EXAM                                                                             
+                  INPUT TRANSFORM:  X ^DD(70.03,.01,9.2) I $D(X) S RASET=1 D CN^RAREG1 I $D(X) W:'$D(RAOVER) !!?4,"Case Number: ",X,!?4,"----------------"
+                                    9.2 = S RADT=$P($P(^RADPT(DA(2),"DT",DA(1),0),U),"."),RATYPE=+$O(^RA(79.2,"B","GENERAL RADIOLOGY",0)) I '$D(^RA(79.2,RATYPE,0)) K RADT,RATYPE,X D EN^DDIOL("Type of imaging is not defined in file 79.2.","","!")
+                  LAST EDITED:      JUN 08, 1994 
+                  HELP-PROMPT:      This field contains the computer generated case number of this exam. 
+                  DESCRIPTION:      This field contains the computer generated case number of this Imaging exam.  The case number is used to quickly track and call up the exam as it is processed through the Rad/Nuc Med system.  The case numbers are
+                                    generated by the system in sequential order.  
+                                     
+                                    NOTE:  Case numbers are not allowed to exceed 99,999.  
+
+                  EXECUTABLE HELP:S RADT=$P($P(^RADPT(DA(2),"DT",DA(1),0),U),"."),RASET=0,RATYPE=+$O(^RA(79.2,"B","GENERAL RADIOLOGY",0)) D:'$D(^RA(79.2,RATYPE,0)) EN^DDIOL("Img.Typ. undef!","","!") I $D(^(0)) D CN^RAREG1 D EN^DDIOL("NEW case# this dt mu
+                                st = '"_X_"'.","","!")
+                  SOURCE OF DATA:SYSTEM GENERATED
+                  NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:70.03^B 
+                                1)= S ^RADPT(DA(2),"DT",DA(1),"P","B",$E(X,1,30),DA)=""
+                                2)= K ^RADPT(DA(2),"DT",DA(1),"P","B",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+                                Regular B cross-reference used for look-up by case number.  
+
+
+                  CROSS-REFERENCE:70.03^ABLTN^MUMPS 
+                                1)= Q
+                                2)= D:$D(RABULL) ^RABUL1 Q
+                                3)= Do not delete.
+                                     This mumps cross-reference will act like a bulletin cross-reference.  The delete logic executes the RABUL1 routine.  This routine will send a bulletin to the RAD/NUC MED EXAM DELETED mail group when an exam is 
+                                deleted.  
+
+
+                  CROSS-REFERENCE:70^ADC^MUMPS 
+                                1)= S ^RADPT("ADC",$E(+^RADPT(DA(2),"DT",DA(1),0),4,7)_$E(+^(0),2,3)_"-"_X,DA(2),DA(1),DA)=""
+                                2)= K ^RADPT("ADC",$E(+^RADPT(DA(2),"DT",DA(1),0),4,7)_$E(+^(0),2,3)_"-"_X,DA(2),DA(1),DA)
+                                This is the date (MMDDYY) - CASE # cross reference.  
+
+
+
+70.03,2           PROCEDURE          0;2 POINTER TO RAD/NUC MED PROCEDURES FILE (#71)
+
+                  PROCEDURE ASSOCIATED WITH THIS CASE NUMBER                                                                   
+                  INPUT TRANSFORM:S DIC("S")="I $$ACTC^RACPTCSV" X ^DD(70.03,2,9.2)
+                                9.2 = D ^DIC X:X=" " ^DD(70.03,2,9.3) S:X=" " Y=-1 K DIC S DIC=DIE,X=+Y K:Y<0 X D:$D(X) PRC^RAUTL8
+                                9.3 = D EN^DDIOL("Spacebar return feature not allowed!","","!?5")
+                  LAST EDITED:  APR 04, 2003 
+                  HELP-PROMPT:  Enter the name of the procedure. 
+                  DESCRIPTION:  This field points to the 'RAD/NUC MED PROCEDURES' file (#71) to indicate the Imaging procedure associated with this case number.  
+                                 
+                                 
+                                   ALLOWABLE WAYS TO ENTER THE IMAGING PROCEDURE FOR THIS CASE NUMBER: 
+                                   ---------------------------------------------------------------------
+                                          -Name of procedure 
+                                          -CPT Code 
+                                          -Site specific synonym 
+
+                  SCREEN:       S DIC("S")="I $$ACTC^RACPTCSV"
+                  EXPLANATION:  Only active procedures allowed, imaging type of exam should be same as procedure, contrast media use must be OK'd if previous adverse reaction on record.
+                  SOURCE OF DATA:RECEPTIONIST
+                  NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:70.02^AP 
+                                1)= S ^RADPT(DA(2),"DT","AP",$E(X,1,30),DA(1),DA)=""
+                                2)= K ^RADPT(DA(2),"DT","AP",$E(X,1,30),DA(1),DA)
+                                Used to screen duplicate entries at the time of entry.  
+
+
+                  CROSS-REFERENCE:70.03^AW^MUMPS 
+                                1)= Q
+                                2)= D DW^RACPTMSC
+                                Whenever the PROCEDURE is changed, we need to delete all its former CPT Modifiers and warn of any existing Procedure Modifiers.  
+
+
+                  RECORD INDEXES: ACR (#475) (WHOLE FILE #70)
+
+70.03,3           EXAM STATUS        0;3 POINTER TO EXAMINATION STATUS FILE (#72) (Required)
+
+                  STATUS OF THIS EXAM                                                                                          
+                  INPUT TRANSFORM:S DIC("S")="N RAIMGTY S RAIMGTY=+$P($G(^RADPT(DA(2),""DT"",DA(1),0)),U,2) I $P(^RA(72,+Y,0),U,7)=RAIMGTY" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X D ^RASTREQ:'$D(RAOVER)&($D(X))
+                                9.2 = S:$P($G(^RADPT(DA(2),"DT",DA(1),"P",DA,0)),U)]"" ^RADPT("AE",$P(^RADPT(DA(2),"DT",DA(1),"P",DA,0),U),DA(2),DA(1),DA)=""
+                  LAST EDITED:  JAN 22, 2001 
+                  HELP-PROMPT:  Select the appropriate Exam Status. 
+                  DESCRIPTION:  This field points to the 'EXAMINATION STATUS' file (#72) to indicate the current status of this Imaging exam.  The status is determined and updated by the system according to the information entered during the various data 
+                                entry processes.  
+
+                  SCREEN:       S DIC("S")="N RAIMGTY S RAIMGTY=+$P($G(^RADPT(DA(2),""DT"",DA(1),0)),U,2) I $P(^RA(72,+Y,0),U,7)=RAIMGTY"
+                  EXPLANATION:  Choose only those Exam statuses that have the same Imaging Type of our Registered Exam.
+                  EXECUTABLE HELP:D HELP^RASTREQ
+                  SOURCE OF DATA:SYSTEM DETERMINED
+                  NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:70^AE^MUMPS 
+                                1)= N RA,RAIMGTY S RA(0)=$G(^RADPT(DA(2),"DT",DA(1),0)),RAIMGTY=$P($G(^RA(79.2,+$P(RA(0),U,2),0)),U) I RAIMGTY]"" X:('$D(^RA(72,"AA",RAIMGTY,9,X)))&('$D(^RA(72,"AA",RAIMGTY,0,X))) ^DD(70.03,3,9.2)
+                                2)= K ^RADPT("AE",+$P($G(^RADPT(DA(2),"DT",DA(1),"P",DA,0)),U),DA(2),DA(1),DA)
+                                3)= Please do not delete this cross reference.
+                                Used to look-up exams that are active/incomplete.  
+
+
+                  CROSS-REFERENCE:70^AS^MUMPS 
+                                1)= N RA,RAIMGTY S RA(0)=$G(^RADPT(DA(2),"DT",DA(1),0)),RAIMGTY=+$P(RA(0),U,2),RAIMGTY=$P($G(^RA(79.2,RAIMGTY,0)),U) I RAIMGTY]"" S:('$D(^RA(72,"AA",RAIMGTY,9,X)))&('$D(^RA(72,"AA",RAIMGTY,0,X))) ^RADPT("AS",$E(X,1,30),DA(
+                                2),DA(1),DA)=""
+
+                                2)= K ^RADPT("AS",$E(X,1,30),DA(2),DA(1),DA)
+                                Used to produce a list of active/incomplete exams.  
+
+
+
+70.03,3.5         REASON FOR CANCELLATION 0;23 POINTER TO RAD/NUC MED REASON FILE (#75.2)
+
+                  INPUT TRANSFORM:S DIC("S")="I $P(^(0),U,2)=1!($P(^(0),U,2)=9)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:  JAN 27, 1993 
+                  HELP-PROMPT:  This field points to the 'RAD/NUC MED REASON' file to indicate the reason the exam was cancelled. 
+                  DESCRIPTION:
+                                This is the reason this exam was cancelled.  
+
+                  SCREEN:       S DIC("S")="I $P(^(0),U,2)=1!($P(^(0),U,2)=9)"
+                  EXPLANATION:  Type of Reason must equal CANCEL REQUEST or GENERAL REQUEST.
+
+70.03,4           CATEGORY OF EXAM   0;4 SET (Required)
+
+                  CATEGORY OF THIS EXAM                                                                                        
+                                'I' FOR INPATIENT; 
+                                'O' FOR OUTPATIENT; 
+                                'C' FOR CONTRACT; 
+                                'S' FOR SHARING; 
+                                'E' FOR EMPLOYEE; 
+                                'R' FOR RESEARCH; 
+                  INPUT TRANSFORM:I $D(X),$E(X)="I" S DFN=DA(2),VAINDT=9999999.9999-DA(1) D ADM^VADPT2 I 'VADMVT K X W !?3,"Patient not an inpatient at registration time.",!
+                  LAST EDITED:  JUN 08, 1994 
+                  HELP-PROMPT:  Enter the exam category for this case number. 
+                  DESCRIPTION:  This field contains the exam category associated with this case number.  It is used to compile workload statistics and various management reports (i.e. AMIS and RCS14-4).  Available exam categories are: 'I' for INPATIENT,
+                                'O' for OUTPATIENT, 'C' for CONTRACT, 'S' for SHARING, 'E' for EMPLOYEE, and 'R' for RESEARCH.  
+                                 
+                                When the 'category of exam' is asked during the exam registration process, the default value asked is the value in the 'usual category' field.  Of course, if the patient is an inpatient, the default value will always be
+                                'inpatient'.  
+                                 
+                                An inpatient may have a 'category of exam' of 'contract', 'sharing', or 'research' for its associated case number if the exam procedure is not directly related with their hospital stay.  (i.e. An inpatient who has an 
+                                imaging exam performed for research purposes.) 
+
+                  SOURCE OF DATA:RECEPTIONIST
+                  NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+70.03,6           WARD               0;6 POINTER TO WARD LOCATION FILE (#42)
+
+                  WARD LOCATION OF RAD/NUC MED INPATIENT                                                                       
+                  LAST EDITED:  MAY 17, 1994 
+                  HELP-PROMPT:  This is the ward where the patient was residing at the time of the exam. 
+                  DESCRIPTION:  This field points to the 'WARD LOCATION' file (#42) to indicate the name of the hospital ward where the inpatient was admitted at the time the Radiology/Nuclear Med exam was performed.  
+                                  
+                                This field is filled in by the system from information entered by the ADT system and is updated at the time the exam report is first printed.  
+
+                  SOURCE OF DATA:MEDICAL ADMINISTRATION SERVICE
+
+70.03,7           SERVICE            0;7 POINTER TO SERVICE/SECTION FILE (#49)
+
+                  SERVICE TREATING THIS RAD/NUC MED INPATIENT                                                                  
+                  LAST EDITED:  MAY 17, 1994 
+                  HELP-PROMPT:  This field is filled in by the system and indicates the service treating the patient at the time of the exam. 
+                  DESCRIPTION:  This field is used for Rad/Nuc Med patients who are inpatients. It points to the 'HOSPITAL SERVICE' file (#49) to indicate the name of the service treating the patient and is filled in by the system from information 
+                                entered by the ADT system. 
+
+                  SOURCE OF DATA:MEDICAL ADMINISTRATION SERVICE
+
+70.03,8           PRINCIPAL CLINIC   0;8 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+                  REFERRING PRINCIPAL CLINIC                                                                                   
+                  INPUT TRANSFORM:S DIC("S")="I $P(^(0),U,3)=""C""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:  MAY 27, 2004 
+                  HELP-PROMPT:  Enter the name of the clinic that referred this patient. 
+                  DESCRIPTION:  This field is used for exams with a 'category of exam' of 'outpatient' or 'employee'.  It points to the 'HOSPITAL LOCATION' file (#44) to indicate the name of the principle clinic that referred the patient to 
+                                Radiology/Nuclear Medicine for the exam.  If the appropriate Report Distribution Queue is active, the report for this exam will automatically be placed in the queue for this clinic, or in the current ward if the patient is
+                                admitted before the report is verified.  
+
+                  SCREEN:       S DIC("S")="I $P(^(0),U,3)=""C"""
+                  EXPLANATION:  Screen to allow any "C" type location.
+                  SOURCE OF DATA:RAD/NUC MED RECEPTIONIST
+
+70.03,9           CONTRACT/SHARING SOURCE 0;9 POINTER TO CONTRACT/SHARING AGREEMENTS FILE (#34)
+
+                  REFERRING CONTRACT/SHARING AGREEMENT                                                                         
+                  INPUT TRANSFORM:S DIC("S")="I $S('$D(^(""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:  AUG 08, 1991 
+                  HELP-PROMPT:  Enter the Contract or Sharing Agreement source that referred this patient. 
+                  DESCRIPTION:  This field is used for exams with a 'category of exam' of 'contract' or 'sharing'.  It points to the 'CONTRACT/SHARING AGREEMENTS' file (#34) to indicate the name of the contract or sharing agreement that referred this
+                                patient to Radiology/Nuclear Medicine for the exam.  
+
+                  SCREEN:       S DIC("S")="I $S('$D(^(""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0)"
+                  EXPLANATION:  Only active agreements are selectable.
+                  SOURCE OF DATA:RAD/NUC MED RECEPTIONIST
+
+70.03,9.5         RESEARCH SOURCE    R;1 FREE TEXT
+
+                  REFERRING RESEARCH SOURCE                                                                                    
+                  INPUT TRANSFORM:K:$L(X)>40!($L(X)<3) X
+                  LAST EDITED:  SEP 14, 1984 
+                  HELP-PROMPT:  Enter the research source that referred this patient. 
+                  DESCRIPTION:
+                                This field is used for exams with a 'category of exam' of 'research'.  This field contains the name (3-40 characters) of the research source that referred the patient to Radiology/Nuclear Medicine for the exam.  
+
+                  SOURCE OF DATA:RAD/NUC MED RECEPTIONIST
+
+70.03,10          CONTRAST MEDIA USED 0;10 SET
+
+                  CONTRAST MEDIA USED IN THIS RAD/NUC MED EXAM?                                                                
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+                  LAST EDITED:  MAY 17, 1994 
+                  HELP-PROMPT:  Enter YES if a contrast was used during this exam. 
+                  DESCRIPTION:  This field contains a value to indicate if a contrast medium was, or if contrast media were used during this Rad/Nuc Med exam.  Available values are: 'Y' for YES and 'N' for NO.  
+                                 
+                                If the Rad/Nuc Med procedure does not involve the use of a contrast, the field is automatically filled in with NO by the system but the user is prompted with this question.  
+                                 
+                                Conversely, if the Rad/Nuc Med procedure does not involve the use of a contrast, the field is automatically filled in with NO by the system but the user is prompted with this question.  
+
+                  TECHNICAL DESCR:
+                                Modified, description and help text only, with the release of RA*5*45.  
+
+                  SOURCE OF DATA:RAD/NUC MED TECHNOLOGIST
+
+70.03,11          IMAGING ORDER      0;11 POINTER TO RAD/NUC MED ORDERS FILE (#75.1)
+
+                  LAST EDITED:  JUN 08, 1994 
+                  HELP-PROMPT:  This field contains the order from the 'RAD/NUC MED ORDERS' file that is associated with this exam. 
+                  DESCRIPTION:  This field points to the 'RAD/NUC MED ORDERS' File (#75.1). It contains the order associated with this exam. This field will only contain data if the exam has an 'ACTIVE' order associated with it.  When orders are purged,
+                                the pointer in this field is also purged.  
+
+                  TECHNICAL DESCR:
+                                Patch RA*5*41 will dis-allow purging of orders from the Radiology/Nuclear Medicine application.  
+
+                  CROSS-REFERENCE:70^AO 
+                                1)= S ^RADPT("AO",$E(X,1,30),DA(2),DA(1),DA)=""
+                                2)= K ^RADPT("AO",$E(X,1,30),DA(2),DA(1),DA)
+                                Used to link the Radiology/Nuclear Medicine Request/Order to the Exam.  
+
+
+
+70.03,12          PRIMARY INTERPRETING RESIDENT 0;12 POINTER TO NEW PERSON FILE (#200)
+
+                  PRIMARY INTERPRETING RESIDENT WHO READ FILMS                                                                 
+                  INPUT TRANSFORM:S DIC("S")="I $$SCRN^RAUTL8(.DA,""R"",+Y,""PRI"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X D:$D(X) EN^RAUTL8(X,70,.DA)
+                  LAST EDITED:  APR 28, 1997 
+                  HELP-PROMPT:  Enter the name of the Primary Resident who interpreted the images for this exam. 
+                  DESCRIPTION:  This field points to the 'NEW PERSON' file (#200) to indicate the name of the primary interpreting resident who read the films of this exam.  If interpreting staff is required to review this resident's results, then the
+                                'primary interpreting staff' field must also be filled in.  Primary Interpreting Resident must be classified as an interpreting resident, and must have access to at least one imaging location that matches the imaging type
+                                of the exam.  
+                                 
+                                Depending on the requirements set up in the 'EXAMINATION STATUS' file (#72), it may be necessary for this field to be filled in before the 'exam status' can be considered complete.  
+
+                  SCREEN:       S DIC("S")="I $$SCRN^RAUTL8(.DA,""R"",+Y,""PRI"")"
+                  EXPLANATION:  Personnel must be classified as Interpreting Resident, and have access to an imaging location with the imaging type of this exam.
+                  DELETE TEST:  1,0)= S RAMULT="SRR" D NODEL^RADD1
+
+                  SOURCE OF DATA:RAD/NUC MED TECHNOLOGIST
+                  NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:70.03^ARES^MUMPS 
+                                1)= S RADA=$P(^RADPT(DA(2),"DT",DA(1),"P",DA,0),"^",17) I RADA K RAKILL S RASET="",RAXREF="ARES",RARAD=X D:$S('$D(^RARPT(RADA,0)):0,$P(^(0),U,5)="V":0,1:1) XREF1^RAUTL2 K RASET,RAXREF,RARAD
+                                2)= S RADA=$P(^RADPT(DA(2),"DT",DA(1),"P",DA,0),"^",17) I RADA K RASET S RAKILL="",RAXREF="ARES",RARAD=X D:$S('$D(^RARPT(RADA,0)):0,$P(^(0),U,5)="V":0,1:1) XREF1^RAUTL2 K RAKILL,RAXREF,RARAD
+                                This cross reference sets the 'ARES' cross reference in the Rad/Nuc Med Reports file.  The 'ARES' cross reference is used during the on-line verification process to determine the reports that a specific interpreting 
+                                resident needs to verify.  
+
+
+
+70.03,13          PRIMARY DIAGNOSTIC CODE 0;13 POINTER TO DIAGNOSTIC CODES FILE (#78.3)
+
+                  PRIMARY DIAGNOSTIC CODE OF THIS RAD/NUC MED EXAM                                                             
+                  INPUT TRANSFORM:S DIC("S")="I $$PDC^RADD1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:  JAN 19, 2001 
+                  HELP-PROMPT:  Enter the primary diagnostic code for this exam. 
+                  DESCRIPTION:  This field is used at sites that decide to enter diagnostic codes for exams, as designated in the Examination Status file parameters. It points to a short diagnostic code in the 'DIAGNOSTIC CODES' file (#78.3) to indicate
+                                the primary diagnostic code associated with this exam. If filled in, this field can be used in the search criteria for database searches.  For example, the database can be searched for all 'normal' chest procedures
+                                performed during a specific time period.  
+                                 
+                                Depending on the requirements set up in the 'EXAMINATION STATUS' file (#72), it may be necessary for this field to be filled in before the 'exam status' can be considered complete.  
+
+                  SCREEN:       S DIC("S")="I $$PDC^RADD1"
+                  EXPLANATION:  Select only Diagnostic codes that have not been entered in the Secondary diagnoses field.
+                  DELETE TEST:  1,0)= S RAMULT="DX" D NODEL^RADD1
+
+                  SOURCE OF DATA:INTERPRETING PHYSICIAN
+                  FIELD INDEX:  AD (#825)    MUMPS    IR    SORTING ONLY    WHOLE FILE (#70)
+                  Short Descr:  The 'AD' is used to mark cases eligible for the Abnormal Report option.
+                  Description:  If the diagnostic code record in the radiology DIAGNOSTIC CODES (#78.3) has the data attribute for field: PRINT ON ABNORMAL REPORT (#3) set to 'Y' (yes) then the "AD" cross-reference will be set for this exam record to
+                                indicate that this case should be identified on the Abnormal Report.  
+                                 
+                                NOTE: When this field is edited the DIAGNOSTIC PRINT DATE (#20) field is deleted! 
+                    Set Logic:  S:$P($G(^RA(78.3,X2(1),0)),U,3)="Y" ^RADPT("AD",X2(1),DA(2),DA(1),DA)=""
+                     Set Cond:  S:X2(1)'="" X=1
+                   Kill Logic:  D:($D(X1(1))#2) PRIDXIXK^RADD2(.DA,X1(1))
+                    Kill Cond:  S:X1(1)'="" X=1
+                         X(1):  PRIMARY DIAGNOSTIC CODE  (70.03,13)
+
+
+70.03,13.1        SECONDARY DIAGNOSTIC CODE DX;0 POINTER Multiple #70.14 (Add New Entry without Asking)
+
+                  SECONDARY DIAGNOSTIC CODE SUB-FIELD                                                                          
+                  LAST EDITED:  JUN 22, 1994 
+                  DESCRIPTION:
+                                This field contains additional Diagnostic Codes for this Rad/Nuc Med exam.  
+
+                  SCREEN:       S DIC("S")="I $$SDC^RADD1"
+                  EXPLANATION:  Select only Diagnostic codes that have not been entered in the Primary Diagnosis field
+
+70.14,.01           SECONDARY DIAGNOSTIC CODE 0;1 POINTER TO DIAGNOSTIC CODES FILE (#78.3) (Multiply asked)
+
+                    SECONDARY DIAGNOSTIC CODE OF THIS RAD/NUC MED EXAM                                                         
+                    INPUT TRANSFORM:S DIC("S")="I $$SDC^RADD1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                    LAST EDITED:  JAN 19, 2001 
+                    HELP-PROMPT:  Enter any appropriate secondary diagnostic codes for this exam. 
+                    DESCRIPTION:  This field is used at sites that decide that diagnostic codes will be asked or required for exams, as designated by the parameters on the Examination Status file.  If the primary diagnostic code is entered, the system
+                                  will also prompt for secondary diagnostic codes.  It points to a short diagnostic code in the 'DIAGNOSTIC CODES' file (#78.3) to indicate additional diagnostic codes associated with this exam.  
+
+                    SCREEN:       S DIC("S")="I $$SDC^RADD1"
+                    EXPLANATION:  Shows Diagnostic codes that have not been entered in the Primary Diagnostic Code field.
+                    NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                    CROSS-REFERENCE:70.14^B 
+                                  1)= S ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"DX","B",$E(X,1,30),DA)=""
+                                  2)= K ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"DX","B",$E(X,1,30),DA)
+                                  3)= DO NOT DELETE
+                                  Regular B cross-reference used for look-up.  
+
+
+                    CROSS-REFERENCE:70.14^AD^MUMPS 
+                                  1)= I $D(^RA(78.3,X,0)),'$P(^RADPT(DA(3),"DT",DA(2),"P",DA(1),"DX",DA,0),U,2),$P(^RA(78.3,X,0),U,3)="Y" S ^RADPT("AD",X,DA(3),DA(2),DA(1))=""
+                                  2)= S:X'=$P(^RADPT(DA(3),"DT",DA(2),"P",DA(1),"DX",DA,0),U,1) $P(^RADPT(DA(3),"DT",DA(2),"P",DA(1),"DX",DA,0),U,2)="" K ^RADPT("AD",X,DA(3),DA(2),DA(1))
+                                  3)= Used to produce the Abnormal Exam Report
+                                  This Mumps cross reference updates the 'AD' cross reference when the PRINT ON EXCEPTIONS LIST field (#3) of the DIAGNOSTIC CODES File (78.3) for that diagnostic code entry is set to 'Y'es.  The 'AD' cross reference is
+                                  used to generate the ABNORMAL EXAM REPORT.  
+
+
+
+70.14,1             SECONDARY DX PRINT DATE 0;2 DATE
+
+                    SECONDARY DX PRINT DATE OF ABNORMAL EXAM REPORT                                                            
+                    INPUT TRANSFORM:S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:  MAY 10, 1994 
+                    HELP-PROMPT:  This field is filled by the system when an abnormal report is printed. 
+                    DESCRIPTION:  If the secondary diagnostic code associated with this exam requires immediate notification of the physician, this field is filled in with the date that this exam appeared on the 'Abnormal Exam Report'. The report prints
+                                  a warning indicating abnormal results of the Rad/Nuc Med exam.  The report is used by Radiology/Nuclear Medicine to help make sure that the physician is notified of the results of the abnormal exam.  
+                                   
+                                  The date is filled in on this field when this report is printed so the next time the report is printed this exam will not appear again.  
+                                   
+                                  This field is filled in by the system and is not seen by the user.  
+
+
+
+
+70.03,14          REQUESTING PHYSICIAN 0;14 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                  NAME OF THE REQUESTING PHYSICIAN                                                                             
+                    INPUT TRANSFORM:S DIC("S")="I $$PROV^RABWORD" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                    LAST EDITED:  AUG 27, 2003 
+                    HELP-PROMPT:  Enter the name of the person requesting this exam. 
+                    DESCRIPTION:
+                                  This field points to the 'NEW PERSON' file (#200) to indicate the name of the person who requested this Rad/Nuc Med exam.  This person is not always a physician.  (i.e. A nurse might request the exam.) 
+
+                    SCREEN:       S DIC("S")="I $$PROV^RABWORD"
+                    EXPLANATION:  Provider must be active.
+                    SOURCE OF DATA:RAD/NUC MED RECEPTIONIST
+                    NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+70.03,15          PRIMARY INTERPRETING STAFF 0;15 POINTER TO NEW PERSON FILE (#200)
+
+                  PRIMARY STAFF WHO INTERPRETED IMAGES                                                                         
+                    INPUT TRANSFORM:S DIC("S")="I $$SCRN^RAUTL8(.DA,""S"",+Y,""PRI"")" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X D:$D(X) EN^RAUTL8(X,60,.DA)
+                    LAST EDITED:  APR 29, 1997 
+                    HELP-PROMPT:  Enter the name of the primary staff who interpreted these images. 
+                    DESCRIPTION:  This field points to the 'NEW PERSON' file (#200) to indicate the name of the primary staff who interpreted the images.  Primary Staff must have Rad/Nuc Med personnel classification of 'staff', and must have access to at
+                                  least one imaging location of the same imaging type as the exam.  
+                                   
+                                  Depending on the requirements set up in the 'EXAMINATION STATUS' file (#72), it may be necessary for this field to be filled in before the 'exam status' can be considered complete.  
+
+                    SCREEN:       S DIC("S")="I $$SCRN^RAUTL8(.DA,""S"",+Y,""PRI"")"
+                    EXPLANATION:  Personnel must be classified as Interpreting Staff Physician, and have access to an imaging location with the imaging type of this exam.
+                    DELETE TEST:  1,0)= S RAMULT="SSR" D NODEL^RADD1
+
+                    SOURCE OF DATA:TRANSCRIPTIONIST
+                    NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                    CROSS-REFERENCE:70.03^ASTF^MUMPS 
+                                  1)= S RADA=$P(^RADPT(DA(2),"DT",DA(1),"P",DA,0),"^",17) I RADA K RAKILL S RASET="",RAXREF="ASTF",RARAD=X D:$S('$D(^RARPT(RADA,0)):0,$P(^(0),U,5)="V":0,1:1) XREF1^RAUTL2 K RASET,RAXREF,RARAD
+                                  2)= S RADA=$P(^RADPT(DA(2),"DT",DA(1),"P",DA,0),"^",17) I RADA K RASET S RAKILL="",RAXREF="ASTF",RARAD=X D:$S('$D(^RARPT(RADA,0)):0,$P(^(0),U,5)="V":0,1:1) XREF1^RAUTL2 K RAKILL,RAXREF,RARAD
+                                  This cross reference sets the 'ASTF' cross reference in the Rad/Nuc Med Reports file.  The 'ASTF' cross reference is used during the on-line verification process to determine the reports that a specific interpreting 
+                                  staff needs to verify.  
+
+
+
+70.03,16          COMPLICATION         0;16 POINTER TO COMPLICATION TYPES FILE (#78.1)
+
+                  EXAM COMPLICATION                                                                                            
+                    LAST EDITED:  AUG 10, 1994 
+                    HELP-PROMPT:  If the patient experienced any complication during the exam, enter it here. 
+                    DESCRIPTION:  This field points to the 'COMPLICATION TYPES' file (#78.1) to indicate if this patient experienced any complication during the exam procedure.  (i.e. Reaction to Contrast Medium) 
+                                   
+                                  If a reaction to the contrast medium did occur, then the system triggers the addition of contrast media as an allergen in the Adverse Reaction Tracking (ART) package without leaving the Radiology/Nuclear Medicine option.  
+
+                    SOURCE OF DATA:TECHNOLOGIST
+                    CROSS-REFERENCE:70.03^ACM^MUMPS 
+                                  1)= I $P($G(^RA(78.1,+X,0)),U,2)="Y",$$RADD^GMRARAD(DA(2),"o","Y")
+                                  2)= Q
+                                  3)= Do not delete !
+                                  If a complication is entered that indicates a reaction to contrast media, a contrast media allergy record will be created in the ATS package (File #120.8).  
+
+
+
+70.03,16.5        COMPLICATION TEXT    COMP;1 FREE TEXT
+
+                  COMPLICATION DESCRIPTION                                                                                     
+                    INPUT TRANSFORM:K:$L(X)>100!($L(X)<4) X
+                    LAST EDITED:  FEB 07, 1985 
+                    HELP-PROMPT:  Enter a brief (4-100 characters) description of the complication. 
+                    DESCRIPTION:  This field is used to give a brief explanation (4-100 characters) to describe the exam complication.  The text entered will appear on the Complications Report, and under the 'Comment' caption in the detailed exam view of
+                                  the Profile of Rad/Nuc Med Exams.  
+
+                    SOURCE OF DATA:TECHNOLOGIST
+
+70.03,17          REPORT TEXT          0;17 POINTER TO RAD/NUC MED REPORTS FILE (#74)
+
+                  TEXT OF IMAGING REPORT                                                                                       
+                    LAST EDITED:  JUN 08, 1994 
+                    HELP-PROMPT:  This field contains the report text. 
+                    DESCRIPTION:
+                                  This field points to the 'RAD/NUC MED REPORTS' file (#74) to indicate the report text associated with this exam.  It is filled in by the system and is not seen by the user.  
+
+                    SOURCE OF DATA:SYSTEM GENERATED
+                                  UNEDITABLE
+
+70.03,18          PRIMARY CAMERA/EQUIP/RM 0;18 POINTER TO CAMERA/EQUIP/RM FILE (#78.6)
+
+                  THE PRIMARY CAMERA/EQUIPMENT/ROOM                                                                            
+                    INPUT TRANSFORM:S DIC("S")="I $D(^RA(79.1,+$P(^RADPT(DA(2),""DT"",DA(1),0),U,4),""R"",+Y,0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                    LAST EDITED:  JUN 06, 1994 
+                    HELP-PROMPT:  Enter the primary camera/equipment/room used for this exam. 
+                    DESCRIPTION:  This field points to the 'CAMERA/EQUIP/RM' file (#78.6) for the name of the primary camera/equipment/room where the imaging exam was performed.  Usually there is only one camera/equipment/room per procedure.  
+                                   
+                                  Depending on the requirements set up in the 'EXAMINATION STATUS' file (#72), it may be necessary for this field to be filled in before the 'exam status' can be considered complete.  
+
+                    SCREEN:       S DIC("S")="I $D(^RA(79.1,+$P(^RADPT(DA(2),""DT"",DA(1),0),U,4),""R"",+Y,0))"
+                    EXPLANATION:  Allow only cameras, equipment and rooms associated with the registration location.
+                    SOURCE OF DATA:TECHNOLOGIST
+
+70.03,19          BEDSECTION           0;19 POINTER TO SPECIALTY FILE (#42.4)
+
+                  BEDSECTION OF THE RAD/NUC MED PATIENT                                                                        
+                    LAST EDITED:  MAY 17, 1994 
+                    HELP-PROMPT:  This field contains the patient's bedsection and is automatically filled in by the system. 
+                    DESCRIPTION:
+                                  This field points to the 'SPECIALTY' file (#42.4) to indicate the name of the bedsection of Rad/Nuc Med patients who are inpatients.  This field is filled in by the system from information entered by the ADT system.  
+
+                    SOURCE OF DATA:MEDICAL ADMINISTRATION SERVICE
+
+70.03,20          DIAGNOSTIC PRINT DATE 0;20 DATE
+
+                  PRINT DATE OF ABNORMAL EXAM REPORT                                                                           
+                    INPUT TRANSFORM:S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:  FEB 07, 1985 
+                    HELP-PROMPT:  This field contains the date that this exam appeared on the 'Abnormal Exam Report'. 
+                    DESCRIPTION:  If any diagnostic code associated with this exam requires immediate notification of the physican, this field is filled in with the date that this exam appeared on the 'Abnormal Exam Report'. The report prints a warning
+                                  indicating abnormal results of the Rad/Nuc Med exam.  The report is used by Radiology/Nuclear Medicine to help make sure that the physican is notified of the results of the abnormal exam.  
+                                   
+                                  The date is filled in on this field when this report is printed so the next time the report is printed this exam will not appear again.  
+                                   
+                                  This field is filled in by the system and is not seen by the user.  
+
+                    WRITE AUTHORITY:^
+                    SOURCE OF DATA:SYSTEM GENERATED
+                                  UNEDITABLE
+
+70.03,21          REQUESTED DATE       0;21 DATE
+
+                  DATE THE RAD/NUC MED EXAM WAS REQUESTED                                                                      
+                    INPUT TRANSFORM:S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:  MAY 17, 1994 
+                    HELP-PROMPT:  Enter the date this exam was requested. 
+                    DESCRIPTION:  This field contains the date the Rad/Nuc Med exam was requested.  
+                                   
+                                  Depending on the site's specifications, this field may or may not be asked of the transcriptionist.  By default, it is populated automatically, at the time an exam is registered, with the Request date in the Rad/Nuc Med
+                                  Order file.  
+
+                    SOURCE OF DATA:TRANSCRIPTIONIST
+
+70.03,22          REQUESTING LOCATION  0;22 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+                    LAST EDITED:  APR 26, 1988 
+                    HELP-PROMPT:  Enter the name of the hospital location requesting the exam. 
+                    DESCRIPTION:  This field points to the 'HOSPITAL LOCATION' file (#44) to indicate the name of the hospital location that is requesting the exam. By default, it is populated automatically, using data from the Rad/Nuc Med Orders file, 
+                                  at the time an exam is registered.  
+
+                    TECHNICAL DESCR:
+                                  This field has been modified with the release of patch: RA*5.0*86.  
+
+
+70.03,23          CLINIC STOP RECORDED? 0;24 SET
+
+                                  'Y' FOR YES; 
+                    LAST EDITED:  JAN 17, 1991 
+                    HELP-PROMPT:  A 'Y' for 'YES' is entered in this field when clinic stop information has been entered in the Scheduling Visits file for this exam. 
+                    DESCRIPTION:
+                                  This field contains a YES when clinic stop information has been entered in the Scheduling Visits file for this exam.  
+
+
+70.03,25          MEMBER OF SET        0;25 SET
+
+                                  '1' FOR Yes,separate reports; 
+                                  '2' FOR Yes,combined report; 
+                    LAST EDITED:  MAR 21, 1996 
+                    HELP-PROMPT:  If this case is a descendant of a single ordered parent procedure, this field should be set to 'Yes'. 
+                    DESCRIPTION:  This field is automatically populated by the system.  If this case was registered as a 'descendant' of a 'parent' procedure, 
+                                     the field value is set to 
+                                     '1' if all cases in the set are to have separate reports 
+                                     '2' if all cases in the set are to be combined into one report.  All cases belonging to a 'parent' are created from the same order.  The system must check all members of the set of descendants to determine the new
+                                  order status whenever the exam status changes on any member.  
+
+
+70.03,26          CREDIT METHOD        0;26 SET
+
+                                  '0' FOR Regular Credit; 
+                                  '1' FOR Interpretation Only; 
+                                  '2' FOR No Credit; 
+                                  '3' FOR Technical Component Only; 
+                    LAST EDITED:  AUG 26, 2003 
+                    HELP-PROMPT:  Enter the type of credit this location will receive for this examination. 
+                    DESCRIPTION:  This field indicates the type of credit this location receives for examinations.  This field is populated automatically by the system at the time an exam is registered based on the Credit Method entered for the Imaging
+                                  Location where the exam is registered.  If only the interpretation was done at this facility, code 1 should be used.  If the exam was performed at this facility, but the interpretation was done elsewhere, code 3 should
+                                  be used.  If both the exam and interpretation were done at this facility, code 0 should be used. If the entire exam was done outside the facility and exam data is being entered for the purposes of record-keeping only,
+                                  code 2 should be used.  
+
+
+70.03,27          VISIT                0;27 POINTER TO VISIT FILE (#9000010)
+
+                    LAST EDITED:  JUN 05, 1996 
+                    HELP-PROMPT:  Enter the visit to which this examination is related. 
+                    DESCRIPTION:
+                                  This field links the examination of a patient to a specific visit.  
+
+                    CROSS-REFERENCE:70^AVSIT 
+                                  1)= S ^RADPT("AVSIT",$E(X,1,30),DA(2),DA(1),DA)=""
+                                  2)= K ^RADPT("AVSIT",$E(X,1,30),DA(2),DA(1),DA)
+                                  3)= Do not delete.
+                                  This is a regular, non-lookup file wide cross reference on the Visit. 
+
+
+                    CROSS-REFERENCE:70.03^AUPN^MUMPS 
+                                  1)= N RAX S RAX=X,X="AUPNVSIT" X ^%ZOSF("TEST") S X=RAX D:$T ADD^AUPNVSIT
+                                  2)= N RAX S RAX=X,X="AUPNVSIT" X ^%ZOSF("TEST") S X=RAX D:$T SUB^AUPNVSIT
+                                  3)= Do not delete.
+                                  This cross reference will invoke software which tracks the number of 'V' file entries pointing to a specific visit.  
+
+
+
+70.03,29          DOSAGE TICKET PRINTED? 0;29 SET
+
+                                  '1' FOR Yes; 
+                    LAST EDITED:  JAN 13, 1997 
+                    HELP-PROMPT:  If the dosage ticket has been printed for the exam this field should be set to 'Yes'. 
+                    DESCRIPTION:  This field indicates if a dosage ticket has been printed for each radiopharmaceutical associated with this examination.  Once this process has completed for a particular exam status, all further status updates will not
+                                  print dosage tickets.  If an examination is cancelled, the dosage ticket field is cleared.  Only if the exam is re-registered will the dosage ticket again print for the examination.  
+
+
+70.03,30          HL7 EXAMINED MSG SENT? 0;30 SET
+
+                                  'Y' FOR Yes; 
+                    LAST EDITED:  NOV 20, 1996 
+                    SOURCE OF DATA:SYSTEM GENERATED
+
+70.03,31          SITE ACCESSION NUMBER 0;31 FREE TEXT (Required)
+
+                    INPUT TRANSFORM:K:$L(X)>16!($L(X)<12)!'(X?3N1"-"6N1"-"1.5N) X
+                    LAST EDITED:  APR 23, 2009 
+                    HELP-PROMPT:  SITE ACCESSION NUMBER is generated by the application. It consists of the site number, date/time and sequential case number separated by dashes.  The total length is 12-16 characters. 
+                    DESCRIPTION:  The SITE ACCESSION NUMBER is generated by the VistA Radiology/Nuclear Medicine application.  
+                                   
+                                  SITE ACCESSION NUMBER is a Free Text data type between 12-16 characters in length. It is created by appending a three-character site identifier to the accession number. This field allows other applications to "look up" 
+                                  an exam record based on a site specific accession number.  
+                                   
+                                  Example: site id-mmddyy-case # 
+                                   
+                                  In the example the dash "-" is the delimiter.  
+
+                    TECHNICAL DESCR:
+                                  The site specific portion of the accession number is determined by the following algorithm: $E($P($$NS^XUAF4($$KSP^XUPARAM("INST")),U,2),1,3) where: 
+                                   
+                                  $$KSP^XUPARAM("INST")=DEFAULT INSTITUTION file: 8989.3; field: 217 data returned: pointer to the INSTITUTION (#4) file record 
+                                   
+                                  $$NS^XUAF4(Y)=Input : 'Y' is the value returned from $$KSP^XUPARAM("INST"). Returns: A string value containing the name (1st piece) & station # (2nd piece) of the institution.  
+                                   
+                                  The SITE ACCESSION NUMBER field has set the 'write' node to the caret to prohibit a user from jumping to this field within an input template with the intention of editing the data.  
+                                   
+                                  Released as a component within RA*5.0*47.  
+
+                                  UNEDITABLE
+                    FIELD INDEX:  ADC1 (#419)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#70)
+                    Short Descr:  This cross-reference links an exam record with site specific accession number.
+                    Description:  This cross-reference provides other applications the ability to look up an exam record based on a site specific accession number.  
+                      Set Logic:  S ^RADPT("ADC1",$E(X,1,30),DA(2),DA(1),DA)=""
+                     Kill Logic:  K ^RADPT("ADC1",$E(X,1,30),DA(2),DA(1),DA)
+                     Whole Kill:  K ^RADPT("ADC1")
+                           X(1):  SITE ACCESSION NUMBER  (70.03,31)  (Subscr 1)  (Len 30)  (forwards)
+
+
+70.03,32          PREGNANCY SCREEN     0;32 SET
+
+                                  'y' FOR Patient answered yes; 
+                                  'n' FOR Patient answered no; 
+                                  'u' FOR Patient is unable to answer or is unsure; 
+                    LAST EDITED:  APR 14, 2009 
+                    HELP-PROMPT:  Enter the patient's response to the question of if she is pregnant at the time of the exam. 
+                    DESCRIPTION:
+                                  This field tracks the answer given by the patient when asked if she is pregnant at the time of the exam.  
+
+                    TECHNICAL DESCR:
+                                  This field was added by RA*5.0*99.  
+
+
+70.03,40          PURGED DATE          PURGE;1 DATE
+
+                  THE DATE THIS EXAM WAS PURGED                                                                                
+                    INPUT TRANSFORM:S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:  JUN 06, 1985 
+                    HELP-PROMPT:  This field contains the last purge date associated with this exam. 
+                    DESCRIPTION:
+                                  This field contains the last purge date associated with this exam.  
+
+                    WRITE AUTHORITY:^
+                    SOURCE OF DATA:SYSTEM GENERATED
+                                  UNEDITABLE
+
+70.03,45          PREVENT PURGE        NOPURGE;1 SET
+
+                                  'n' FOR NO PURGE; 
+                                  'o' FOR OK TO PURGE; 
+                    LAST EDITED:  MAR 22, 1994 
+                    HELP-PROMPT:  Enter 'n' for NO PURGE if the data for this exam should not be purged or 'o' if it is OK to purge the data. 
+                    DESCRIPTION:
+                                  If this field is set to 'NO PURGE' then the data for this exam will not be purged or archived, nor will the report associated with this exam be purged or archived.  
+
+                    CROSS-REFERENCE:70^AC^MUMPS 
+                                  1)= S:$D(^RARPT(+$P(^RADPT(DA(2),"DT",DA(1),"P",DA,0),U,17),0)) ^("NOPURGE")=X
+                                  2)= K:$D(^RARPT(+$P(^RADPT(DA(2),"DT",DA(1),"P",DA,0),U,17),0)) ^("NOPURGE")
+                                  Used to determine which exams and reports to purge.  
+
+
+
+70.03,46          REASON FOR NOT PURGING NOPURSN;0 SET Multiple #70.346 (Add New Entry without Asking)
+
+                    LAST EDITED:  JUN 21, 1996 
+                    DESCRIPTION:
+                                  This field indicates why the examination should not be purged.  
+
+
+70.346,.01          REASON FOR NOT PURGING 0;1 SET (Multiply asked)
+
+                                    'a' FOR Agent Orange Exposure; 
+                                    'c' FOR Cancer/Tumor Registry; 
+                                    'e' FOR Employee; 
+                                    'm' FOR Mammography; 
+                                    'p' FOR Persian Gulf War; 
+                                    'r' FOR Radiation Exposure; 
+                                    't' FOR Teaching; 
+                      LAST EDITED:  APR 21, 1997 
+                      HELP-PROMPT:  Enter one or more reasons why the exam should not be purged. 
+                      DESCRIPTION:
+                                    This field indicates why the examination should not be purged.  
+
+                      CROSS-REFERENCE:70.346^B 
+                                    1)= S ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"NOPURSN","B",$E(X,1,30),DA)=""
+                                    2)= K ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"NOPURSN","B",$E(X,1,30),DA)
+
+
+
+
+70.03,50          FILM SIZE              F;0 POINTER Multiple #70.04 (Add New Entry without Asking)
+
+                  SIZE OF FILM SUB-FIELD                                                                                       
+                      DESCRIPTION:
+                                    This is a multiple field containing the sizes of the films used and films wasted during this exam.  
+
+                      SOURCE OF DATA: 
+
+70.04,.01           FILM SIZE              0;1 POINTER TO FILM SIZES FILE (#78.4) (Multiply asked)
+
+                    SIZE OF FILM USED FOR EXAM                                                                                 
+                        INPUT TRANSFORM:S DIC("S")="I $S('$D(^(""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:  AUG 08, 1991 
+                        HELP-PROMPT:  Enter a film size used or wasted during this exam. 
+                        DESCRIPTION:
+                                      This field points to the 'FILM SIZES' file (#78.4) to indicate the size of the film used during the Rad/Nuc Med exam.  Users may also enter film sizes that have been wasted during the exam.  
+
+                        SCREEN:       S DIC("S")="I $S('$D(^(""I"")):1,'^(""I""):1,DT'>^(""I""):1,1:0)"
+                        EXPLANATION:  Only active film sizes are selectable.
+                        SOURCE OF DATA:SYSTEM GENERATED
+
+70.04,2             AMOUNT(#films or cine ft) 0;2 NUMBER
+
+                    AMOUNT OF FILM USED/WASTED FOR EXAM                                                                        
+                        INPUT TRANSFORM:K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                        LAST EDITED:  OCT 13, 1994 
+                        HELP-PROMPT:  Enter the amount of film, between 0 and 999, used or wasted during this exam. 
+                        DESCRIPTION:  This field contains the amount of film (a number between 0 and 999) used or wasted during the Rad/Nuc Med exam.  
+                                       
+                                      The amount represents either the number of that film size or the number of cine feet of that film size.  On the 'Film Usage Report',  these two amounts are distinguished from each other.  
+
+                        SOURCE OF DATA:SYSTEM GENERATED
+
+
+
+70.03,60          SECONDARY INTERPRETING STAFF SSR;0 POINTER Multiple #70.11 (Add New Entry without Asking)
+
+                  SECONDARY INTERPRETING STAFF SUB-FIELD                                                                       
+                        LAST EDITED:  JUN 06, 1994 
+                        DESCRIPTION:
+                                      This multiple tracks additional Staff who have interpreted the images of an exam.  
+
+                        SCREEN:       S DIC("S")="I $$SCRN^RAUTL8(.DA,""S"",+Y,""SEC""),$$SSR^RAUTL8"
+                        EXPLANATION:  Personnel must be classified as Interpreting Staff, and have access to an imaging location with the imaging type of this exam.
+
+70.11,.01           SECONDARY INTERPRETING STAFF 0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                          INPUT TRANSFORM:S DIC("S")="I $$SCRN^RAUTL8(.DA,""S"",+Y,""SEC""),$$SSR^RAUTL8" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                          LAST EDITED:  APR 28, 1997 
+                          HELP-PROMPT:  Enter name of staff who is NOT the Primary Interpreting Staff and NOT a Secondary Interpreting Staff whose name has already been entered. 
+                          DESCRIPTION:  This field points to the 'NEW PERSON' file (#200) to indicate the names of other interpreting Staff in addition to the Primary Interpreting Staff who interpreted images of this exam.  Secondary Interpreting Staff
+                                        must be classified as 'staff' and must have access to at least one imaging location with an imaging type matching that of the exam.  
+
+                          SCREEN:       S DIC("S")="I $$SCRN^RAUTL8(.DA,""S"",+Y,""SEC""),$$SSR^RAUTL8"
+                          EXPLANATION:  Only active interpreting staff physicians may be selected
+                          NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                          CROSS-REFERENCE:70.11^B 
+                                        1)= S ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"SSR","B",$E(X,1,30),DA)=""
+                                        2)= K ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"SSR","B",$E(X,1,30),DA)
+                                        3)= DO NOT DELETE
+                                        Regular B cross-reference used for look-up.  
+
+
+                          CROSS-REFERENCE:70^ASTF^MUMPS 
+                                        1)= S RADA=$P(^RADPT(DA(3),"DT",DA(2),"P",DA(1),0),"^",17) I RADA K RAKILL S RASET="",RAXREF="ASTF",RARAD=X D:$S('$D(^RARPT(RADA,0)):0,$P(^(0),U,5)="V":0,1:1) XREF1^RAUTL2 K RASET,RAXREF,RARAD
+                                        2)= S RADA=$P(^RADPT(DA(3),"DT",DA(2),"P",DA(1),0),"^",17) I RADA K RASET S RAKILL="",RAXREF="ASTF",RARAD=X D:$S('$D(^RARPT(RADA,0)):0,$P(^(0),U,5)="V":0,1:1) XREF1^RAUTL2 K RAKILL,RAXREF,RARAD
+                                        This cross reference sets the 'ASTF' cross reference in the Rad/Nuc Med Reports file (#74). The 'ASTF' cross reference is used during the on-line verification process to determine the reports that a specific
+                                        interpreting staff needs to verify.  
+
+
+
+
+
+70.03,70          SECONDARY INTERPRET'G RESIDENT SRR;0 POINTER Multiple #70.09 (Add New Entry without Asking)
+
+                  SECONDARY INTERPRETING RESIDENT SUB-FIELD                                                                    
+                          LAST EDITED:  JUN 06, 1994 
+                          DESCRIPTION:
+                                        This multiple tracks additional Interpreting Residents who interpreted the images of an exam.  
+
+                          SCREEN:       S DIC("S")="I $$SCRN^RAUTL8(.DA,""R"",+Y,""SEC""),$$S^RAUTL8"
+                          EXPLANATION:  Personnel must be classified as Interpreting Resident, and have access to an imaging location with the imaging type of the exam.
+
+70.09,.01           SECONDARY INTERPRET'G RESIDENT 0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                    SECONDARY INTERPRETING RESIDENT                                                                            
+                            INPUT TRANSFORM:S DIC("S")="I $$SCRN^RAUTL8(.DA,""R"",+Y,""SEC""),$$S^RAUTL8" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                            LAST EDITED:  APR 28, 1997 
+                            HELP-PROMPT:  Enter name of resident who is NOT the Primary Interpreting Resident and NOT a Secondary Interpreting Resident whose name has already been entered. 
+                            DESCRIPTION:  This field points to the "NEW PERSON" file (#200) to indicate the names of other Residents in addition to the Primary Interpreting Resident who interpreted the images of this exam.  Secondary Interpreting
+                                          Residents cannot be the same as the Primary Interpreting Resident, must have resident classification, and must have access to at least one imaging location with an imaging type matching that of the exam.  
+
+                            SCREEN:       S DIC("S")="I $$SCRN^RAUTL8(.DA,""R"",+Y,""SEC""),$$S^RAUTL8"
+                            EXPLANATION:  Only active interpreting resident physicians may be selected
+                            NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                            CROSS-REFERENCE:70^ARES^MUMPS 
+                                          1)= S RADA=$P(^RADPT(DA(3),"DT",DA(2),"P",DA(1),0),"^",17) I RADA K RAKILL S RASET="",RAXREF="ARES",RARAD=X D:$S('$D(^RARPT(RADA,0)):0,$P(^(0),U,5)="V":0,1:1) XREF1^RAUTL2 K RASET,RAXREF,RARAD
+                                          2)= S RADA=$P(^RADPT(DA(3),"DT",DA(2),"P",DA(1),0),"^",17) I RADA K RASET S RAKILL="",RAXREF="ARES",RARAD=X D:$S('$D(^RARPT(RADA,0)):0,$P(^(0),U,5)="V":0,1:1) XREF1^RAUTL2 K RAKILL,RAXREF,RARAD
+                                          This cross reference sets the 'ARES' cross reference used during the on-line verification process to determine the reports that a specific interpreting resident needs to verify.  
+
+
+                            CROSS-REFERENCE:70.09^B 
+                                          1)= S ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"SRR","B",$E(X,1,30),DA)=""
+                                          2)= K ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"SRR","B",$E(X,1,30),DA)
+                                          3)= DO NOT DELETE
+                                          Regular B cross-reference used for look-up.  
+
+
+
+
+
+70.03,75          EXAM STATUS TIMES            T;0 DATE Multiple #70.05 (Add New Entry without Asking)
+
+                  EXAM STATUS CHANGES SUB-FIELD                                                                                
+                            DESCRIPTION:  This is a multiple field containing a log of when the exam status was changed from one status to another.  
+                                           
+                                          Depending on how the system parameters are set up, this field may or may not be filled in.  
+                                           
+                                          Because the mass override process will degrade system performance by slowing the system down, it should be run at specified times only. (i.e.  one week per quarter) 
+
+
+70.05,.01           STATUS CHANGE DATE/TIME      0;1 DATE
+
+                    THE DATE AND TIME OF THE STATUS CHANGE                                                                     
+                              INPUT TRANSFORM:S %DT="ETX" D ^%DT S X=Y K:Y<1 X D SCDTC^RADD1 K:Y<1 X
+                              LAST EDITED:  APR 26, 1994 
+                              HELP-PROMPT:  This field should contain the date and time the exam status was changed. 
+                              DESCRIPTION:  This field contains the date and the time that the exam status was changed.  
+                                             
+                                            Depending on how the system parameters are set up on site, this field may or may not be filled in.  If the system parameter is set up to have this field filled in, then the system allows the user to have the
+                                            option of filling in this field or having the field  filled in by the system.  
+
+                              SOURCE OF DATA:DEPENDS ON SYSTEM PARAMETERS - SYSTEM GENERATED OR RAD/NUC MED USER
+                              NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+70.05,2             NEW STATUS                   0;2 POINTER TO EXAMINATION STATUS FILE (#72) (Required)
+
+                    THE NEW EXAM STATUS                                                                                        
+                              INPUT TRANSFORM:S DIC("S")="N RAIMGTY S RAIMGTY=+$P($G(^RADPT(DA(3),""DT"",DA(2),0)),U,2) I $P(^RA(72,+Y,0),U,7)=RAIMGTY" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                              LAST EDITED:  APR 28, 1994 
+                              HELP-PROMPT:  Select the appropriate Examination Status. 
+                              DESCRIPTION:
+                                            This field points to the 'EXAMINATION STATUS' file (#72) to indicate the new exam status.  
+
+                              SCREEN:       S DIC("S")="N RAIMGTY S RAIMGTY=+$P($G(^RADPT(DA(3),""DT"",DA(2),0)),U,2) I $P(^RA(72,+Y,0),U,7)=RAIMGTY"
+                              EXPLANATION:  Select Exam Statuses with the same Imaging Type.
+                              SOURCE OF DATA:SYSTEM GENERATED
+                              NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+70.05,3             COMPUTER USER                0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                    USER DOING PROCESSING DURING STATUS CHANGE                                                                 
+                              LAST EDITED:  MAR 02, 1990 
+                              HELP-PROMPT:  This field contains the name of the person doing the processing at the time of the exam status change. 
+                              DESCRIPTION:
+                                            This field points to the 'NEW PERSON file (#200) to indicate the person doing the processing at the time the exam status was changed.  This field is filled in by the system and is not seen by the user.  
+
+                              SOURCE OF DATA:SYSTEM GENERATED
+
+
+
+70.03,80          PREGNANCY SCREEN COMMENT       PCOMM;E1,240 FREE TEXT
+
+                              INPUT TRANSFORM:K:$L(X)>240!($L(X)<3) X
+                              LAST EDITED:  APR 20, 2009 
+                              HELP-PROMPT:  Please enter comments regarding the patient's answer to the Pregnancy Screen question.  It must be 3-240 characters in length. 
+                              DESCRIPTION:
+                                            This field allows comments to be collected by the individual administering the exam regarding the patient's answer to the Pregnancy Screen question.  
+
+                              TECHNICAL DESCR:
+                                            This field was added by RA*5.0*99.  
+
+
+70.03,81          STUDY INSTANCE UID             SIUID;E1,240 FREE TEXT
+
+                              INPUT TRANSFORM:K:$L(X)>240!($L(X)<3) X
+                              LAST EDITED:  OCT 28, 2010 
+                              HELP-PROMPT:  Answer must be 3-240 characters in length. 
+                              DESCRIPTION:  This field will store the Study Instance UID.  
+                                             
+                                            The Study Instance UID is a unique key that associates the images to a particular study, and thus is required in messages sent to the PACS.  
+                                             
+                                            An Imaging API will be used to generate the Study Instance UID and the Study Instance UID will be sent in specific v2.4 HL7 event messages (when an order is registered, an exam cancelled, or when an exam
+                                            reaches the Examined status).  This will allow Vista Radiology to send event transactions to a commercial PACS directly, bypassing the Vista DICOM Text Gateway.  
+
+                              FIELD INDEX:  ASIUID (#517)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#70)
+                              Short Descr:  Cross reference to assist API to return SIUID for exam
+                              Description:  This is a sorting only cross-reference for use with a new API to return SIUID.  
+                                Set Logic:  S ^RADPT("ASIUID",$E(X,1,240),DA(2),DA(1),DA)=""
+                               Kill Logic:  K ^RADPT("ASIUID",$E(X,1,240),DA(2),DA(1),DA)
+                               Whole Kill:  K ^RADPT("ASIUID")
+                                     X(1):  STUDY INSTANCE UID  (70.03,81)  (Subscr 1)  (Len 240)  (forwards)
+
+
+70.03,100         ACTIVITY LOG                   L;0 DATE Multiple #70.07 (Add New Entry without Asking)
+
+                  LOG OF EXAM ACTIONS SUB-FIELD                                                                                
+                              DESCRIPTION:  This is a multiple field containing a log of actions that have been taken on this exam record during processing of this exam.  
+                                             
+                                            Use the function that allows you to View Exam by Case No. within the Exam Entry/Edit menu to view this activity log.  
+
+                              SOURCE OF DATA: 
+
+70.07,.01           LOG DATE                       0;1 DATE (Required)
+
+                    DATE OF ACTION ON EXAM                                                                                     
+                                INPUT TRANSFORM:S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                                LAST EDITED:  NOV 30, 1984 
+                                HELP-PROMPT:  This field contains a system generated date/time that an action was taken on this record. 
+                                DESCRIPTION:
+                                              This field contains the date and time that the action was taken on this exam record. This field is filled in by the system.  
+
+                                SOURCE OF DATA:SYSTEM GENERATED
+                                              UNEDITABLE
+
+70.07,2             TYPE OF ACTION                 0;2 SET (Required)
+
+                    THE TYPE OF ACTION ON EXAM                                                                                 
+                                              'E' FOR EXAM ENTRY; 
+                                              'C' FOR EDIT BY CASE NO.; 
+                                              'P' FOR EDIT BY PATIENT; 
+                                              'D' FOR DIAGNOSIS ENTRY BY CASE NO.; 
+                                              'S' FOR EXAM STATUS TRACKING; 
+                                              'X' FOR CANCELLED; 
+                                              'O' FOR COMPLETE STATUS OVERRIDE; 
+                                              'U' FOR UPDATE STATUS; 
+                                              'N' FOR NO PURGING SPECIFIED; 
+                                LAST EDITED:  FEB 13, 1991 
+                                HELP-PROMPT:  This field contains a system generated code for the activity associated with this exam. 
+                                DESCRIPTION:
+                                              This field contains the type of action that was taken on this exam record during processing of this exam.  
+
+                                SOURCE OF DATA:SYSTEM GENERATED
+                                              UNEDITABLE
+
+70.07,3             COMPUTER USER                  0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                    THE PERSON DOING EXAM PROCESSING                                                                           
+                                LAST EDITED:  MAR 02, 1990 
+                                HELP-PROMPT:  This field contains the name of the person doing the exam processing at the time the action was taken. 
+                                DESCRIPTION:
+                                              This field points to the 'NEW PERSON' file (#200) to indicate the person doing the exam processing at the time the action was taken on this exam record.  
+
+                                SOURCE OF DATA:SYSTEM GENERATED
+                                              UNEDITABLE
+
+70.07,4             TECHNOLOGIST COMMENT           TCOM;E1,245 FREE TEXT
+
+                                INPUT TRANSFORM:K:$L(X)>245!($L(X)<3)!'(X?1A.ANP) X
+                                LAST EDITED:  JUN 02, 2000 
+                                HELP-PROMPT:  Answer must be 3-245 characters in length. 
+                                DESCRIPTION:
+                                              This field tracks the comments of the Technologist as the exam is edited.  Information, pertinent to the editing of the exam, should be entered here.  
+
+
+
+
+70.03,125         PROCEDURE MODIFIERS              M;0 POINTER Multiple #70.1
+
+                  MODIFIERS OF THIS EXAM SUB-FIELD                                                                             
+                                LAST EDITED:  AUG 05, 1999 
+                                DESCRIPTION:
+                                              This multiple field is used to give the imaging modifiers that are associated with this exam.  
+
+
+70.1,.01            PROCEDURE MODIFIERS              0;1 POINTER TO PROCEDURE MODIFIERS FILE (#71.2) (Multiply asked)
+
+                    PROCEDURE MODIFIERS OF THIS EXAM                                                                           
+                                  INPUT TRANSFORM:S DIC("S")="X ^DD(70.1,.01,9.2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                                                9.2 = N RASERIES I $D(^RAMIS(71.2,"AB",(+$$ITYPE^RASITE(+$P($G(^RADPT(D0,"DT",D1,"P",D2,0)),U,2))),+Y)),$S('$G(RASERIES):1,$P(^RAMIS(71.2,+Y,0),U,2)="":1,1:0)
+                                  LAST EDITED:  AUG 05, 1999 
+                                  HELP-PROMPT:  Enter any appropriate procedure modifiers for this exam. 
+                                  DESCRIPTION:
+                                                This field points to the 'PROCEDURE MODIFIERS' file (#71.2) to give details and further describe this exam.  Modifier examples include, 'LEFT', 'RIGHT', 'BILATERAL', 'OPERATING ROOM',and 'PORTABLE' exams.  
+
+                                  SCREEN:       S DIC("S")="X ^DD(70.1,.01,9.2)"
+                                  EXPLANATION:  Only procedure modifiers with the appropriate imaging type can be selected.  In addition, if the procedure is 'SERIES', it must not have AMIS CREDIT INDICATOR
+                                  SOURCE OF DATA: RECEPTIONIST
+                                  NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                                  CROSS-REFERENCE:70.1^B 
+                                                1)= S ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"M","B",$E(X,1,30),DA)=""
+                                                2)= K ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"M","B",$E(X,1,30),DA)
+                                                3)= DO NOT DELETE
+                                                Regular B cross-reference used for look-up.  
+
+
+
+
+
+70.03,135         CPT MODIFIERS                      CMOD;0 POINTER Multiple #70.3135
+
+                                  SCREEN:       S DIC("S")="I $$SCRN^RACPTMSC(+Y)"
+                                  EXPLANATION:  screen in CPT modifiers that agree with CPT for this exam
+
+70.3135,.01         CPT MODIFIERS                      0;1 POINTER TO CPT MODIFIER FILE (#81.3) (Multiply asked)
+
+                    CPT MODIFIERS OF THIS EXAM                                                                                 
+                                    INPUT TRANSFORM:S DIC("S")="I $$SCRN^RACPTMSC(+Y)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                                    LAST EDITED:  AUG 05, 1999 
+                                    HELP-PROMPT:  Choose one or more CPT Modifiers, one at a time. 
+                                    DESCRIPTION:
+                                                  This field is screened to accept only those CPT Modifiers that agree with this exam's CPT CODE and EXAM DATE.  The screen code calls the CPT package to evaluate the "CPT code" and "CPT Modifier" pair.  
+
+                                    SCREEN:       S DIC("S")="I $$SCRN^RACPTMSC(+Y)"
+                                    EXPLANATION:  CPT Modifier must agree with CPT code
+                                    CROSS-REFERENCE:70.3135^B 
+                                                  1)= S ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"CMOD","B",$E(X,1,30),DA)=""
+                                                  2)= K ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"CMOD","B",$E(X,1,30),DA)
+
+
+
+
+70.03,175         TECHNOLOGIST                         TC;0 POINTER Multiple #70.12 (Add New Entry without Asking)
+
+                  TECHNOLOGIST SUB-FIELD                                                                                       
+                                    LAST EDITED:  MAY 14, 1997 
+                                    DESCRIPTION:  This multiple field is used to give the names of technologists who performed this exam.  
+                                                   
+                                                  Depending on the site's specifications, this field may or may not be filled in.  
+
+
+70.12,.01           TECHNOLOGIST                         0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                    TECHNOLOGISTS PERFORMING THIS EXAM                                                                         
+                                      INPUT TRANSFORM:S DIC("S")="I $D(^VA(200,+Y,""RAC"")),$S('$D(^VA(200,+Y,""RA"")):1,'$P(^(""RA""),U,3):1,DT'>$P(^(""RA""),U,3):1,1:0),$D(^VA(200,""ARC"",""T"",+Y))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                                      LAST EDITED:  MAR 07, 1994 
+                                      HELP-PROMPT:  Enter the name of the technologist who performed this exam. 
+                                      DESCRIPTION:
+                                                    This field points to the 'NEW PERSON' file (#200) to indicate the technologists who performed this exam.  
+
+                                      SCREEN:       S DIC("S")="I $D(^VA(200,+Y,""RAC"")),$S('$D(^VA(200,+Y,""RA"")):1,'$P(^(""RA""),U,3):1,DT'>$P(^(""RA""),U,3):1,1:0),$D(^VA(200,""ARC"",""T"",+Y))"
+                                      EXPLANATION:  Only active rad/nuc med users classified as technologists may be selected.
+                                      SOURCE OF DATA:TECHNOLOGIST
+                                      NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+70.03,200         MEDICATIONS                            RX;0 POINTER Multiple #70.15 (Add New Entry without Asking)
+
+                                      LAST EDITED:  DEC 12, 1996 
+
+70.15,.01           MED ADMINISTERED                       0;1 POINTER TO DRUG FILE (#50) (Multiply asked)
+
+                                        LAST EDITED:  MAY 22, 2006 
+                                        HELP-PROMPT:  Enter medication administered during this exam. 
+                                        DESCRIPTION:  If any medications were administered to the patient during this exam, they may be recorded here.  If medications are associated with a procedure during system set-up, the system will enter them
+                                                      automatically when the procedure is registered.  
+
+                                        SOURCE OF DATA:Entered by system during Registration if default values exist in file 71; edited during case edit
+                                        CROSS-REFERENCE:70.15^B 
+                                                      1)= S ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"RX","B",$E(X,1,30),DA)=""
+                                                      2)= K ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"RX","B",$E(X,1,30),DA)
+
+
+70.15,2             MED DOSE                               0;2 FREE TEXT
+
+                                        INPUT TRANSFORM:K:$L(X)>30!($L(X)<3) X
+                                        LAST EDITED:  DEC 12, 1996 
+                                        HELP-PROMPT:  Answer must be 3-30 characters in length, and must include dosage and unit of measure.  Format:  999.99 ml 
+                                        DESCRIPTION:
+                                                      Enter the dose and unit of measure for this pharmaceutical.  Example:  2 capsules.  
+
+                                        SOURCE OF DATA:Entered by system if default values exist in file 71; edited during case edit.
+
+70.15,3             DATE/TIME MED ADMINISTERED             0;3 DATE
+
+                                        INPUT TRANSFORM:S %DT="ETXR",%DT(0)=$$FMADD^XLFDT((9999999.9999-DA(2)),-7) D ^%DT S X=Y K:Y<1 X K %DT(0)
+                                        LAST EDITED:  DEC 20, 1996 
+                                        HELP-PROMPT:  Enter the date/time this dose was administered (must not precede the exam date/time by more than seven days). 
+                                        DESCRIPTION:
+                                                      The date and time this dosage was administered should be recorded here.  
+
+                                        SOURCE OF DATA:Entered during case edit or status tracking.
+                                        NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+70.15,4             PERSON WHO ADMINISTERED MED            0;4 POINTER TO NEW PERSON FILE (#200)
+
+                                        INPUT TRANSFORM:S DIC("S")="I $$MEDOSE^RADD2(+Y,9999999.9999-DA(2))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                                        LAST EDITED:  JAN 08, 1997 
+                                        HELP-PROMPT:  Enter the name of the clinician who administered this medication. 
+                                        DESCRIPTION:
+                                                      The name of the radiology/nuclear medicine clinician who administered this medication to the patient should be entered here.  
+
+                                        SCREEN:       S DIC("S")="I $$MEDOSE^RADD2(+Y,9999999.9999-DA(2))"
+                                        EXPLANATION:  The individual must be authorized to write med orders.
+                                        SOURCE OF DATA:Entered during case edit or status tracking.
+                                        NOTES:        XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+70.03,225         CONTRAST MEDIA                           CM;0 SET Multiple #70.3225
+
+
+70.3225,.01         CONTRAST MEDIA                           0;1 SET (Multiply asked)
+
+                                                        'I' FOR Ionic Iodinated; 
+                                                        'N' FOR Non-ionic Iodinated; 
+                                                        'L' FOR Gadolinium; 
+                                                        'C' FOR Cholecystographic; 
+                                                        'G' FOR Gastrografin; 
+                                                        'B' FOR Barium; 
+                                                        'M' FOR unspecified contrast media; 
+                                          LAST EDITED:  DEC 07, 2004 
+                                          HELP-PROMPT:  Enter the contrast agent(s) associated with this exam. 
+                                          DESCRIPTION:
+                                                        This field identifies the contrast agent(s) associated with this Rad/Nuc Med exam.  
+
+                                          TECHNICAL DESCR:
+                                                        This field was added with RA*5*45.  
+
+                                          PRE-LOOKUP:   S X=$$UP^XLFSTR(X)
+                                          CROSS-REFERENCE:70.3225^B 
+                                                        1)= S ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"CM","B",$E(X,1,30),DA)=""
+                                                        2)= K ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"CM","B",$E(X,1,30),DA)
+
+
+
+
+70.03,250         CONTRAST MEDIA ACTIVITY LOG                AUD;0 DATE Multiple #70.16 (Add New Entry without Asking)
+
+
+70.16,.01           DATE/TIME EDITED                           0;1 DATE
+
+                                            INPUT TRANSFORM:S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+                                            LAST EDITED:  DEC 31, 2003 
+                                            HELP-PROMPT:  This field contains a system generated date/time of when the contrast medium or media was edited for this Rad/Nuc Med exam. 
+                                            DESCRIPTION:
+                                                          This field tracks the date/time the contrast medium or media data was edited for this specific Rad/Nuc Med exam.  
+
+                                            TECHNICAL DESCR:
+                                                          Added with the release of RA*5*45 
+
+                                            CROSS-REFERENCE:70.16^B 
+                                                          1)= S ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"AUD","B",$E(X,1,30),DA)=""
+                                                          2)= K ^RADPT(DA(3),"DT",DA(2),"P",DA(1),"AUD","B",$E(X,1,30),DA)
+
+
+70.16,2             PRIOR CONTRAST MEDIA VALUE                 0;2 FREE TEXT
+
+                                            INPUT TRANSFORM:K:$L(X)>30!($L(X)<1) X
+                                            LAST EDITED:  DEC 31, 2003 
+                                            HELP-PROMPT:  This field contains the system generated contrast medium or media data of the Rad/Nuc Med exam prior to edit. 
+                                            DESCRIPTION:
+                                                          This field tracks the contrast media of the Rad/Nuc Med exam before the edit occurs.  
+
+
+70.16,3             USER WHO EDITED CONTRAST                   0;3 POINTER TO NEW PERSON FILE (#200)
+
+                                            LAST EDITED:  JAN 07, 2004 
+                                            HELP-PROMPT:  This is a system generated field that tracks the name of the person editing the contrast media data for this Rad/Nuc Med exam. 
+                                            DESCRIPTION:
+                                                          This field tracks the person editing the contrast media data for this Rad/Nuc Med exam.  
+
+
+
+
+70.03,400         CLINICAL HISTORY FOR EXAM                    H;0   WORD-PROCESSING #70.13
+
+                                            DESCRIPTION:  This field may contain a written clinical history of the patient as well as instructions to the interpreting physician .  For example, the instructions might be to interpret the images to rule out
+                                                          the possibility of a patient having a certain disease.  
+                                                           
+                                                          This field is used as the 'Clinical History' that appears on the printed report for each exam associated with this visit.  
+
+                                            TECHNICAL DESCR:
+                                                           
+
+
+70.03,500         NUCLEAR MED DATA                             0;28 POINTER TO NUC MED EXAM DATA FILE (#70.2)
+
+                                            LAST EDITED:  SEP 26, 1996 
+                                            HELP-PROMPT:  Enter exam data related to radiopharmaceuticals. 
+                                            DESCRIPTION:
+                                                          Radiopharmaceutical data may be automatically entered, if it exists on the procedure file.  It is also editable during case edit options and may be configured for editing during status tracking.  
+
+                                            TECHNICAL DESCR:
+                                                          On an exam, this field is used to point to an entry in the Nuc Med Exam file #70.2 which contains radiopharmaceutical data for the case.  Within the pointed-to file is a multiple for radiopharms.  
+
+                                            CROSS-REFERENCE:70.03^NMD^MUMPS 
+                                                          1)= Q
+                                                          2)= Q:$D(RAIEN702)  N DA,DIK S DA=X,DIK="^RADPTN(" D ^DIK
+                                                          delete pointed-to record in file 70.2 when field 500 is deleted 
+
+
+
+
+
+
+
+70,50         OUTSIDE FILMS REGISTRY O;0 DATE Multiple #70.06
+
+              OUTSIDE FILMS REGISTRY SUB-FIELD                                                                                 
+              DESCRIPTION:
+                                This is a multiple field containing information about this patient's films obtained from an outside source.  
+
+              IDENTIFIED BY:    REMARKS(#20)
+
+70.06,.01       OUTSIDE FILMS REGISTER DATE 0;1 DATE
+
+                THE DATE THE OUTSIDE FILMS WERE REGISTERED                                                                     
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 28, 1984 
+                HELP-PROMPT:      Enter the date this patient's films were received from the outside source and registered. 
+                DESCRIPTION:
+                                  This field contains the date this patient's films were received from the outside source and registered.  
+
+                SOURCE OF DATA:   FILE ROOM CLERK
+
+70.06,2         NEEDED BACK DATE       0;2 DATE
+
+                THE DATE THE OUTSIDE FILMS ARE NEEDED BACK                                                                     
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X),$D(^RADPT(DA(1),"O",DA,0)),X<+^(0) W !?3,"The date the films are needed back can not be prior to the outside films register date!" K X
+                LAST EDITED:      JAN 12, 1989 
+                HELP-PROMPT:      Enter the date the outside source wants this patient's films returned or the date they are sent back. 
+                DESCRIPTION:
+                                  This field contains the requested date that the outside source wants this patient's films back on or the date the films are to be sent back.  
+
+                SOURCE OF DATA:   FILE ROOM CLERK
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+70.06,3         RETURNED DATE          0;3 DATE
+
+                THE DATE ACTUALLY RETURNED                                                                                     
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X I $D(X),$D(^RADPT(DA(1),"O",DA,0)),X<+^(0) W !?3,"The return date can not be prior to the outside films register date!" K X
+                LAST EDITED:      JAN 12, 1989 
+                HELP-PROMPT:      Enter the date this patient's films were returned to the outside source. 
+                DESCRIPTION:
+                                  This field contains the date that this patient's outside films were actually returned to the outside source.  
+
+                SOURCE OF DATA:   FILE ROOM CLERK
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+70.06,4         SOURCE OF FILMS        0;4 FREE TEXT
+
+                THE OUTSIDE SOURCE OF THESE FILMS                                                                              
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+                LAST EDITED:      AUG 28, 1984 
+                HELP-PROMPT:      Enter a name, between 3 and 80 characters in length, of the source of this patient's outside films. (ie. General Hospital) 
+                DESCRIPTION:
+                                  This field contains the name (3-80 characters) of the source of this patient's outside films. (ie. General Hospital) 
+
+                SOURCE OF DATA:   FILE ROOM CLERK
+
+70.06,5         ASK FOR 'OK' BEFORE RETURNING? 0;5 SET (Required)
+
+                ASK FOR 'OK' BEFORE RETURNING OUTSIDE FILMS?                                                                   
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      AUG 30, 1984 
+                HELP-PROMPT:      Enter 'Y' for YES if these films require approval by a supervisor before returning them to their outside source. Enter 'N' for NO if they do not. 
+                DESCRIPTION:      This field contains a value to indicate if these outside films require the approval of the supervisor before returning to their source since some films should be kept on file.  Available values are: 'Y' for YES and 'N'
+                                  for NO.  If the value is YES, then a flag is set to designate 'OK' needed before return.  
+                                   
+                                  The activity log can be used to determine who sent the films back.  It can be displayed using the 'Inquire' option of File Manager.  
+
+                SOURCE OF DATA:   SUPERVISOR
+
+70.06,6         HAS RETURN BEEN OK'ed? 0;6 SET
+
+                HAS RETURN OF OUTSIDE FILMS BEEN OK'ed?                                                                        
+                                  'Y' FOR YES; 
+                                  'N' FOR NO; 
+                LAST EDITED:      AUG 30, 1984 
+                HELP-PROMPT:      Enter 'Y' for YES or 'N' for NO to indicate whether or not these films have been approved for return by a supervisor to the outside source. 
+                DESCRIPTION:      This field is used for outside films which are designated as requiring the supervisor's approval before return to the outside source.  It contains a 'Y' for YES or 'N' for NO to indicate if these outside films have been 
+                                  approved for return yet.  
+
+                SOURCE OF DATA:   FILE ROOM CLERK
+
+70.06,20        REMARKS                1;1 FREE TEXT
+
+                REMARKS ABOUT THE OUTSIDE FILMS                                                                                
+                INPUT TRANSFORM:  K:$L(X)>240!($L(X)<2) X
+                LAST EDITED:      AUG 30, 1984 
+                HELP-PROMPT:      Enter a brief comment, between 2 and 240 characters in length, to identify the type of outside film. (ie. Chest Films) 
+                DESCRIPTION:
+                                  This field contains a brief comment (2-240 characters) about the outside films.  It is used mainly to identify what type the outside film is. (ie. Chest Films) 
+
+                SOURCE OF DATA:   FILE ROOM CLERK
+
+70.06,100       ACTIVITY LOG           L;0 DATE Multiple #70.08 (Add New Entry without Asking)
+
+                ACTIVITY LOG SUB-FIELD                                                                                         
+                DESCRIPTION:      This is a multiple field containing a log of actions that have been taken on this outside film record. 
+                                   
+                                  The activity log can be used to resolve any discrepancies.  It can be displayed using the 'Inquire' option of File Manager.  
+
+
+70.08,.01         LOG DATE               0;1 DATE (Required)
+
+                  DATE OF ACTION ON THIS OUTSIDE FILM RECORD                                                                   
+                  INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      NOV 14, 1984 
+                  HELP-PROMPT:      Enter a date and time that action was taken on this outside film record. 
+                  DESCRIPTION:
+                                    This field contains the date and the time that the action was taken on this outside film record.  
+
+                  SOURCE OF DATA:   SYSTEM GENERATED
+                                    UNEDITABLE
+
+70.08,2           TYPE OF ACTION         0;2 SET (Required)
+
+                  THE TYPE OF ACTION ON THE OUTSIDE FILM                                                                       
+                                    'A' FOR ADD FILMS TO REGISTRY; 
+                                    'S' FOR INDICATED FILM NEEDS SUPERVISOR'S OK; 
+                                    'E' FOR EDIT REGISTRY; 
+                  LAST EDITED:      NOV 14, 1984 
+                  HELP-PROMPT:      Enter the type of action that was taken on this outside film during processing. 
+                  DESCRIPTION:      This field contains the type of action that was performed on this outside film during processing.  Available types include:  'A' for ADD FILMS TO REGISTRY, 'S' for INDICATED FILM NEEDS SUPERVISOR'S OK, and 'E' for EDIT 
+                                    REGISTRY.  
+
+                  SOURCE OF DATA:   SYSTEM GENERATED
+                                    UNEDITABLE
+
+70.08,3           COMPUTER USER          0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                  THE PERSON DOING THE OUTSIDE FILM REGISTERING                                                                
+                  LAST EDITED:      MAR 02, 1990 
+                  HELP-PROMPT:      This field contains the name of the computer user doing the processing at the time action was performed on this outside film. 
+                  DESCRIPTION:
+                                    This field points to the 'NEW PERSON' file (#200) to indicate the person doing the processing at the time the action was performed on this outside film.  
+
+                  SOURCE OF DATA:   SYSTEM GENERATED
+                                    UNEDITABLE
+
+
+
+
+
+70,1901       IS PATIENT A VETERAN?   ;  COMPUTED
+
+              IS THIS PATIENT A VETERAN?                                                                                       
+              MUMPS CODE:       X ^DD(70,1901,9.3) S X=$P($P(Y(70,1901,102),$C(59)_$P(Y(70,1901,101),U,1)_":",2),$C(59),1) S D0=Y(70,1901,2)
+                                9.2 = S Y(70,1901,2)=$S($D(D0):D0,1:""),Y(70,1901,1)=$S($D(^RADPT(D0,0)):^(0),1:""),D0=$P(Y(70,1901,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1
+                                9.3 = X ^DD(70,1901,9.2) S Y(70,1901,102)=$C(59)_$S($D(^DD(2,1901,0)):$P(^(0),U,3),1:""),Y(70,1901,101)=$S($D(^DPT(D0,"VET")):^("VET"),1:"")
+              ALGORITHM:        #.01:#1901
+              DESCRIPTION:
+                                This field is computed by the system and indicates whether this patient is a veteran or not.  The system obtains this information from the main 'PATIENT' file (#2).  It is not stored in this file (#70).  
+
+              SOURCE OF DATA:   MEDICAL ADMINISTRATION SERVICE
+
+
+      FILES POINTED TO                      FIELDS
+
+CAMERA/EQUIP/RM (#78.6)           EXAMINATIONS:PRIMARY CAMERA/EQUIP/RM (#18)
+
+COMPLICATION TYPES (#78.1)        EXAMINATIONS:COMPLICATION (#16)
+
+CONTRACT/SHARING AGREEMENTS 
+                   (#34)          EXAMINATIONS:CONTRACT/SHARING SOURCE (#9)
+
+CPT MODIFIER (#81.3)              CPT MODIFIERS:CPT MODIFIERS (#.01)
+
+DIAGNOSTIC CODES (#78.3)          EXAMINATIONS:PRIMARY DIAGNOSTIC CODE (#13)
+                                  SECONDARY DIAGNOSTIC CODE:SECONDARY DIAGNOSTIC CODE (#.01)
+
+DRUG (#50)                        MEDICATIONS:MED ADMINISTERED (#.01)
+
+EXAMINATION STATUS (#72)          EXAMINATIONS:EXAM STATUS (#3)
+                                  EXAM STATUS TIMES:NEW STATUS (#2)
+
+FILM SIZES (#78.4)                FILM SIZE:FILM SIZE (#.01)
+
+HOSPITAL LOCATION (#44)           EXAMINATIONS:PRINCIPAL CLINIC (#8)
+                                  REQUESTING LOCATION (#22)
+
+IMAGING LOCATIONS (#79.1)         REGISTERED EXAMS:IMAGING LOCATION (#4)
+
+IMAGING TYPE (#79.2)              REGISTERED EXAMS:TYPE OF IMAGING (#2)
+
+NEW PERSON (#200)                 USER WHO ENTERED PATIENT (#.06)
+                                  EXAMINATIONS:PRIMARY INTERPRETING RESIDENT (#12)
+                                  REQUESTING PHYSICIAN (#14)
+                                  PRIMARY INTERPRETING STAFF (#15)
+                                  EXAM STATUS TIMES:COMPUTER USER (#3)
+                                  ACTIVITY LOG:COMPUTER USER (#3)
+                                  ACTIVITY LOG:COMPUTER USER (#3)
+                                  SECONDARY INTERPRET'G RESIDENT:SECONDARY INTERPRET'G RESIDENT (#.01)
+                                  SECONDARY INTERPRETING STAFF:SECONDARY INTERPRETING STAFF (#.01)
+                                  TECHNOLOGIST:TECHNOLOGIST (#.01)
+                                  MEDICATIONS:PERSON WHO ADMINISTERED MED (#4)
+                                  CONTRAST MEDIA ACTIVITY LOG:USER WHO EDITED CONTRAST (#3)
+
+NUC MED EXAM DATA (#70.2)         EXAMINATIONS:NUCLEAR MED DATA (#500)
+
+PATIENT (#2)                      NAME (#.01)
+
+PROCEDURE MODIFIERS (#71.2)       PROCEDURE MODIFIERS:PROCEDURE MODIFIERS (#.01)
+
+RAD/NUC MED DIVISION (#79)        REGISTERED EXAMS:HOSPITAL DIVISION (#3)
+
+RAD/NUC MED ORDERS (#75.1)        EXAMINATIONS:IMAGING ORDER (#11)
+
+RAD/NUC MED PROCEDURES (#71)      EXAMINATIONS:PROCEDURE (#2)
+
+RAD/NUC MED REASON (#75.2)        EXAMINATIONS:REASON FOR CANCELLATION (#3.5)
+
+RAD/NUC MED REPORTS (#74)         EXAMINATIONS:REPORT TEXT (#17)
+
+SERVICE/SECTION (#49)             EXAMINATIONS:SERVICE (#7)
+
+SPECIALTY (#42.4)                 EXAMINATIONS:BEDSECTION (#19)
+
+VISIT (#9000010)                  EXAMINATIONS:VISIT (#27)
+
+WARD LOCATION (#42)               EXAMINATIONS:WARD (#6)
+
+
+Subfile #70.03
+
+  Record Indexes:
+
+  ACR (#475)    RECORD    MUMPS    IR    ACTION    WHOLE FILE (#70)
+      Short Descr:  Clinical Reminders index.
+      Description:  This cross-reference builds two indexes, one for finding all patients with a particular radiology procedure and one for finding all the radiology procedures a patient has.  The indexes are stored in the Clinical Reminders index global
+                    as: 
+                     ^PXRMINDX(70,"IP",PROCEDURE,DFN,EXAM DATE,DAS) and 
+                     ^PXRMINDX(70,"PI",DFN,PROCEDURE,EXAM DATE,DAS) respectively.  For all the details, see the Clinical Reminders Index Technical Guide/Programmer's Manual.  
+        Set Logic:  D SRAD^RAPXRM(.X,.DA)
+       Kill Logic:  D KRAD^RAPXRM(.X,.DA)
+       Whole Kill:  K ^PXRMINDX(70)
+             X(1):  PROCEDURE  (70.03,2)  (Subscr 1)  (forwards)
+
+
+INPUT TEMPLATE(S):
+RA CANCEL                     AUG 31, 2000@10:37  USER #0    
+     This template is used for the cancelling of exams.
+RA DIAGNOSTIC BY CASE         AUG 31, 2000@10:59  USER #0    
+     This template is used for the Diagnostic Code Entry By Case option.
+RA EXAM EDIT                  JUN 23, 2009@09:06  USER #0    
+     This template is used to edit exams.
+RA LAST PAST VISIT            MAR 29, 1994@08:19  USER #0    
+     This template is used when adding the last visit prior to implementing the
+     DHCP Radiology/Nuclear Medicine module.
+RA NO PURGE SPECIFICATION     NOV 12, 1997@11:43  USER #0    
+     This input template is used to set the no purge flag for an exam.
+RA OUTSIDE ADD                JUN 26, 1991@13:15  USER #0    
+     This template is used for entering outside films for tracking purposes.
+RA OUTSIDE EDIT               DEC 20, 2002@11:59  USER #0    
+     This template is used for editing information on outside film tracking.
+RA OUTSIDE SUPEROK            JUN 26, 1991@13:16  USER #0    
+     This template is used for flaging an outside film as needing a
+     supervisor ok to release.
+RA OVERRIDE                   MAR 23, 1994@13:10  USER #0    
+     This template is used to override exams to complete.
+RA REGISTER                   NOV 08, 2010@13:36  USER #0    ^RACTRG 
+RA STATUS CHANGE              APR 16, 2007@10:57  USER #0    
+      
+     This template is used for the Status Tracking of Exams option.
+
+PRINT TEMPLATE(S):
+RA DAILY LOG                  JUN 08, 1994@15:05  USER #0                                                                                                                                                                     IMAGING SERVICE DAILY LOG REPORT
+     Used to print a daily log of registered examinations.
+RA OUTSIDE LIST               JUN 08, 1994@15:05  USER #0                                                                                                                                       IMAGING SERVICE DELINQUENT OUTSIDE FILM REPORT FOR OUTPATIENTS
+     Used to generate the Delinquent Outside Film Report for Outpatients.
+
+SORT TEMPLATE(S):
+RA DAILY LOG                  MAR 07, 1985        USER #0    
+SORT BY: 'REGISTERED EXAMS//
+REGISTERED EXAMS SUB-FIELD: EXAM DATE//    (User is asked range)
+  WITHIN EXAM DATE, SORT BY: #REGISTERED EXAMS//
+  REGISTERED EXAMS SUB-FIELD: HOSPITAL DIVISION//
+    WITHIN HOSPITAL DIVISION, SORT BY: NAME//
+     Used for sorting exams by exam date and hospital division.
+
+RA OUTSIDE LIST               JAN 11, 1989        USER #0    
+SORT BY: OUTSIDE FILMS REGISTRY//
+OUTSIDE FILMS REGISTRY SUB-FIELD: NEEDED BACK DATE//    (User is asked range)
+  WITHIN NEEDED BACK DATE, SORT BY: @OUTSIDE FILMS REGISTRY//
+  OUTSIDE FILMS REGISTRY SUB-FIELD: RETURNED DATE// (RETURNED DATE is null)
+    WITHIN RETURNED DATE, SORT BY: NAME// (NAME)
+     Used for sorting outside film registry.
+
+
+FORM(S)/BLOCK(S):

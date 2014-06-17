@@ -1,0 +1,366 @@
+STANDARD DATA DICTIONARY #790 -- WV PATIENT FILE                                                                                                                                                                                  MAY 20,2014@15:42:51  PAGE 1
+STORED IN ^WV(790,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                               (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the names of patient's tracked by the Women's Health application.  Patient names may be either manually entered by a case manager or loaded through the Automatically Load Patients [WV AUTOLOAD PATIENTS] option.  
+ 
+Other data stored in this file can be categorized as demographic, administrative, and clinical information.  The clinical data reflects current breast and cervical treatment needs, pregnancy information, breast and cervical treatment regimes, family
+history of breast cancer and DES, name of facility responsible for breast and treatment needs, and personal history of sexual trauma. Information specific to the results of breast and cervical exams and procedures are stored in the WV Procedure (#790.1) 
+file.  Administrative data is limited to the name of the current case manager, the date of first encounter, and the date the patient record was inactivated.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: 
+             DEL ACCESS: 
+           LAYGO ACCESS: 
+           AUDIT ACCESS: @
+IDENTIFIED BY: CASE MANAGER (#.1)[R]
+
+POINTED TO BY: PATIENT field (#.02) of the WV PAP REGIMEN LOG File (#790.04) 
+               PATIENT field (#.02) of the WV PREGNANCY LOG File (#790.05) 
+               PATIENT field (#.02) of the WV PROCEDURE File (#790.1) 
+               PATIENT field (#1) of the WV REFUSALS File (#790.3) 
+               PATIENT field (#.01) of the WV NOTIFICATION File (#790.4) 
+               
+
+CROSS
+REFERENCED BY: CURRENTLY PREGNANT(AEDC), EDC(AEDC1), PAP REGIMEN START DATE(APDLOG), PAP REGIMEN(APRLOG), NAME(B), CASE MANAGER(C)
+
+790,.01       NAME                   0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              INPUT TRANSFORM:  S:$D(X) DINUM=X I $P(^DPT(DINUM,0),"^",2)'="F" K X D EN^DDIOL("Patient is not female.")
+              LAST EDITED:      MAY 08, 1998 
+              DESCRIPTION:
+                                This field contains the patient's name.  It is a pointer to the Patient (#2) file.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  790^B 
+                                1)= S ^WV(790,"B",$E(X,1,30),DA)=""
+                                2)= K ^WV(790,"B",$E(X,1,30),DA)
+
+
+790,.02       MAILING ADDRESS-STREET  ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(790,.02,9.2) S X=$P(Y(790,.02,101),U,1) S D0=Y(790,.02,80)
+                                9.2 = S Y(790,.02,80)=$S($D(D0):D0,1:""),Y(790,.02,1)=$S($D(^WV(790,D0,0)):^(0),1:""),D0=$P(Y(790,.02,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(790,.02,101)=$S($D(^DPT(D0,.11)):^(.11),1:"")
+              ALGORITHM:        .01:.111
+              LAST EDITED:      MAY 13, 1998 
+              DESCRIPTION:
+                                The street mailing address of this patient.  This is computed from data in the Patient file.  
+
+
+790,.03       MAILING ADDRESS-CITY    ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(790,.03,9.2) S X=$P(Y(790,.03,101),U,4) S D0=Y(790,.03,80)
+                                9.2 = S Y(790,.03,80)=$S($D(D0):D0,1:""),Y(790,.03,1)=$S($D(^WV(790,D0,0)):^(0),1:""),D0=$P(Y(790,.03,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(790,.03,101)=$S($D(^DPT(D0,.11)):^(.11),1:"")
+              ALGORITHM:        .01:.114
+              LAST EDITED:      MAY 13, 1998 
+              DESCRIPTION:
+                                The city mailing address for this patient.  This information in this field is obtained from the Patient file.  
+
+
+790,.04       MAILING ADDRESS-STATE   ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(790,.04,9.3) S X=$P(Y(790,.04,201),U,2) S D0=Y(790,.04,80)
+                                9.2 = S Y(790,.04,80)=$S($D(D0):D0,1:""),Y(790,.04,1)=$S($D(^WV(790,D0,0)):^(0),1:""),D0=$P(Y(790,.04,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(790,.04,180)=$S($D(D0):D0,1:"")
+                                9.3 = X ^DD(790,.04,9.2) S Y(790,.04,101)=$S($D(^DPT(D0,.11)):^(.11),1:""),D0=$P(Y(790,.04,101),U,5) S:'$D(^DIC(5,+D0,0)) D0=-1 S Y(790,.04,201)=$S($D(^DIC(5,D0,0)):^(0),1:"")
+              ALGORITHM:        .01:.115:1
+              LAST EDITED:      MAY 13, 1998 
+              DESCRIPTION:
+                                The State portion of this patient's mailing address, obtained from the Patient file.  
+
+
+790,.05       MAILING ADDRESS-ZIP     ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(790,.05,9.2) S X=$P(Y(790,.05,101),U,6) S D0=Y(790,.05,80)
+                                9.2 = S Y(790,.05,80)=$S($D(D0):D0,1:""),Y(790,.05,1)=$S($D(^WV(790,D0,0)):^(0),1:""),D0=$P(Y(790,.05,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(790,.05,101)=$S($D(^DPT(D0,.11)):^(.11),1:"")
+              ALGORITHM:        .01:.116
+              LAST EDITED:      MAY 13, 1998 
+              DESCRIPTION:
+                                The zip code portion of this patient's mailing address is obtained from the Patient file.  
+
+
+790,.06       SSN#                    ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(790,.06,9.2) S X=$P(Y(790,.06,101),U,9) S D0=Y(790,.06,80)
+                                9.2 = S Y(790,.06,80)=$S($D(D0):D0,1:""),Y(790,.06,1)=$S($D(^WV(790,D0,0)):^(0),1:""),D0=$P(Y(790,.06,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(790,.06,101)=$S($D(^DPT(D0,0)):^(0),1:"")
+              ALGORITHM:        .01:SSN
+              LAST EDITED:      MAY 18, 1998 
+              DESCRIPTION:
+                                This computed field gathers the patient's social security number from the Patient file.  
+
+
+790,.1        CASE MANAGER           0;10 POINTER TO WV CASE MANAGER FILE (#790.01) (Required)
+
+              LAST EDITED:      MAY 07, 1998 
+              HELP-PROMPT:      Select the person who is currently managing this patient's breast and cervical treatment needs, letters, follow-up, etc. 
+              DESCRIPTION:
+                                This field contains the name of the person who is currently managing the women's health care needs of this patient.  
+
+              CROSS-REFERENCE:  790^C 
+                                1)= S ^WV(790,"C",$E(X,1,30),DA)=""
+                                2)= K ^WV(790,"C",$E(X,1,30),DA)
+
+
+790,.11       CX TX NEED             0;11 POINTER TO WV CERVICAL TX NEED FILE (#790.5)
+
+              LAST EDITED:      MAY 07, 1998 
+              HELP-PROMPT:      Select the current or next cervical procedure needed for this patient. 
+              DESCRIPTION:
+                                This field contains the name of the current or next cervical procedure or treatment need scheduled for this patient.  
+
+
+790,.12       CX TX NEED DUE DATE    0;12 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 17, 1995 
+              HELP-PROMPT:      Enter the date by which this cervical treatment need should be completed. 
+              DESCRIPTION:
+                                This field contains the date when this cervical procedure or treatment need should be completed.  
+
+
+790,.13       CURRENTLY PREGNANT     0;13 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      OCT 24, 1994 
+              HELP-PROMPT:      Enter 'Yes' if this patient is currently pregnant, 'No' if not, and leave blank if unknown. 
+              DESCRIPTION:      This field contains information on the pregnancy status of the patient.  The status is a set of codes: 1 = Yes if this patient is currently pregnant, 0 = No, if not.  When the pregnanacy status is unknown, the field is
+                                blank.  
+
+              CROSS-REFERENCE:  790^AEDC^MUMPS 
+                                1)= S WVPREG=X,WVEDC=$P(^WV(790,DA,0),U,14) D STOREDC^WVUTL3
+                                2)= S WVPREG="",WVEDC=0 D STOREDC^WVUTL3
+
+
+790,.14       EDC                    0;14 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 24, 1994 
+              HELP-PROMPT:      Enter the estimated date of confinement (delivery date). 
+              DESCRIPTION:
+                                This field stores the patient's delivery date or estimated date of confinement (EDC).  
+
+              CROSS-REFERENCE:  790^AEDC1^MUMPS 
+                                1)= S WVEDC=X,WVPREG=$P(^WV(790,DA,0),U,13) D STOREDC^WVUTL3
+                                2)= S WVEDC="",WVPREG=$P(^WV(790,DA,0),U,13) D STOREDC^WVUTL3
+
+
+790,.15       DES DAUGHTER           0;15 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+                                '9' FOR UNKNOWN; 
+              LAST EDITED:      MAY 24, 1999 
+              HELP-PROMPT:      Enter 'Yes' if this patient's mother took DES when she was pregnant with this patient. 
+              DESCRIPTION:
+                                This field indicates if this patient's mother took diethylstilbestrol (DES) when she was pregnant with this patient.  
+
+
+790,.16       PAP REGIMEN            0;16 POINTER TO WV PAP REGIMEN FILE (#790.03)
+
+              LAST EDITED:      MAY 07, 1998 
+              DESCRIPTION:
+                                This field stores the current PAP regimen for the patient.  
+
+              CROSS-REFERENCE:  790^APRLOG^MUMPS 
+                                1)= S WVLPRG=X,WVLDAT=$P(^WV(790,DA,0),U,17) D STORPAP^WVUTL3
+                                2)= ;
+
+
+790,.17       PAP REGIMEN START DATE 0;17 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 21, 1994 
+              HELP-PROMPT:      Enter the date on which the patient began or will begin the current PAP regimen. 
+              DESCRIPTION:
+                                This field stores a date on which the patient began or will begin her current PAP regimen.  
+
+              CROSS-REFERENCE:  790^APDLOG^MUMPS 
+                                1)= S WVLDAT=X,WVLPRG=$P(^WV(790,DA,0),U,16) D STORPAP^WVUTL3
+                                2)= ;
+
+
+790,.18       BR TX NEED             0;18 POINTER TO WV BREAST TX NEED FILE (#790.51)
+
+              LAST EDITED:      MAY 07, 1998 
+              HELP-PROMPT:      Select the current or next breast study procedure needed for this patient. 
+              DESCRIPTION:
+                                This field contains the name of the the current or next breast study procedure needed for this patient.  
+
+
+790,.19       BR TX NEED DUE DATE    0;19 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 17, 1995 
+              HELP-PROMPT:      Enter the date by which this breast Tx procedure should be completed. 
+              DESCRIPTION:
+                                This field contains the date by which the breast treatment procedure should be completed.  
+
+
+790,.21       DATE OF FIRST ENCOUNTER 0;21 DATE
+
+              INPUT TRANSFORM:  S %DT="EX",%DT(0)=-DT D ^%DT S X=Y K:Y<1 X K %DT(0)
+              LAST EDITED:      JUL 23, 1998 
+              HELP-PROMPT:      Enter the date on which this patient was enrolled in the Women's Health package. 
+              DESCRIPTION:      This field contains the date of the patient's first clinic visit.  Although a date is automatically stuffed when the Automatically Load Patients [WV AUTOLOAD PATIENTS] option is run, the information can be edited through
+                                the Edit/Print Patient Case Data option.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+790,.22       REFERRAL SOURCE        0;22 POINTER TO WV REFERRAL SOURCE FILE (#790.07)
+
+              LAST EDITED:      MAY 20, 1998 
+              DESCRIPTION:
+                                This field stores information on who referred the patient or how the patient found out about the womens health care services at the facility.  This field points to entries in the WV Referral Source (#790.07) file.  
+
+
+790,.23       FAMILY HX OF BR CA     0;23 SET
+
+                                '0' FOR no family history; 
+                                '1' FOR 2nd degree relative; 
+                                '2' FOR 1st degree relative; 
+                                '3' FOR >1 1st degree relatives; 
+                                '4' FOR personal history; 
+                                '9' FOR unknown; 
+              LAST EDITED:      MAY 24, 1999 
+              HELP-PROMPT:      Enter the code that describes the category of relative(s) who have had breast cancer.  (1st degree relative is a sister/mother, 2nd degree relatives are extended family.) 
+              DESCRIPTION:      This field identifies if the patient or the patient's relatives have had breast cancer. The information may be selected from a set of codes to indicate unknown, personal history, no family history, a 2nd degree relative
+                                (cousin, aunt, grandmother), a 1st degree relative (mother OR sister) or multiple 1st degree relatives (mother AND sister).  
+
+
+790,.24       DATE INACTIVE          0;24 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 01, 1996 
+              HELP-PROMPT:      Enter the date on which this patient became inactive.  ANY date (past, present or future) will cause this patient to be excluded from all reports that assess treatment needs. 
+              DESCRIPTION:      This field contains the date on which this patient's record became inactive.  ANY date (past, present or future) will cause this patient's data to be excluded from all reports that assess treatment needs (i.e., Snapshot of
+                                the Program Today report and Browse Patients with Needs Past Due).  
+
+
+790,.25       BREAST TX FACILITY     0;25 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      MAY 26, 1998 
+              HELP-PROMPT:      The name of the facility that has the responsibility to provide the appropriate breast tests/exams for this patient. 
+              DESCRIPTION:
+                                The name of the facility responsible for performing breast diagnostic procedures for this patient if treatment is performed at another facility.  Facility choices are limited to entries in the Institution (#4) file.  
+
+
+790,.26       CERVICAL TX FACILITY   0;26 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      MAY 26, 1998 
+              HELP-PROMPT:      The name of the facility that has the responsibility to provide the appropriate cervical tests/exams for this patient. 
+              DESCRIPTION:
+                                The name of the facility that is responsible for providing the gynecological tests/exams for this patient if treatment is performed at another facility. Facility choices are limited to entries in the Institution (#4) file.  
+
+
+790,.28       CST                    0;28 SET
+
+                                'Y' FOR Yes; 
+                                'N' FOR No; 
+                                'D' FOR Declined to Answer; 
+                                'U' FOR Unknown; 
+              LAST EDITED:      DEC 29, 2000 
+              DESCRIPTION:
+                                This field indicates if the patient has experienced any sexual trauma (rape, sexual assault, etc.) as a civilian.  
+
+
+790,1.01      NOTES                  1;0   WORD-PROCESSING #790.06
+
+              DESCRIPTION:
+                                This field stores special notes regarding the patient and her health care needs.  
+
+
+790,2         APPOINTMENTS           2;0 Multiple #790.09 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple contains the patient's future appointments.  
+
+
+790.09,.01      APPOINTMENTS           0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3) X
+                LAST EDITED:      MAR 18, 1999 
+                HELP-PROMPT:      Answer must be 3-80 characters in length. 
+                DESCRIPTION:      This field contains the external date of the appointment concatenated to the name of the clinic. This field value is set by the WVUTL9 routine when a WH user displays/prints a notification letter. If there are no future 
+                                  appointments scheduled, then the value "No Future Appointments" is stored in this field.  
+                                   
+                                  The future appointments are displayed in the text of the letter only when "|APPOINTMENTS|" (without the quotes) appears in the form letter template.  
+
+                CROSS-REFERENCE:  790.09^B 
+                                  1)= S ^WV(790,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^WV(790,DA(1),2,"B",$E(X,1,30),DA)
+
+
+
+
+790,3         COMPLETE ADDRESS       3;0 Multiple #790.12 (Add New Entry without Asking)
+
+              LAST EDITED:      JAN 14, 2000 
+              DESCRIPTION:
+                                This multiple field contains the patient's complete mailing address.  
+
+              TECHNICAL DESCR:
+                                The value for this field is created by calling the ADD^VADPT supported API from the WVUTL9 routine.  
+
+
+790.12,.01      COMPLETE ADDRESS       0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+                LAST EDITED:      JAN 14, 2000 
+                HELP-PROMPT:      Answer must be 3-50 characters in length. 
+                DESCRIPTION:      This field contains the patient's complete address (street, city, state and zip code). This information is computed by a call to the ADD^VADPT API and stuffed into this multiple field whenever a notification letter is 
+                                  printed.  
+                                   
+                                  This address information is displayed in the text of the letter only when "|COMPLETE ADDRESS|" (without the quotes) appears in the form letter template.  
+                                   
+                                   Example: 
+                                   
+                                   STREET ADDRESS [LINE 1] <---if there is a value 
+                                   STREET ADDRESS [LINE 2] <---if there is a value 
+                                   STREET ADDRESS [LINE 3] <---if there is a value 
+                                   CITY, STATE  ZIP CODE 
+
+                CROSS-REFERENCE:  790.12^B 
+                                  1)= S ^WV(790,DA(1),3,"B",$E(X,1,30),DA)=""
+                                  2)= K ^WV(790,DA(1),3,"B",$E(X,1,30),DA)
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSTITUTION (#4)                  BREAST TX FACILITY (#.25)
+                                  CERVICAL TX FACILITY (#.26)
+
+PATIENT (#2)                      NAME (#.01)
+
+WV BREAST TX NEED (#790.51)       BR TX NEED (#.18)
+
+WV CASE MANAGER (#790.01)         CASE MANAGER (#.1)
+
+WV CERVICAL TX NEED (#790.5)      CX TX NEED (#.11)
+
+WV PAP REGIMEN (#790.03)          PAP REGIMEN (#.16)
+
+WV REFERRAL SOURCE (#790.07)      REFERRAL SOURCE (#.22)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+WV PATIENT-FORM-1             SEP 17, 1994        USER #0
+  WV PATIENT-EDITBLK-1          DD #790
+  WV PATIENT-HEADER-2           DD #790
+

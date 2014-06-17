@@ -1,0 +1,159 @@
+STANDARD DATA DICTIONARY #811.7 -- REMINDER CATEGORY FILE                                                                                                                                                                         MAY 20,2014@15:31:41  PAGE 1
+STORED IN ^PXRMD(811.7,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains Reminder Categories. Reminder Categories are created at each site and are not released with the reminder package.  
+ 
+A Reminder Category is a list of reminders (or other reminder categories) and is used to group reminders for display in the CPRS GUI. Reminder categories are allocated to individual users, locations, service or system using the option PXRM CPRS LOOKUP 
+CATEGORIES.  
+ 
+Reminder Categories can also be used in conjunction with Reminder Due Summary Reports. The user is given the option to select a Reminder Category or input a list of individual reminders.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+PRIMARY KEY:        A (#52)
+  Uniqueness Index: B (#536)
+       File, Field: 1) NAME (811.7,.01)
+
+POINTED TO BY: REMINDER CATEGORY field (#.01) of the REMINDER CATEGORY sub-field (#810.113) of the REMINDER REPORT TEMPLATE File (#810.1) 
+               SUB-CATEGORY field (#.01) of the SUB-CATEGORY sub-field (#811.701) of the REMINDER CATEGORY File (#811.7) 
+               
+
+CROSS
+REFERENCED BY: SUB-CATEGORY(AC), NAME(ACP)
+
+INDEXED BY:    NAME (B)
+
+
+811.7,.01     NAME                   0;1 FREE TEXT (Required) (Key field)
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      MAY 08, 2000 
+              HELP-PROMPT:      Enter the name of the Category, up to 35 characters. 
+              DESCRIPTION:
+                                This is the name of the Reminder Category.  
+
+              CROSS-REFERENCE:  811.7^ACP^MUMPS 
+                                1)= D SETAC^PXRMCLST
+                                2)= D KILLAC^PXRMCLST
+                                If a category is deleted this cross reference deletes pointers to that category from other reminder categories.  
+                                 
+                                The 'AC' index (^PXRMD(811.7,Sub-Category,Category,DA)) is used to determine which categories point to the deleted category. DIK is then used to remove the deleted category from the sub-category multiple of these
+                                categories.  
+
+
+              FIELD INDEX:      B (#536)    REGULAR    IR    LOOKUP & SORTING
+                   Unique for:  Key A (#52), File #811.7
+                  Short Descr:  New style B cross-reference
+                    Set Logic:  S ^PXRMD(811.7,"B",$E(X,1,35),DA)=""
+                   Kill Logic:  K ^PXRMD(811.7,"B",$E(X,1,35),DA)
+                   Whole Kill:  K ^PXRMD(811.7,"B")
+                         X(1):  NAME  (811.7,.01)  (Subscr 1)  (Len 35)  (forwards)
+
+
+811.7,1       DESCRIPTION            1;0   WORD-PROCESSING #811.71
+
+              DESCRIPTION:
+                                This is the description of the Reminder Category.  
+
+
+811.7,2       INDIVIDUAL REMINDERS   2;0 POINTER Multiple #811.72
+
+              DESCRIPTION:
+                                This is the list of reminders that are in this category.  
+
+
+811.72,.01      INDIVIDUAL REMINDERS   0;1 POINTER TO REMINDER DEFINITION FILE (#811.9) (Multiply asked)
+
+                LAST EDITED:      JUN 10, 1999 
+                HELP-PROMPT:      Enter a reminder definition that you want in this category. 
+                DESCRIPTION:
+                                  This is a reminder definition.  
+
+                CROSS-REFERENCE:  811.72^B 
+                                  1)= S ^PXRMD(811.7,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMD(811.7,DA(1),2,"B",$E(X,1,30),DA)
+
+
+811.72,.02      DISPLAY ORDER          0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X Q:'$D(X)  K:'$$UNIQUE^PXRMCLST(X,DA(1),DA,2) X
+                LAST EDITED:      APR 06, 2000 
+                HELP-PROMPT:      Enter the display order for this reminder definition. 
+                DESCRIPTION:
+                                  This is the order in which to display this reminder definition when the list of reminders in this category is displayed.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+811.7,10      SUB-CATEGORY           10;0 POINTER Multiple #811.701
+
+              DESCRIPTION:
+                                This multiple allows you to include already existing categories as part of a new category. Sub-categories are always listed after individual reminders.  
+
+              SCREEN:           S DIC("S")="I ^(0)'=^PXRMD(811.7,DA,0)"
+              EXPLANATION:      Category cannot point to itself.
+
+811.701,.01     SUB-CATEGORY           0;1 POINTER TO REMINDER CATEGORY FILE (#811.7) (Multiply asked)
+
+                INPUT TRANSFORM:  K:$$BADITEM^PXRMCLST(X,DA(1)) X
+                LAST EDITED:      JUN 17, 1999 
+                HELP-PROMPT:      The sub-category selected cannot be the same as the parent category, nor a sub-category within the current category hierarchy.  
+                DESCRIPTION:
+                                  This is an existing category that is to be included as part of a new category.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  811.701^B 
+                                  1)= S ^PXRMD(811.7,DA(1),10,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PXRMD(811.7,DA(1),10,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  811.7^AC 
+                                  1)= S ^PXRMD(811.7,"AC",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PXRMD(811.7,"AC",$E(X,1,30),DA(1),DA)
+                                  This cross reference holds the Parent categories for each category.  
+                                   
+                                  The ACP cross reference on the name field deletes this cross reference.  
+
+
+
+811.701,.02     DISPLAY ORDER          0;2 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X Q:'$D(X)  K:'$$UNIQUE^PXRMCLST(X,DA(1),DA,2) X
+                LAST EDITED:      AUG 22, 2011 
+                HELP-PROMPT:      Enter the sub-category display order. 
+                DESCRIPTION:
+                                  This is the display order for the sub-categories. Sub-categories are displayed after individual reminders.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+REMINDER CATEGORY (#811.7)        SUB-CATEGORY:SUB-CATEGORY (#.01)
+
+REMINDER DEFINITION (#811.9)      INDIVIDUAL REMINDERS:INDIVIDUAL REMINDERS (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PXRM REMINDER CATEGORIES      MAY 05, 2000@16:44  USER #0                                                                                                                                                                               REMINDER CATEGORY LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

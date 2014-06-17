@@ -1,0 +1,2846 @@
+STANDARD DATA DICTIONARY #458 -- TIME & ATTENDANCE RECORDS FILE                                                                                                                                                                   MAY 20,2014@15:39:34  PAGE 1
+STORED IN ^PRST(458,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                             (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains all the data that appears on an employee's time card.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: PAY PERIOD field (#2) of the OVERTIME WARNINGS File (#458.6) 
+               
+
+CROSS
+REFERENCED BY: PAY PERIOD(AB), DATE 1(AD1), DATE 10(AD10), DATE 11(AD11), DATE 12(AD12), DATE 13(AD13), DATE 14(AD14), DATE 2(AD2), DATE 3(AD3), DATE 4(AD4), DATE 5(AD5), DATE 6(AD6), DATE 7(AD7), DATE 8(AD8), DATE 9(AD9), PRIOR SCHEDULED TOUR(ATC), 
+               STATUS(AX), PAY PERIOD(B)
+
+INDEXED BY:    DAY # & ESR DAILY STATUS (AEA), DAY # & ESR DAILY STATUS (ASA)
+
+
+458,.01       PAY PERIOD             0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>5!($L(X)<5)!'(X'?1P.E) X
+              LAST EDITED:      FEB 06, 1998 
+              HELP-PROMPT:      Answer must be 5 characters in length. 
+              DESCRIPTION:
+                                The year and pay period for the time and attendance records in the format of the last two digits of the year, a hyphen, and the two digit pay period number (e.g., 92-26 for 1992 and pay period 26).  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  458^B 
+                                1)= S ^PRST(458,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRST(458,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  458^AB^MUMPS 
+                                1)= S ^PRST(458,"AB",$$IC^PRSAPPU($P(X,"-"),4,10,)_"-"_$P(X,"-",2),DA)=""
+                                2)= K ^PRST(458,"AB",$$IC^PRSAPPU($P(X,"-"),4,10,)_"-"_$P(X,"-",2),DA)
+                                  This cross reference contains the 4 digit year associated with the .01 fields 2 digit year and pay period #.  The cross reference allows chronological sorting accross centuries.  This is in contrast to the "B" x-ref
+                                which contains a 2 digit year and does not sort chronologically accross new centuries. 
+                                 
+                                  The function call IC^PRSAPPU() infers a four digit year from the 2 digit year of the .01 field.  The inference is based upon the parameters passed to the function.  Namely, a future pivot year (parameter #3 - # of years
+                                from base date) is used to determine the end of the 100 year range that are valid for selection of the matching 4 digit year.  The number of years in parameter 4 are added to the base date (parameter 4 - default of today) 
+                                to determine the end of this range.  Parameter #2 is the format of the year returned (e.g. 4 returns a 4 digit year).  
+
+
+
+458,1         EMPLOYEE               E;0 POINTER Multiple #458.01
+
+              LAST EDITED:      AUG 26, 1992 
+              DESCRIPTION:
+                                Contains the time card data associated with the employee for this pay period.  
+
+
+458.01,.01      EMPLOYEE               0;1 POINTER TO PAID EMPLOYEE FILE (#450)
+
+                INPUT TRANSFORM:  I $D(X) S DINUM=X
+                LAST EDITED:      FEB 21, 1992 
+                DESCRIPTION:
+                                  A pointer to the PAID EMPLOYEE file (#450) which identifies the name of the employee.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.01,1        STATUS                 0;2 SET
+
+                                  'P' FOR RELEASED TO PAYROLL; 
+                                  'X' FOR XMITTED; 
+                                  'T' FOR TIMEKEEPER; 
+                LAST EDITED:      JAN 19, 1993 
+                DESCRIPTION:
+                                  The processing status of this employee's time card.  
+
+
+458.01,2        APP. SUPERVISOR        0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      AUG 12, 1992 
+                DESCRIPTION:
+                                  A pointer to the NEW PERSON file (#200) which identifies the name of the supervisor who approves the employee's time card.  
+
+
+458.01,3        APP. DATE/TIME         0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      NOV 27, 1992 
+                DESCRIPTION:
+                                  The date and time the supervisor approved the employee's time card.  
+
+
+458.01,4        ENTITLEMENT            0;5 POINTER TO PAY ENTITLEMENT FILE (#457.5)
+
+                LAST EDITED:      NOV 27, 1992 
+                DESCRIPTION:
+                                  This is a pointer to the Entitlement File and represents the Entitlement at the time the initial time decomposition is done.  It is used, if necessary, for time decomposition of prior pay period adjustments.  
+
+
+458.01,5        CUR. PP COMPRESSED INDICATOR 0;6 SET
+
+                                  'C' FOR Compressed; 
+                                  'F' FOR Flexitime; 
+                                  '0' FOR None; 
+                LAST EDITED:      MAY 30, 1995 
+                DESCRIPTION:
+                                  This field contains the value for the Compressed/Flex indicator for this Pay Period 
+
+
+458.01,6        NEXT PP COMPRESSED INDICATOR 0;7 SET
+
+                                  'C' FOR Compressed; 
+                                  'F' FOR Flexitime; 
+                                  '0' FOR None; 
+                LAST EDITED:      MAY 30, 1995 
+                DESCRIPTION:
+                                  This field contains the value for the Compressed/Flex indicator to be moved to the next pay period when opened.  
+
+
+458.01,7        TELEWORK INDICATOR     0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                OUTPUT TRANSFORM: S SUB454="TW" D:'$D(DIS(0)) OT^PRSDUTIL K SUB454
+                LAST EDITED:      MAY 14, 2012 
+                HELP-PROMPT:      Answer must be 1 character in length. 
+                DESCRIPTION:
+                                  This is the single character code that represents the type of eligibility of the employee for telework.  The possible codes are stored and maintained in the PAID CODE FILES file (#454) in the TELEWORK INDICATOR multiple.  
+
+                TECHNICAL DESCR:  The employee's current telework indicator (from File 450) is stored in this field upon certification of the employee's timecard.  This provides a historical reference for what the employee's telework indicator was during 
+                                  any given pay period.  
+
+
+458.01,10       DAY #                  D;0 Multiple #458.02
+
+                DESCRIPTION:
+                                  Contains all the time card data for each day of the pay period for the employee.  
+
+
+458.02,.01        DAY #                  0;1 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>14)!(X<1)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 21, 1992 
+                  HELP-PROMPT:      Type a Number between 1 and 14, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    The day number of the pay period.  
+
+                  RECORD INDEXES:   AEA (#78) (WHOLE FILE #458), ASA (#707) (WHOLE FILE #458)
+
+458.02,2          TOUR OF DUTY           0;2 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                  LAST EDITED:      MAR 04, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TOUR OF DUTY file (#457.1) which identifies the employee's tour of duty for this day.  
+
+
+458.02,3          TEMPORARY TOUR?        0;3 SET
+
+                                    '0' FOR NO; 
+                                    '1' FOR YES (CURRENT PP CHANGE); 
+                                    '2' FOR YES (NEXT PP CHANGE); 
+                  LAST EDITED:      JAN 12, 2000 
+                  HELP-PROMPT:      Select answer from choices. 
+                  DESCRIPTION:
+                                    Identifies the tour for this day as a temporary tour. Set as 1 if temporary tour change was made to current pay period or as 2 if tour change is effective with the next pay period.  
+
+
+458.02,4          PRIOR SCHEDULED TOUR   0;4 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                  LAST EDITED:      APR 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TOUR OF DUTY file (#457) which identifies the permanent tour of duty when a temporary tour of duty is being used in place of the permanent tour of duty.  
+
+                  CROSS-REFERENCE:  458^ATC^MUMPS 
+                                    1)= I $P(^PRST(458,DA(2),"E",DA(1),"D",DA,0),"^",5)="" S ^PRST(458,"ATC",DA(1),DA(2),DA)=""
+                                    2)= Q
+                                    This cross-reference is set whenever a tour change occurs and is used to indicate to the supervisor that a tour change has occurred and must be approved.  In the special case where a prior tour has yet to be approved 
+                                    (and hence the cross-reference is already set) and a new change supercedes the prior change, the cross-reference is not set as it has already been set.  
+
+
+
+458.02,5          SUPERVISOR             0;5 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      APR 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the NEW PERSON file (#200) that identifies the employee's supervisor for this day.  
+
+
+458.02,6          APPROVAL DATE/TIME     0;6 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      MAY 20, 1992 
+                  DESCRIPTION:
+                                    The date and time the supervisor approved the tour of duty change.  
+
+
+458.02,7          SUPR. ES               0;7 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>20!($L(X)<6) X
+                  OUTPUT TRANSFORM: S Y="<Hidden>"
+                  LAST EDITED:      MAY 25, 1995 
+                  HELP-PROMPT:      Answer must be 6-20 characters in length. 
+                  DESCRIPTION:
+                                    A free text response which is the supervisor's electronic signature code.  
+
+
+458.02,8          TOUR LENGTH            0;8 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>24)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      JUL 14, 1992 
+                  HELP-PROMPT:      Type a Number between 0 and 24, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The tour's length of time in hours and minutes.  
+
+
+458.02,9          TEMP TOUR T&L          0;9 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X I $D(X) S DIC="^PRST(455.5,",DIC(0)="QEM" D ^DIC K DIC S X=$S(Y>0:$P(Y,"^",2),1:"") K:$L(X)'=3 X
+                  LAST EDITED:      AUG 07, 1992 
+                  DESCRIPTION:
+                                    The Time and Leave Unit where the employee worked if a temporary tour of duty was worked.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(455.5,",DIC(0)="Q",D="B" D DQ^DICQ Q
+
+458.02,10         TOUR LAST POSTED BY    0;10 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      AUG 27, 1992 
+                  DESCRIPTION:
+                                    A pointer to the NEW PERSON file (#200) which identifies the last person who posted a tour for the employee for this day.  
+
+
+458.02,10.1       POSTING DATE/TIME      0;11 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      AUG 27, 1992 
+                  DESCRIPTION:
+                                    The date and time the data was posted for this employee for this day.  
+
+
+458.02,10.2       OBSERVED HOLIDAY       0;12 DATE
+
+                  INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      JUN 11, 1993 
+                  DESCRIPTION:
+                                    Identifies the day as an observed holiday for the date indicated.  
+
+
+458.02,10.3       SECOND TOUR OF DUTY    0;13 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                  LAST EDITED:      OCT 26, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TOUR OF DUTY file (#457.1) which identifies a second tour of duty the employee will work on this day.  
+
+
+458.02,10.4       TOUR #2 LENGTH         0;14 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>24)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      OCT 26, 1992 
+                  HELP-PROMPT:      Type a Number between 0 and 24, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The second tour's length of time in hours and minutes.  
+
+
+458.02,10.5       TOUR #2 T&L            0;15 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X I $D(X) S DIC="^PRST(455.5,",DIC(0)="QEM" D ^DIC K DIC S X=$S(Y>0:$P(Y,"^",2),1:"") K:$L(X)'=3 X
+                  LAST EDITED:      OCT 26, 1992 
+                  DESCRIPTION:
+                                    The Time and Leave Unit the second tour is associated with.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(455.5,",DIC(0)="Q",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,11         TOUR #1 SCH START TIME-1 1;1 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the first segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,12         TOUR #1 SCH STOP TIME-1 1;2 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the first segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,13         TOUR #1 SCH SPECIAL CODE-1 1;3 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the first segment of the first tour of duty for this day.  
+
+
+458.02,14         TOUR #1 SCH START TIME-2 1;4 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the second segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,15         TOUR #1 SCH STOP TIME-2 1;5 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the second segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,16         TOUR #1 SCH SPECIAL CODE-2 1;6 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the second segment of the first tour of duty for this day.  
+
+
+458.02,17         TOUR #1 SCH START TIME-3 1;7 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the third segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,18         TOUR #1 SCH STOP TIME-3 1;8 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the third segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,19         TOUR #1 SCH SPECIAL CODE-3 1;9 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the third segment of the first tour of duty for this day.  
+
+
+458.02,20         TOUR #1 SCH START TIME-4 1;10 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the fourth segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,21         TOUR #1 SCH STOP TIME-4 1;11 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the fourth segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,22         TOUR #1 SCH SPECIAL CODE-4 1;12 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the fourth segment of the first tour of duty for this day.  
+
+
+458.02,23         TOUR #1 SCH START TIME-5 1;13 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the fifth segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,24         TOUR #1 SCH STOP TIME-5 1;14 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the fifth segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,25         TOUR #1 SCH SPECIAL CODE-5 1;15 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the fifth segment of the first tour of duty for this day.  
+
+
+458.02,26         TOUR #1 SCH START TIME-6 1;16 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the sixth segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,27         TOUR #1 SCH STOP TIME-6 1;17 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the sixth segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,28         TOUR #1 SCH SPECIAL CODE-6 1;18 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the sixth segment of the first tour of duty for this day.  
+
+
+458.02,29         TOUR #1 SCH START TIME-7 1;19 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the seventh segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,30         TOUR #1 SCH STOP TIME-7 1;20 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the seventh segment of the first tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,31         TOUR #1 SCH SPECIAL CODE-7 1;21 FREE TEXT
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the seventh segment of the first tour of duty for this day.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,32         TOUR #2 SCH START TIME-1 4;1 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the first segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,32.1       TOUR #2 SCH STOP TIME-1 4;2 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the first segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,32.2       TOUR #2 SCH SPECIAL CODE-1 4;3 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the first segment of the second tour of duty for this day.  
+
+
+458.02,32.3       TOUR #2 SCH START TIME-2 4;4 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the second segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,32.4       TOUR #2 SCH STOP TIME-2 4;5 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the second segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,32.5       TOUR #2 SCH SPECIAL CODE-2 4;6 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the second segment of the second tour of duty for this day.  
+
+
+458.02,32.6       TOUR #2 SCH START TIME-3 4;7 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the third segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,32.7       TOUR #2 SCH STOP TIME-3 4;8 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the third segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,32.8       TOUR #2 SCH SPECIAL CODE-3 4;9 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the third segment of the second tour of duty for this day.  
+
+
+458.02,32.9       TOUR #2 SCH START TIME-4 4;10 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the fourth segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,33         TOUR #2 SCH STOP TIME-4 4;11 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the fourth segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,33.1       TOUR #2 SCH SPECIAL CODE-4 4;12 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the fourth segment of the second tour of duty for this day.  
+
+
+458.02,33.2       TOUR #2 SCH START TIME-5 4;13 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the fifth segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,33.3       TOUR #2 SCH STOP TIME-5 4;14 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the fifth segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,33.4       TOUR #2 SCH SPECIAL CODE-5 4;15 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the fifth segment of the second tour of duty for this day.  
+
+
+458.02,33.5       TOUR #2 SCH START TIME-6 4;16 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the sixth segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,33.6       TOUR #2 SCH STOP TIME-6 4;17 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the sixth segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,33.7       TOUR #2 SCH SPECIAL CODE-6 4;18 POINTER TO SPECIAL TOUR INDICATOR FILE (#457.2)
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the sixth segment of the second tour of duty for this day.  
+
+
+458.02,33.8       TOUR #2 SCH START TIME-7 4;19 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled start time for the seventh segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,33.9       TOUR #2 SCH STOP TIME-7 4;20 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The scheduled stop time for the seventh segment of the second tour of duty for this day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,34         TOUR #2 SCH SPECIAL CODE-7 4;21 FREE TEXT
+
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the SPECIAL TOUR INDICATOR file (#457.2) which identifies the scheduled type of special (non-regular) hours associated with the seventh segment of the second tour of duty for this day.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,41         WRK START TIME-1       2;1 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually began work/leave for the first time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,42         WRK STOP TIME-1        2;2 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually stopped work/leave for the first time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,43         WRK TYPE OF TIME-1     2;3 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the first segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,44         WRK SPECIAL CODE-1     2;4 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the first segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,45         WRK START TIME-2       2;5 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually began work/leave for the second time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,46         WRK STOP TIME-2        2;6 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually stopped work/leave for the second time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,47         WRK TYPE OF TIME-2     2;7 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the second segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,48         WRK SPECIAL CODE-2     2;8 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the second segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,49         WRK START TIME-3       2;9 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually began work/leave for the third time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,50         WRK STOP TIME-3        2;10 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually stopped work/leave for the third time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,51         WRK TYPE OF TIME-3     2;11 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the third segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,52         WRK SPECIAL CODE-3     2;12 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the third segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,53         WRK START TIME-4       2;13 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually began work/leave for the fourth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,54         WRK STOP TIME-4        2;14 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually stopped work/leave for the fourth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,55         WRK TYPE OF TIME-4     2;15 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the fourth segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,56         WRK SPECIAL CODE-4     2;16 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the fourth segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,57         WRK START TIME-5       2;17 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually began work/leave for the fifth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,58         WRK STOP TIME-5        2;18 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually stopped work/leave for the fifth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,59         WRK TYPE OF TIME-5     2;19 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the fifth segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,60         WRK SPECIAL CODE-5     2;20 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the fifth segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,61         WRK START TIME-6       2;21 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually began work/leave for the sixth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,62         WRK STOP TIME-6        2;22 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually stopped work/leave for the sixth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,63         WRK TYPE OF TIME-6     2;23 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the sixth segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,64         WRK SPECIAL CODE-6     2;24 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the sixth segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,65         WRK START TIME-7       2;25 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually began work/leave for the seventh time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,66         WRK STOP TIME-7        2;26 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The time the employee actually stopped work/leave for the seventh time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,67         WRK TYPE OF TIME-7     2;27 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the seventh segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,68         WRK SPECIAL CODE-7     2;28 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 29, 1992 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the seventh segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,70         T/K REMARKS            3;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>70!($L(X)<1) X
+                  LAST EDITED:      JUL 14, 1992 
+                  HELP-PROMPT:      Answer must be 1-70 characters in length. 
+                  DESCRIPTION:
+                                    A free text response for any timekeeper remarks.  
+
+
+458.02,71         TELEWORK HOURS SCHEDULED 8;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>24)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      MAY 10, 2012 
+                  HELP-PROMPT:      Enter telework hours performed on this day including any quarter hours (.25, .5, .75).  Telework hours must be less than or equal to the amount of work posted. 
+                  DESCRIPTION:
+                                    This is the actual number of hours the employee performed scheduled telework on the current day.  
+
+                  TECHNICAL DESCR:  Scheduled telework hours cannot exceed the actual telework hours scheduled and worked for the current day. Scheduled telework must be added to the tour of duty through the Timekeeper option Enter/Edit Employee Tour of
+                                    Duty.  If the telework is not scheduled through that option then it can not be entered in this field.  
+
+
+458.02,72         TELEWORK HOURS MEDICAL 8;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>24)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      MAY 10, 2012 
+                  HELP-PROMPT:      Enter telework hours performed on this day including any quarter hours (.25, .5, .75).  Telework hours must be less than or equal to the amount of work posted. 
+                  DESCRIPTION:
+                                    This is the actual number of hours the employee performed medical telework on the current day.  
+
+                  TECHNICAL DESCR:  The total telework hours cannot exceed the hours posted on the timecard for work for the current day.  Telework hours can be tour work plus overtime, less any leave taken.  Medical telework is telework performed by an
+                                    employee who is approved to telework due to medical circumstances.  This type of telework can be either ad hoc or scheduled.  
+
+
+458.02,73         TELEWORK HRS AD HOC SITU 8;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>24)!(X<0)!(X?.E1"."3.N) X
+                  LAST EDITED:      MAY 10, 2012 
+                  HELP-PROMPT:      Enter telework hours performed on this day including any quarter hours (.25, .5, .75).  Telework hours must be less than or equal to the amount of work posted. 
+                  DESCRIPTION:
+                                    This is the actual number of hours the employee performed ad hoc or situational telework on this day.  
+
+                  TECHNICAL DESCR:
+                                    The total telework hours cannot exceed the hours posted on the timecard for work.  So telework hours should be tour work plus overtime, less any leave taken.  
+
+
+458.02,74         TELEWORK TOUR          8;1 SET
+
+                                    'REG' FOR REGULAR SCHEDULED TELEWORK; 
+                                    'MED' FOR MEDICAL SCHEDULED TELEWORK; 
+                  LAST EDITED:      MAY 10, 2012 
+                  HELP-PROMPT:      Select type of scheduled telework for this employee. 
+                  DESCRIPTION:      This field designates the active tour for the current pay period as scheduled for telework.  The tour may be permanent or temporary. If it's a permanent tour, this designator will be copied into this same field for the
+                                    next pay period. If it's a temporary tour, the TELEWORK PRIOR SCHEDULED TOUR (#75) field contains the scheduled telework tour indicator for the permanent tour.  
+
+
+458.02,75         TELEWORK PRIOR SCHEDULED TOUR 8;5 SET
+
+                                    'REG' FOR REGULAR SCHEDULED TELEWORK; 
+                                    'MED' FOR MEDICAL SCHEDULED TELEWORK; 
+                  LAST EDITED:      MAY 10, 2012 
+                  HELP-PROMPT:      Select type of scheduled telework for this employee. 
+                  DESCRIPTION:      If the TELEWORK TOUR (#74) field contains the scheduled telework designator for a temporary tour, this field contains the indicator for the permanent tour, and will be copied into field #74 for the next pay period. If
+                                    the TELEWORK TOUR (#74) field contains a scheduled telework designator for a permanent tour, this field is null.  
+
+
+458.02,101        POSTING STATUS         10;1 SET
+
+                                    'T' FOR TIMEKEEPER POSTED; 
+                                    'P' FOR PAYROLL REVIEWED; 
+                                    'X' FOR TRANSMITTED; 
+                  LAST EDITED:      NOV 13, 1992 
+                  DESCRIPTION:
+                                    The status of this day's posting.  
+
+
+458.02,102        TIMEKEEPER POSTING     10;2 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      APR 24, 1992 
+                  DESCRIPTION:
+                                    A pointer to the NEW PERSON file (#200) which identifies the timekeeper who posted this day's entry.  
+
+
+458.02,103        TK DATE/TIME ENTERED   10;3 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      MAY 20, 1992 
+                  DESCRIPTION:
+                                    The date and time this day's entry was posted.  
+
+
+458.02,104        POSTING TYPE           10;4 SET
+
+                                    '1' FOR WORKED ENTIRE TOUR; 
+                                    '2' FOR ABSENT ENTIRE TOUR; 
+                                    '3' FOR IRREGULAR TOUR; 
+                  LAST EDITED:      MAY 29, 1992 
+                  DESCRIPTION:
+                                    Identifies the employee as having worked the entire tour, been absent the entire tour or having a mixture of work and leave hours during the tour.  
+
+
+458.02,110        ESR START TIME-1       5;1 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The start time for the 1st segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the first time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,111        ESR STOP TIME-1        5;2 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The end time for the 1st segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually stopped work/leave for the first time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,112        ESR TYPE OF TIME-1     5;3 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The type of work performed during the 1st segment of work. 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the first segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,113        ESR SPECIAL CODE-1     5;4 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The remarks code, if any, for the 1st segment of work. 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the first segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,114        ESR MEAL TIME-1        5;5 FREE TEXT
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<0)!(X?.E1"."1N.N) X I $D(X) K:X#15 X
+                  LAST EDITED:      JUL 28, 2005 
+                  HELP-PROMPT:      Enter 0, 15, 30, 45, or 60 as the best approximation of the actual meal time in minutes. 
+                  DESCRIPTION:      Enter the best approximation of time for the meal during this work segment in increments of 15 minutes.  Meals may not be longer than 60 minutes, so appropriate meal times are 15, 30, 45, and 60.  Enter a 0 or leave
+                                    the field blank to indicate that no meal was taken.  When meals are taken, they must be entered, even when they are not scheduled for that tour.  Meals may be entered for periods of both regular hours and leave. 
+                                    Entering the meal time will automatically deduct the meal from the total creditable hours in the work segment. 
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,115        ESR START TIME-2       5;6 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The start time for the 2nd segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the second time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,116        ESR STOP TIME-2        5;7 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The end time for the 2nd segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the second time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,117        ESR TYPE OF TIME-2     5;8 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The type of work performed during the 2nd segment of work. 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the second segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,118        ESR SPECIAL CODE-2     5;9 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The remarks code, if any, for the 2nd segment of work. 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the second segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,119        ESR MEAL TIME-2        5;10 FREE TEXT
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<0)!(X?.E1"."1N.N) X I $D(X) K:X#15 X
+                  LAST EDITED:      JAN 28, 2005 
+                  HELP-PROMPT:      Enter 0, 15, 30, 45, or 60 as the best approximation of the actual meal time in minutes. 
+                  DESCRIPTION:      Enter the best approximation of time for the meal during this work segment in increments of 15 minutes.  Meals may not be longer than 60 minutes, so appropriate meal times are 15, 30, 45, and 60.  Enter a 0 or leave
+                                    the field blank to indicate that no meal was taken.  When meals are taken, they must be entered, even when they are not scheduled for that tour.  Meals may be entered for periods of both regular hours and leave. 
+                                    Entering the meal time will automatically deduct the meal from the total creditable hours in the work segment. 
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,120        ESR START TIME-3       5;11 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The start time for the 3rd segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the third time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,121        ESR STOP TIME-3        5;12 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The end time for the 3rd segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the third time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,122        ESR TYPE OF TIME-3     5;13 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The type of work performed during the 3rd segment of work. 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the third segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,123        ESR SPECIAL CODE-3     5;14 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The remarks code, if any, for the 3rd segment of work. 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the third segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,124        ESR MEAL TIME-3        5;15 FREE TEXT
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<0)!(X?.E1"."1N.N) X I $D(X) K:X#15 X
+                  LAST EDITED:      JAN 28, 2005 
+                  HELP-PROMPT:      Enter 0, 15, 30, 45, or 60 as the best approximation of the actual meal time in minutes. 
+                  DESCRIPTION:      Enter the best approximation of time for the meal during this work segment in increments of 15 minutes.  Meals may not be longer than 60 minutes, so appropriate meal times are 15, 30, 45, and 60.  Enter a 0 or leave
+                                    the field blank to indicate that no meal was taken.  When meals are taken, they must be entered, even when they are not scheduled for that tour.  Meals may be entered for periods of both regular hours and leave. 
+                                    Entering the meal time will automatically deduct the meal from the total creditable hours in the work segment.  
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,125        ESR START TIME-4       5;16 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The start time for the 4th segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the fourth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,126        ESR STOP TIME-4        5;17 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The end time for the 4th segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the fourth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,127        ESR TYPE OF TIME-4     5;18 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The type of work performed during the 4th segment of work. 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the fourth segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,128        ESR SPECIAL CODE-4     5;19 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The remarks code, if any, for the 4th segment of work. 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the fourth segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,129        ESR MEAL TIME-4        5;20 FREE TEXT
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<0)!(X?.E1"."1N.N) X I $D(X) K:X#15 X
+                  LAST EDITED:      JAN 28, 2005 
+                  HELP-PROMPT:      Enter 0, 15, 30, 45, or 60 as the best approximation of the actual meal time in minutes. 
+                  DESCRIPTION:      Enter the best approximation of time for the meal during this work segment in increments of 15 minutes.  Meals may not be longer than 60 minutes, so appropriate meal times are 15, 30, 45, and 60.  Enter a 0 or leave
+                                    the field blank to indicate that no meal was taken.  When meals are taken, they must be entered, even when they are not scheduled for that tour.  Meals may be entered for periods of both regular hours and leave. 
+                                    Entering the meal time will automatically deduct the meal from the total creditable hours in the work segment. 
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,130        ESR START TIME-5       5;21 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The start time for the 5th segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the fifth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,131        ESR STOP TIME-5        5;22 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The end time for the 5th segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the fifth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,132        ESR TYPE OF TIME-5     5;23 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The type of work performed during the 5th segment of work. 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the fifth segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,133        ESR SPECIAL CODE-5     5;24 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The remarks code, if any, for the 5th segment of work. 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the fifth segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,134        ESR MEAL TIME-5        5;25 FREE TEXT
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<0)!(X?.E1"."1N.N) X I $D(X) K:X#15 X
+                  LAST EDITED:      JAN 28, 2005 
+                  HELP-PROMPT:      Enter 0, 15, 30, 45, or 60 as the best approximation of the actual meal time in minutes. 
+                  DESCRIPTION:      Enter the best approximation of time for the meal during this work segment in increments of 15 minutes.  Meals may not be longer than 60 minutes, so appropriate meal times are 15, 30, 45, and 60.  Enter a 0 or leave
+                                    the field blank to indicate that no meal was taken.  When meals are taken, they must be entered, even when they are not scheduled for that tour. Meals may be entered for periods of both regular hours and leave. 
+                                    Entering the meal time will automatically deduct the meal from the total creditable hours in the work segment. 
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,135        ESR START TIME-6       5;26 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The start time for the 6th segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the sixth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,136        ESR STOP TIME-6        5;27 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The end time for the 6th segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the sixth time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,137        ESR TYPE OF TIME-6     5;28 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The type of work performed during the 6th segment of work. 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the sixth segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,138        ESR SPECIAL CODE-6     5;29 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The remarks code, if any, for the 6th segment of work. 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the sixth segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,139        ESR MEAL TIME-6        5;30 FREE TEXT
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<0)!(X?.E1"."1N.N) X I $D(X) K:X#15 X
+                  LAST EDITED:      JAN 28, 2005 
+                  HELP-PROMPT:      Enter 0, 15, 30, 45, or 60 as the best approximation of the actual meal time in minutes. 
+                  DESCRIPTION:      Enter the best approximation of time for the meal during this work segment in increments of 15 minutes.  Meals may not be longer than 60 minutes, so appropriate meal times are 15, 30, 45, and 60.  Enter a 0 or leave
+                                    the field blank to indicate that no meal was taken.  When meals are taken, they must be entered, even when they are not scheduled for that tour.  Meals may be entered for periods of both regular hours and leave. 
+                                    Entering the meal time will automatically deduct the meal from the total creditable hours in the work segment. 
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,140        ESR START TIME-7       5;31 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The start time for the 7th segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the seventh time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,141        ESR STOP TIME-7        5;32 FREE TEXT
+
+                  INPUT TRANSFORM:  D:$D(X) ^PRSATIM
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The end time for the 7th segment of work. 
+                  DESCRIPTION:
+                                    The time the Part Time Physician actually began work/leave for the seventh time segment of the work day.  
+
+                  EXECUTABLE HELP:  D HLP^PRSATIM
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,142        ESR TYPE OF TIME-7     5;33 FREE TEXT
+
+                  INPUT TRANSFORM:  S DIC=457.3,DIC(0)="EMQ",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))" D ^DIC K DIC S X=$P(Y,"^",2) K:Y'>0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The type of work performed during the 7th segment of work. 
+                  DESCRIPTION:
+                                    The type of time worked or leave taken for the seventh segment of the work day.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(457.3,",DIC(0)="Q",DIC("S")="I $S('$D(ZENT):1,1:ZENT[$P(^(0),U,1))",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,143        ESR SPECIAL CODE-7     5;34 POINTER TO TIME REMARKS FILE (#457.4)
+
+                  INPUT TRANSFORM:  S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                  LAST EDITED:      JAN 22, 2005 
+                  HELP-PROMPT:      The remarks code, if any, for the 7th segment of work. 
+                  DESCRIPTION:
+                                    A pointer to the TIME REMARKS file (#457.4) which identifies a time remark with the type of time worked or leave taken for the seventh segment of the work day.  
+
+                  SCREEN:           S DIC("S")="I $S('$D(TT):1,1:$P(^(0),U,3)[TT)"
+                  EXPLANATION:      Select only valid time remarks for Type of Time.
+
+458.02,144        ESR MEAL TIME-7        5;35 FREE TEXT
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>60)!(X<0)!(X?.E1"."1N.N) X I $D(X) K:X#15 X
+                  LAST EDITED:      JAN 28, 2005 
+                  HELP-PROMPT:      Enter 0, 15, 30, 45, or 60 as the best approximation of the actual meal time in minutes. 
+                  DESCRIPTION:      Enter the best approximation of time for the meal during this work segment in increments of 15 minutes.  Meals may not be longer than 60 minutes, so appropriate meal times are 15, 30, 45, and 60.  Enter a 0 or leave
+                                    the field blank to indicate that no meal was taken.  When meals are taken, they must be entered, even when they are not scheduled for that tour.  Meals may be entered for periods of both regular hours and leave. 
+                                    Entering the meal time will automatically deduct the meal from the total creditable hours in the work segment. 
+
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.02,145        DAILY ESR REMARKS      6;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>70!($L(X)<1) X
+                  LAST EDITED:      OCT 01, 2004 
+                  HELP-PROMPT:      Answer must be 1-70 characters in length 
+                  DESCRIPTION:
+                                    Any comments entered by the Part Time Physician.  
+
+
+458.02,146        ESR DAILY STATUS       7;1 SET
+
+                                    '1' FOR NOT STARTED; 
+                                    '2' FOR PENDING; 
+                                    '3' FOR RESUBMIT; 
+                                    '4' FOR SIGNED; 
+                                    '5' FOR APPROVED; 
+                                    '6' FOR DAY OFF; 
+                  LAST EDITED:      APR 26, 2005 
+                  HELP-PROMPT:      Answer must be 1 character in length 
+                  DESCRIPTION:
+                                    The status of the Part Time Physician's daily Electronic Subsidiary Record (ESR).  
+
+                  RECORD INDEXES:   AEA (#78) (WHOLE FILE #458), ASA (#707) (WHOLE FILE #458)
+
+458.02,147        PT PHYSICIAN DATE/TIME STAMP 7;2 DATE
+
+                  INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:X<1 X
+                  LAST EDITED:      FEB 25, 2005 
+                  HELP-PROMPT:      (No range limit on date) 
+                  DESCRIPTION:
+                                    The Date and Time the Part Time Physician electronically signed their daily ESR record.  
+
+
+458.02,148        ESR SUPERVISOR REMARKS 6;2 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>21!($L(X)<1) X
+                  LAST EDITED:      APR 28, 2005 
+                  HELP-PROMPT:      Answer must be 1-21 characters in length 
+                  DESCRIPTION:      Enter a brief comment that will be displayed to the part-time physician when they resubmit the daily ESR. 
+                                     
+
+
+458.02,149        ESR DAY LAST SIGN METHOD 7;3 SET
+
+                                    '1' FOR MANUAL POST; 
+                                    '2' FOR EXTENDED ABSENCE; 
+                                    '3' FOR LEAVE REQUEST; 
+                                    '4' FOR HOLIDAY; 
+                  LAST EDITED:      JAN 28, 2005 
+                  HELP-PROMPT:      How the signature for the current ESR data was obtained. 
+                  DESCRIPTION:      This field indicates how the current ESR record was signed.  
+                                     
+                                    When the employee signs an ESR day, this field is set with code 1 for employee manual post. If the auto posting of either an extended absence or a leave request changes field 146--ESR DAILY STATUS--to signed, then the
+                                    field is update with code 2 or 3 respectively. 
+                                     
+                                    If the employee signature is removed via supervisor rework request, employee edit, cancellation of extended absence, or cancellation of leave, the value in the field will be deleted.  
+
+
+
+
+458.01,20       DAY 1 VCS/FEE AMOUNT     2;1 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the first day of the pay period.  
+
+
+458.01,21       DAY 2 VCS/FEE AMOUNT     2;2 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the second day of the pay period.  
+
+
+458.01,22       DAY 3 VCS/FEE AMOUNT     2;3 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the third day of the pay period.  
+
+
+458.01,23       DAY 4 VCS/FEE AMOUNT     2;4 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the fourth day of the pay period.  
+
+
+458.01,24       DAY 5 VCS/FEE AMOUNT     2;5 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the fifth day of the pay period.  
+
+
+458.01,25       DAY 6 VCS/FEE AMOUNT     2;6 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the sixth day of the pay period.  
+
+
+458.01,26       DAY 7 VCS/FEE AMOUNT     2;7 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the seventh day of the pay period.  
+
+
+458.01,27       DAY 8 VCS/FEE AMOUNT     2;8 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the eighth day of the pay period.  
+
+
+458.01,28       DAY 9 VCS/FEE AMOUNT     2;9 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the ninth day of the pay period.  
+
+
+458.01,29       DAY 10 VCS/FEE AMOUNT    2;10 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the tenth day of the pay period.  
+
+
+458.01,30       DAY 11 VCS/FEE AMOUNT    2;11 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the eleventh day of the pay period.  
+
+
+458.01,31       DAY 12 VCS/FEE AMOUNT    2;12 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the twelfth day of the pay period.  
+
+
+458.01,32       DAY 13 VCS/FEE AMOUNT    2;13 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the thirteenth day of the pay period.  
+
+
+458.01,33       DAY 14 VCS/FEE AMOUNT    2;14 NUMBER
+
+                  INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999)!(X<0) X
+                  OUTPUT TRANSFORM: S Y=$J(Y,7,2)
+                  LAST EDITED:      MAR 25, 1992 
+                  HELP-PROMPT:      Type a Dollar Amount between 0 and 9999, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    VCS or Fee Basis Appointee amount, in dollars and cents, for the fourteenth day of the pay period.  
+
+
+458.01,34       VCS/FEE POSTING PERSON   2;15 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                  LAST EDITED:      NOV 29, 1995 
+                  DESCRIPTION:
+                                    A pointer to the NEW PERSON file (#200) which identifies the person posting the VCS/Fee amounts for this employee.  
+
+
+458.01,35       LAST POSTING DATE/TIME   2;16 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      AUG 26, 1992 
+                  DESCRIPTION:
+                                    The most recent date and time the VCS/Fee amounts were posted for this employee.  
+
+
+458.01,36       VCS/FEE APPROVED BY      2;17 POINTER TO NEW PERSON FILE (#200)
+
+                  LAST EDITED:      NOV 29, 1995 
+                  DESCRIPTION:
+                                    A pointer to the NEW PERSON file (#200) which identifies the person who approves the accuracy of the VCS/Fee amounts for this employee.  
+
+
+458.01,37       VCS/FEE APPROVED DATE/TIME 2;18 DATE
+
+                  INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      NOV 29, 1995 
+                  DESCRIPTION:
+                                    The date and time the accuracy of the VCS/Fee amounts for this employee were approved.  
+
+
+458.01,40       NEW T&L                  3;1 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X I $D(X) S DIC="^PRST(455.5,",DIC(0)="QEM" D ^DIC K DIC S X=$S(Y>0:$P(^PRST(455.5,+Y,0),U,1),1:"") K:$L(X)'=3 X
+                  LAST EDITED:      MAR 31, 1992 
+                  DESCRIPTION:
+                                    This field will be coded only to change the employee's time and leave unit.  
+
+                  EXECUTABLE HELP:  N D,X,DIC,DO S DIC="^PRST(455.5,",DIC(0)="Q",D="B" D DQ^DICQ Q
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.01,41       LUMP SUM UNITS           3;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999.75)!(X<0)!(X?.E1"."3N.N) X I $D(X) S Y=$P(X,".",2) I Y,Y'=5,Y'=25,Y'=75 K X
+                  LAST EDITED:      FEB 17, 1993 
+                  HELP-PROMPT:      Type a Number between 0 and 999.75, 2 Decimal Digits (.25, .5, or .75 only) 
+                  DESCRIPTION:
+                                    The number of hours or days of annual leave a day shift employee has when separating.  
+
+
+458.01,42       LUMP SUM UNITS 2         3;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999.75)!(X<0)!(X?.E1"."3N.N) X I $D(X) S Y=$P(X,".",2) I Y,Y'=5,Y'=25,Y'=75 K X
+                  LAST EDITED:      FEB 17, 1993 
+                  HELP-PROMPT:      Type a Number between 0 and 999.75, 2 Decimal Digits (.25, .5, or .75 only) 
+                  DESCRIPTION:
+                                    The number of hours or days of annual leave a second shift employee has when separating.  
+
+
+458.01,43       LUMP SUM UNITS 3         3;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999.75)!(X<0)!(X?.E1"."3N.N) X I $D(X) S Y=$P(X,".",2) I Y,Y'=5,Y'=25,Y'=75 K X
+                  LAST EDITED:      FEB 17, 1993 
+                  HELP-PROMPT:      Type a Number between 0 and 999.75, 2 Decimal Digits (.25, .5, or .75 only) 
+                  DESCRIPTION:
+                                    The number of hours or days of annual leave a third shift employee has when separating.  
+
+
+458.01,44       LUMP SUM EXP. DATE       3;5 DATE
+
+                  INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      MAR 31, 1992 
+                  DESCRIPTION:
+                                    The date the separating employee's annual leave will expire.  
+
+
+458.01,45       PAYMENT RECORD           3;6 SET
+
+                                    'Y' FOR YES; 
+                                    'N' FOR NO; 
+                  LAST EDITED:      MAR 31, 1992 
+                  DESCRIPTION:
+                                    Indicates Payroll has requested a current "Record of Salary Payments" for this employee.  
+
+
+458.01,46       OPT. W/H TAX             3;7 SET
+
+                                    'Y' FOR YES; 
+                                    'N' FOR NO; 
+                  LAST EDITED:      MAR 31, 1992 
+                  DESCRIPTION:
+                                    Indicates the employee elects the optional method of withholding Federal income tax from the lump-sum payment.  
+
+
+458.01,47       FOREIGN COLA             3;8 SET
+
+                                    'Y' FOR YES; 
+                                    'N' FOR NO; 
+                  LAST EDITED:      MAR 31, 1992 
+                  DESCRIPTION:
+                                    Indicates the exclusion of a foreign cost-of-living-allowance from the employee's lump-sum payment.  
+
+
+458.01,48       DAY NUMBER               3;9 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3)!'(X?3N) X I $D(X),X<1!(X>366) K X
+                  LAST EDITED:      SEP 18, 1992 
+                  HELP-PROMPT:      Answer must be 3 digits in length and between 001 and 366. 
+                  DESCRIPTION:
+                                    Indicates the day number of the last day of duty or date of effectiveness of the transaction for this employee.  
+
+
+458.01,50       FEE TOTAL HOURS          2;19 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>224)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      NOV 28, 1995 
+                  HELP-PROMPT:      Type a Number between 0 and 224, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    Total hours for Fee Basis Appointee during the Pay Period.  
+
+
+458.01,51       FEE TOTAL DAYS           2;20 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>14)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      NOV 28, 1995 
+                  HELP-PROMPT:      Type a Number between 0 and 14, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    Total number of Days worked by Fee Basis Appointee.  
+
+
+458.01,52       FEE TOTAL PROCEDURES     2;21 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      NOV 28, 1995 
+                  HELP-PROMPT:      Type a Number between 0 and 999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                    This is total number of procedures by Fee Basis Appointee.  
+
+
+458.01,60       ENVIR. DIFF. WK 1 # 1    4;1 POINTER TO ENVIRONMENTAL DIFFERENTIALS FILE (#457.6)
+
+                  LAST EDITED:      JUL 17, 1992 
+                  DESCRIPTION:
+                                    A pointer to the ENVIRONMENTAL DIFFERENTIALS file (#457.6) which identifies the first type of environmental hazard the employee is being exposed to in the first week of the pay period.  
+
+
+458.01,61       ENVIR. DIFF. WK 1 # 1 HRS 4;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>160)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      JUL 17, 1992 
+                  HELP-PROMPT:      Type a Number between 0 and 160, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The number of hours for which environmental differential pay will be paid for the first type of exposure for the first week of the pay period.  
+
+
+458.01,62       ENVIR. DIFF. WK 1 # 2    4;3 POINTER TO ENVIRONMENTAL DIFFERENTIALS FILE (#457.6)
+
+                  LAST EDITED:      JUL 17, 1992 
+                  DESCRIPTION:
+                                    A pointer to the ENVIRONMENTAL DIFFERENTIALS file (#457.6) which identifies the second type of environmental hazard the employee is being exposed to in the first week of the pay period.  
+
+
+458.01,63       ENVIR. DIFF. WK 1 # 2 HRS 4;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>160)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      JUL 17, 1992 
+                  HELP-PROMPT:      Type a Number between 0 and 160, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The number of hours for which environmental differential pay will be paid for the second type of exposure for the first week of the pay period.  
+
+
+458.01,64       ENVIR. DIFF. WK 1 # 3    4;5 POINTER TO ENVIRONMENTAL DIFFERENTIALS FILE (#457.6)
+
+                  LAST EDITED:      JUL 17, 1992 
+                  DESCRIPTION:
+                                    A pointer to the ENVIRONMENTAL DIFFERENTIALS file (#457.6) which identifies the third type of environmental hazard the employee is being exposed to in the first week of the pay period.  
+
+
+458.01,65       ENVIR. DIFF. WK 1 # 3 HRS 4;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>160)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      JUL 17, 1992 
+                  HELP-PROMPT:      Type a Number between 0 and 160, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The number of hours for which environmental differential pay will be paid for the third type of exposure for the first week of the pay period.  
+
+
+458.01,66       ENVIR. DIFF. WK 2 # 1    4;7 POINTER TO ENVIRONMENTAL DIFFERENTIALS FILE (#457.6)
+
+                  LAST EDITED:      JUL 17, 1992 
+                  DESCRIPTION:
+                                    A pointer to the ENVIRONMENTAL DIFFERENTIALS file (#457.6) which identifies the first type of environmental hazard the employee is being exposed to in the second week of the pay period.  
+
+
+458.01,67       ENVIR. DIFF. WK 2 # 1 HRS 4;8 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>160)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      JUL 17, 1992 
+                  HELP-PROMPT:      Type a Number between 0 and 160, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The number of hours for which environmental differential pay will be paid for the first type of exposure for the second week of the pay period.  
+
+
+458.01,68       ENVIR. DIFF. WK 2 # 2    4;9 POINTER TO ENVIRONMENTAL DIFFERENTIALS FILE (#457.6)
+
+                  LAST EDITED:      JUL 17, 1992 
+                  DESCRIPTION:
+                                    A pointer to the ENVIRONMENTAL DIFFERENTIALS file (#457.6) which identifies the second type of environmental hazard the employee is being exposed to in the second week of the pay period.  
+
+
+458.01,69       ENVIR. DIFF. WK 2 # 2 HRS 4;10 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>160)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      JUL 17, 1992 
+                  HELP-PROMPT:      Type a Number between 0 and 160, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The number of hours for which environmental differential pay will be paid for the second type of exposure for the second week of the pay period.  
+
+
+458.01,70       ENVIR. DIFF. WK 2 # 3    4;11 POINTER TO ENVIRONMENTAL DIFFERENTIALS FILE (#457.6)
+
+                  LAST EDITED:      JUL 17, 1992 
+                  DESCRIPTION:
+                                    A pointer to the ENVIRONMENTAL DIFFERENTIALS file (#457.6) which identifies the third type of environmental hazard the employee is being exposed to in the second week of the pay period.  
+
+
+458.01,71       ENVIR. DIFF. WK 2 # 3 HRS 4;12 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>160)!(X<0)!(X?.E1"."3N.N) X
+                  LAST EDITED:      JUL 17, 1992 
+                  HELP-PROMPT:      Type a Number between 0 and 160, 2 Decimal Digits 
+                  DESCRIPTION:
+                                    The number of hours for which environmental differential pay will be paid for the third type of exposure for the second week of the pay period.  
+
+
+458.01,101      AUDIT RECORD             X;0 Multiple #458.1101 (Add New Entry without Asking)
+
+                  DESCRIPTION:
+                                    A log of changes made to the employee's time card.  
+
+
+458.1101,.01      AUDIT RECORD             0;1 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                    LAST EDITED:      AUG 26, 1992 
+                    HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                    DESCRIPTION:
+                                      A sequential number assigned to previous time card entry changes for this employee in this pay period.  
+
+                    CROSS-REFERENCE:  458.1101^B 
+                                      1)= S ^PRST(458,DA(2),"E",DA(1),"X","B",$E(X,1,30),DA)=""
+                                      2)= K ^PRST(458,DA(2),"E",DA(1),"X","B",$E(X,1,30),DA)
+
+
+458.1101,1        DATE/TIME AUDITED        0;2 DATE (Required)
+
+                    INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      AUG 26, 1992 
+                    DESCRIPTION:
+                                      The date and time the time card entry was changed.  
+
+
+458.1101,2        PERSON CHANGING RECORD   0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                    LAST EDITED:      AUG 26, 1992 
+                    DESCRIPTION:
+                                      A pointer to the NEW PERSON file (#200) which identifies the person changing the time card record.  
+
+
+458.1101,3        TYPE OF RECORD           0;4 SET (Required)
+
+                                      'T' FOR TIME; 
+                                      'V' FOR VCS/FEE; 
+                                      'H' FOR HAZARD/ENVIR DIFF; 
+                    LAST EDITED:      NOV 29, 1995 
+                    DESCRIPTION:
+                                      The portion of the time card being changed; time worked/leave taken, Veterans Canteen Service sales, environmental differential/hazard pay, or Fee Basis Appointee data.  
+
+
+458.1101,4        STATUS                   0;5 SET (Required)
+
+                                      'R' FOR REQUESTED; 
+                                      'A' FOR APPROVED; 
+                                      'P' FOR PAYROLL PROCESSED; 
+                                      'D' FOR DISAPPROVED; 
+                                      'X' FOR CANCELLED; 
+                                      'S' FOR SUPR. APPROVED; 
+                    LAST EDITED:      MAY 27, 1993 
+                    DESCRIPTION:
+                                      The status of the time card change.  
+
+                    CROSS-REFERENCE:  458^AX^MUMPS 
+                                      1)= I "ARS"[X S ^PRST(458,"AX"_X,DA(1),DA(2),DA)=""
+                                      2)= K ^PRST(458,"AX"_X,DA(1),DA(2),DA)
+                                      This cross-reference sets an AXR for requested correction entries, AXS for supervisor approved entries, and AXA for final approved entries.  
+
+
+
+458.1101,5        CLEARING PERSONNEL CLERK 0;6 POINTER TO NEW PERSON FILE (#200)
+
+                    LAST EDITED:      MAR 30, 1993 
+                    DESCRIPTION:
+                                      This field contains the DUZ number of the Payroll Clerk who cleared this change.  
+
+
+458.1101,6        CLEARING DATE/TIME       0;7 DATE
+
+                    INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      MAR 30, 1993 
+                    DESCRIPTION:
+                                      This field contains the date/time the change was cleared.  
+
+
+458.1101,7        APPROVAL PERSON          0;8 POINTER TO NEW PERSON FILE (#200)
+
+                    LAST EDITED:      JUN 01, 1993 
+                    DESCRIPTION:
+                                      This is the second-level approver who took action on the correction. 
+
+
+458.1101,8        APPROVAL DATE/TIME       0;9 DATE
+
+                    INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      JUN 01, 1993 
+                    DESCRIPTION:
+                                      This is the date/time at which the second-level approver took action on this correction.  
+
+
+458.1101,9        APP. SUPERVISOR          0;10 POINTER TO NEW PERSON FILE (#200)
+
+                    LAST EDITED:      DEC 10, 1993 
+                    DESCRIPTION:
+                                      This is the supervisor who took action on the correction.  
+
+
+458.1101,9.5      APP. SUPERVISOR DATE/TIME 0;11 DATE
+
+                    INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+                    LAST EDITED:      DEC 10, 1993 
+                    DESCRIPTION:
+                                      This is the date/time the supervisor took action on this correction.  
+
+
+458.1101,10       OLD RECORD #1            1;1 FREE TEXT (Required)
+
+                    INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                    LAST EDITED:      MAR 25, 1993 
+                    HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                    DESCRIPTION:
+                                      The first node of the original record.  
+
+
+458.1101,11       OLD RECORD #2            2;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                    LAST EDITED:      MAR 25, 1993 
+                    HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                    DESCRIPTION:
+                                      This is the second node, if necessary, of the original record.  
+
+
+458.1101,12       OLD RECORD #3            3;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                    LAST EDITED:      MAR 25, 1993 
+                    HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                    DESCRIPTION:
+                                      This is the third node, if necessary, of the original record.  
+
+
+458.1101,13       OLD RECORD #4            4;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                    LAST EDITED:      MAR 25, 1993 
+                    HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                    DESCRIPTION:
+                                      This is thre fourth node, if necessary, of the original record.  
+
+
+458.1101,14       OLD RECORD #5            5;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                    LAST EDITED:      MAR 25, 1993 
+                    HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                    DESCRIPTION:
+                                      This is the fifth node, if necessary, of the original record.  
+
+
+458.1101,15       OLD RECORD #6            6;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                    LAST EDITED:      MAR 25, 1993 
+                    HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                    DESCRIPTION:
+                                      This is the sixth node, if necessary, of the original record.  
+
+
+458.1101,20       REMARKS                  7;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>60!($L(X)<3) X
+                    LAST EDITED:      MAY 09, 1994 
+                    HELP-PROMPT:      Answer must be 3-60 characters in length. 
+                    DESCRIPTION:
+                                      This field contains any remarks the posting person may choose to make when entering a time card correction.  
+
+
+
+
+458.01,102      8B RECORD                  5;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                    LAST EDITED:      AUG 27, 1992 
+                    HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                    DESCRIPTION:
+                                      The character string that makes up the 8B record that is transmitted to the Austin Automation Center.  
+
+
+458.01,105      LD AUDIT                   LDAUD;0 Multiple #458.1105 (Add New Entry without Asking)
+
+
+458.1105,.01      AUDIT SEQUENCE             0;1 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1.N) X
+                      LAST EDITED:      SEP 03, 2003 
+                      HELP-PROMPT:      Type a number between 1 and 999, 0 Decimal Digits 
+                      CROSS-REFERENCE:  458.1105^B 
+                                        1)= S ^PRST(458,DA(2),"E",DA(1),"LDAUD","B",$E(X,1,30),DA)=""
+                                        2)= K ^PRST(458,DA(2),"E",DA(1),"LDAUD","B",$E(X,1,30),DA)
+
+
+458.1105,1        DATE OF AUDIT              0;2 DATE
+
+                      INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                      LAST EDITED:      SEP 04, 2003 
+                      HELP-PROMPT:      (No range limit on date) 
+                      NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+458.1105,2        LABOR DIST CODE CHANGED BY 0;3 POINTER TO NEW PERSON FILE (#200)
+
+                      LAST EDITED:      SEP 03, 2003 
+
+458.1105,3        TYPE OF INTERFACE          0;4 FREE TEXT
+
+                      INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+                      OUTPUT TRANSFORM: S Y(0)=Y S SUB454="TOI" D:'$D(DIS(0)) OT^PRSDUTIL K SUB454
+                      LAST EDITED:      SEP 08, 2003 
+                      HELP-PROMPT:      Answer must be 1 character in length 
+
+458.1105,4        LABOR DISTRIBUTION         LD;0 Multiple #458.11054 (Add New Entry without Asking)
+
+
+458.11054,.01       DISTRIBUTION NUMBER        0;1 NUMBER
+
+                        INPUT TRANSFORM:  K:+X'=X!(X>4)!(X<1)!(X?.E1"."1.N) X
+                        LAST EDITED:      SEP 03, 2003 
+                        HELP-PROMPT:      Type a number between 1 and 4, 0 Decimal Digits 
+                        CROSS-REFERENCE:  458.11054^B 
+                                          1)= S ^PRST(458,DA(3),"E",DA(2),"LDAUD",DA(1),"LD","B",$E(X,1,30),DA)=""
+                                          2)= K ^PRST(458,DA(3),"E",DA(2),"LDAUD",DA(1),"LD","B",$E(X,1,30),DA)
+
+
+458.11054,1         CODE                       0;2 FREE TEXT
+
+                        INPUT TRANSFORM:  K:$L(X)>4!($L(X)<4) X
+                        LAST EDITED:      SEP 03, 2003 
+                        HELP-PROMPT:      Answer must be 4 characters in length 
+
+458.11054,2         PERCENT                    0;3 NUMBER
+
+                        INPUT TRANSFORM:  K:+X'=X!(X>1)!(X<0)!(X?.E1"."3.N) X
+                        LAST EDITED:      SEP 03, 2003 
+                        HELP-PROMPT:      Type a number between 0 and 1, 2 Decimal Digits 
+
+458.11054,3         COST CENTER                0;4 FREE TEXT
+
+                        INPUT TRANSFORM:  K:$L(X)>4!($L(X)<4) X
+                        LAST EDITED:      SEP 03, 2003 
+                        HELP-PROMPT:      Answer must be 4 characters in length 
+
+458.11054,4         FUND CTRL PT               0;5 FREE TEXT
+
+                        INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                        LAST EDITED:      SEP 03, 2003 
+                        HELP-PROMPT:      Answer must be 3 characters in length 
+
+
+
+
+
+458.01,201      TMP 1                          T;1 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the first day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,202      TMP 2                          T;2 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the second day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,203      TMP 3                          T;3 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the third day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,204      TMP 4                          T;4 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the fourth day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,205      TMP 5                          T;5 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the fifth day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,206      TMP 6                          T;6 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the sixth day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,207      TMP 7                          T;7 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the seventh day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,208      TMP 8                          T;8 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the eighth day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,209      TMP 9                          T;9 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the ninth day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,210      TMP 10                         T;10 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the tenth day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,211      TMP 11                         T;11 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the eleventh day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,212      TMP 12                         T;12 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the twelfth day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,213      TMP 13                         T;13 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the thirteenth day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+458.01,214      TMP 14                         T;14 POINTER TO TOUR OF DUTY FILE (#457.1)
+
+                        INPUT TRANSFORM:  S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                        LAST EDITED:      AUG 13, 1992 
+                        DESCRIPTION:
+                                          A pointer to the TOUR OF DUTY file (#457.1) and used to temporarily store and edit the employee's tour for the fourteenth day of the pay period.  
+
+                        SCREEN:           S DIC("S")="I "_$S($E(ENT,1)="D":"Y<3",1:"Y>5!(Y=1)")_",$P(^PRST(457.1,+Y,0),U,4)!($D(^PRST(457.1,+Y,""T"",""B"",WTL)))"
+                        EXPLANATION:      Allow only authorized tours for T&L
+
+
+
+458,2         TRANSMITTING CLERK     0;2 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      SEP 28, 1992 
+              DESCRIPTION:
+                                A pointer to the NEW PERSON file (#200) which identifies the payroll person performing the transmission of the pay period data to the Austin Automation Center.  
+
+
+458,3         TRANSMITTING DATE/TIME 0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      SEP 28, 1992 
+              DESCRIPTION:
+                                The date and time of the transmission of pay period data to the Austin Automation Center.  
+
+
+458,4         TOTAL # EMPLOYEES TRANSMITTED 0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 09, 1992 
+              HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The total number of employees for whom 8B records have been transmitted.  
+
+
+458,5         TOTAL # RECORDS TRANSMITTED 0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 09, 1992 
+              HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The total number of 8B records that have been transmitted.  
+
+
+458,10        DATE 1                 1;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 20, 1992 
+              DESCRIPTION:
+                                The date of the first day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD1^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^1"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,11        DATE 2                 1;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 20, 1992 
+              DESCRIPTION:
+                                The date of the second day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD2^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^2"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,12        DATE 3                 1;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the third day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD3^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^3"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,13        DATE 4                 1;4 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the fourth day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD4^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^4"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,14        DATE 5                 1;5 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the fifth day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD5^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^5"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,15        DATE 6                 1;6 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the sixth day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD6^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^6"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,16        DATE 7                 1;7 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the seventh day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD7^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^7"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,17        DATE 8                 1;8 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the eighth day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD8^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^8"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,18        DATE 9                 1;9 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the ninth day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD9^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^9"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,19        DATE 10                1;10 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the tenth day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD10^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^10"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,20        DATE 11                1;11 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the eleventh day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD11^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^11"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,21        DATE 12                1;12 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the twelfth day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD12^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^12"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,22        DATE 13                1;13 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the thirteenth day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD13^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^13"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,23        DATE 14                1;14 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 27, 1992 
+              DESCRIPTION:
+                                The date of the fourteenth day of the pay period stored in FileMan format.  
+
+              CROSS-REFERENCE:  458^AD14^MUMPS 
+                                1)= S ^PRST(458,"AD",X)=DA_"^14"
+                                2)= K ^PRST(458,"AD",X)
+                                This cross-reference allows a program to determine the payperiod^day number by looking up a specific date in the AD cross-reference.  
+
+
+
+458,30        PRINT DATE 1           2;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the first day of the pay period stored in a printable format.  
+
+
+458,31        PRINT DATE 2           2;2 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the second day of the pay period stored in a printable format.  
+
+
+458,32        PRINT DATE 3           2;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the third day of the pay period stored in a printable format.  
+
+
+458,33        PRINT DATE 4           2;4 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the fourth day of the pay period stored in a printable format.  
+
+
+458,34        PRINT DATE 5           2;5 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the fifth day of the pay period stored in a printable format.  
+
+
+458,35        PRINT DATE 6           2;6 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the sixth day of the pay period stored in a printable format.  
+
+
+458,36        PRINT DATE 7           2;7 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the seventh day of the pay period stored in a printable format.  
+
+
+458,37        PRINT DATE 8           2;8 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the eighth day of the pay period stored in a printable format.  
+
+
+458,38        PRINT DATE 9           2;9 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the ninth day of the pay period stored in a printable format.  
+
+
+458,39        PRINT DATE 10          2;10 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the tenth day of the pay period stored in a printable format.  
+
+
+458,40        PRINT DATE 11          2;11 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the eleventh day of the pay period stored in a printable format.  
+
+
+458,41        PRINT DATE 12          2;12 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the twelfth day of the pay period stored in a printable format.  
+
+
+458,42        PRINT DATE 13          2;13 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the thirteenth day of the pay period stored in a printable format.  
+
+
+458,43        PRINT DATE 14          2;14 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>13!($L(X)<13) X
+              LAST EDITED:      FEB 27, 1992 
+              HELP-PROMPT:      Answer must be 13 characters in length. 
+              DESCRIPTION:
+                                The date of the fourteenth day of the pay period stored in a printable format.  
+
+
+458,50        MESSAGES TRANSMITTED   X;0 POINTER Multiple #458.03 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple field contains a list of the mail message numbers generated during all transmissions.  
+
+
+458.03,.01      MESSAGES TRANSMITTED   0;1 POINTER TO MESSAGE FILE (#3.9)
+
+                LAST EDITED:      OCT 09, 1992 
+                DESCRIPTION:
+                                  A pointer to the MESSAGE file (#3.9) which identifies the message number of a message containing time card data transmitted to the Austin Automation Center.  
+
+                CROSS-REFERENCE:  458.03^B 
+                                  1)= S ^PRST(458,DA(1),"X","B",$E(X,1,30),DA)=""
+                                  2)= K ^PRST(458,DA(1),"X","B",$E(X,1,30),DA)
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ENVIRONMENTAL DIFFERENTIALS 
+                   (#457.6)       EMPLOYEE:ENVIR. DIFF. WK 1 # 1 (#60)
+                                  ENVIR. DIFF. WK 1 # 2 (#62)
+                                  ENVIR. DIFF. WK 1 # 3 (#64)
+                                  ENVIR. DIFF. WK 2 # 1 (#66)
+                                  ENVIR. DIFF. WK 2 # 2 (#68)
+                                  ENVIR. DIFF. WK 2 # 3 (#70)
+
+MESSAGE (#3.9)                    MESSAGES TRANSMITTED:MESSAGES TRANSMITTED (#.01)
+
+NEW PERSON (#200)                 TRANSMITTING CLERK (#2)
+                                  EMPLOYEE:APP. SUPERVISOR (#2)
+                                  VCS/FEE POSTING PERSON (#34)
+                                  VCS/FEE APPROVED BY (#36)
+                                  DAY #:SUPERVISOR (#5)
+                                  TOUR LAST POSTED BY (#10)
+                                  TIMEKEEPER POSTING (#102)
+                                  AUDIT RECORD:PERSON CHANGING RECORD (#2)
+                                  CLEARING PERSONNEL CLERK (#5)
+                                  APPROVAL PERSON (#7)
+                                  APP. SUPERVISOR (#9)
+                                  LD AUDIT:LABOR DIST CODE CHANGED BY (#2)
+
+PAID EMPLOYEE (#450)              EMPLOYEE:EMPLOYEE (#.01)
+
+PAY ENTITLEMENT (#457.5)          EMPLOYEE:ENTITLEMENT (#4)
+
+SPECIAL TOUR INDICATOR (#457.2)   DAY #:TOUR #1 SCH SPECIAL CODE-1 (#13)
+                                  TOUR #1 SCH SPECIAL CODE-2 (#16)
+                                  TOUR #1 SCH SPECIAL CODE-3 (#19)
+                                  TOUR #1 SCH SPECIAL CODE-4 (#22)
+                                  TOUR #1 SCH SPECIAL CODE-5 (#25)
+                                  TOUR #1 SCH SPECIAL CODE-6 (#28)
+                                  TOUR #2 SCH SPECIAL CODE-1 (#32.2)
+                                  TOUR #2 SCH SPECIAL CODE-2 (#32.5)
+                                  TOUR #2 SCH SPECIAL CODE-3 (#32.8)
+                                  TOUR #2 SCH SPECIAL CODE-4 (#33.1)
+                                  TOUR #2 SCH SPECIAL CODE-5 (#33.4)
+                                  TOUR #2 SCH SPECIAL CODE-6 (#33.7)
+
+TIME REMARKS (#457.4)             DAY #:WRK SPECIAL CODE-1 (#44)
+                                  WRK SPECIAL CODE-2 (#48)
+                                  WRK SPECIAL CODE-3 (#52)
+                                  WRK SPECIAL CODE-4 (#56)
+                                  WRK SPECIAL CODE-5 (#60)
+                                  WRK SPECIAL CODE-6 (#64)
+                                  WRK SPECIAL CODE-7 (#68)
+                                  ESR SPECIAL CODE-1 (#113)
+                                  ESR SPECIAL CODE-2 (#118)
+                                  ESR SPECIAL CODE-3 (#123)
+                                  ESR SPECIAL CODE-4 (#128)
+                                  ESR SPECIAL CODE-5 (#133)
+                                  ESR SPECIAL CODE-6 (#138)
+                                  ESR SPECIAL CODE-7 (#143)
+
+TOUR OF DUTY (#457.1)             EMPLOYEE:TMP 1 (#201)
+                                  TMP 2 (#202)
+                                  TMP 3 (#203)
+                                  TMP 4 (#204)
+                                  TMP 5 (#205)
+                                  TMP 6 (#206)
+                                  TMP 7 (#207)
+                                  TMP 8 (#208)
+                                  TMP 9 (#209)
+                                  TMP 10 (#210)
+                                  TMP 11 (#211)
+                                  TMP 12 (#212)
+                                  TMP 13 (#213)
+                                  TMP 14 (#214)
+                                  DAY #:TOUR OF DUTY (#2)
+                                  PRIOR SCHEDULED TOUR (#4)
+                                  SECOND TOUR OF DUTY (#10.3)
+
+
+Subfile #458.02
+
+  Record Indexes:
+
+  AEA (#78)    RECORD    REGULAR    IR    SORTING ONLY    WHOLE FILE (#458)
+      Short Descr:  All Employee Action (AEA) Part time physician incompletes
+      Description:  This index can be used to quickly find all of a part time physician's ESR days that have a status that requires action on their part. (not started, pending, resubmit) 
+        Set Logic:  S ^PRST(458,"AEA",X(1),X(2),X(3),DA(2),DA(1),DA)=""
+         Set Cond:  S X=$S($G(X(4))<4&($G(X(4))>0):1,1:0)
+       Kill Logic:  K ^PRST(458,"AEA",X(1),X(2),X(3),DA(2),DA(1),DA)
+       Whole Kill:  K ^PRST(458,"AEA")
+             X(1):  Computed Code: S X=DA(1)
+                      (Subscr 1)
+             X(2):  Computed Code: S X=$P(^PRST(458,DA(2),0),"^")
+                      (Subscr 2)
+             X(3):  DAY #  (458.02,.01)  (Subscr 3)  (forwards)
+             X(4):  ESR DAILY STATUS  (458.02,146)  (forwards)
+
+  ASA (#707)    RECORD    REGULAR    IR    SORTING ONLY    WHOLE FILE (#458)
+      Short Descr:  TEST
+      Description:  This index promotes rapid access to all the ESR days for which a Supervisor of a T&L unit must take action.  
+        Set Logic:  S ^PRST(458,"ASA",X(1),X(2),X(3),DA(2),DA(1),DA)=""
+         Set Cond:  S X=$S($G(X(4))=4:1,1:0)
+       Kill Logic:  K ^PRST(458,"ASA",X(1),X(2),X(3),DA(2),DA(1),DA)
+       Whole Kill:  K ^PRST(458,"ASA")
+             X(1):  Computed Code: S X=DA(1)
+                      (Subscr 1)
+             X(2):  Computed Code: S X=$P(^PRST(458,DA(2),0),"^")
+                      (Subscr 2)
+             X(3):  DAY #  (458.02,.01)  (Subscr 3)  (forwards)
+             X(4):  ESR DAILY STATUS  (458.02,146)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
+PRSA FEE POST                 MAR 25, 1992        USER #0
+  PRSA FEE HDR                  DD #458.01
+  PRSA FEE POST                 DD #458.01
+
+PRSA PM POST                  MAR 31, 1992        USER #0
+  PRSA PM HDR                   DD #458.01
+  PRSA EMP HDR                  DD #458.01
+  PRSA PM POST                  DD #458.01
+
+PRSA TE EDIT                  AUG 13, 1992        USER #0
+  PRSA TE EDIT                  DD #458.01
+
+PRSA TP POST1                 JUL 14, 1992        USER #0
+  PRSA TP POST                  DD #458.02
+  PRSA TP EMP                   DD #458.02
+
+PRSA VC POST                  MAR 25, 1992        USER #0
+  PRSA VC HDR                   DD #458.01
+  PRSA VC POST                  DD #458.01
+
+PRSP ESR POST                 JUL 14, 1992        USER #0
+  PRSP ESR POST SEGMENTS        DD #458.02
+  PRSP PTP EMP                  DD #458.02
+

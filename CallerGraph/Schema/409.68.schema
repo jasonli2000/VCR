@@ -1,0 +1,498 @@
+STANDARD DATA DICTIONARY #409.68 -- OUTPATIENT ENCOUNTER FILE                                                                                                                                                                     MAY 20,2014@15:41:42  PAGE 1
+STORED IN ^SCE(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                  (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ This file contains all outpatient encounters since 10/1/93 that have been 
+ successfully checked out or need to be checked out. The types of 
+ encounters that caused entries to be added to this file are appointments, 
+ add/edit stop codes and dispositions.  
+ 
+ If the encounter needs to be checked out then it will have a status 
+ of 'PENDING ACTION'. The site will not receive workload credit if 
+ the status remains 'PENDING ACTION'.  'PENDING ACTION' includes both 
+ 'ACTION REQUIRED' and 'NO ACTION TAKEN' statuses.  
+ 
+ If the encounter has been no-showed or cancelled then it will NOT be 
+ in this file.  
+ 
+ Inpatient encounters will always have a status of 'INPATIENT APPOINTMENT'.  
+ 
+ Appointments made for non-count clinics will always have a status of 
+ 'NON-COUNT'.  
+ 
+ All other encounters will have a status of 'CHECKED OUT'.  
+ 
+ 
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+IDENTIFIED BY: PATIENT (#.02)[R], CLINIC STOP CODE (#.03)[R], LOCATION (#.04)
+
+POINTED TO BY: OUTPATIENT ENCOUNTER field (#18) of the DISPOSITION LOG-IN DATE/TIME sub-field (#2.101) of the PATIENT File (#2) 
+               OUTPATIENT ENCOUNTER field (#21) of the APPOINTMENT sub-field (#2.98) of the PATIENT File (#2) 
+               OUTPATIENT ENCOUNTER field (#.04) of the CLAIMS TRACKING File (#356) 
+               EVENT POINTER field (#.05) of the ADT/HL7 PIVOT File (#391.71) 
+               OUTPATIENT ENCOUNTER field (#20) of the PROCEDURES sub-field (#399.0304) of the BILL/CLAIMS File (#399) 
+               OUTPATIENT ENCOUNTER field (#.02) of the OUTPATIENT CLASSIFICATION File (#409.42) 
+               OUTPATIENT ENCOUNTER field (#.02) of the OUTPATIENT DIAGNOSIS File (#409.43) 
+               OUTPATIENT ENCOUNTER field (#.02) of the OUTPATIENT PROVIDER File (#409.44) 
+               OUTPATIENT ENCOUNTER field (#.01) of the SDSC SERVICE CONNECTED CHANGES File (#409.48) 
+               OUTPATIENT ENCOUNTER field (#8) of the CLINIC STOP CODE sub-field (#409.51) of the SCHEDULING VISITS File (#409.5) 
+               PARENT ENCOUNTER field (#.06) of the OUTPATIENT ENCOUNTER File (#409.68) 
+               OUTPATIENT ENCOUNTER field (#.02) of the TRANSMITTED OUTPATIENT ENCOUNTER File (#409.73) 
+               OUTPATIENT ENCOUNTER field (#31) of the HBHC VISIT File (#632) 
+               OUTPATIENT ENCOUNTER field (#4) of the HBHC VISIT ERROR(S) File (#634.2) 
+               
+
+CROSS
+REFERENCED BY: APPOINTMENT TYPE(ACG), DATE(ACG1), CHECK OUT PROCESS COMPLETION(ACHILD), PATIENT(ADFN), DATE(ADFN1), COMPUTER GENERATED?(AG), DATE(AG1), CHECK OUT PROCESS COMPLETION(ANT), PARENT ENCOUNTER(APAR), VISIT FILE ENTRY(AVCNT), 
+               VISIT FILE ENTRY(AVSIT), DATE(B), PATIENT(C)
+
+409.68,.01    DATE                   0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 27, 1997 
+              DESCRIPTION:
+                                This field contains the date and time when outpatient encounter occurred.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  409.68^B 
+                                1)= S ^SCE("B",$E(X,1,30),DA)=""
+                                2)= K ^SCE("B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  409.68^ADFN1^MUMPS 
+                                1)= S:$P(^SCE(DA,0),U,2) ^SCE("ADFN",$P(^SCE(DA,0),U,2),X,DA)=""
+                                2)= K:$P(^SCE(DA,0),U,2) ^SCE("ADFN",$P(^SCE(DA,0),U,2),X,DA)
+                                 This cross reference is by patient DFN and the outpatient encounter date.  The PATIENT(#.02) field also has a companion cross reference to set this compound cross reference.  
+
+
+              CROSS-REFERENCE:  409.68^ACG1^MUMPS 
+                                1)= N SD0 S SD0=$G(^SCE(DA,0)) IF $P(SD0,U,10)=10 S ^SCE("ACG",+X,DA)=""
+                                2)= N SD0 S SD0=$G(^SCE(DA,0)) IF $P(SD0,U,10)=10 K ^SCE("ACG",+X,DA)
+                                Used to quickly find entries that have a 'computer generated' appointment type.  
+
+
+              CROSS-REFERENCE:  409.68^AG1^MUMPS 
+                                1)= N SDCG S SDCG=$G(^SCE(DA,"CG")) IF +SDCG S ^SCE("AG",+X,DA)=""
+                                2)= N SDCG S SDCG=$G(^SCE(DA,"CG")) IF +SDCG K ^SCE("AG",+X,DA)
+                                Used to quickly identify entries 'auto-generated' by other pacakges.  
+
+
+
+409.68,.02    PATIENT                0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      JUL 22, 1993 
+              DESCRIPTION:
+                                This field contains the patient associated with the encounter.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  409.68^C 
+                                1)= S ^SCE("C",$E(X,1,30),DA)=""
+                                2)= K ^SCE("C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  409.68^ADFN^MUMPS 
+                                1)= S:$D(^SCE(DA,0)) ^SCE("ADFN",X,+^SCE(DA,0),DA)=""
+                                2)= K:$D(^SCE(DA,0)) ^SCE("ADFN",X,+^SCE(DA,0),DA)
+                                 This cross reference is by patient DFN and the outpatient encounter date.  The DATE(#.01) field also has a companion cross reference to set this compound cross reference.  
+
+
+
+409.68,.03    CLINIC STOP CODE       0;3 POINTER TO CLINIC STOP FILE (#40.7) (Required)
+
+              LAST EDITED:      JUL 22, 1993 
+              DESCRIPTION:
+                                This field contains the CLINIC STOP CODE associated with the outpatient encounter.  
+
+                                UNEDITABLE
+
+409.68,.04    LOCATION               0;4 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      JUL 22, 1993 
+              DESCRIPTION:      This field contains the location, usually a clinic, where the encounter took place.  
+                                 
+                                This field is optional.  
+
+                                UNEDITABLE
+
+409.68,.05    VISIT FILE ENTRY       0;5 POINTER TO VISIT FILE (#9000010)
+
+              LAST EDITED:      MAY 03, 1996 
+              DESCRIPTION:      This field indicates the VISIT file entry associated with this encounter.  
+                                 
+                                This field is  optional and will only be filled in if the site is running the Visit Tracking module.  
+
+              CROSS-REFERENCE:  409.68^AVSIT 
+                                1)= S ^SCE("AVSIT",$E(X,1,30),DA)=""
+                                2)= K ^SCE("AVSIT",$E(X,1,30),DA)
+                                This is the standard cross reference set for the Visit Tracking application.  
+
+
+              CROSS-REFERENCE:  409.68^AVCNT^MUMPS 
+                                1)= N SDX S SDX=X,X="VSIT" X ^%ZOSF("TEST") I $T S X=SDX D ADD^VSIT
+                                2)= N SDX S SDX=X,X="VSIT" X ^%ZOSF("TEST") I $T S X=SDX D SUB^VSIT
+                                This cross refernce calls Visit Tracking code to increment and decrement the VISIT file's DEPENDENT ENTRY COUNT field.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^409.68^.2 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SCE(D0,0)):^(0),1:"") S X=$P(Y(1),U,20),X=X S DIU=X K Y S X=DIV S X=$$IEN2VID^VSIT(X) X ^DD(409.68,.05,1,3,1.4)
+                                1.4)= S DIH=$S($D(^SCE(DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,20)=DIV,DIH=409.68,DIG=.2 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= S X=$$IEN2VID^VSIT(X)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= UNIQ
+                                This trigger is to collect the Unique Visit ID when a Visit IEN is entered.  
+
+
+
+409.68,.06    PARENT ENCOUNTER       0;6 POINTER TO OUTPATIENT ENCOUNTER FILE (#409.68)
+
+              LAST EDITED:      JUL 22, 1993 
+              DESCRIPTION:      This field associates the current encounter with a parent encounter.  For example, if there are add/edit stop codes associated with an appointment, then all the add/edit encounter entries will have this parent field filled
+                                in with the appointment encounter.  
+                                 
+                                This relationship allows the check out software to use the check out information of the appointment for the add/edits, as well.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  409.68^APAR 
+                                1)= S ^SCE("APAR",$E(X,1,30),DA)=""
+                                2)= K ^SCE("APAR",$E(X,1,30),DA)
+                                Cross reference to be used to find outpatient encounters that are associated with other encounters.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^409.68^.07 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SCE(D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X=$P($G(^SCE(+X,0)),U,7) X ^DD(409.68,.06,1,2,1.4)
+                                1.4)= S DIH=$S($D(^SCE(DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=409.68,DIG=.07 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SCE(D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X="" S DIH=$S($D(^SCE(DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,7)=DIV,DIH=409.68,DIG=.07 D ^DICR:$N(^DD(DIH,DIG,1,0))>
+                                0
+
+                                CREATE VALUE)= S X=$P($G(^SCE(+X,0)),U,7)
+                                DELETE VALUE)= @
+                                FIELD)= CHECK OUT PROCESS COMPLETION
+                                 Update children's completion date/time with parent's.  
+
+
+
+409.68,.07    CHECK OUT PROCESS COMPLETION 0;7 DATE
+
+              CHECK OUT PROCESS COMPLETION DATE                                                                                
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 03, 1993 
+              DESCRIPTION:
+                                This field indicates the check out process has been successfully completed for this outpatient encounter.  
+
+              TECHNICAL DESCR:
+                                 
+
+              NOTES:            TRIGGERED by the PARENT ENCOUNTER field of the OUTPATIENT ENCOUNTER File 
+
+              CROSS-REFERENCE:  409.68^ANT^MUMPS 
+                                1)= D OE^SDM1A(DA,"SET")
+                                2)= D OE^SDM1A(DA,"KILL")
+                                This MUMPS cross reference updates the appointment status field in the patient file.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^409.68^.12 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SCE(D0,0)):^(0),1:"") S X=$P(Y(1),U,12),X=X S DIU=X K Y X ^DD(409.68,.07,1,2,1.1) X ^DD(409.68,.07,1,2,1.4)
+                                1.1)= S X=DIV N Y S Y=^SCE(DA,0) S X=$$STATUS^SDVSIT0(+$P(Y,U,2),+Y,+$P(Y,U,4),+$P(Y,U,8),"SET")
+                                1.4)= S DIH=$S($D(^SCE(DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,12)=DIV,DIH=409.68,DIG=.12 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^SCE(D0,0)):^(0),1:"") S X=$P(Y(1),U,12),X=X S DIU=X K Y X ^DD(409.68,.07,1,2,2.1) X ^DD(409.68,.07,1,2,2.4)
+                                2.1)= S X=DIV N Y S Y=^SCE(DA,0) S X=$$STATUS^SDVSIT0(+$P(Y,U,2),+Y,+$P(Y,U,4),+$P(Y,U,8),"KILL")
+                                2.4)= S DIH=$S($D(^SCE(DIV(0),0)):^(0),1:""),DIV=X S $P(^(0),U,12)=DIV,DIH=409.68,DIG=.12 D ^DICR:$N(^DD(DIH,DIG,1,0))>0
+                                CREATE VALUE)= N Y S Y=^SCE(DA,0) S X=$$STATUS^SDVSIT0(+$P(Y,U,2),+Y,+$P(Y,U,4),+$P(Y,U,8),"SET")
+                                DELETE VALUE)= N Y S Y=^SCE(DA,0) S X=$$STATUS^SDVSIT0(+$P(Y,U,2),+Y,+$P(Y,U,4),+$P(Y,U,8),"KILL")
+                                FIELD)= STATUS
+                                 This trigger updates the STATUS(#.12) field.  
+                                 
+                                If the patient was an inpatient at the time of the encounter then the status will always be 'INPATIENT' regardless if the encounter was checked out or not.  
+                                 
+                                Also, if the encounter was an appointment and the clinic is a non-count clinic then the status will always be 'NON-COUNT' regardless if the encounter was checked out ot not.  
+
+
+              CROSS-REFERENCE:  409.68^ACHILD^MUMPS 
+                                1)= D SET^SDCOU(DA,X)
+                                2)= D KILL^SDCOU(DA,X)
+                                 This cross reference updates the 'CHECK OUT PROCESS COMPLETION field of the 'children' entries.  
+
+
+
+409.68,.08    ORIGINATING PROCESS TYPE 0;8 SET (Required)
+
+                                '1' FOR APPOINTMENT; 
+                                '2' FOR STOP CODE ADDITION; 
+                                '3' FOR DISPOSITION; 
+                                '4' FOR CREDIT STOP CODE; 
+              LAST EDITED:      JUL 22, 1993 
+              DESCRIPTION:      This field indicates the type of process that created this encounter.  The types are the follwoing: 
+                                       1 - appointment 
+                                       2 - add/edit stop code 
+                                       3 - disposition 
+                                 
+
+                                UNEDITABLE
+
+409.68,.09    EXTENDED REFERENCE     0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      JUN 07, 1996 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:      This field indicates the internal multiple entry of the originating process that created the encounter.  
+                                 
+                                The reference mapping is the following: 
+                                 
+                                        Originating Process    Global Reference 
+                                        -------------------    ----------------
+                                        1 - appointments       ^SC(<LOCATION>,"S",<DATE/TIME>,1,<EXTERNAL REF>) 
+                                            Note: If this field is equal to 999999, it means that the 
+                                                  appointment encounter was created by the ACRP Database 
+                                                  Conversion functionality in patch SD*5.3*211. The 999999 
+                                                  indicates that the above ^SC node did not exist at the 
+                                                  time of the conversion. The node did not exist because it 
+                                                  had been purged. The conversion set and then killed the 
+                                                  psuedo 999999 node in order to create the encounter.  
+                                  
+                                                  As a result, the 999999 also means that the ELIGIBILITY 
+                                                  OF ENCOUNTER (#.13) for the encounter was the patient's 
+                                                  primary eligibility at the time of the conversion, since 
+                                                  no history exists.  
+                                 
+                                        2 - add/edits          Always null ; not applicable 
+                                 
+                                        3 - dispositions       ^DPT(<PATIENT>,"DIS",<EXTERNAL REFERENCE>) 
+
+                                UNEDITABLE
+
+409.68,.1     APPOINTMENT TYPE       0;10 POINTER TO APPOINTMENT TYPE FILE (#409.1) (Required)
+
+              LAST EDITED:      AUG 28, 1997 
+              DESCRIPTION:
+                                This field contains the appointment type assoicated with the outpatient encounter.  
+
+              NOTES:            TRIGGERED by the APPOINTMENT TYPE field of the APPOINTMENT sub-field of the PATIENT File 
+                                TRIGGERED by the APPOINTMENT TYPE field of the CLINIC STOP CODE sub-field of the SCHEDULING VISITS File 
+
+              CROSS-REFERENCE:  409.68^ACG^MUMPS 
+                                1)= N SD0 S SD0=$G(^SCE(DA,0)) IF +SD0,X=10 S ^SCE("ACG",+SD0,DA)=""
+                                2)= N SD0 S SD0=$G(^SCE(DA,0)) IF +SD0,X=10 K ^SCE("ACG",+SD0,DA)
+                                Used to quickly find entries that have a 'computer generated' appointment type.  
+
+
+
+409.68,.11    MEDICAL CENTER DIVISION 0;11 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8) (Required)
+
+              LAST EDITED:      JUL 22, 1993 
+              DESCRIPTION:
+                                This field indicates the medical center division where the encounter took place.  
+
+                                UNEDITABLE
+
+409.68,.12    STATUS                 0;12 POINTER TO APPOINTMENT STATUS FILE (#409.63)
+
+              LAST EDITED:      APR 06, 1993 
+              DESCRIPTION:      This field indicates the status of the encounter. Currently, the only possible statuses are the following: 
+                                       CHECKED OUT 
+                                       PENDING ACTION 
+                                       INPATIENT APPOINTMENT 
+                                       NON-COUNT 
+                                 
+                                Future, no-showed and cancelled appointments are not included in this file at the present time.  
+
+              NOTES:            TRIGGERED by the CHECK OUT PROCESS COMPLETION field of the OUTPATIENT ENCOUNTER File 
+
+
+409.68,.13    ELIGIBILITY OF ENCOUNTER 0;13 POINTER TO ELIGIBILITY CODE FILE (#8) (Required)
+
+              LAST EDITED:      JUL 22, 1993 
+              DESCRIPTION:
+                                This field contains the eligibility associated with the encounter.  
+
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the REGISTRATION ELIGIBILITY CODE field of the DISPOSITION LOG-IN DATE/TIME sub-field of the PATIENT File 
+                                TRIGGERED by the ELIGIBILITY FOR VISIT field of the CLINIC STOP CODE sub-field of the SCHEDULING VISITS File 
+
+
+409.68,.2     UNIQUE VISIT NUMBER    0;20 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<1) X
+              LAST EDITED:      MAY 03, 1996 
+              HELP-PROMPT:      Answer must be 1-12 characters in length. 
+              DESCRIPTION:      This is the unique visit ID created by PCE.  It is stored for every encounter.  This number will be obtained from a supported call provided by PCE.  
+                                 
+
+              NOTES:            TRIGGERED by the VISIT FILE ENTRY field of the OUTPATIENT ENCOUNTER File 
+
+
+409.68,101    EDITED LAST BY         USER;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 27, 1997 
+              DESCRIPTION:
+                                This field records the user who last edited the entry.  
+
+              TECHNICAL DESCR:
+                                This field is automatically entered by the software and requires n user input.  
+
+
+409.68,102    DATE/TIME LAST EDITED  USER;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 27, 1997 
+              DESCRIPTION:
+                                This field contains the date/time that the entry was last edited.  
+
+              TECHNICAL DESCR:
+                                This field is automatically entered by the software and requires n user input.  
+
+
+409.68,103    CREATED BY             USER;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 27, 1997 
+              DESCRIPTION:
+                                This field records the user who created the entry.  
+
+              TECHNICAL DESCR:
+                                This field is automatically set as part of the SD ENCOUNTER ENTRY input template. This template is executed whenever a new entry is created.  
+
+
+409.68,104    DATE/TIME CREATED      USER;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 27, 1997 
+              DESCRIPTION:
+                                This field contains the date/time that the entry was made.  
+
+              TECHNICAL DESCR:  This field is automatically set as part of the SD ENCOUNTER ENTRY input template. This template is executed whenever a new entry is created.  
+                                 
+
+
+409.68,201    COMPUTER GENERATED?    CG;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 27, 1997 
+              DESCRIPTION:       This field is used for data validation. It helps determine which entries 
+                                 were automatically generated by outside packages. This field should not be 
+                                 editied.  
+
+              TECHNICAL DESCR:
+                                This field is updated via PCE event driver.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  409.68^AG^MUMPS 
+                                1)= N SD0 S SD0=$G(^SCE(DA,0)) IF +SD0,X S ^SCE("AG",+SD0,DA)=""
+                                2)= N SD0 S SD0=$G(^SCE(DA,0)) IF +SD0,X K ^SCE("AG",+SD0,DA)
+                                Used to quickly identify entries 'auto-generated' by other pacakges.  
+
+
+
+409.68,202    UNRESOLVED APPT TYPE REASON CG;2 SET
+
+                                '1' FOR DUAL ELIGIBILITY; 
+                                '2' FOR POSSIBLE COMP & PEN; 
+              LAST EDITED:      AUG 26, 1997 
+              DESCRIPTION:       If visit has an appointment type of computer generated, the 
+                                 UNRESOLVED APPT TYPE REASON field will also be stuffed with the best 
+                                 possible reason why an appropriate appointment type could not be 
+                                 determined.  
+                                 
+                                 Currently, if a patient has a comp and pen exam within the last 
+                                 three days of the visit date which is computer generated the 
+                                 unresolved reason will be POSSIBLE COMP & PEN.  
+                                 
+                                 If a patient has a dual eligibility and one of those eligibilities 
+                                 is Sharing Agreement, Employee, or Collateral, the unresolved reason 
+                                 will be DUAL ELIGIBILITY.  
+                                 
+                                 If there is a scenario where both apply, the default is POSSIBLE COMP & PEN.  
+
+              TECHNICAL DESCR:
+                                This field is updated via PCE event driver functionality.  
+
+
+409.68,901    CREATED BY CONVERSION  CNV;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 01, 1996 
+              DESCRIPTION:
+                                This field is set to 'Yes' if the encounter is created by the ACRP Database Conversion patch (SD*5.3*211).  
+
+
+409.68,902    ORIGINAL CREATE DT FROM 'SDV' CNV;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 05, 1998 
+              DESCRIPTION:      If this encounter was created by the ACRP Database Conversion patch (SD*5.3*211) from an entry in the SCHEDULING VISITS (#409.5) file then this field contains the date that the original entry in the SCHEDULING VISITS file
+                                was created.  
+
+
+409.68,903    NON-HISTORICAL STOP CODE USED CNV;3 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      FEB 17, 1998 
+              DESCRIPTION:      This field is set to "YES" if this encounter was created by ACRP Database Conversion patch (SD*5.3*211) and the stop code associated with the encounter was obtained from the HOSPITAL LOCATION (#44) file entry for the
+                                clinic at the time of the conversion.  
+                                 
+                                In other words, there was no mechanism available to absolutely determine the historical value of either a clinic stop code or a credit stop code for a clinic at the time the encounter actually occurred.  
+
+
+409.68,904    CONVERSION COMPLETED   CNV;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      APR 06, 1998 
+              HELP-PROMPT:      Respond yes or no 
+              DESCRIPTION:
+                                This field indicates whether or not the conversion process has been completed for this encounter.  
+
+
+409.68,905    DATE OF LAST CONVERSION CNV;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 06, 1998 
+              HELP-PROMPT:      ENTER THE DATE THIS ENCOUNTER WAS LAST CONVERTED 
+              DESCRIPTION:
+                                This is the date that the conversion process was last completed for this encounter.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+APPOINTMENT STATUS (#409.63)      STATUS (#.12)
+
+APPOINTMENT TYPE (#409.1)         APPOINTMENT TYPE (#.1)
+
+CLINIC STOP (#40.7)               CLINIC STOP CODE (#.03)
+
+ELIGIBILITY CODE (#8)             ELIGIBILITY OF ENCOUNTER (#.13)
+
+HOSPITAL LOCATION (#44)           LOCATION (#.04)
+
+MEDICAL CENTER DIVISION (#40.8)   MEDICAL CENTER DIVISION (#.11)
+
+NEW PERSON (#200)                 EDITED LAST BY (#101)
+                                  CREATED BY (#103)
+
+OUTPATIENT ENCOUNTER (#409.68)    PARENT ENCOUNTER (#.06)
+
+PATIENT (#2)                      PATIENT (#.02)
+
+VISIT (#9000010)                  VISIT FILE ENTRY (#.05)
+
+
+
+INPUT TEMPLATE(S):
+SD ENCOUNTER ENTRY            MAY 19, 1998@09:56  USER #0    ^SDAMXOE 
+      
+SD ENCOUNTER LOG              AUG 27, 1997@08:53  USER #0    ^SDAMXLG 
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

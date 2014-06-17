@@ -1,0 +1,469 @@
+STANDARD DATA DICTIONARY #702 -- CP TRANSACTION FILE                                                                                                                                                                              MAY 20,2014@15:31:21  PAGE 1
+STORED IN ^MDD(702,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 1.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the transactions between the instruments and user generated data as it is matched to a consult order and a TIU document is created for the results.  It also manages the interface between the images and the Imaging server.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: 
+             DEL ACCESS: @
+           LAYGO ACCESS: 
+           AUDIT ACCESS: @
+IDENTIFIED BY: CREATED DATE/TIME (#.02)[R], CP DEFINITION (#.04)[R]
+
+POINTED TO BY: STUDY_ID field (#.01) of the CP_TRANSACTION_TIU_HISTORY File (#702.001) 
+               STUDY REFERENCE NUMBER field (#.05) of the CP RESULT REPORT File (#703.1) 
+               STUDY_REFERENCE_NBR field (#.07) of the CP_HL7_LOG File (#704.002) 
+               ID field (#.01) of the HEMODIALYSIS STUDY File (#704.202) 
+               
+
+CROSS
+REFERENCED BY: CONSULT NUMBER(ACON), CONVERSION ID REFERENCE(ACONV), CP DEFINITION(ACP), SUBMITTED TO INSTRUMENT(AINST), INSTRUMENT ORDER NUMBER(AION), TRANSACTION STATUS(AS), SCHEDULED DATE/TIME(ASD), TIU NOTE(ATIU), VISIT(AUPNV), VISIT(AVISIT), 
+               PATIENT(B)
+
+INDEXED BY:    PATIENT & CREATED DATE/TIME & CP DEFINITION (AVPR)
+
+
+702,.01       PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              Patient                                                                                                          
+              LAST EDITED:      APR 04, 2005 
+              HELP-PROMPT:      Enter a patient name. 
+              DESCRIPTION:
+                                This field contains a pointer to the Patient file (#2) for this transaction.  
+
+              CROSS-REFERENCE:  702^B 
+                                1)= S ^MDD(702,"B",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"B",$E(X,1,30),DA)
+                                Contains the standard Fileman "B" index of the file.  
+
+
+              RECORD INDEXES:   AVPR (#683)
+
+702,.011      SSN (C)                 ;  COMPUTED
+
+              SSN                                                                                                              
+              MUMPS CODE:       X ^DD(702,.011,9.2) S X=$P(Y(702,.011,101),U,9) S D0=Y(702,.011,80)
+                                9.2 = S Y(702,.011,80)=$S($D(D0):D0,1:""),Y(702,.011,1)=$S($D(^MDD(702,D0,0)):^(0),1:""),D0=$P(Y(702,.011,1),U,1) S:'$D(^DPT(+D0,0)) D0=-1 S Y(702,.011,101)=$S($D(^DPT(D0,0)):^(0),1:"")
+              ALGORITHM:        #.01:#.09
+              LAST EDITED:      JUL 25, 2000 
+              DESCRIPTION:
+                                This field contains the computed value of the patient's SSN from the Patient file (#2).  
+
+
+702,.012      DOB (C)                 ;  COMPUTED
+
+              Date of birth                                                                                                    
+              MUMPS CODE:       X ^DD(702,.012,9.2) S Y(702,.012,102)=X,Y=$P(Y(702,.012,101),U,3) X:$D(^DD(2,.03,2)) ^(2) S X=Y S D0=Y(702,.012,80)
+                                9.2 = S Y(702,.012,80)=$G(D0),Y(702,.012,1)=$S($D(^MDD(702,D0,0)):^(0),1:""),D0=$P(Y(702,.012,1),U,1) S:'D0!'$D(^DPT(+D0,0)) D0=-1 S Y(702,.012,101)=$S($D(^DPT(D0,0)):^(0),1:"")
+              ALGORITHM:        #.01:#.03
+              LAST EDITED:      JUL 25, 2000 
+              DESCRIPTION:
+                                This field contains the computed value of the patient's DOB from the Patient file (#2).  
+
+
+702,.02       CREATED DATE/TIME      0;2 DATE (Required)
+
+              Date/Time Created                                                                                                
+              INPUT TRANSFORM:  S %DT="ESTXR",%DT(0)="-NOW" D ^%DT K %DT(0) S X=Y K:Y<1 X
+              LAST EDITED:      APR 04, 2005 
+              HELP-PROMPT:      Enter the date/time the procedure was entered. 
+              DESCRIPTION:
+                                This field contains the date/time the transaction was created.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              RECORD INDEXES:   AVPR (#683)
+
+702,.03       CREATED BY             0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              Created By                                                                                                       
+              LAST EDITED:      APR 02, 2001 
+              HELP-PROMPT:      User who created this transaction. 
+              DESCRIPTION:
+                                This field contains the DUZ of the user that created this transaction.  
+
+
+702,.04       CP DEFINITION          0;4 POINTER TO CP DEFINITION FILE (#702.01) (Required)
+
+              CP Definition                                                                                                    
+              LAST EDITED:      APR 04, 2005 
+              HELP-PROMPT:      Enter a CP Procedure Definition. 
+              DESCRIPTION:
+                                This field contains a pointer to the CP DEFINITION file (#702.01) indicating the procedure of the transaction.  
+
+              CROSS-REFERENCE:  702^ACP 
+                                1)= S ^MDD(702,"ACP",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"ACP",$E(X,1,30),DA)
+                                This cross reference maintains a list of transactions by CP Definition for quick retrieval. It is also used to prevent deletion of CP Definitions that are being pointed to.  
+
+
+              RECORD INDEXES:   AVPR (#683)
+
+702,.05       CONSULT NUMBER         0;5 FREE TEXT
+
+              Consult Number                                                                                                   
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      JUL 19, 2002 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field contains an Consult number from Request/Consultation file (#123).  This field represents the Consult order that is matched up to this transaction.  (Reference IA #3162) 
+
+              CROSS-REFERENCE:  702^ACON 
+                                1)= S ^MDD(702,"ACON",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"ACON",$E(X,1,30),DA)
+                                This is the cross reference of the Consult.  
+
+
+
+702,.06       TIU NOTE               0;6 POINTER TO TIU DOCUMENT FILE (#8925)
+
+              TIU Note                                                                                                         
+              LAST EDITED:      NOV 28, 2007 
+              HELP-PROMPT:      TIU note for interpretation of this transaction 
+              DESCRIPTION:
+                                This field contains a pointer to the TIU DOCUMENT file (#8925) representing the note that contains the interpretation of this transaction as well as the links to the associated images.  (Reference IA #3376) 
+
+              CROSS-REFERENCE:  702^ATIU 
+                                1)= S ^MDD(702,"ATIU",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"ATIU",$E(X,1,30),DA)
+                                3)= Cross Reference of the TIU Note
+                                This is the cross reference of the TIU Note.  
+
+
+
+702,.07       VSTRING                0;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      APR 13, 2001 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                This field contains the vstring.  The vstring is in the following format: Visit type_";"_Visit Date/Time_";"_Hospital Location (internal entry number of the visit).  
+
+
+702,.08       TRANSACTION MESSAGE    0;8 FREE TEXT
+
+              Message                                                                                                          
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      FEB 26, 2001 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                This field contains a short 80 characters text message of the transaction status update.  
+
+
+702,.09       TRANSACTION STATUS     0;9 SET
+
+              Status                                                                                                           
+                                '0' FOR New; 
+                                '1' FOR Submitted; 
+                                '2' FOR Error; 
+                                '3' FOR Complete; 
+                                '4' FOR Ready to Complete; 
+                                '5' FOR Pending Instrument Data; 
+                                '6' FOR Cancelled; 
+              LAST EDITED:      APR 04, 2005 
+              HELP-PROMPT:      Status of this transaction. 
+              DESCRIPTION:      This field contains the status of this transaction. Available statuses are listed below with a description of each.  
+                                 
+                                0: New                                                                        This transaction has been created by an external application and needs to be checked-in with the CPUser application and submitted to an
+                                instrument.  An example of this status would be a consent form scanned in via the VistA Imaging Capture Workstation that creates a CP Study record stub with a TIU document but allows further input with the CPUser 
+                                application.  
+                                 
+                                1: Submitted                                                      This transaction has been submitted to the VistA Imaging Background Processor and is awaiting the copy process to place the attachments for the study on the
+                                VistA Imaging server.  A study in this status is not accessible until VistA Imaging returns a status of Complete or Error and logs any errors encountered in the submission process.  
+                                 
+                                2: Error                                                               This transaction has encountered an error while being submitted to VistA Imaging.  The error may be due to the TIU note creation or a problem with the
+                                attachments sent to the VistA Imaging server. Error messages are logged with the transaction and can be reviewed by users when opening the transaction in an error status.  
+                                 
+                                3: Complete                                                             This transaction has completed the process and has successfully created a TIU note for interpretation on the selected Consult and if any attachments
+                                were included they have been successfully copied to the VistA Imaging server.  
+                                 
+                                4: Ready to Complete                                                    This transaction has been checked in and alternatively, if submitted to a bi-directional instrument, has received the data back from the instrument. 
+                                Users may open these transactions and view the Consult/Procedure order as well as assign instrument results to the study.  Once these steps have been done this study can be submitted to VistA Imaging.  
+                                 
+                                5: Pending Instrument Data                                             This transaction has been submitted to a bi-directional instrument and is awaiting that instrument to return the results of the procedure.  
+                                Transactions in this status should not be opened until the instrument has returned the results, assigned them to the study, and marked it as Ready to Complete.  
+                                                                                                      
+                                6: Cancelled This transaction has been cancelled when the procedure request in Consult Report Tracking and CPRS has been cancelled or discontinued.  
+
+              CROSS-REFERENCE:  702^AS 
+                                1)= S ^MDD(702,"AS",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"AS",$E(X,1,30),DA)
+                                It is a cross reference on the status of the CP study and it is used for quick look up.  
+
+
+
+702,.091      ERROR MESSAGES         .091;0 Multiple #702.091
+
+              DESCRIPTION:
+                                This multiple contains the information on the error messages that Clinical Procedures receive from API calls with Consults, TIU, CPRS, and VistA Imaging.  
+
+
+702.091,.01     ERROR MESSAGES         0;1 NUMBER (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUN 19, 2001 
+                HELP-PROMPT:      Type a Number between 1 and 9999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field contains a sequential number assigned to the error message and it has no meaning.  
+
+                CROSS-REFERENCE:  702.091^B 
+                                  1)= S ^MDD(702,DA(1),.091,"B",$E(X,1,30),DA)=""
+                                  2)= K ^MDD(702,DA(1),.091,"B",$E(X,1,30),DA)
+                                  Standard Fileman "B" index for the sub-file.  
+
+
+
+702.091,.02     DATE RECEIVED          0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUN 19, 2001 
+                HELP-PROMPT:      Enter a Date/Time. 
+                DESCRIPTION:
+                                  Date and Time this error message was generated.  
+
+
+702.091,.03     RECEIVED FROM          0;3 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+                LAST EDITED:      JUN 19, 2001 
+                HELP-PROMPT:      Answer must be 1-30 characters in length. 
+                DESCRIPTION:
+                                  This field contains the free text name of the application that generated the error during an API call.  
+
+
+702.091,.09     MESSAGE                0;9 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>150!($L(X)<1) X
+                LAST EDITED:      JUN 19, 2001 
+                HELP-PROMPT:      Answer must be 1-150 characters in length. 
+                DESCRIPTION:
+                                  This is the text of the error message that was generated.  
+
+
+
+
+702,.1        IMAGE                  .1;0 Multiple #702.1
+
+              Image Index                                                                                                      
+              DESCRIPTION:
+                                This multiple contains the image attachment information for the transaction.  
+
+
+702.1,.01       IMAGE                  0;1 NUMBER (Multiply asked)
+
+                Image                                                                                                          
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 08, 2005 
+                HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This is a sequential number assigned to the attached image for this transaction and it has no meaning.  
+
+                CROSS-REFERENCE:  702.1^B 
+                                  1)= S ^MDD(702,DA(1),.1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^MDD(702,DA(1),.1,"B",$E(X,1,30),DA)
+                                  Standard Fileman "B" index for the sub-file.  
+
+
+
+702.1,.02       TYPE                   0;2 SET
+
+                Type                                                                                                           
+                                  'I' FOR Instrument data; 
+                                  'U' FOR User supplied file; 
+                LAST EDITED:      FEB 16, 2001 
+                HELP-PROMPT:      Type of Image 
+                DESCRIPTION:      Type of image attachment to be processed.  
+                                   
+                                  'I' FOR Instrument data - image generated from an instrument.  'U' FOR User supplied file - image or file that user supplied.  
+
+
+702.1,.03       RESULT REPORT          0;3 POINTER TO CP RESULT REPORT FILE (#703.1)
+
+                Result Report                                                                                                  
+                LAST EDITED:      FEB 22, 2001 
+                HELP-PROMPT:      Enter in a CP RESULT REPORT. 
+                DESCRIPTION:
+                                  This field contains a pointer to the CP RESULT REPORT file (#703.1) where the attachment from the instrument is located.  
+
+
+702.1,.09       STATUS                 0;9 SET
+
+                Status                                                                                                         
+                                  '0' FOR Submitted to server; 
+                                  '1' FOR Error in submission; 
+                                  '2' FOR Error in filing; 
+                                  '3' FOR Copied to server; 
+                LAST EDITED:      FEB 16, 2001 
+                HELP-PROMPT:      Status of attachment 
+                DESCRIPTION:      This field contains the status of this image attachment.  
+                                   
+                                  '0' FOR Submitted to server - the image has been submitted to VistA Imaging 
+                                                                server.  
+                                   
+                                  '1' FOR Error in submission - VistA Imaging has generated error(s) during 
+                                                                image submission.  
+                                   
+                                  '2' FOR Error in filing - VistA Imaging has generated error(s) when the 
+                                                            image is being copied over to the Imaging server.  
+                                   
+                                  '3' FOR Copied to server - the image is copied over to the VistA Imaging 
+                                                             server successfully.  
+
+
+702.1,.1        UNC                    .1;E1,245 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                LAST EDITED:      FEB 22, 2001 
+                HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                DESCRIPTION:
+                                  This field contains the Universal Naming Convention (UNC) for this attachment indicating where the image attachment is located.  
+
+
+
+
+702,.11       SUBMITTED TO INSTRUMENT 0;11 POINTER TO CP INSTRUMENT FILE (#702.09)
+
+              LAST EDITED:      AUG 01, 2002 
+              DESCRIPTION:
+                                Points to the instrument definition that this study was submitted to at the time of check-in.  
+
+              CROSS-REFERENCE:  702^AINST 
+                                1)= S ^MDD(702,"AINST",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"AINST",$E(X,1,30),DA)
+                                This cross reference maintains a list of transactions by instrument for quick retrieval. It is also used to prevent deletion of instruments that are being pointed to.  
+
+
+
+702,.12       INSTRUMENT ORDER NUMBER 0;12 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>22!($L(X)<1) X
+              LAST EDITED:      MAY 13, 2003 
+              HELP-PROMPT:      Answer must be 1-22 characters in length. 
+              DESCRIPTION:      Contains the unique order number for this study that is sent to the instrument if it is bi-directional so the results can be auto-matched back to this study by the CP Gateway.  Field is 1-22 characters and contains only
+                                numeric characters.  
+
+              TECHNICAL DESCR:
+                                Generated from $$NOW^XLFDT() padded to 14 characters and stripped of the decimal point. Guaranteed unique by comparison to the AION cross reference in this file.  
+
+              CROSS-REFERENCE:  702^AION 
+                                1)= S ^MDD(702,"AION",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"AION",$E(X,1,30),DA)
+                                This cross reference is used by the GETSTDY^MDRPCOT1 extrinsic to quickly retrieve the study ien from the instrument order number.  
+
+
+
+702,.13       VISIT                  1;1 POINTER TO VISIT FILE (#9000010)
+
+              Visit                                                                                                            
+              LAST EDITED:      JUN 30, 2004 
+              HELP-PROMPT:      Enter a Visit number. 
+              DESCRIPTION:
+                                This is the Visit entry returned from PCE.  (Reference IA# 1902) 
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  702^AVISIT 
+                                1)= S ^MDD(702,"AVISIT",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"AVISIT",$E(X,1,30),DA)
+                                3)= Do Not Delete.
+                                This cross reference is used to make sure that a Visit file entry is not deleted as long as there is an entry.  
+
+
+              CROSS-REFERENCE:  702^AUPNV^MUMPS 
+                                1)= D ADD^AUPNVSIT
+                                2)= D SUB^AUPNVSIT
+                                3)= Do Not Delete.
+                                This cross reference tells Visit Tracking how many file entries are using (point to) a Visit file entry.  
+
+
+
+702,.14       SCHEDULED DATE/TIME    3;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 17, 2007 
+              DESCRIPTION:
+                                This field contains the date/time when the HL7 message should be sent by CP to the device for this CP transaction.  
+
+              CROSS-REFERENCE:  702^ASD 
+                                1)= S ^MDD(702,"ASD",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"ASD",$E(X,1,30),DA)
+                                3)= This is the scheduled date/time needed for sending HL7 message.
+                                This cross reference contains the scheduled date/time as to when the HL7 message should be sent to the device for the CP transaction.  It is used for easy look up to process the study.  
+
+
+
+702,.3        CONVERSION ID REFERENCE 2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      SEP 20, 2004 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:      This field is the Reference Conversion ID.  It is a variable pointer to the Medicine files.  It indicates which converted Medicine report record is associated with the CP Transaction study.  This field helps to keep track 
+                                which CP Transaction study was created for the Medicine report conversion.  This field is a variable pointer to the following files: 
+                                                                                                  
+                                691   ECHO                                   691.1 CARDIAC CATHETERIZATION                  691.5 ELECTROCARDIOGRAM (EKG)                  691.6 HOLTER                               691.7 EXERCISE TOLERANCE TEST            
+                                     691.8 ELECTROPHYSIOLOGY (EP)                   694   HEMATOLOGY                            694.5 CARDIAC SURGERY RISK ASSESSMENT          698   GENERATOR IMPLANT                        698.1 V LEAD IMPLANT             
+                                            698.2 A LEAD IMPLANT                       698.3 PACEMAKER SURVEILLANCE                   699   ENDOSCOPY/CONSULT                          699.5 GENERALIZED PROCEDURE/CONSULT              700   PULMONARY
+                                FUNCTION TESTS                   701   RHEUMATOLOGY           
+
+              CROSS-REFERENCE:  702^ACONV 
+                                1)= S ^MDD(702,"ACONV",$E(X,1,30),DA)=""
+                                2)= K ^MDD(702,"ACONV",$E(X,1,30),DA)
+                                3)= Do Not Delete.
+                                This cross reference is used to keep track of which CP transaction study was created during the Medicine report conversion and which Medicine record it is associated with.  
+
+
+
+702,.991      IMAGE COUNT             ;  COMPUTED
+
+              Count                                                                                                            
+              MUMPS CODE:       S X=0 X "F Y=0:0 S Y=$O(^MDD(702,D0,.1,Y)) Q:'Y  S X=X+1" S X=$J(X,0,0)
+              ALGORITHM:        S X=0 X "F Y=0:0 S Y=$O(^MDD(702,D0,.1,Y)) Q:'Y  S X=X+1"  (ALWAYS 0 DECIMAL DIGITS)
+              DESCRIPTION:
+                                Computed field to return the total number of images associated with this transaction.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CP DEFINITION (#702.01)           CP DEFINITION (#.04)
+
+CP INSTRUMENT (#702.09)           SUBMITTED TO INSTRUMENT (#.11)
+
+CP RESULT REPORT (#703.1)         IMAGE:RESULT REPORT (#.03)
+
+NEW PERSON (#200)                 CREATED BY (#.03)
+
+PATIENT (#2)                      PATIENT (#.01)
+
+TIU DOCUMENT (#8925)              TIU NOTE (#.06)
+
+VISIT (#9000010)                  VISIT (#.13)
+
+
+File #702
+
+  Record Indexes:
+
+  AVPR (#683)    RECORD    MUMPS        ACTION
+      Short Descr:  Trigger updates to VPR
+      Description:  This is an action index that updates the VPR when the fields in this index are changed.  
+        Set Logic:  I $T(UPD^VPRPROC)]"" D UPD^VPRPROC(X2(1),DA_";MDD(702,")
+         Set Cond:  S:X2(1)'="" X=1
+       Kill Logic:  I $T(DEL^VPRPROC)]"" D DEL^VPRPROC(X1(1),DA_";MDD(702,")
+        Kill Cond:  S:(X1(1)'=""&(X2(1)="")) X=1
+             X(1):  PATIENT  (702,.01)  (forwards)
+             X(2):  CREATED DATE/TIME  (702,.02)  (forwards)
+             X(3):  CP DEFINITION  (702,.04)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

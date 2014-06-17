@@ -1,0 +1,403 @@
+STANDARD DATA DICTIONARY #62.48 -- LA7 MESSAGE PARAMETER FILE                                                                                                                                                                     MAY 20,2014@15:30:45  PAGE 1
+STORED IN ^LAHM(62.48,  (16 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                         (VERSION 5.2)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to store parameters associated with a Lab Messaging system configuration.  
+
+
+
+POINTED TO BY: MESSAGE CONFIGURATION field (#8) of the AUTO INSTRUMENT File (#62.4) 
+               MESSAGE CONFIGURATION field (#2.2) of the IDENTIFIER sub-field (#62.4701) of the LAB CODE MAPPING File (#62.47) 
+               CONFIGURATION field (#.5) of the LA7 MESSAGE QUEUE File (#62.49) 
+               LAB MESSAGING LINK field (#.07) of the LAB SHIPPING CONFIGURATION File (#62.9) 
+               
+
+CROSS
+REFERENCED BY: CONFIGURATION(B), REMOTE SYSTEM ID(C)
+
+62.48,.01     CONFIGURATION          0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      APR 25, 1994 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This field contains the descriptive name for all Lab Messaging configurations.  Each external partner that the Lab system exchanges messages with should have an entry in the file, e.g. OERR, Universal Interface.  
+
+              CROSS-REFERENCE:  62.48^B 
+                                1)= S ^LAHM(62.48,"B",$E(X,1,30),DA)=""
+                                2)= K ^LAHM(62.48,"B",$E(X,1,30),DA)
+
+
+62.48,1       PROTOCOL               0;2 SET
+
+                                'HL7' FOR HEALTH LEVEL SEVEN; 
+                                'X12' FOR ANSI X.12; 
+                                '1238' FOR ASTM 1238; 
+                                '1381' FOR ASTM 1381; 
+                                '1394' FOR ASTM 1394; 
+                                'LOCAL' FOR LOCAL; 
+              LAST EDITED:      JAN 22, 1995 
+              HELP-PROMPT:      Enter the protocol name that best fits this configuration. 
+              DESCRIPTION:
+                                This field should contain the type of messages that are used by this configuration.  This field is primarily for documentation.  
+
+
+62.48,2       STATUS                 0;3 SET
+
+                                '1' FOR ACTIVE; 
+                                '0' FOR INACTIVE; 
+              LAST EDITED:      APR 25, 1994 
+              HELP-PROMPT:      Enter "Active" to allow this configuration to send and receive messages. 
+              DESCRIPTION:
+                                This field is used to turn this configuration on or off.  
+
+
+62.48,3       GRACE PERIOD FOR MESSAGES 0;6 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>31)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 05, 1997 
+              HELP-PROMPT:      Type a Number between 1 and 31, 0 Decimal Digits. 
+              DESCRIPTION:      Grace period determines the number of days that messages for this configuration are kept on the system before purging when the message status is "purgable".  If this field is left blank, the system assumes 3 days.  These
+                                messages are found in the LA7 MESSAGE QUEUE file (#62.49).  When messages have status of "error" they remain on the system until their corresponding error message is removed from the XTMP global by a KERNEL cleanup task. 
+                                The messages then become "purgable".  
+
+
+62.48,4       LOG ERRORS             0;4 SET
+
+                                '0' FOR OFF; 
+                                '1' FOR ON; 
+              LAST EDITED:      FEB 04, 1997 
+              HELP-PROMPT:      Answer "Yes" to log errors in ^XTMP. 
+              DESCRIPTION:
+                                If turned on, errors or exceptional conditions that occur during message processing are stored in the ^XTMP global for review.  To review the log, in programmer mode, type D PRINT^LA7LOG.  
+
+
+62.48,5       PROCESS IN             1;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      MAY 07, 1994 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:
+                                This field is executable MUMPS code. It should contain a call to an application routine that will process the incoming message.  For a Universal Interface setup, it should contain the call D QUE^LA7UIIN.  
+
+              WRITE AUTHORITY:  @
+
+62.48,6       PROCESS DOWNLOAD       2;E1,245 MUMPS
+
+              INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+              LAST EDITED:      MAY 16, 1994 
+              HELP-PROMPT:      This is Standard MUMPS code. 
+              DESCRIPTION:      This field contains executable MUMPS code.  It should contain the call point in a routine that will process building a message to be sent to the receiving system.  For a Universal Interface configuration it should contain
+                                the call D EN^LA7UID1.  
+
+              WRITE AUTHORITY:  @
+
+62.48,7       HL7 NON-DHCP APPLICATION 0;5 POINTER TO HL7 NON-DHCP APPLICATION PARAMETER FILE (#770)
+
+              LAST EDITED:      MAY 16, 1994 
+              HELP-PROMPT:      Used to call the HL7 package with the appropriate remote system identifier. 
+              DESCRIPTION:
+                                This field is a pointer to the HL7 NON-DHCP APPLICATION PARAMETER file (#770).  The field is used by the Universal Interface to create an Health Level Seven message using the Vista HL7 v1.5 package.  
+
+              TECHNICAL DESCR:  The variable HLNDAP is often required by the HL7 package.  This is a pointer to the HL7 NON-DHCP APPLICATION PARAMETER file (#770).  This field is a pointer to that file and can be used in messaging building routines to
+                                set the HLNDAP variable.  
+
+
+62.48,10      MULTIPLE ORDERS        0;8 SET
+
+                                '0' FOR MULTIPLE PATIENTS; 
+                                '1' FOR SINGLE PATIENT; 
+                                '2' FOR SINGLE ORDER; 
+              LAST EDITED:      AUG 31, 2001 
+              HELP-PROMPT:      Select if multiple/single patients/orders should be sent in a single message. See description (??) for additional help. 
+              DESCRIPTION:      Determines when building a HL7 message if message should contain only one patient/order or multiple patients/orders.  
+                                 
+                                Default is multiple patients per message if possible.  
+                                 
+                                This allows site to configure message building when communicating with a non-VA system that can not handle a message that has more than one patient in the message. It applies to both order (ORM) and result (ORU) messages.  
+                                 
+                                When communicating with a VA facility this field can be left blank (default) or set to 0 - MULTIPLE PATIENTS 
+                                 
+                                If the receiving system can only accept one patient per HL7 message then select 1 - SINGLE PATIENT. This will place multiple orders or results for multiple orders in one message but only one patient will be contained in
+                                the message.  
+                                 
+                                If the receiving system can only accept one order per HL7 message then select 2 - SINGLE ORDER. This will place in the message one order or the results associated with one order for a single patient 
+                                 
+                                Note: An order in the VA is considered those tests found on one accession. What the VA considers as an accession other non-VA systems may refer to as an order.  
+
+
+62.48,11      INTERFACE TYPE         0;9 SET
+
+                                '1' FOR LAB UI; 
+                                '10' FOR LEDI; 
+                                '20' FOR POC; 
+                                '21' FOR POCA; 
+                                '30' FOR HDR; 
+                                '40' FOR OCS; 
+                                '99' FOR OTHER; 
+              LAST EDITED:      OCT 19, 2007 
+              HELP-PROMPT:      Enter the purpose for this messaging interface. 
+              DESCRIPTION:      This field determines how and for what purpose this configuration is used. It allows the laboratory software to generate, handle and process messages.  
+                                 
+                                LAB UI - Used to identify configurations that are for processing 
+                                         laboratory automated instrument data via a generic interface 
+                                         manager.  
+                                 
+                                  LEDI - Designate entries involved with Laboratory Electronic Data 
+                                         Interchange (LEDI). Used to identify interfaces involved in 
+                                         the generation, transmission and processing of HL7 order (ORM) 
+                                         and result (ORU) messages involving reference laboratory 
+                                         testing between VistA and other VistA systems, commercial 
+                                         reference laboratories, DoD laboratories and civilian 
+                                         institutions.  
+                                 
+                                   POC - Point of Care (POC) interface. These interfaces transmit 
+                                         laboratory test results for which there is no pre-existing 
+                                         VistA laboratory order. VistA creates an order as part of 
+                                         result processing and storage.  
+                                 
+                                  POCA - Point of Care interface that subscribes to HL7 patient 
+                                         demographic (ADT) messages from VistA. Used by POC interfaces 
+                                         that subscribe to patient information from VistA to maintain 
+                                         the POC's patient database.  
+                                 
+                                   HDR - Designates interface to the VA Health Data Repository (HDR).  
+                                         And those systems which subscribe to VistA Lab HL7 Result (ORU) 
+                                         messages broadcast by VistA when lab results are made available  
+                                         within VistA. Examples are COTS clinical decision support 
+                                         systems.  
+                                 
+                                   OCS - Order Collection System. Interfaces involved in phlebotomy 
+                                         and other specimen collection systems. Information regarding 
+                                         lab orders and specimen requirement are transmitted to an 
+                                         external system which assists in the specimen collection 
+                                         and updates VistA Lab with information related to the specimen 
+                                         and the related order/accession.  
+                                 
+                                 OTHER - Designate other non-laboratory interfaces that utilize the 
+                                         Laboratory package.  
+
+
+62.48,20      ALERT CONDITION        20;0 SET Multiple #62.481
+
+              DESCRIPTION:
+                                This field allows the user to identify whether to receive alerts when there are new results, new orders or when an error is logged to the ^XTMP global.  
+
+
+62.481,.01      ALERT CONDITION        0;1 SET
+
+                                  '1' FOR NEW RESULTS; 
+                                  '2' FOR ERROR ON MESSAGE; 
+                                  '3' FOR ORDERS RECEIVED; 
+                LAST EDITED:      AUG 27, 1997 
+                HELP-PROMPT:      Enter "1" to receive alerts for new results, a "2" to receive alerts for errors during processing. and "3" when orders are received. 
+                DESCRIPTION:
+                                  This field allows the user to identify whether to receive alerts when there are new results and when an error is logged to the ^XTMP global.  
+
+                SCREEN:           S DIC("S")="I $S(Y=2&($P(^LAHM(62.48,DA(1),0),U,4)'=1):0,1:1)"
+                EXPLANATION:      Error on message alert may only be selected if Field #4, LOG ERRORS,is set to "ON".
+                CROSS-REFERENCE:  62.481^B 
+                                  1)= S ^LAHM(62.48,DA(1),20,"B",$E(X,1,30),DA)=""
+                                  2)= K ^LAHM(62.48,DA(1),20,"B",$E(X,1,30),DA)
+
+
+62.481,.02      MAIL GROUP             0;2 POINTER TO MAIL GROUP FILE (#3.8) (Required)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X I $D(X) S DIC(0)="EMQ" S X=$P(Y,U,2),DIC=DIE K:Y<1 X
+                LAST EDITED:      FEB 19, 1997 
+                HELP-PROMPT:      Enter the Mail Group that will receive the alert condition messages. 
+                DESCRIPTION:
+                                  This field contains a pointer to the MAIL GROUP file (#3.8).  The group is used to identify who will receive the alert condition messages.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+62.48,30      NON-VA ORDER SNOMED CODES SCT;0     VARIABLE POINTER  Multiple #62.482
+              DESCRIPTION:
+                                Allows mapping a SNOMED CT code to specimen (topography) and/or collection sample which an external system requires and which is different from the SNOMED CT code assigned to the concept by the Dept of Veterans Affairs.  
+
+              TECHNICAL DESCR:
+                                This field uses a combination of an Output Transform and a "WRITE ID" node in the DD to display the file that the particular entry is from.  
+
+              IDENTIFIED BY:    
+                       "LA":    D EN^DDIOL("  "_$$ID62482^LA7XREF(),"","$C(32)")
+
+              INDEXED BY:       VA FILE ENTRY & SNOMED CT ID (AC), SNOMED CT ID & VA FILE ENTRY (AD), SNOMED CT ID & VA FILE ENTRY (AD1), SNOMED CT ID & VA FILE ENTRY (AD2)
+
+62.482,.001     SEQUENCE                 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      DEC 19, 2006 
+                HELP-PROMPT:      Type a Number between 1 and 999999999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  Sequence (IEN) number.  
+
+
+62.482,.01      VA FILE ENTRY          0;1        VARIABLE POINTER (Multiply asked)
+
+                FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                   61   1    SP           n   Specimen from TOPOGRAPHY file 
+                   62   2    CS           n   Sample from COLLECTION SAMPLE 
+                                         
+                OUTPUT TRANSFORM: S Y=$$OT62482^LA7XREF(Y)
+                LAST EDITED:      DEC 20, 2006 
+                HELP-PROMPT:      Select specimen or collection sample 
+                DESCRIPTION:
+                                  The file entry to map to a different code/codeset.  
+
+                CROSS-REFERENCE:  62.482^B 
+                                  1)= S ^LAHM(62.48,DA(1),"SCT","B",$E(X,1,30),DA)=""
+                                  2)= K ^LAHM(62.48,DA(1),"SCT","B",$E(X,1,30),DA)
+                                  3)= Required for Variable Pointer
+
+                RECORD INDEXES:   AC (#1079), AD (#1080), AD1 (#1081), AD2 (#1082)
+
+62.482,.02      SNOMED CT ID           0;2 NUMBER
+
+                INPUT TRANSFORM:  N LROUT K:'$$SCTOK^LRSCT(X,,.LROUT) X D:$D(X)&('$$ISQUIET^LRXREF()) EN^DDIOL($G(LROUT("F")),"","$C(32)")
+                LAST EDITED:      DEC 19, 2006 
+                HELP-PROMPT:      Enter a valid SNOMED CT Code 
+                DESCRIPTION:
+                                  This is the SNOMED CT code for this entry.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                RECORD INDEXES:   AC (#1079), AD (#1080), AD1 (#1081), AD2 (#1082)
+
+
+
+62.48,90      REMOTE SYSTEM ID       90;0 Multiple #62.483 (Add New Entry without Asking)
+
+              DESCRIPTION:      This field is used to locate the correct configuration in this file when a message is received from a remote system. Most messaging protocols contain information about the system that originated the message and the system
+                                that is the destination. Since there can be several senders and receivers, this field can be used to determine the correct receiver by using a special lookup on this field. The Universal Interface utilizes this field in
+                                the following manner.  
+                                 
+                                The VISTA Health Level Seven (HL7) package requires that every message must have four fields in the message header so that it can determine the application route for the message. Those four fields are called Sending
+                                Application, Sending Facility, Receiving Application, and Receiving Facility. The HL7 software must find values for each of these fields in the message within the HL7 package files. The fields must match in the following
+                                way.  
+                                 For HL7 v1.5 interfaces 
+                                 Sending Application = the NAME field (#.01) in  the HL7 NON-DHCP 
+                                  APPLICATION PARAMETER file (#770) 
+                                 Sending Facility = the NON-DHCP FACILITY NAME field (#3) in File 770 
+                                 Receiving Application = the NAME field (#.01) in the HL7 APPLICATION 
+                                  PARAMETER file (#771) 
+                                 Receiving Facility = the DHCP STATION NUMBER field (#2) in File 770 
+                                 
+                                 For HL7 v1.6 interfaces 
+                                 Sending Application = the NAME field (#.01) in the HL7 APPLICATION 
+                                  PARAMETER file (#771) 
+                                 Sending Facility = the FACILITY NAME field (#3) in File 771 
+                                 Receiving Application = the NAME field (#.01) in the HL7 APPLICATION  
+                                  PARAMETER file (#771) 
+                                 Receiving Facility = the FACILITY NAME field (#3) in File 771 
+                                 
+                                For the Universal Interface, all four of those fields should be entered into this multiple field, exactly as they are entered in the HL7 fields listed above, including upper and lower case characters. No spaces should be
+                                entered between the field values. An example of a Universal Interface value for this field is listed below.  LAB INTERFACEInstrument ManagerLA AUTO INST695 Where LAB INTERFACE is the NAME in File 770, Instrument Manager is 
+                                the NON-DHCP FACILITY NAME in File 770, LA AUTO INST is the NAME in File 771, and 695 is the DHCP STATION NUMBER in File 770.  
+                                 
+                                When an HL7 message comes in, these four fields are taken out of the message, concatenated together, and a lookup is done on the "C" cross reference to find this configuration and its associated parameters. The processing
+                                routine can then continue to process the data. 
+
+
+62.483,.01      REMOTE SYSTEM ID       0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>60!($L(X)<1) X
+                LAST EDITED:      APR 29, 1994 
+                HELP-PROMPT:      Answer must be 1-60 characters in length. 
+                DESCRIPTION:      For the Universal Interface, the following four fields should be entered into this REMOTE SYSTEM ID field.  
+                                   Sending Application = the NAME field (#.01) in File 770 
+                                   Sending Facility = the NON-DHCP FACILITY NAME field (#3) in File 770 
+                                   Receiving Application = the NAME field (#.01) in the HL7 APPLICATION 
+                                    PARAMETER file (#771) 
+                                   Receiving Facility = the DHCP STATION NUMBER field (#2) in File 770 
+                                   
+                                  For interfaces that use the Vista Health Level Seven (HL7) v1.6 package, the following four fields should beentered into this REMOTE SYSTEM ID field.  
+                                   Sending Application = the NAME field (#.01) in the HL7 APPLICATION  
+                                    PARAMETER file (#771) 
+                                   Sending Facility = the FACILITY NAME field (#3) in File 771 
+                                   Receiving Application = the NAME field (#.01) in the HL7 APPLICATION  
+                                    PARAMETER file (#771) 
+                                   Receiving Facility = the FACILITY NAME field (#3) in File 771 
+                                   
+                                   
+                                  The data from these fields should be entered exactly as it is found in the HL7 fields listed above, including upper and lower case characters.  No spaces should be entered between the field values.  An example of a
+                                  Universal Interface value for this field is listed below.  LAB INTERFACEInstrument ManagerLA AUTO INST695 Where LAB INTERFACE is the NAME in File 770, Instrument Manager is the NON-DHCP FACILITY NAME in File 770, LA AUTO
+                                  INST is the NAME in File 771, and 695 is the DHCP STATION NUMBER in File 770.  
+                                   
+                                  When an HL7 message comes in, these four fields are taken out of the message, concatenated together, and a lookup is done on the "C" cross reference to find this configuration and its associated parameters. The 
+                                  processing routine can then continue to process the data. 
+
+                CROSS-REFERENCE:  62.483^B 
+                                  1)= S ^LAHM(62.48,DA(1),90,"B",$E(X,1,30),DA)=""
+                                  2)= K ^LAHM(62.48,DA(1),90,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  62.48^C^MUMPS 
+                                  1)= N Y X ^%ZOSF("LPC") S ^LAHM(62.48,"C",$E(X,1,27)_Y,DA(1))=""
+                                  2)= N Y X ^%ZOSF("LPC") K ^LAHM(62.48,"C",$E(X,1,27)_Y,DA(1))
+                                  This cross reference is used to identify the incoming messages to a specific LA7 MESSAGE PARAMETER file (#62.48) entry.  The cross reference is checked against the third (Sending Application), fourth (Sending facility),
+                                  fifth (Receiving Application), and sixth (Receiving facility) sequences in the HL7 message header (MSH).  The format of the cross reference is as follows 
+                                    X ^%ZOSF("LPC")  S ^LAHM(62.48,"C",$E(REMOTE SYSTEM ID,1,27)_Y,CONFIGURATION)="" 
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+HL7 NON-DHCP APPLICATION PARAM 
+                   (#770)         HL7 NON-DHCP APPLICATION (#7)
+
+MAIL GROUP (#3.8)                 ALERT CONDITION:MAIL GROUP (#.02)
+
+
+Subfile #62.482
+
+  Record Indexes:
+
+  AC (#1079)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Cross-reference by file type
+        Set Logic:  S ^LAHM(62.48,DA(1),"SCT","AC",X(1),X(2),DA)=""
+       Kill Logic:  K ^LAHM(62.48,DA(1),"SCT","AC",X(1),X(2),DA)
+       Whole Kill:  K ^LAHM(62.48,DA(1),"SCT","AC")
+             X(1):  VA FILE ENTRY  (62.482,.01)  (Subscr 1)  (forwards)
+             X(2):  SNOMED CT ID  (62.482,.02)  (Subscr 2)  (forwards)
+
+  AD (#1080)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Cross-reference by SNOMED CT ID
+        Set Logic:  S ^LAHM(62.48,DA(1),"SCT","AD",X(1),X(2),DA)=""
+       Kill Logic:  K ^LAHM(62.48,DA(1),"SCT","AD",X(1),X(2),DA)
+       Whole Kill:  K ^LAHM(62.48,DA(1),"SCT","AD")
+             X(1):  SNOMED CT ID  (62.482,.02)  (Subscr 1)  (forwards)
+             X(2):  VA FILE ENTRY  (62.482,.01)  (Subscr 2)  (forwards)
+
+  AD1 (#1081)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Cross-reference by SNOMED CT ID on file #61 entries
+        Set Logic:  S ^LAHM(62.48,DA(1),"SCT","AD1",X(1),X(2),DA)=""
+         Set Cond:  S X=$S($P(X(2),";",2)="LAB(61,":1,1:0)
+       Kill Logic:  K ^LAHM(62.48,DA(1),"SCT","AD1",X(1),X(2),DA)
+       Whole Kill:  K ^LAHM(62.48,DA(1),"SCT","AD1")
+             X(1):  SNOMED CT ID  (62.482,.02)  (Subscr 1)  (forwards)
+             X(2):  VA FILE ENTRY  (62.482,.01)  (Subscr 2)  (forwards)
+
+  AD2 (#1082)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Cross-reference by SNOMED CT ID on file #62 entries
+        Set Logic:  S ^LAHM(62.48,DA(1),"SCT","AD2",X(1),X(2),DA)=""
+         Set Cond:  S X=$S($P(X(2),";",2)="LAB(62,":1,1:0)
+       Kill Logic:  K ^LAHM(62.48,DA(1),"SCT","AD2",X(1),X(2),DA)
+       Whole Kill:  K ^LAHM(62.48,DA(1),"SCT","AD2")
+             X(1):  SNOMED CT ID  (62.482,.02)  (Subscr 1)  (forwards)
+             X(2):  VA FILE ENTRY  (62.482,.01)  (Subscr 2)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,304 @@
+STANDARD DATA DICTIONARY #8994 -- REMOTE PROCEDURE FILE                                                                                                                                                                           MAY 20,2014@15:40:26  PAGE 1
+STORED IN ^XWB(8994,  (2982 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                         (VERSION 1.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used as a repository of server-based procedures in the context of the Client/Server architecture.  By using the Remote Procedure Call (RPC) Broker, applications running on client workstations can invoke (call) the procedures in this file to
+be executed by the server and the results will be returned to the client application.  
+ 
+Each remote procedure entry is associated with an entry point (ROUTINE with optional TAG).  Calls to these procedures can include parameters of different value types.  The resulting value of the call can be either a string, a list of strings or a word
+processing string as indicated by the RETURN VALUE TYPE field (.04).  
+ 
+The remote procedure may be available for use by anyone or its use may be restricted to one or more application.  The range of availability is indicated by the AVAILABILITY field.  IF THERE IS NO ENTRY IN THE AVAILABILITY FIELD, then the procedure is
+assumed to be PUBLIC.  
+ 
+A remote procedure may be removed from service for a period of time by setting the INACTIVE field.  A request for use of a procedure which is marked inactive will result in an error being returned to the originating application.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+POINTED TO BY: RPC field (#.01) of the RPC sub-field (#19.05) of the OPTION File (#19) 
+               RPC field (#.13) of the OE/RR REPORT File (#101.24) 
+               
+
+CROSS
+REFERENCED BY: NAME(B)
+
+8994,.01      NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(X?.N)!($L(X)<3)!'(X'?1P.E) X
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              CROSS-REFERENCE:  8994^B 
+                                1)= S ^XWB(8994,"B",$E(X,1,30),DA)=""
+                                2)= K ^XWB(8994,"B",$E(X,1,30),DA)
+
+
+8994,.02      TAG                    0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<1) X
+              LAST EDITED:      DEC 13, 1994 
+              HELP-PROMPT:      Enter the TAG to be used as the entry point for the routine.  Leave this field empty if a TAG is not required. 
+
+8994,.03      ROUTINE                0;3 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>8!($L(X)<3)!'(X?1U1.7UN) X
+              LAST EDITED:      DEC 13, 1994 
+              HELP-PROMPT:      This is the name of the routine used by this API 
+
+8994,.04      RETURN VALUE TYPE      0;4 SET (Required)
+
+                                '1' FOR SINGLE VALUE; 
+                                '2' FOR ARRAY; 
+                                '3' FOR WORD PROCESSING; 
+                                '4' FOR GLOBAL ARRAY; 
+                                '5' FOR GLOBAL INSTANCE; 
+              LAST EDITED:      JUL 12, 1995 
+              HELP-PROMPT:      Select the appropriate value to indicate what type of value will be returned by the API. 
+              DESCRIPTION:      This field tells RPC Broker how to process the resulting data from the call.  
+                                 
+                                SINGLE VALUE: Broker will return the value of the return parameter (first 
+                                   parameter in the formal list).  For example, 
+                                       TAG(RESULT)     ; 
+                                               S RESULT="DOE, JOHN" 
+                                               Q 
+                                 
+                                ARRAY: Using $ORDER Broker will traverse the return parameter (first 
+                                   parameter in the formal list), returning all elements of the array.  
+                                   For example, 
+                                       TAG(RESULT)     ; 
+                                               S RESULT(1)="ONE" 
+                                               S RESULT(2)="TWO" 
+                                               Q 
+                                 
+                                WORD PROCESSING: This type is treated exactly the same way as the ARRAY, 
+                                   with one exception that the WORD WRAP ON field is used to 
+                                   control whether each line returned is terminated with CR + LF characters.  
+                                   See WORD WRAP ON field description for more information.  
+                                 
+                                GLOBAL ARRAY: Return value parameter should be set to a closed global 
+                                   reference in ^TMP. The global's data nodes will be traversed using 
+                                   $QUERY, and all data values on global nodes descendant from the global 
+                                   reference are returned.  This type is especially useful for returning data 
+                                   from VA FileMan word processing fields, where each line is on a 
+                                   0-subscripted node.  
+                                 
+                                   Important: The global reference you pass is killed by the Broker at the 
+                                              end of RPC Execution as part of RPC cleanup. Do not pass a 
+                                              global reference that is not in ^TMP or that should not be 
+                                              killed.  
+                                 
+                                   This type is useful for returning large amounts of data to the client, 
+                                   where using the ARRAY type can exceed the symbol table limit and crash 
+                                   your RPC.  
+                                 
+                                   For example, to return sign-on introductory text you could do this, 
+                                       TAG(RESULT)     ; 
+                                               M RESULT=^XTV(8989.3,1,"INTRO") 
+                                               K RESULT(0)  ;this node is not needed 
+                                               Q 
+                                 
+                                GLOBAL INSTANCE: Using this type Broker will return the value of a global 
+                                   node.  For example the following code will return the whole 0th node 
+                                   from the NEW PERSON file for the current user.  
+                                       TAG(RESULT)     ; 
+                                               S RESULT=$NA(^VA(200,DUZ,0)) 
+                                               Q 
+
+
+8994,.05      AVAILABILITY           0;5 SET
+
+                                'P' FOR PUBLIC; 
+                                'S' FOR SUBSCRIPTION; 
+                                'A' FOR AGREEMENT; 
+                                'R' FOR RESTRICTED; 
+              LAST EDITED:      DEC 13, 1994 
+              HELP-PROMPT:      Select the appropriate indicator of the availability of this API as PUBLIC (general), SUBSCRIPTION (need to subscribe), AGREEMENT required, or RESTRICTED to the developing package. 
+              DESCRIPTION:      This field is used to indicate the availability of the API to various users.  
+                                 
+                                PUBLIC indicates that the API is available for general use by any package, and it is not necessary to either indicate that the API is being used or to request permission to use it.  
+                                 
+                                SUBSCRIPTION indicates that the API is available to those packages that wish to use it, BUT the package needs to indicate that it is using the API or subscribing to it.  
+                                 
+                                AGREEMENT indicates that the API is available to packages, other than the developing package, only by means of an integration agreement on its usage.  
+                                 
+                                RESTRICTED indicates that the API is not available for reference by any package other than the package which developed it.  Entry of the input and return parameter information is at the option of the developing package in 
+                                this case.  
+
+
+8994,.06      INACTIVE               0;6 SET
+
+                                '0' FOR ACTIVE; 
+                                '1' FOR INACTIVE; 
+                                '2' FOR LOCAL INACTIVE (ACTIVE REMOTELY); 
+                                '3' FOR REMOTE INACTIVE (ACTIVE LOCALLY); 
+              LAST EDITED:      OCT 07, 1999 
+              HELP-PROMPT:      Marks RPC as not useable completely, locally, or remotely.  
+              DESCRIPTION:      This field is used to indicate that the RPC is not available for use for some reason.  An RPC can be marked as completely unusable (1), unusable locally (2), or unusable remotely (3).  Local use means in the account the 
+                                user is logged into; remote use means in an account other than the one the user is directly logged into (i.e., a 'Remote RPC').  The Broker will not run an RPC that is marked as unusable in the applicable context.  
+
+              TECHNICAL DESCR:
+                                Before patch XWB*1.1*10, this field was for documentation only.  Also, the set of codes was only 1 = INACTIVE.  
+
+
+8994,.07      CLIENT MANAGER         0;7 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      DEC 15, 1994 
+              HELP-PROMPT:      Enter 1 or YES if this API requires other configuration information related to transmission to the client. 
+              DESCRIPTION:      This field is used to identify those APIs which may be initiated to control the client or to send data to the client unrelated to requests from the client.  These actions usually require additional information on the
+                                configuration which is present.  
+
+
+8994,.08      WORD WRAP ON           0;8 SET
+
+                                '0' FOR FALSE; 
+                                '1' FOR TRUE; 
+              LAST EDITED:      AUG 04, 1995 
+              DESCRIPTION:      Affects GLOBAL ARRAY and WORD PROCESSING return value types only. If set to FALSE, all data values are returned in a single concatenated string in Results[0]. If set to TRUE, each array node on the M side is returned as a 
+                                distinct array item in the Results property of the TRPCBroker.  
+                                 
+                                If you're returning some text to the client and you'd rather let the memo box of the client control the wrapping of lines, set WORD WRAP ON to FALSE.  On the other hand, if you want to preserve line breaks as they exist on
+                                the server, set WORD WRAP ON to TRUE.  
+
+
+8994,.09      VERSION                0;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."6N.N) X
+              LAST EDITED:      OCT 07, 1999 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 5 Decimal Digits 
+              DESCRIPTION:      A number to identify the version of the Remote Procedure.  Currently this number is only checked if the Remote Procedure is being run on a foreign server.  If a version number is passed to the Broker by the application 
+                                requesting that the Remote Procedure be run on the foreign server, the Remote Procedure will only be run if the value of this field is equal to or greater than the passed version number.  
+
+              TECHNICAL DESCR:
+                                Introduced in patch XWB*1.1*10.  
+
+
+8994,.1       SUPPRESS RDV USER SETUP 0;10 SET
+
+              Suppress RDV user setup                                                                                          
+                                '0' FOR No; 
+                                '1' FOR Yes; 
+              LAST EDITED:      AUG 20, 2001 
+              HELP-PROMPT:      Must not be set to YES for RPC's that collect Patient data. 
+              DESCRIPTION:      This field controls how Remote Data View handles the setup of a user to run the RPC. If the field is set to No or is blank than the remote users data will be set up in the New Person file and DUZ for the process will be 
+                                set to the user. If the field is set to Yes at the remote site the remote user data will NOT be entered into the New Person file and DUZ will be set to the Postmaster.  
+                                 
+                                This field should not be set to Yes for RPC's that collect patient data.  If there is any question about why a RPC has this set to yes contact the DBA for the VA.  
+
+              WRITE AUTHORITY:  ^
+
+8994,.11      APP PROXY ALLOWED      0;11 SET
+
+                                '0' FOR No; 
+                                '1' FOR Yes; 
+              LAST EDITED:      MAR 01, 2005 
+              DESCRIPTION:
+                                This field must be set to Allowed if this RPC is to be run by an APPLICATION PROXY user.  The default is to NOT allow access.  
+
+
+8994,1        DESCRIPTION            1;0   WORD-PROCESSING #8994.01   (NOWRAP)
+
+
+8994,2        INPUT PARAMETER        2;0 Multiple #8994.02 (Add New Entry without Asking)
+
+              DESCRIPTION:      Input parameter is what RPC Broker passes into your remote procedure.  The name that you may call the input parameter has no special meaning to the Broker.  However, you should choose a name that best describes the data 
+                                that the parameter is used for.  
+
+
+8994.02,.01     INPUT PARAMETER        0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+                LAST EDITED:      DEC 13, 1994 
+                HELP-PROMPT:      Answer must be 3-30 characters in length. 
+                DESCRIPTION:
+                                  This field is used to identify an input parameter for the API.  
+
+                CROSS-REFERENCE:  8994.02^B 
+                                  1)= S ^XWB(8994,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^XWB(8994,DA(1),2,"B",$E(X,1,30),DA)
+
+
+8994.02,.02     PARAMETER TYPE         0;2 SET
+
+                                  '1' FOR LITERAL; 
+                                  '2' FOR LIST; 
+                                  '3' FOR WORD PROCESSING; 
+                                  '4' FOR REFERENCE; 
+                LAST EDITED:      AUG 07, 1997 
+                HELP-PROMPT:      Select the appropriate value indicating whether the parameter is a literal, a list, a reference or a word processing string. 
+                DESCRIPTION:      This field is used to indicate the type (Literal, List, Reference, or Word Processing entry) of value passed by this parameter.  The Literal, List, and Reference types correspond to the TParamType of the same name.  A
+                                  Word Processing type would also be a List TParamType.  
+
+                TECHNICAL DESCR:  Currently, this field is used only for documenting the RPC's input parameters.  
+                                   
+                                  In version 1.0 of the RPC Broker the Literal type was called Single Value and the List type was called Array.  
+
+
+8994.02,.03     MAXIMUM DATA LENGTH    0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>32000)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      DEC 13, 1994 
+                HELP-PROMPT:      Indicate the maximum length of the parameter, type a Number between 1 and 32000, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This field indicates the maximum length that would be expected for the parameter value.  
+
+
+8994.02,.04     REQUIRED               0;4 SET
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      DEC 15, 1994 
+                HELP-PROMPT:      This field is used to indicate when an input parameter is required in the API call. 
+                DESCRIPTION:
+                                  This field is used to indicate that the input parameter is a required argument in the API call.  
+
+
+8994.02,.05     SEQUENCE NUMBER        0;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>30)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 28, 1997 
+                HELP-PROMPT:      Type a Number between 1 and 30, 0 Decimal Digits 
+                DESCRIPTION:      This number should correspond to the position of this parameter in the formal list of the function.  Consider that the return parameter that Broker passes in, by reference, is the very first parameter with the sequence
+                                  number of 0.  The next parameter is the first application-supplied parameter with the sequence of 1.  
+                                   
+                                  Example: 
+                                   
+                                    Your entry point may look like: 
+                                   
+                                      EN(RESULT,USER,DATE)       ;this will do something 
+                                   
+                                        In this case the parameter corresponding to USER should have sequence 
+                                        number 1 and the DATE parameter should be 2.  
+
+                CROSS-REFERENCE:  8994.02^PARAMSEQ 
+                                  1)= S ^XWB(8994,DA(1),2,"PARAMSEQ",$E(X,1,30),DA)=""
+                                  2)= K ^XWB(8994,DA(1),2,"PARAMSEQ",$E(X,1,30),DA)
+
+
+8994.02,1       DESCRIPTION            1;0   WORD-PROCESSING #8994.021   (NOWRAP)
+
+
+
+
+8994,3        RETURN PARAMETER DESCRIPTION 3;0   WORD-PROCESSING #8994.03   (NOWRAP)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+DSIC RPC LIST                 DEC 18, 2002@15:45  USER #0                                                                                                                                                                                REMOTE PROCEDURE LIST
+XWB SEND API                  FEB 02, 1995        USER #0    
+
+SORT TEMPLATE(S):
+IBD RPC LIST                  JUN 04, 1996@11:19  USER #0    
+     AICS Remote Procedure List
+
+
+FORM(S)/BLOCK(S):

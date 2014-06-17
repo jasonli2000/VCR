@@ -1,0 +1,300 @@
+STANDARD DATA DICTIONARY #445.3 -- INTERNAL DISTRIBUTION ORDER/ADJ. FILE                                                                                                                                                          MAY 20,2014@15:34:31  PAGE 1
+STORED IN ^PRCP(445.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+USED BY GENERIC INVENTORY SYSTEM.  This file is used to store distribution orders from a Primary Inventory/ Distribution point to a Secondary.  An order can be entered either at the Primary, for the Secondary, or at the Secondary, if they are automated. 
+When an order is posted, the inventory level at the affected inventory points are updated, history is updated, and the record is deleted from the file, unless items are backordered.  Items on backorder are left on the record until the back-order function
+has been completed.  
+
+
+FILE SCREEN (SCR-node) : I $D(DIS(0))!($G(PRCPPRIV))
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+IDENTIFIED BY: SECONDARY INVENTORY POINT (#2)[R], DATE (#3)[R], TYPE (#3.5), ORDER STATUS (#5)
+
+POINTED TO BY: ORDER NUMBER field (#6) of the AUTOMATED SUPPLY STATION PROCESSING QUEUE File (#447.1) 
+               
+
+CROSS
+REFERENCED BY: PRIMARY INVENTORY POINT(AC), SECONDARY INVENTORY POINT(AD), PRIMARY INVENTORY POINT(ANXT), PATIENT NAME(ASR1), SCHEDULED OPERATION(ASR2), NUMBER(B)
+
+445.3,.01     NUMBER                 0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:X&('$D(^PRCP(445.3,X,0))) X K:'$G(PRCPPRIV) X I $D(X) D:X="NEW" NEWORDER^PRCPOPUS(+$G(PRCPPRIM)) I $D(X) K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 15, 1993 
+              HELP-PROMPT:      Enter 'NEW' to add a new order to the file, or enter the number identifying this order. 
+              DESCRIPTION:      Enter 'NEW' to add a new order to the file, or enter the number identifying the order.  This sequential number is updated automatically by the system when a new order is added.  Each inventory point will use their own set
+                                of numbers.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  445.3^B 
+                                1)= S ^PRCP(445.3,"B",$E(X,1,30),DA)=""
+                                2)= K ^PRCP(445.3,"B",$E(X,1,30),DA)
+
+
+445.3,1       PRIMARY INVENTORY POINT 0;2 POINTER TO GENERIC INVENTORY FILE (#445) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,3)=""P""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUN 03, 1987 
+              HELP-PROMPT:      Primary Inventory point from which the Order originated. 
+              DESCRIPTION:
+                                This is the Primary Inventory point from which the Order originated.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,3)=""P"""
+              EXPLANATION:      Must be a Primary Inventory Point.
+                                UNEDITABLE
+              CROSS-REFERENCE:  445.3^ANXT^MUMPS 
+                                1)= S:'$D(^PRCP(445.3,"ANXT",+X)) ^(+X)="" S:^(+X)=999999 ^(+X)=""
+                                2)= Q
+                                This cross reference is used to reset the distribution order number for the primary inventory point (stored in the variable X).  
+
+
+              CROSS-REFERENCE:  445.3^AC 
+                                1)= S ^PRCP(445.3,"AC",$E(X,1,30),DA)=""
+                                2)= K ^PRCP(445.3,"AC",$E(X,1,30),DA)
+                                This cross reference sorts the distribution orders by the primary inventory point.  The node prcp(445.3,"ac",INVPT,DISTR) is set where INVPT is the internal primary inventory point number and DISTR is the internal
+                                distribution order number.  
+
+
+
+445.3,2       SECONDARY INVENTORY POINT 0;3 POINTER TO GENERIC INVENTORY FILE (#445) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^PRCP(445,DA,0),U,3)=""S"",$D(^PRCP(445,+$P(^PRCP(445.3,DA,0),U,2),2,+Y,0))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 08, 1987 
+              HELP-PROMPT:      The Secondary Inventory/Distribution point to which the Order is made. 
+              DESCRIPTION:
+                                This is a pointer to the Generic Inventory File, #445.  This field contains the Secondary Inventory/Distribution point to which the Order/Adjustment is made.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,3)=""S"",$D(^PRCP(445,+$P(^PRCP(445.3,DA,0),U,2),2,+Y,0))"
+              EXPLANATION:      Must be a Secondary Inventory Point.
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  445.3^AD 
+                                1)= S ^PRCP(445.3,"AD",$E(X,1,30),DA)=""
+                                2)= K ^PRCP(445.3,"AD",$E(X,1,30),DA)
+                                This cross reference sorts the distribution orders by the secondary inventory point.  The node prcp(445.3,"ad",INVPT,DISTR) is set where INVPT is the internal secondary inventory point number and DISTR is the internal
+                                distribution order number.  
+
+
+
+445.3,3       DATE                   0;4 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 21, 1987 
+              HELP-PROMPT:      Date Order was entered 
+              DESCRIPTION:
+                                This is the date the Order was entered.  
+
+
+445.3,3.5     TYPE                   0;8 SET
+
+                                'R' FOR REGULAR ORDER; 
+                                'C' FOR CALL-IN ORDER; 
+                                'E' FOR EMERGENCY; 
+              LAST EDITED:      OCT 22, 1992 
+              DESCRIPTION:
+                                This is a code indicating the type of order (i.e., r=regular order; c=call-in order; e=emergency).  
+
+
+445.3,4       ENTERED BY             0;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUN 01, 1992 
+              HELP-PROMPT:      Name of person who entered the Order 
+              DESCRIPTION:
+                                This is the name of the person who entered the Order.  
+
+
+445.3,5       ORDER STATUS           0;6 SET
+
+                                'R' FOR RELEASED TO FILL; 
+                                'P' FOR POSTED; 
+                                'B' FOR BACKORDERED; 
+                                'F' FOR BACK-ORDER FILLED; 
+              LAST EDITED:      MAR 08, 1999 
+              HELP-PROMPT:      BLANK-Order entered by Secondary, not released to Primary. 'R'-Order ready to be filled. 'P'-Order  posted. 'B'-Order has been posted and is back-ordered. 
+              DESCRIPTION:
+                                This is a code indicating the status of the order (i.e., R=order ready to be filled; P=order has been posted; B=order has been posted and is back-ordered; Blank=order entered by Secondary, not released to Primary).  
+
+              TECHNICAL DESCR:
+                                 
+
+
+445.3,6       PICKING TICKET PRINTED 0;7 SET
+
+                                'Y' FOR YES; 
+              HELP-PROMPT:      Set to 'Y' automatically when picking ticket is printed, then causes 'REPRINT' to show on any subsequent printing of the same picking ticket.  Helps prevent filling orders twice. 
+              DESCRIPTION:
+                                This code (i.e.,Y=Yes) is intended to help prevent filling orders twice.  Entering Y, when picking ticket is printed, causes the flag REPRINT to be displayed on any subsequent printings of the same picking ticket.  
+
+
+445.3,7       ITEM NO.               1;0 POINTER Multiple #445.37 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This is a pointer to the multiple, #445.37.  
+
+              IDENTIFIED BY:    
+                    "WRITE":    W ?10," ",$$DESCR^PRCPUX1(+$P(^PRCP(445.3,DA(1),0),U,2),+Y)
+
+445.37,.01      ITEM NO.               0;1 POINTER TO ITEM MASTER FILE (#441) (Multiply asked)
+
+                INPUT TRANSFORM:  S DINUM=X I '$D(^PRCP(445,+$P(^PRCP(445.3,DA(1),0),U,2),1,X,0)) K DINUM,X
+                LAST EDITED:      SEP 13, 1989 
+                HELP-PROMPT:      Item must be on the Primary's Inventory File. 
+                DESCRIPTION:
+                                  This field stores the item master number of the item ordered.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  445.37^B 
+                                  1)= S ^PRCP(445.3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PRCP(445.3,DA(1),1,"B",$E(X,1,30),DA)
+
+
+445.37,1        QTY.(PRIMARY UNIT OF ISSUE) 0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<-999999)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 21, 1992 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN  -999999 AND 999999. Quantity ordered/adjusted.  plus (+) indicates distribution to Secondary, minus (-) indicates return from Secondary. Must be in Primary Inventory unit of issue 
+                DESCRIPTION:
+                                  This field stores the quantity in the primary inventory point unit per issue of the item ordered.  
+
+
+445.37,2        UNIT PRICE (PRI.UNIT OF ISSUE) 0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999.999)!(X<0)!(X?.E1"."4N.N) X
+                HELP-PROMPT:      Selling price from Primary to Secondary Inventory Point.  Numeric with up to 3 decimal places.  This must be the price for a single Unit of Issue from the Primary. 
+                DESCRIPTION:
+                                  This field stores the unit price in the primary unit per issue of the item ordered.  
+
+
+445.37,3        QTY.BACK-ORDERED(PRI.UNIT) 0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999999. (Used for Distribution Orders only, not Adjustments.  Qty.Back-ordered, in Primary Inventory point Unit of Issue.) 
+                DESCRIPTION:
+                                  This field stores the quantity in the primary unit per issue of the item which has been back ordered.  
+
+
+445.37,4        ADJUST PRIMARY INVENTORY? 0;5 SET
+
+                                  'Y' FOR YES; 
+                HELP-PROMPT:      Always set to 'Y'(yes) for Distribution Orders.  For adjustments, indicates whether the inventory level in the Primary Inventory point is to be affected by the adjustment. 
+                DESCRIPTION:
+                                  This field stores whether the primary inventory has been adjusted.  
+
+
+445.37,5        ADJUST SECONDARY INVENTORY? 0;6 SET
+
+                                  'Y' FOR YES; 
+                HELP-PROMPT:      Always set to 'Y'(yes) for distribution orders.  For adjustments, indicates whether the inventory level in the Secondary Inventory point is to be affected by the adjustment. 
+                DESCRIPTION:
+                                  This field stores whether the secondary inventory has been adjusted.  
+
+
+445.37,6        QTY POSTED             0;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<-999999)!(X?.E1"."1N.N) X
+                LAST EDITED:      SEP 15, 2000 
+                HELP-PROMPT:      Type a Number between -999999 and 999999, 0 Decimal Digits 
+                DESCRIPTION:      This field indicates the actual quantity posted which may or may not be equal to the quantity ordered. If the order is filled at a supply station, the amount here will be populated by the refill transaction received from 
+                                  the supply station.  
+
+
+
+
+445.3,8       REMARKS                8;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<1) X
+              LAST EDITED:      JUL 27, 1994 
+              HELP-PROMPT:      Answer must be 1-200 characters in length. 
+              DESCRIPTION:
+                                This field is used to store any remarks for the distribution order.  
+
+
+445.3,9       DATE POSTED            0;9 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 08, 1999 
+              DESCRIPTION:      This is the date the distribution order was posted. It is automatically populated and is used to determine if the order is ready to be purged.  Purging occurs when an order was posted more than 2 days ago.  See 
+                                POST^PRCPOPP for purging logic. (PRC*5*204) 
+
+
+445.3,10      TRANSMISSION DATE/TIME 0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 21, 2000 
+              DESCRIPTION:      The Release Date/Time field will be used as a flag to indicate an order was transmitted to a supply station.  The value stored in this field will be the actual date and time that the order was transmitted to the supply 
+                                station.  
+
+
+445.3,129     PATIENT NAME           2;1 POINTER TO PATIENT FILE (#2)
+
+              LAST EDITED:      SEP 14, 1993 
+              DESCRIPTION:
+                                This field is used to store the patient name for distribution orders placed by Surgery for scheduled operations/procedures.  
+
+              CROSS-REFERENCE:  445.3^ASR1^MUMPS 
+                                1)= D XREFASR^PRCPUXRE(DA,X,129,"SET")
+                                2)= D XREFASR^PRCPUXRE(DA,X,129,"KILL")
+                                This cross reference sets ^PRCP(445.3,"ASR",patda,surgda,da) where patda is the patient internal entry number; surgda is the scheduled operation (file 130) internal entry number; da is the internal entry number for file
+                                445.3.  
+                                 
+                                This cross reference is used to lookup patients and scheduled operations for the ordering of surgical supplies (case carts and instrument kits).  
+
+
+
+445.3,130     SCHEDULED OPERATION    2;2 POINTER TO SURGERY FILE (#130)
+
+              LAST EDITED:      SEP 14, 1993 
+              DESCRIPTION:
+                                This field is used to store the scheduled surgical operations for distribution orders.  
+
+              CROSS-REFERENCE:  445.3^ASR2^MUMPS 
+                                1)= D XREFASR^PRCPUXRE(DA,X,130,"SET")
+                                2)= D XREFASR^PRCPUXRE(DA,X,130,"KILL")
+                                This cross reference sets ^PRCP(445.3,"ASR",patda,surgda,da) where patda is the patient internal entry number; surgda is the scheduled operation (file 130) internal entry number; da is the internal entry number for file
+                                445.3.  
+                                 
+                                This cross reference is used to lookup patients and scheduled operations for the ordering of surgical supplies (case carts and instrument kits).  
+
+
+
+445.3,131     INVENTORY PATIENT LINK 2;3 POINTER TO INVENTORY DISTRIBUTED PATIENT SUPPLIES FILE (#446.1)
+
+              LAST EDITED:      MAR 09, 1994 
+              DESCRIPTION:
+                                This field is used internally by the program to determine which entry in file 446.1 (INVENTORY PATIENT ITEMS) is used to track patient costs.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+GENERIC INVENTORY (#445)          PRIMARY INVENTORY POINT (#1)
+                                  SECONDARY INVENTORY POINT (#2)
+
+INVENTORY DISTRIBUTED PATIENT  
+                   (#446.1)       INVENTORY PATIENT LINK (#131)
+
+ITEM MASTER (#441)                ITEM NO.:ITEM NO. (#.01)
+
+NEW PERSON (#200)                 ENTERED BY (#4)
+
+PATIENT (#2)                      PATIENT NAME (#129)
+
+SURGERY (#130)                    SCHEDULED OPERATION (#130)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

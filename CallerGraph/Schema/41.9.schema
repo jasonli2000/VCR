@@ -1,0 +1,526 @@
+STANDARD DATA DICTIONARY #41.9 -- CENSUS FILE                                                                                                                                                                                     MAY 20,2014@15:41:05  PAGE 1
+STORED IN ^DG(41.9,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the statistical data necessary for each ward to create the daily G&L and bed status reports.  The data contained in this file is also utilized to compile a wide assortment of MAS AMIS segments.  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+
+CROSS
+REFERENCED BY: NAME(B)
+
+41.9,.01      NAME                   0;1 POINTER TO WARD LOCATION FILE (#42) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X
+              DESCRIPTION:
+                                This field points to the Ward Location File (#42) and contains the IFN for that ward.  
+
+              DELETE AUTHORITY: ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  41.9^B 
+                                1)= S ^DG(41.9,"B",$E(X,1,30),DA)=""
+                                2)= K ^DG(41.9,"B",$E(X,1,30),DA)
+
+
+41.9,1        CENSUS                 C;0 DATE Multiple #41.91 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This multiple contains all census data as compiled by the G&L and Bed Status Reports.  This data is used by the inpatient AMIS reports and MUST not be altered in any way.  
+
+
+41.91,.001      NUMBER                   NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<99999)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 99999 AND 99999999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple is the .001 and contains a whole number between 99999 and 99999999.  
+
+
+41.91,.01       CENSUS DATE            0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y,DINUM=X K:Y<1!(Y>DT) X,DINUM
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the inverse date for information stored for this ward on a specific Census Date.  
+
+
+41.91,.91       FISCAL YEAR DATE        ;  COMPUTED
+
+                MUMPS CODE:       X ^DD(41.91,.91,9.2) S X1=X,X2=$E(X1,1,3)_"1001" S:+$E(X1,4,5)<10 X2=X2-10000 D D^%DTC S X=X+1 S X=$J(X,0,0)
+                                  9.2 = S Y(41.91,.91,1)=$S($D(^DG(41.9,D0,"C",D1,0)):^(0),1:"") S X=$P(Y(41.91,.91,1),U,1)
+                ALGORITHM:        DGFYD(#.01)  (ALWAYS 0 DECIMAL DIGITS)
+                LAST EDITED:      SEP 18, 1986 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple is a computed fiscal year date.  
+
+
+41.91,.92       ADC FYTD                ;  COMPUTED
+
+                MUMPS CODE:       X $P(^DD(41.91,.91,0),U,5,99) S Y(41.91,.92,2)=X S Y(41.91,.92,1)=$S($D(^DG(41.9,D0,"C",D1,0)):^(0),1:"") S X=$P(Y(41.91,.92,1),U,3),X=$S(Y(41.91,.92,2):X/Y(41.91,.92,2),1:"*******") S X=$J(X,0,0)
+                ALGORITHM:        #2/#.91  (ALWAYS 0 DECIMAL DIGITS)
+                LAST EDITED:      SEP 18, 1986 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple is a computed Average Daily Census (ADC) for the Fiscal Year to Date (FYTD).  
+
+                SUM:              S X=S("41.91^2"),X=$S(S("41.91^.91"):X/S("41.91^.91"),1:"*******") S Y=X
+
+41.91,.93       DAYS IN MONTH           ;  COMPUTED
+
+                MUMPS CODE:       S X1=+$E(D1,4,5),X=$P("31^28^31^30^31^30^31^31^30^31^30^31",U,X1),X3=+$E(D1,1,3)+1700,X2=(X3#4=0&(X3#100'=0))!(X3#100=0&(X3#400=0)) S:+X1=2&(X2) X=29 S X=$J(X,0,0)
+                ALGORITHM:        S X1=+$E(D1,4,5),X=$P("31^28^31^30^31^30^31^31^30^31^30^31",U,X1),X3=+$E(D1,1,3)+1700,X2=(X3#4=0&(X3#100'=0))!(X3#100=0&(X3#400=0)) S:+X1=2&(X2) X=29 S X=$J(X,0,0)  (ALWAYS 0 DECIMAL DIGITS)
+                LAST EDITED:      MAR 11, 1998 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple is the computed Days in Month.  
+
+                TECHNICAL DESCR:
+                                  This sub-field was modified through the utility option to bring the computation into year 2000 compliance for leap year calculations.  
+
+
+41.91,.94       MONTH                   ;  COMPUTED
+
+                MUMPS CODE:       S X=3+$E(D1,4,5),X=$S(X>12:X-12,1:X)
+                ALGORITHM:        S X=3+$E(D1,4,5),X=$S(X>12:X-12,1:X)
+                LAST EDITED:      JAN 15, 1986 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple is the computed Month.  
+
+
+41.91,.95       DAY IN MONTH            ;  COMPUTED
+
+                MUMPS CODE:       S X=+$E(D1,6,7)
+                ALGORITHM:        S X=+$E(D1,6,7)
+                LAST EDITED:      JAN 15, 1986 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple is the computed Day in Month. 
+
+
+41.91,.96       MONTHS IN FY            ;  COMPUTED
+
+                MUMPS CODE:       X ^DD(41.91,.96,9.2) S X=X+Y(41.91,.96,3) S X=$J(X,0,0)
+                                  9.2 = X $P(^DD(41.91,.93,0),U,5,99) S Y(41.91,.96,2)=X X $P(^DD(41.91,.94,0),U,5,99) S Y(41.91,.96,3)=X X $P(^DD(41.91,.95,0),U,5,99) S Y(41.91,.96,1)=X S X=Y(41.91,.96,1),X=$S(Y(41.91,.96,2):X/Y(41.91,.96,2),1:"*******"
+                                  )
+                ALGORITHM:        #.95/#.93+#.94  (ALWAYS 0 DECIMAL DIGITS)
+                LAST EDITED:      SEP 18, 1986 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple is computed and contains the Months in Fiscal Year.  
+
+
+41.91,.97       FY TO DATE              ;  COMPUTED
+
+                MUMPS CODE:       X ^DD(41.91,.97,9.2) S X=$P(Y(41.91,.97,1),U,24),X=$S(Y(41.91,.97,2):X/Y(41.91,.97,2),1:"*******"),X=$S(Y(41.91,.97,3):X/Y(41.91,.97,3),1:"*******")*100 S X=$J(X,0,0)
+                                  9.2 = X $P(^DD(41.91,.92,0),U,5,99) S Y(41.91,.97,3)=X X $P(^DD(41.91,.96,0),U,5,99) S Y(41.91,.97,2)=X S Y(41.91,.97,1)=$S($D(^DG(41.9,D0,"C",D1,0)):^(0),1:"")
+                ALGORITHM:        ((CUM LOSSES/#.96))/ADC FYTD*100  (ALWAYS 0 DECIMAL DIGITS)
+                LAST EDITED:      SEP 18, 1986 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple is computed and contains (Cum Losses/Months in FY)/ADC FYTD*100  and always is a whole number.  
+
+
+41.91,1         PATIENTS REMAINING     0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 19, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the patients remaining in this ward at end of census day.  
+
+
+41.91,2         CUM PATIENT DAYS OF CARE 0;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>199999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      Enter the total number of cumulative patient days FYTD, not including pass days. The entry must be betweed 0 and 199,999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Patient Days of Care in this ward from beginning of fiscal year to today.  
+
+
+41.91,3         CUM BED                0;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>199999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      Enter the cumulative bed days (operating beds--used for occupancy rate) FYTD, between 0 and 199,999. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Beds in this ward from the beginning of fiscal year.  
+
+
+41.91,4         PCT BED UTILIZATION     ;  COMPUTED
+
+                MUMPS CODE:       S Y(41.91,4,1)=$S($D(^DG(41.9,D0,"C",D1,0)):^(0),1:"") S X=$P(Y(41.91,4,1),U,3),X=$S($P(Y(41.91,4,1),U,4):X/$P(Y(41.91,4,1),U,4),1:"*******")*100
+                ALGORITHM:        #2/#3*100
+                LAST EDITED:      SEP 18, 1986 
+                DESCRIPTION:
+                                  Cum Count divided by Cum Beds 
+
+
+41.91,5         CUM DISCHARGES         0;5 NUMBER
+
+                CUMULATIVE DISCHARGES                                                                                          
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      Enter the cumulative discharges for the current fiscal year, between 0 and 9,999,999. 
+                DESCRIPTION:
+                                  The sub-field of the Census field multiple contains the Cumulative Discharges from beginning of the current fiscal year for this ward location.  
+
+
+41.91,6         CUM INTER XFERS        0;6 NUMBER
+
+                CUMULATIVE INTERWARD TRANSFERS                                                                                 
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      Enter the cumulative interward transfers for the current fiscal year, between 0 and 9,999,999. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Interward Transfers Out for the current fiscal year for this ward location.  
+
+
+41.91,7         CUM PAT REMAIN         0;7 NUMBER
+
+                CUMULATIVE PATIENTS REMAINING                                                                                  
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      Enter the cumulative patients remaining for the current fiscal year, between 0 and 99,999,999. 
+                DESCRIPTION:      This sub-field of the Census multiple field contains the Cumulative Patients remaining fiscal year to date for this ward location.  
+                                     
+                                  Patients remaining equals: 
+                                     
+                                      Yesterday's COUNT 
+                                     
+                                          +  (Plus) 
+                                     
+                                      Todays GAINS (Admissions and Transfers) 
+                                     
+                                          -  (Minus) 
+                                     
+                                      Todays LOSSES  (Discharges and Transfers) 
+
+
+41.91,8         CUM INTSERV XFERS      0;8 NUMBER
+
+                CUMULATIVE INTERSERVICE TRANSFERS                                                                              
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      Enter the cumulative interservice transfers (bedsection changes) for the current fiscal year, between 0 and 99999999. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Interservice (Bedsection Changes) for the current fiscal year for this ward location.  
+
+
+41.91,9         CUM PASS DAYS          0;9 NUMBER
+
+                CUMULATIVE PASS DAYS                                                                                           
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      DEC 11, 1983 
+                HELP-PROMPT:      Enter the cumulative number of pass days for this ward, between 0 and 9,999,999. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative days of Authorized Absence <96 hours fiscal year to date for this ward location.  
+
+
+41.91,10        CUM ABO DAYS           0;10 NUMBER
+
+                CUMULATIVE ABSENT BED OCCUPIED DAYS                                                                            
+                INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      DEC 11, 1983 
+                HELP-PROMPT:      Enter the cumulative number of authorized absence days for the current fiscal year, between 0 and 9,999,999. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Absent Bed Occupied Days (Authorized Absence) fiscal year to date for this ward location.  
+
+
+41.91,11        CUM UA DAYS            0;11 NUMBER
+
+                CUMULATIVE UNAUTHORIZED ABSENCE DAYS                                                                           
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 08, 1984 
+                HELP-PROMPT:      Enter the cumulative number of days of unauthorized absence, fiscal year to date, for this ward location. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Unauthorized Absence Days fiscal year to date for this ward location.  
+
+
+41.91,12        *CUM 1 DAY DIALYSIS PATIENTS 0;12 NUMBER
+
+                CUMULATIVE INPATIENT HEMODIALYSIS DAYS                                                                         
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 30, 1992 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 9999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Dialysis Patients (only for dialysis ward) for fiscal year to date for this ward location.  
+
+
+41.91,13        CUM ADMIS FROM XFER IN 0;13 NUMBER
+
+                CUMULATIVE ADMISSIONS FROM 'TRANSFER IN' STATUS                                                                
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 08, 1984 
+                HELP-PROMPT:      Enter the cumulative number of admissions which were transfers in from other VA facilities or facilities under VA auspices, fiscal year to date. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Admissions with movement type Tranfer In for fiscal year to date for this ward location.  
+
+
+41.91,14        CUM DISCH TO  XFER OUT 0;14 NUMBER
+
+                CUMULATIVE DISCHARGES TO 'TRANSFER OUT' STATUS                                                                 
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 08, 1984 
+                HELP-PROMPT:      Enter the cumulative number of discharges with the status of transfer out, fiscal year to date. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Discharges with movement type Transfer Out for this fiscal year to date for this ward location.  
+
+
+41.91,15        CUM DISCHARGES TO DEATH 0;15 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 08, 1984 
+                HELP-PROMPT:      Enter the cumulative number of discharges to status of death, fiscal year to date. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Discharges with movement type of Death for this fiscal year for this ward location.  
+
+
+41.91,16        CUM DISCH TO 'OPT/NSC' 0;16 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 08, 1984 
+                HELP-PROMPT:      Enter the cumulative discharges with the status of 'OPT/NSC', fiscal year to date. Does not include one day dialysis patients. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Discharges with movement type OPT/NSC for this fiscal year for this ward location.  
+
+
+41.91,17        CUM ADMISSIONS         0;17 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 14, 1984 
+                HELP-PROMPT:      Enter the total number of cumulative admissions for this ward location as required by AMIS. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the Cumulative Admissions for this fiscal year for this ward loation.  
+
+
+41.91,18        ADM AFTER REHOSP >30DAYS 0;18 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 14, 1984 
+                HELP-PROMPT:      Enter the total number of patient's admitted to this ward location (pertains only to Dom or NHCU) that were hospitalized >30 days. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of admission (pertains only to Dom or NHCU) that were hospitalized more than 30 days for this fiscal year for this ward location.  
+
+
+41.91,19        FROM ASIH              0;19 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 14, 1984 
+                HELP-PROMPT:      Enter the total number of patients readmitted from ASIH status. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative transfers from Absent Sick In Hospital (From ASIH) for this fiscal year for this ward location.  
+
+
+41.91,20        TO ASIH                0;20 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 14, 1984 
+                HELP-PROMPT:      Enter the total number of patients transfered to ASIH (only applies to Dom or NHCU). 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative transfers or discharges from Absent Sick In Hospital (TO ASIH) for this fiscal year for this ward location.  
+
+
+41.91,21        DISCHARGE WHILE ASIH   0;21 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 14, 1984 
+                HELP-PROMPT:      Enter the total number of patients that were discharged from the hospital while on ASIH status from this ward. (Only applies to Dom and NHCU) 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cummulative discharges (NHCU or DOM) while Absent Sick In Hospital for this fiscal yar for this ward location.  
+
+
+41.91,22        DIED WHILE ASIH        0;22 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 14, 1984 
+                HELP-PROMPT:      Enter the total number of patients who died in the hospital while on ASIH status from this ward. (Applies only to Dom and NHCU) 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative Deaths (recorded in NHCU or DOM) while patient was Absent Sick In  Hospital for this fiscal year for this ward location.  
+
+
+41.91,23        CUM INTSERV XFERS IN   0;23 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 16, 1984 
+                HELP-PROMPT:      Enter the total number of cumulative interservice transfers into this bedsection, 0-999,999. 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative Interservice Transfers into this bedsection for this fiscal year for this ward location.  
+
+
+41.91,24        CUM LOSSES             0;24 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 25, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 99999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative Losses (from transfers and discharges) for this fiscal year for this ward location.  
+
+
+41.91,25        CUM MONTHLY PAT DAYS   0;25 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 26, 1984 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 99999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative (from beginning of Month) Patient Days of Care for this month (from the beginning of current month) for this ward location.  
+
+
+41.91,26        CUM AUTHORIZED ABSENCE 0;26 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      SEP 09, 1985 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 9999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative Transfers To Authorized Absence (not days) for this fiscal year for this ward location.  
+
+
+41.91,27        CUM UNAUTHORIZED ABSENCES 0;27 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 9999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative Transfers To Unauthorized Absence (not days) for this fiscal year for this ward location.  
+
+
+41.91,28        GAINS-TOTAL [CUM]      0;28 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 15, 1990 
+                HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative Gains Totals (from admissions and transfers) for this fiscal year for this ward location.  
+
+
+41.91,29        IWT GAINS [CUM]        0;29 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 15, 1990 
+                HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative Inter-Ward-Transfers for this fiscal year for this ward location.  
+
+
+41.91,30        CUM BEDS OUT-OF-SERVICE 0;30 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 15, 1991 
+                HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Cumulative Beds Out-Of-Service for this fiscal year for this ward location.  
+
+
+41.91,31        CUM DAYS WARD OUT-OF-SERVICE 0;31 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>366)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      APR 15, 1991 
+                HELP-PROMPT:      Type a Number between 0 and 366, 0 Decimal Digits 
+                DESCRIPTION:
+                                  This sub-field of the Census field mutiple contains the number of Cumulative Days Ward Out-Of-Service for this fiscal year for this ward location.  
+
+
+41.91,101       FEMALE PATIENTS REMAINING 1;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      JAN 04, 1985 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Female Patients Remaining at end of census day (not cumulative) for this ward location.  
+
+
+41.91,102       OPERATING BEDS         1;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Operating Beds at end of census day (not cumulative) for this ward location.  
+
+
+41.91,103       BED OCCUPANTS- 65 AND OVER 1;3 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 22, 1985 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Bed Occupants who were 65 Years Old or Over at the end of census day (not cumulative) for this ward location.  
+
+
+41.91,104       BED OCCUPANTS- VIETNAM ERA 1;4 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Bed Occupants whose period of service indicated Vietnam Era at the end of the census day (not cumulative) for this ward location.  
+
+
+41.91,105       PATIENTS ON AA<96      1;5 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 22, 1985 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Patients on Pass (AA<96) at the end of the census day (not cumulative) for this ward location.  
+
+
+41.91,106       PATIENTS ON AUTHORIZED ABSENCE 1;6 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Patients on Authorized Absence (AA) at the end of the census day (not cumulative) for this ward location.  
+
+
+41.91,107       UNAUTHORIZED ABSENCE   1;7 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Patients on Unauthorized Absence (UA) at the end of the census day (not cumulative) for this ward location.  
+
+
+41.91,108       ASIH                   1;8 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Patients Absent Sick In Hospital (ASIH) at the end of the census day (not cumulative) for this ward location.  
+
+
+41.91,109       BEDS OUT OF SERVICE    1;9 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      SEP 06, 1985 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 9999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Beds Out Of Service at the end of the census day (not cumulative) for this ward location.  
+
+
+41.91,110       AUTHORIZED BEDS        1;10 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 9999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of Authorized Beds at the end of the census day (not cumulative) for this ward location.  
+
+
+41.91,111       ONE DAY DISCHARGES     1;11 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      OCT 09, 1985 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 999 
+                DESCRIPTION:
+                                  This sub-field of the Census field multiple contains the number of One Day Discharges (patients who were discharged with admission on the same day) at the end of the census day (not cumulative) for this ward location.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+WARD LOCATION (#42)               NAME (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

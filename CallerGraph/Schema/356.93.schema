@@ -1,0 +1,110 @@
+STANDARD DATA DICTIONARY #356.93 -- INPATIENT INTERIM DRG FILE                                                                                                                                                                    MAY 20,2014@15:35:53  PAGE 1
+STORED IN ^IBT(356.93,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file holds interim DRGs computed by the Claims Tracking Module for display in Claims Tracking and on Reports.  The computed ALOS is based upon 1992 HCFA average lengths of stay and not VA averages.  The purpose is to help utilization review
+personnel determine if the the ALOS approved by an insurance company is within industry standards.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: ADMISSION MOVEMENT (#.02), DATE (#.03)
+      "WRITE": N Y S Y=$G(^(0)) W "   ",$P($G(^DPT(+$P($G(^DGPM(+$P(Y,U,2),0)),U,3),0)),U)
+
+CROSS
+REFERENCED BY: ESTIMATED LENGTH OF STAY(AC), ADMISSION MOVEMENT(AMVD), DATE(AMVD1), NAME(B)
+
+356.93,.01    NAME                   0;1 POINTER TO DRG FILE (#80.2) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $$DRGACT^IBACSV(+Y,$P(+$G(^DGPM(+$P($G(^IBT(356.93,+$G(DA),0)),U,2),0)),"".""))" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
+              LAST EDITED:      JUN 01, 2003 
+              DESCRIPTION:
+                                Enter the DRG that best describes this inpatient case.  
+
+              SCREEN:           S DIC("S")="I $$DRGACT^IBACSV(+Y,$P(+$G(^DGPM(+$P($G(^IBT(356.93,+$G(DA),0)),U,2),0)),"".""))"
+              EXPLANATION:      Only codes active for the admission date may be selected.
+              CROSS-REFERENCE:  356.93^B 
+                                1)= S ^IBT(356.93,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBT(356.93,"B",$E(X,1,30),DA)
+
+
+356.93,.02    ADMISSION MOVEMENT     0;2 POINTER TO PATIENT MOVEMENT FILE (#405)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)=1" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 30, 1993 
+              DESCRIPTION:
+                                This field should point to the admission movement of the inpatient episode that this interim DRG is for.  
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,2)=1"
+              EXPLANATION:      Must be an admission movement.
+              CROSS-REFERENCE:  356.93^AMVD^MUMPS 
+                                1)= S:$P(^IBT(356.93,DA,0),U,3) ^IBT(356.93,"AMVD",X,+$P(^(0),U,3),DA)=""
+                                2)= K ^IBT(356.93,"AMVD",X,+$P(^IBT(356.93,DA,0),U,3),DA)
+                                Cross reference of drgs by admission movement and drg date.  
+
+
+
+356.93,.03    DATE                   0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 30, 1993 
+              HELP-PROMPT:      This is the date that the INTERIM DRG was computed. 
+              DESCRIPTION:
+                                Enter the date that this DRG was computed.  
+
+              CROSS-REFERENCE:  356.93^AMVD1^MUMPS 
+                                1)= S:$P(^IBT(356.93,DA,0),U,2) ^IBT(356.93,"AMVD",+$P(^(0),U,2),X,DA)=""
+                                2)= K ^IBT(356.93,"AMVD",+$P(^IBT(356.93,DA,0),U,2),X,DA)
+                                Cross reference of drgs by admission movement and drg date.  
+
+
+
+356.93,.04    ESTIMATED LENGTH OF STAY 0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."2N.N) X
+              LAST EDITED:      DEC 15, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 99999, 1 Decimal Digit 
+              DESCRIPTION:      This is the estimated length of stay in the medical center for UR or Insurance purposes.  This is not related to the average length of stays for PTF.  It is the estimated LOS for this admission for this patient for this
+                                DRG.  It is used to help determine if for billing purposes that this patient has exceeded his length of stay.  
+
+              CROSS-REFERENCE:  356.93^AC^MUMPS 
+                                1)= Q
+                                2)= Q
+                                Cross-reference to cause filing of data.  Field Days Remaining utilizes value in input transform and may not be filed without this x-ref.  
+
+
+
+356.93,.05    DAYS REMAINING         0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N)!(X>$P($G(^IBT(356.93,DA,0)),"^",4)) X
+              LAST EDITED:      DEC 01, 1993 
+              HELP-PROMPT:      The Days Remaining can not exceed the Estimated Length of Stay.  Type a Number between 0 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is the days remaining that this patient has for this DRG.  It is the ELOS minus the number of days the patient has already been treated for this episode.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DRG (#80.2)                       NAME (#.01)
+
+PATIENT MOVEMENT (#405)           ADMISSION MOVEMENT (#.02)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

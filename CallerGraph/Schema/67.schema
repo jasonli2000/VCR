@@ -1,0 +1,312 @@
+STANDARD DATA DICTIONARY #67 -- REFERRAL PATIENT FILE                                                                                                                                                                             MAY 20,2014@15:36:56  PAGE 1
+STORED IN ^LRT(67,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                               (VERSION 5.2)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Referral patients who do not have an SSN or Pseudo-SSN may be added to this file.  If the patient HAS an SSN or Pseudo-SSN, they should be in the Patient file! 
+  ONLY BILLABLE PATIENTS SHOULD BE ENTERED INTO THIS FILE ! 
+
+
+IDENTIFIED BY: SEX (#.02), DOB (#.03), IDENTIFIER (#.09)[R]
+
+POINTED TO BY: LAB REFERRAL REF field (#67) of the PATIENT File (#2) 
+               PATIENT NAME field (#2) of the WKLD LOG FILE File (#64.03) 
+               PATIENT field (#9) of the ACCESSION WKLD CODE TIME sub-field (#64.1111) of the WKLD CODE sub-field (#64.111) of the DATE sub-field (#64.11) of the WKLD DATA File (#64.1) 
+               Patient Name field (#3) of the REFERRAL PATIENT File (#67) 
+               FILE REF field (#7) of the LAB PENDING ORDERS ENTRY File (#69.6) 
+               OBJECT OF ORDER field (#.02) of the ORDER File (#100) 
+               NAME field (#.01) of the ONCOLOGY PATIENT File (#160) 
+               
+
+CROSS
+REFERENCED BY: NAME(B), IDENTIFIER(BS), IDENTIFIER(BS5), IDENTIFIER(C), REFERRAL SOURCE(CN), NAME(D)
+
+67,.01        NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>50!($L(X)<1)!(X?1P.E)!(X'?1U.ANP)!(X'[",") X I $D(X) S Y=", " F I=0:0 Q:$F(X,Y)<1  S X=$E(X,1,($F(X,Y)-2))_$E(X,$F(X,Y),99)
+              LAST EDITED:      AUG 30, 1989 
+              HELP-PROMPT:      1-50 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION & CONTAIN A ',' 
+              DESCRIPTION:
+                                Name of patient.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  67^B 
+                                1)= S ^LRT(67,"B",$E(X,1,30),DA)=""
+                                2)= K ^LRT(67,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  67^D^MUMPS 
+                                1)= D UP^LRXREF S ^LRT(67,"D",X,DA)=""
+                                2)= D UP^LRXREF K ^LRT(67,"D",X,DA)
+                                This MUMPS cross reference stores the name of the REFERRAL PATIENT in upper case and is used for look-up nd sorting purposes.  The format for the cross reference stored is below.  
+                                 
+                                    ^LRT(67,"D",Name of Referral Patient in Upper Case,IEN) = "" 
+
+
+
+67,.02        SEX                    0;2 SET
+
+                                'M' FOR MALE; 
+                                'F' FOR FEMALE; 
+              LAST EDITED:      JUL 23, 1987 
+              DESCRIPTION:
+                                Sex of patient.  
+
+
+67,.03        DOB                    0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EP" D ^%DT S X=Y K:1701231>X!(DT<X) X
+              OUTPUT TRANSFORM: NUMDATE(DOB)
+              LAST EDITED:      JUL 23, 1987 
+              HELP-PROMPT:      Enter the patient's date of birth between 12/31/1870 and today's date. 
+              DESCRIPTION:
+                                Date of birth of patient.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+67,.033       AGE                     ;  COMPUTED
+
+              MUMPS CODE:       S Y(67,.033,1)=$S($D(^LRT(67,D0,0)):^(0),1:"") S X=DT,X1=X,X2=$P(Y(67,.033,1),U,3),X="" D:X2 ^%DTC:X1 S X=X\365.25
+              ALGORITHM:        DT-DOB\365.25
+              DESCRIPTION:
+                                Computed field.  
+
+
+67,.05        MARITAL STATUS         0;5 POINTER TO MARITAL STATUS FILE (#11)
+
+              LAST EDITED:      OCT 26, 1987 
+              DESCRIPTION:
+                                 This field contains the marital status of the referral patient.  
+
+              GROUP:            DEMOG
+
+67,.06        RACE                   0;6 POINTER TO RACE FILE (#10)
+
+              LAST EDITED:      SEP 12, 1994 
+
+67,.08        RELIGION               0;8 POINTER TO RELIGION FILE (#13)
+
+              LAST EDITED:      OCT 26, 1987 
+              DESCRIPTION:
+                                 This field contains the religious preference of the referral patient.  
+
+
+67,.09        IDENTIFIER             0;9 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>30!($L(X)<2) X I $D(X),$O(^LRT(67,"C",X,0))>0 K X N LRX S LRX=$C(7)_"Already exists" D EN^DDIOL(LRX)
+              LAST EDITED:      JUN 09, 1997 
+              HELP-PROMPT:      ANSWER MUST BE 2-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Short description of referral.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  67^C 
+                                1)= S ^LRT(67,"C",$E(X,1,30),DA)=""
+                                2)= K ^LRT(67,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  67^BS^MUMPS 
+                                1)= S:$L(X)=9 ^LRT(67,"BS",$E(X,6,9),DA)=""
+                                2)= K:$L(X)=9 ^LRT(67,"BS",$E(X,6,9),DA)
+                                This MUMPS cross reference stores the last 4 digits of the identifier (if the identifier is 9 characters in length as it would be if it is the SSN) to be used for look-ups.  The format for the cross reference is below.  
+                                 
+                                      ^LRT(67,"BS",$E(Identifier,6,9),IEN) = "" 
+
+
+              CROSS-REFERENCE:  67^BS5^MUMPS 
+                                1)= S:$L(X)=9 ^LRT(67,"BS5",$E(^LRT(67,DA,0),1)_$E(X,6,9),DA)=""
+                                2)= K:$L(X)=9 ^LRT(67,"BS5",$E(^LRT(67,DA,0),1)_$E(X,6,9),DA)
+                                This MUMPS cross reference stores the first letter of the REFERRAL PATIENT name appended to the last 4 characters of the identifier for the purpose of facilitating look-ups within the file.  The format for the cross 
+                                reference is below.  
+                                 
+                                    ^LRT(67,"BS5",$E(Name,1)_$E(Identifier,6,9),IEN)="" 
+
+
+
+67,.1         REFERRAL SOURCE        .1;E1,19 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>19!($L(X)<2) X
+              LAST EDITED:      MAR 19, 1985 
+              DESCRIPTION:
+                                Where specimen came from- (ex. Hospital, Physician's office) 
+
+              CROSS-REFERENCE:  67^CN 
+                                1)= S ^LRT(67,"CN",$E(X,1,30),DA)=""
+                                2)= K ^LRT(67,"CN",$E(X,1,30),DA)
+
+
+67,.104       PROVIDER               .104;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<2) X
+              LAST EDITED:      FEB 28, 1997 
+              HELP-PROMPT:      Answer must be 2-35 characters in length. 
+
+67,.111       STREET ADDRESS         .11;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+              LAST EDITED:      MAR 19, 1985 
+              HELP-PROMPT:      ANSWER MUST BE 2-50 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Street part of address of patient.  
+
+
+67,.112       STREET ADDRESS 2       .11;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+              HELP-PROMPT:      ANSWER MUST BE 2-50 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Secondary street address.  
+
+
+67,.113       STREET ADDRESS 3       .11;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<2) X
+              HELP-PROMPT:      ANSWER MUST BE 2-50 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Tertiary street address.  
+
+
+67,.114       CITY                   .11;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      MAR 19, 1985 
+              HELP-PROMPT:      ANSWER MUST BE 2-30 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                City part of address of patient.  
+
+
+67,.115       STATE                  .11;5 POINTER TO STATE FILE (#5)
+
+              LAST EDITED:      MAR 19, 1985 
+              DESCRIPTION:
+                                State part of address of patient.  
+
+
+67,.116       ZIP CODE               .11;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5)!'(X?1N.N."-"1N.N) X
+              LAST EDITED:      MAR 19, 1985 
+              HELP-PROMPT:      Enter as 5 numerics (NNNNN) or 5 numerics dash 4 numerics (NNNNN-NNNN) 
+              DESCRIPTION:
+                                Zip code part of address of patient.  
+
+
+67,.131       PHONE                  .13;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<4) X
+              LAST EDITED:      MAR 19, 1985 
+              HELP-PROMPT:      ANSWER MUST BE 4-20 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Home phone number of patient.  
+
+
+67,.132       OFFICE PHONE           .13;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<4) X
+              HELP-PROMPT:      ANSWER MUST BE 4-20 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Office (work) phone number of patient.  
+
+
+67,.133       PHONE #3               .13;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<4) X
+              HELP-PROMPT:      ANSWER MUST BE 4-20 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Other phone number.  
+
+
+67,.134       PHONE #4               .13;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<4) X
+              HELP-PROMPT:      ANSWER MUST BE 4-20 CHARACTERS IN LENGTH 
+              DESCRIPTION:
+                                Other phone number.  
+
+
+67,.351       DATE OF DEATH          .35;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX",%DT(0)="-N" D ^%DT K %DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 10, 1992 
+              DESCRIPTION:
+                                Date of death of patient.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+67,2          PATIENT FILE REF       DPT;1 POINTER TO PATIENT FILE (#2)
+
+              INPUT TRANSFORM:  S DIC("S")="I $G(^DPT(Y,""LRT""))=DA" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 20, 1996 
+              DESCRIPTION:      This field contains the pointer to ^DPT( and is used to obtain patient's demographics. LEDI accessioning attempts to find a match in the Patient file (#2) using the PID (Socical Security Number). If a match is found, the
+                                patient's demographic information is copied into the REFERRAL PATIENT file fields, NAME, SSN, Date of Birth and sex.  
+                                 
+                                The pointer entry stored in this field is used in future lookup for data validation.  
+
+              SCREEN:           S DIC("S")="I $G(^DPT(Y,""LRT""))=DA"
+              EXPLANATION:      Select the correct patient
+
+67,2.2        NHE FILE REF           NHE;1 POINTER TO VAMC NETWORK PATIENT FILE (#537010)
+
+              LAST EDITED:      MAR 01, 1997 
+              DESCRIPTION:      This field contains the pointer to the VAMC NETWORK PATIENT (#537010) file used to obtain patient's demographics. LEDI accessioning software attempts to find a match in the 537010 file using the PID (SSN). If a match is 
+                                found, the patient's demographic information is copied into the REFERRAL PATIENT fields NAME,SSN and Date of Birth.  
+                                 
+                                The pointer entry stored in this field is used in future lookups to data validation.  
+
+
+67,3          Patient Name           3;1          VARIABLE POINTER
+
+              FILE  ORDER  PREFIX    LAYGO  MESSAGE
+                 2    1    PAT              Patient file entry 
+                 67   3    REF          n   Referral Patient 
+                                         
+              LAST EDITED:      FEB 17, 1997 
+              DESCRIPTION:
+                                This field controls the sequence used to lookup of patient's demographic information already stored in either ^DPT( or the ^LRT(67 files.  This field is used by LEDI patient accessioning software.  
+
+
+67,63         LABORATORY REFERENCE   LR;1 POINTER TO LAB DATA FILE (#63)
+
+              INPUT TRANSFORM:  K X
+              LAST EDITED:      MAR 19, 1985 
+              HELP-PROMPT:      Any changes to this entry must be made from the lab data entry routines.  This is the patient's record number in the lab data file. 
+              DESCRIPTION:
+                                Patient's record number in the lab data file.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+      FILES POINTED TO                      FIELDS
+
+LAB DATA (#63)                    LABORATORY REFERENCE (#63)
+
+MARITAL STATUS (#11)              MARITAL STATUS (#.05)
+
+PATIENT (#2)                      PATIENT FILE REF (#2)
+                                  Patient Name (#3)
+
+RACE (#10)                        RACE (#.06)
+
+REFERRAL PATIENT (#67)            Patient Name (#3)
+
+RELIGION (#13)                    RELIGION (#.08)
+
+STATE (#5)                        STATE (#.115)
+
+VAMC NETWORK PATIENT (#537010)    NHE FILE REF (#2.2)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,275 @@
+STANDARD DATA DICTIONARY #57.5 -- WARD GROUP FILE                                                                                                                                                                                 MAY 20,2014@15:35:22  PAGE 1
+STORED IN ^PS(57.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  Allows the user to group the wards from the WARD LOCATION file (42) to facilitate the printing of reports and for other Unit Dose processes.  Ward groups are required for the running of pick lists.  
+
+
+              DD ACCESS: @
+IDENTIFIED BY: TYPE (#3)[R], ATC DEVICE POINTER (#32)
+
+POINTED TO BY: WARD GROUP FOR ATC CANISTER field (#.01) of the ATC CANISTER sub-field (#50.0212) of the DRUG File (#50) 
+               WARD GROUP field (#.02) of the PICK LIST File (#53.5) 
+               
+
+CROSS
+REFERENCED BY: WARD(AB), WARD(AC), TYPE(AP), NAME(ATNC), NAME(B)
+
+57.5,.01      NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45)!(X=+X) X I $D(X) K:$L(X)>20!($L(X)<1)!'(X'?1P.E)!(X'?.ANP) X
+              LAST EDITED:      NOV 15, 1990 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                  This is a generic name for a grouping of wards.  
+
+              DELETE TEST:      .01,0)= I $D(^PS(53.5,"A",DA)) D WRDGP^PSJDDUT
+
+              GROUP:            PSJU
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  57.5^B 
+                                1)= S ^PS(57.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(57.5,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  57.5^ATNC^MUMPS 
+                                1)= I '$D(PSGINITF) S ^PS(57.5,"ATNC")=$S($D(^PS(59.7,1,20)):$P(^(20),"^"),1:"")
+                                2)= Q
+                                3)= Needed by the Inpatient Medications init process.
+                                  This is used by the Inpatient Medications init process.  If the post-init process does not find this cross reference, it converts this file for use with the new pick list.  (Routine used is PSGPOST.) S
+                                ^PS(57.5,"ATNC")=VERSION NUMBER LAST INITS RUN 
+
+
+
+57.5,1        WARD                   1;0 POINTER Multiple #57.51
+
+              DESCRIPTION:
+                                  This is the wards that make up this ward group.  
+
+              TECHNICAL DESCR:
+                                  This is the wards that make up this ward group.  Wards are obtained from the WARD LOCATION file (#42).  
+
+              GROUP:            PSJU
+
+57.51,.01       WARD                   0;1 POINTER TO WARD LOCATION FILE (#42) (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  I $D(^PS(57.5,DA(1),0)),$P(^(0),"^",2)'="M",$D(^PS(57.5,"AB",X)) D EN^DDIOL("THIS WARD ALREADY BELONGS TO THE '"_$P(^PS(57.5,$O(^(X,0)),0),"^")_"' WARD GROUP!") K X
+                LAST EDITED:      AUG 03, 1992 
+                HELP-PROMPT:      Enter the MAS ward(s) that are included in this ward group. 
+                DESCRIPTION:
+                                    This is a ward to be placed under this ward group.  
+
+                EXECUTABLE HELP:  D EN^DDIOL("THE WARD(S) CHOSEN MUST ALREADY BE IN THE 'WARD LOCATION' FILE.")
+                GROUP:            PSJU
+                CROSS-REFERENCE:  57.5^AB^MUMPS 
+                                  1)= I $D(^PS(57.5,DA(1),0)),$P(^(0),"^",2)="P" S ^PS(57.5,"AB",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^PS(57.5,"AB",$E(X,1,30),DA(1),DA)
+                                  3)= USED BY UNIT DOSE
+                                  Allows Unit Dose to determine a ward's corresponding PHARMACY ward group.  Set only for ward groups given the TYPE of PHARMACY.  S ^PS(57.5,"AB",WARD,WARD GROUP NAME,WARD IEN)="" 
+
+
+                CROSS-REFERENCE:  57.5^AC^MUMPS 
+                                  1)= S ^PS(57.5,"AC",DA(1),X)=""
+                                  2)= K ^PS(57.5,"AC",DA(1),X)
+                                  3)= USED BY UNIT DOSE
+                                  Allows Unit Dose to easily access the wards that belong to a ward group.  S ^PS(57.5,"AC",WARD,WARD GROUP)="" 
+
+
+                CROSS-REFERENCE:  57.51^B 
+                                  1)= S ^PS(57.5,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^PS(57.5,DA(1),1,"B",$E(X,1,30),DA)
+
+
+
+
+57.5,2        PICK LIST DATA         2;E1,245 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      NOV 23, 1990 
+              HELP-PROMPT:      Answer must be 1-245 characters in length. 
+              DESCRIPTION:        This is sets of data pertaining to pick lists run for this ward group.  
+                                  The corresponding fields are: 
+                                     PIECES       DATA TYPE 
+                                     ----------   ---------------------------------------------
+                                      1,6,11,16 - PICK LIST INTERNAL NUMBER (DA) 
+                                      2,7,12,17 - DATE PICK LIST WAS RUN 
+                                      3,8,13,18 - COVERAGE START DATE/TIME 
+                                      4,9,14,19 - COVERAGE STOP DATE/TIME 
+                                     5,10,15,20 - INTERNAL NUMBER OF USER WHO RAN THE PICK LIST 
+                                 
+                                   Data from the last four (4) pick lists run are kept.  When a new pick list is run, its data comes in from the left (first 5 pieces), and the oldest pick list's data (last 5 pieces) drop off the right.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+              GROUP:            PSJU
+                                UNEDITABLE
+
+57.5,3        TYPE                   0;2 SET (Required)
+
+                                'M' FOR MAS; 
+                                'P' FOR PHARMACY; 
+              LAST EDITED:      MAY 06, 1987 
+              DESCRIPTION:        Differentiates between MAS ward groups and PHARMACY ward groups.  Only PHARMACY ward groups are selectable in the PICK LIST options and no two PHARMACY ward groups may contain the same ward (for dose counting and 
+                                tracking purposes).  MAS ward groups may be set up as desired, and are selectable (along with PHARMACY ward groups) in all other print options.  
+
+              TECHNICAL DESCR:    This should never be made editable.  It is only asked when the user first creates the ward group.  MAS ward groups can be set up any way the users desire, but no two PHARMACY ward groups may contain the same ward.  
+                                Making this editable could defeat that scheme, which would cause the cost reports to be useless.  
+
+              DELETE AUTHORITY: ^
+              GROUP:            PSJU
+                                UNEDITABLE
+              CROSS-REFERENCE:  57.5^AP^MUMPS 
+                                1)= I $E(X)="P",$D(^PS(57.5,DA,0)) S ^PS(57.5,"AP",$P(^(0),"^"),DA)=""
+                                2)= I $D(^PS(57.5,DA,0)) K ^PS(57.5,"AP",$P(^(0),"^"),DA)
+                                3)= USED FOR LOOK-UP
+                                Used to facilitate the look-up of only those ward groups marked as PHARMACY types.  
+
+
+
+57.5,4        LENGTH OF PICK LIST (in hours) 0;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>200)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 09, 1987 
+              HELP-PROMPT:      Enter the number of hours a pick list for this ward group usually lasts. 
+              DESCRIPTION:
+                                  If an entry is found here when a pick list is run for this ward group, the Unit Dose package will add the number of hours found to the start date to produce a DEFAULT stop date.  
+
+              GROUP:            PSJU
+
+57.5,5.01     PICK LIST - ROOM/BED SORT 5;1 SET
+
+              Should the pick lists sort orders by ROOM-BED, or by BED-ROOM?                                                   
+                                '0' FOR ROOM-BED; 
+                                '1' FOR BED-ROOM; 
+              LAST EDITED:      FEB 04, 1987 
+              HELP-PROMPT:      Enter how you want the pick list to sort the room-bed. 
+              DESCRIPTION:        The Pick List normally sorts patients' orders by ROOM-BED.  To have the Pick List sort orders by BED-ROOM, enter a '1' here.  Any change in this field will NOT affect Pick Lists already run.  PLEASE NOTE that if the pick
+                                list is flagged to NOT sort by ROOM-BED, this flag will be ignored.  
+
+              EXECUTABLE HELP:  D EN^DDIOL("Enter a '1' to have the pick lists sort orders by BED-ROOM.","","!")
+              GROUP:            PSJU
+
+57.5,5.02     PICK LIST - OMIT WARD SORT 5;2 SET
+
+              Should the pick lists NOT sort orders by ward?                                                                   
+                                '0' FOR NO (SORT BY WARD); 
+                                '1' FOR YES (DO NOT SORT BY WARD); 
+              LAST EDITED:      APR 10, 1990 
+              HELP-PROMPT:      Answer 'YES' (or '1') to have the pick list NOT sort by ward. 
+              DESCRIPTION:        The Pick List normally sorts orders by TEAM, WARD, ROOM-BED...  To have the Pick List omit the WARD sort, answer 'YES' here, and the Pick List will sort by TEAM, ROOM-BED (and NOT by WARD).  Any change here will NOT
+                                affect any Pick Lists that have already been run.  
+
+              GROUP:            PSJU
+
+57.5,5.03     PICK LIST - OMIT ROOM-BED SORT 5;3 SET
+
+              Should the pick lists NOT sort orders by room-bed?                                                               
+                                '1' FOR YES (DO NOT SORT BY ROOM-BED); 
+                                '0' FOR NO (SORT BY ROOM-BED); 
+              LAST EDITED:      APR 10, 1990 
+              HELP-PROMPT:      Answer 'YES' to have the pick list NOT sort by room-bed. 
+              DESCRIPTION:        The PICK LIST normally sorts orders by ...TEAM, WARD, ROOM-BED, PATIENT NAME...  To have the pick list NOT sort by ROOM-BED at all, answer 'YES' here.  Any change here will NOT affect pick lists that have already been 
+                                run.  
+
+              GROUP:            PSJU
+
+57.5,5.04     PICK LIST - FORM FEED/PATIENT 5;4 SET
+
+              Should the pick lists start a new page for each patient?                                                         
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUL 21, 1987 
+              HELP-PROMPT:      Answer 'YES' to have the pick lists printed start a new page for each patient. 
+              DESCRIPTION:
+                                  This is a flag that tells the package to start a new page for each patient found when printing the pick list.  
+
+              GROUP:            PSJU
+
+57.5,5.05     PICK LIST - FORM FEED/WARD 5;5 SET
+
+              Should the pick lists start a new page for each ward?                                                            
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAY 26, 1988 
+              HELP-PROMPT:      Answer 'YES' to have the pick list start a new page for each ward. 
+              DESCRIPTION:
+                                  This is a flag that tells the pick list to start a new page for each ward found when printing.  This flag is ignored if the "NEW PAGE PER PATIENT" flag is turned on.  
+
+              GROUP:            PSJU
+
+57.5,5.06     PICK LIST - LINES ON FORM FEED 5;6 SET
+
+              Should the pick lists print the "FILLED BY" lines after each patient (or ward)?                                  
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAY 26, 1988 
+              HELP-PROMPT:      Answer 'YES' to have the "FILLED BY" lines print after each ward or patient on the pick list. 
+              DESCRIPTION:        This is a flag that tells the pick list to print the "FILLED BY" and the "CHECKED BY" lines after each ward or patient.  This is used only if either of the "PICK LIST FORM FEED/PATIENT" or "PICK LIST FORM FEED/WARD" site 
+                                parameters is turned on.  
+
+              GROUP:            PSJU
+
+57.5,5.07     PRINT NON-ACTIVE ORDERS FIRST 5;7 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      JAN 28, 1992 
+              HELP-PROMPT:      Answer 'YES' to have expired and dc'd orders print before active orders for each patient on the pick list. 
+              DESCRIPTION:        For each patient, a pick list will print active orders and any orders that have expired or have been discontinued within 24 hours of the start date of the pick list.  Normally, for each patient, the patient's active 
+                                orders are printed first.  This will allow pick lists run for this ward group to print each patient's expired and dc'd orders first. This does not affect pick lists that have already been run.  
+
+              TECHNICAL DESCR:    This is used to determine the sort order of active vs. non-active orders for each patient within the pick list.  If this is 'NO' (or not set), each patient's active orders will print first, as they always have.  If this
+                                is set to 'YES', each patient's non-active orders (if any exist) will print first.  
+
+              GROUP:            PSJU
+
+57.5,30       *BAXTER ATC DEVICE     3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X I $D(X) D ENDLP^PSJDDUT2
+              LAST EDITED:      APR 13, 1998 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                  This is the device corresponding to the Baxter ATC dispensing machine for which all pick lists run for this ward group will be sent.  
+
+              GROUP:            PSJ
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+57.5,31       USE OLD ATC INTERFACE  3;2 SET
+
+                                '1' FOR YES; 
+                                '0' FOR NO; 
+              LAST EDITED:      MAR 06, 1991 
+              HELP-PROMPT:      Enter 'YES' to have the ATC interface use the old method. 
+              DESCRIPTION:        Beginning in version 3.2 of the Inpatient Medications package, an attempt has been made to increase the speed of the ATC/Unit Dose interface. This new interface may not work for all sites.  If your site is one of those,
+                                answer 'YES' to have the interface use the old method.  
+
+              GROUP:            PSJU
+
+57.5,32       ATC DEVICE POINTER     3;3 POINTER TO DEVICE FILE (#3.5)
+
+              LAST EDITED:      JUN 01, 2000 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                This is the device corresponding to the ATC dispensing machine for which all pick lists run for this ward group will be sent.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+DEVICE (#3.5)                     ATC DEVICE POINTER (#32)
+
+WARD LOCATION (#42)               WARD:WARD (#.01)
+
+
+
+INPUT TEMPLATE(S):
+PSJU WG                       APR 13, 1998@14:40  USER #0    
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,699 @@
+STANDARD DATA DICTIONARY #798.8 -- ROR TASK FILE                                                                                                                                                                                  MAY 20,2014@15:31:12  PAGE 1
+STORED IN ^RORDATA(798.8,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                        (VERSION 1.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The ROR TASK file enhances the functionality of Taskman and supports the package APIs used by the GUI to schedule and control tasks, and view and print reports.  
+ 
+Records in the file have the same internal entry numbers as the corresponding tasks in Taskman. The records are uniquely identified by the internal value of the TASK NUMBER field.  
+ 
+Usually, you should not edit records of this file directly. The file is maintained by the APIs located in the RORTSK* routines.  
+ 
+A permanent screen (the ^DD(798.8,0,"SCR") node) restricts access to the records of this file. Only users with the security key(s) for any defined registry (or those with the ROR VA IRM security key) can access records of the file.  
+     
+If you want the changes in the security keys allocation to have an effect immediately, you should rebuild the "ACL" cross-reference of the .01 field of the SECURITY KEY multiple of the ROR REGISTRY PARAMETERS file (#798.1). See the description of the
+cross-reference for more details.  
+
+
+FILE SCREEN (SCR-node) : I $$ACCESS^RORDD(798.8)
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: CREATION TIME(ACDT), REGISTRY(ADUMMY), LOG(ALOG), TASK NUMBER(B), USER(U)
+
+798.8,.01     TASK NUMBER            0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9899999999)!(X<1)!(X?.E1"."1N.N) X S:$D(X) DINUM=X
+              LAST EDITED:      OCT 27, 2003 
+              HELP-PROMPT:      Type a Number between 1 and 9899999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The TASK NUMBER field references the task created by Taskman.  
+
+              TECHNICAL DESCR:
+                                Internal value of this field is used as the internal entry number of record ("DINUM" feature).  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  798.8^B 
+                                1)= S ^RORDATA(798.8,"B",$E(X,1,30),DA)=""
+                                2)= K ^RORDATA(798.8,"B",$E(X,1,30),DA)
+                                3)= Do not delete!
+
+              CROSS-REFERENCE:  ^^TRIGGER^798.8^.07 
+                                1)= X ^DD(798.8,.01,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^RORDATA(798.8,D0,0)):^(0),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV N %I,%H,% D NOW^%DTC S X=% X ^DD(798.8,.01,1,2,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^RORDATA(798.8,D0,0)):^(0),1:"") S X=$P(Y(1),U,7)=""
+                                1.4)= S DIH=$G(^RORDATA(798.8,DIV(0),0)),DIV=X S $P(^(0),U,7)=DIV,DIH=798.8,DIG=.07 D ^DICR
+                                2)= Q
+                                3)= Do not delete!
+                                CREATE CONDITION)= CREATION TIME=""
+                                CREATE VALUE)= NOW
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= CREATION TIME
+                                This trigger populates the CREATION TIME field with the current date and time when the task is created.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^798.8^.08 
+                                1)= X ^DD(798.8,.01,1,3,1.3) I X S X=DIV S Y(1)=$S($D(^RORDATA(798.8,D0,0)):^(0),1:"") S X=$P(Y(1),U,8),X=X S DIU=X K Y X ^DD(798.8,.01,1,3,1.1) S DIH=$G(^RORDATA(798.8,DIV(0),0)),DIV=X S $P(^(0),U,8)=DIV,DIH=798.8,DIG=.08
+                                 D ^DICR
+
+                                1.1)= S X=DIV X ^DD(798.8,.01,1,3,49.2) S %=$S($D(^VA(200,+DUZ,0)):^(0),1:""),X=$S('DUZ:"??",X="#":DUZ,X="N":$P(%,U,1),X="I":$P(%,U,2),X="T":$S($D(^DIC(3.1,+$P(%,U,9),0)):$P(^(0),U,1),1:""),X="NN":$S($D(^VA(200,+DUZ,.1)):$
+                                P(^(.1),U,4),1:""),1:"??") K %
+
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S Y(1)=$S($D(^RORDATA(798.8,D0,0)):^(0),1:"") S X=$S('$D(^VA(200,+$P(Y(1),U,8),0)):"",1:$P(^(0),U,1))=""
+
+                                2)= Q
+                                3)= Do not delete!
+                                49.2)= S X="#"
+                                CREATE CONDITION)= USER=""
+                                CREATE VALUE)= USER("#")
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= USER
+                                This trigger populates the USER field with the DUZ of the user who created the task.  
+
+
+
+798.8,.02     TYPE                   0;2 SET (Required)
+
+                                '1' FOR Generic; 
+                                '2' FOR Report; 
+              LAST EDITED:      OCT 28, 2003 
+              DESCRIPTION:
+                                The TYPE field indicates the type of task.  
+
+              TECHNICAL DESCR:
+                                Currently only 'Report' tasks are used.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+                                UNEDITABLE
+
+798.8,.03     REGISTRY               0;3 POINTER TO ROR REGISTRY PARAMETERS FILE (#798.1)
+
+              LAST EDITED:      OCT 28, 2003 
+              DESCRIPTION:      The REGISTRY field references the registry that the task is associated with. 
+                                 
+                                If this field has no value then the task either works on several registries or does not affect any of them directly.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+                                UNEDITABLE
+              CROSS-REFERENCE:  798.8^ADUMMY^MUMPS 
+                                1)= Q
+                                2)= Q
+                                3)= Do not delete!
+                                This dummy cross-reference forces FileMan to flush data during editing a record.  This is required for the proper functioning of the REPORT field's screening logic.  
+
+
+
+798.8,.04     REPORT                 0;4 POINTER TO ROR REPORT PARAMETERS FILE (#799.34)
+
+              LAST EDITED:      JAN 21, 2004 
+              DESCRIPTION:
+                                The REPORT field indicates the report generated by the task.  This field has a value only if the type of task is 'Report' (see the TYPE field).  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+                                UNEDITABLE
+
+798.8,.05     DESCRIPTION            0;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      NOV 07, 2002 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This field stores the description of task.  For reports, it holds the report name.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+
+798.8,.07     CREATION TIME          0;7 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 17, 2003 
+              DESCRIPTION:
+                                The CREATION TIME field stores the date and time when the task was created.  This field is populated by the trigger associated with the TASK NUMBER field.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the TASK NUMBER field of the ROR TASK File 
+
+              CROSS-REFERENCE:  798.8^ACDT 
+                                1)= S ^RORDATA(798.8,"ACDT",$E(X,1,30),DA)=""
+                                2)= K ^RORDATA(798.8,"ACDT",$E(X,1,30),DA)
+                                3)= Do not delete!
+                                The $$PURGE^RORTSK02 function uses the ACDT cross-reference to find and purge old tasks.  
+
+
+
+798.8,.08     USER                   0;8 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      NOV 09, 2002 
+              DESCRIPTION:
+                                The USER field references the VistA user who created the task.  This field is populated by the trigger associated with the TASK NUMBER field.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the TASK NUMBER field of the ROR TASK File 
+
+              CROSS-REFERENCE:  798.8^U 
+                                1)= S ^RORDATA(798.8,"U",$E(X,1,30),DA)=""
+                                2)= K ^RORDATA(798.8,"U",$E(X,1,30),DA)
+                                3)= Do not delete!
+                                This cross-reference is used to select only the tasks created by a particular user.  
+
+
+
+798.8,1.01    USER COMMENT           1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
+              LAST EDITED:      FEB 17, 2005 
+              HELP-PROMPT:      Answer must be 1-60 characters in length. 
+              DESCRIPTION:
+                                This field stores the user comment entered while scheduling the task.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+
+798.8,2.01    STATUS                 2;1 SET
+
+                                '3' FOR Inactive> Finished; 
+                                '5' FOR Inactive> Interrupted; 
+                                '100' FOR Inactive> Crashed; 
+                                '101' FOR Inactive> Errors; 
+                                '102' FOR Active> Suspended; 
+                                '103' FOR Active> Stopping; 
+              LAST EDITED:      DEC 01, 2003 
+              DESCRIPTION:
+                                The STATUS field stores the current status of the task.  The values of this field are used along with those returned by the STAT^%ZTLOAD procedure.  
+
+              TECHNICAL DESCR:  Codes 3 and 5 are duplicated here so that the most recent status of task will be known even if the task is deleted by Taskman.  
+                                 
+                                Please do not try to analyze this field yourself; use the $$STATUS^RORTSK02 function instead.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+
+798.8,2.02    COMPLETION TIME        2;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 17, 2003 
+              DESCRIPTION:
+                                The task populates the COMPLETION TIME field with the current date and time right before the task is completed.  
+
+              TECHNICAL DESCR:  This field has no value in the following cases: 
+                                 
+                                 * the task has not started yet; 
+                                 * the task is still running; 
+                                 * the task has crashed; 
+                                 * the task has not populated the field 
+                                   due to poor design.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+
+798.8,2.03    LOG                    2;3 POINTER TO ROR LOG FILE (#798.7)
+
+              LAST EDITED:      MAR 18, 2003 
+              DESCRIPTION:
+                                The LOG field references the log created by the task.  
+
+              TECHNICAL DESCR:
+                                The proxy task used by the reports (TASK^RORTSK01) always creates a log and populates this field.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              CROSS-REFERENCE:  798.8^ALOG^MUMPS 
+                                1)= S ^RORDATA(798.7,"AREF",X,798.8,DA_",",2.03)=""
+                                2)= K ^RORDATA(798.7,"AREF",X,798.8,DA_",",2.03)
+                                3)= Do not delete!
+                                The logic of the ALOG cross-reference maintains a list of references from the ROR TASK file to the ROR LOG file.  This list allows the function that purges the old logs ($$PURGE^RORLOG01) either to keep those logs that are
+                                referenced from other files or to remove the references.  
+                                                     
+                                The list is stored under the "AREF" subscript in the ROR LOG file (#798.7) and has the following structure: 
+                                                     
+                                 ^RORDATA(798.7,"AREF",<Log>,798.8,<IENS>,2.03) 
+                                                     
+                                The <Log> is the IEN of the log that is associated with the task (internal value of the LOG field).  
+                                                     
+                                The 798.8 is the number of the file from where the log is referenced (ROR TASK).  
+                                                     
+                                The <IENS> is the IENS of the record that references the log.  
+                                                     
+                                The 2.03 is the number of the field that points to the log (the LOG field).  
+
+
+
+798.8,2.04    JOB NUMBER             2;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 09, 2002 
+              HELP-PROMPT:      Type a Number between 1 and 999999999999, 0 Decimal Digits. 
+              DESCRIPTION:
+                                When the task is running, the JOB NUMBER field holds the job number that is assigned to the task by the M system.  
+
+              TECHNICAL DESCR:
+                                If the task crashes, this field retains its value. Otherwise, it is cleared right before the task finishes (see the $$EXIT^RORTSK01 function).  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+
+798.8,3       SUBTASK                T;0 Multiple #798.83
+
+              DESCRIPTION:
+                                The SUBTASK multiple contains a list of subtasks started by the main task.  
+
+              TECHNICAL DESCR:
+                                The subtask functionality has not been implemented yet.  This multiple is reserved for future use.  
+
+              WRITE AUTHORITY:  @
+
+798.83,.001     NUMBER                   NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9899999999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 13, 2002 
+                HELP-PROMPT:      Type a Number between 1 and 9899999999, 0 Decimal Digits. 
+                DESCRIPTION:
+                                  This is the record IEN that should be equal to the subtask number.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+
+798.83,.01      STATUS                 0;1 FREE TEXT (Multiply asked)
+
+                INPUT TRANSFORM:  K:$L(X)>10!($L(X)<1) X
+                LAST EDITED:      NOV 13, 2002 
+                HELP-PROMPT:      Answer must be 1-10 characters in length. 
+                DESCRIPTION:
+                                  The current status of the subtask is stored in this field.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+
+
+
+798.8,4       PROGRESS               P;E1,255 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."4N.N) X
+              LAST EDITED:      NOV 14, 2002 
+              HELP-PROMPT:      Type a Number between 0 and 100, 3 Decimal Digits. 
+              DESCRIPTION:
+                                The PROGRESS field stores the percentage of completion of the task.  If the task does not explicitly support this feature, the field is always empty.  
+
+              TECHNICAL DESCR:
+                                The task can update the value of this field using the parameter of the $$LOOP^RORTSK01 function that should be called in the main loop of the task.  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+
+798.8,5       ACTION                 A;E1,255 SET
+
+                                '1' FOR Suspend; 
+                                '2' FOR Stop; 
+              LAST EDITED:      NOV 14, 2002 
+              DESCRIPTION:
+                                Values of the ACTION field control the task behavior.  You can either suspend/resume or stop the task 
+
+              TECHNICAL DESCR:  Please do not modify this field directly.  Use the $$DEQUEUE^RORTSK function to stop the task, and the $$SUSPEND^RORTSK02 and $$RESUME^RORTSK02 functions to suspend/resume it.  
+                                 
+                                The task can also be stopped using the Stop task option of the Taskman User menu (see the User's Toolbox menu).  
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+
+798.8,7       REPORT ELEMENT         RI;0 POINTER Multiple #798.87
+
+              LAST EDITED:      NOV 29, 2002 
+              DESCRIPTION:      The REPORT ELEMENT multiple stores the output of the 'Report' task (see the TYPE field).  
+                                 
+                                A report is stored as a tree of XML elements. Each element can contain some text, a single-line value or no value at all. Several attributes can be associated with the element. Valid element and attribute names are stored
+                                in the ROR XML ELEMENT and ROR XML ATTRIBUTE files.  
+                                 
+                                Storing the XML document in this sparse format allows to perform sorting on predefined fields (on the server) when the report is created.  
+                                 
+                                If you do not need this functionality, you can generate a report as a single element (in terms of this multiple) that contains the whole XML document.  
+
+              TECHNICAL DESCR:
+                                Please do not edit this multiple directly. Use the API defined in the RORTSK1 routine instead.  
+
+              WRITE AUTHORITY:  @
+
+              INDEXED BY:       PARENT & REPORT ELEMENT & SORT BY (APSR), PARENT (APSV0), PARENT & REPORT ELEMENT & VALUE & SORT BY (APSV1)
+
+798.87,.01      REPORT ELEMENT         0;1 POINTER TO ROR XML ITEM FILE (#799.31) (Multiply asked)
+
+                LAST EDITED:      AUG 19, 2003 
+                DESCRIPTION:
+                                  The REPORT ELEMENT field references the XML element (tag) that is a part of the report.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                CROSS-REFERENCE:  798.87^B 
+                                  1)= S ^RORDATA(798.8,DA(1),"RI","B",$E(X,1,30),DA)=""
+                                  2)= K ^RORDATA(798.8,DA(1),"RI","B",$E(X,1,30),DA)
+                                  3)= Do not delete!
+
+                RECORD INDEXES:   APSR (#369), APSV1 (#371)
+
+798.87,.02      PARENT                 0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 19, 2003 
+                HELP-PROMPT:      Type a Number between 1 and 999999999999, 0 Decimal Digits. 
+                DESCRIPTION:
+                                  The PARENT field stores the IEN of the record of the REPORT ELEMENT multiple that represents the parent element for this one.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                FIELD INDEX:      APSV0 (#370)    MUMPS    IR    SORTING ONLY
+                    Short Descr:  Preserves the sequence of the report elements.
+                    Description:  The APSV0 index allows to render the report elements into the XML tags in the same sequence as those elements were created by the report builder.  
+                                   
+                                  The APSV0 and APSV1 indexes work together and the entries of both indexes are created under the same "APSV" subscript.  
+                                   
+                                  See the description of the APSV1 index for more details.  
+                      Set Logic:  S ^RORDATA(798.8,DA(1),"RI","APSV",+X(1),0," ",DA)=""
+                     Kill Logic:  K ^RORDATA(798.8,DA(1),"RI","APSV",+X(1),0," ",DA)
+                           X(1):  PARENT  (798.87,.02)  (forwards)
+
+                RECORD INDEXES:   APSR (#369), APSV1 (#371)
+
+798.87,.03      SORT BY                0;3 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR AS-IS; 
+                                  '2' FOR STRING; 
+                                  '3' FOR NUMBER; 
+                LAST EDITED:      AUG 19, 2003 
+                DESCRIPTION:      The SORT field determines if the value of the element should be included in the special index (APSV1) that allows report sorting on the server.  It also controls how the value is transformed before adding to the index.  
+                                   
+                                  Only those elements that have single-line values can be sorted.  
+
+                TECHNICAL DESCR:  For example, let us assume the report has the following structure: 
+                                   
+                                    <REPORT> 
+                                     <HEADER> 
+                                     ...
+                                     </HEADER> 
+                                     <PATIENTS> 
+                                      <PATIENT> 
+                                       <NAME> ... </NAME> 
+                                       <DOB> ... </DOB> 
+                                       <SELRULES> 
+                                        <RULE> 
+                                         <NAME> ... </NAME> 
+                                         <DATE> ... </DATE> 
+                                        </RULE> 
+                                        ...
+                                       </SELRULES> 
+                                      </PATIENT> 
+                                      ...
+                                     </PATIENTS> 
+                                    </REPORT> 
+                                   
+                                  If the SORT BY field is populated and greater than 0 for the NAME child element of each PATIENT element, then the patients will be sorted by their names.  
+                                   
+                                  See the $$SORTBY^RORDD01 function for details regarding different types of sorting.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                RECORD INDEXES:   APSR (#369), APSV1 (#371)
+
+798.87,.04      IGNORE                 0;4 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      SEP 24, 2003 
+                DESCRIPTION:
+                                  If the IGNORE field is set to 'YES' then the report element and all its descendants will not be rendered into the resulting XML document.  
+
+
+798.87,1        VALUE                  1;E1,245 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                LAST EDITED:      AUG 19, 2003 
+                HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                DESCRIPTION:      The VALUE field stores the single-line value of the element.  For example, if "SMITH, JOHN" is stored as the value of the NAME element, then the corresponding fragment of the XML document will look as follows:
+                                  <NAME>SMITH, JOHN</NAME>.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                RECORD INDEXES:   APSV1 (#371)
+
+798.87,2        ATTRIBUTE              2;0 POINTER Multiple #798.872
+
+                DESCRIPTION:
+                                  The ATTRIBUTE multiple contains a list of XML attributes (and their values) associated with the element.  
+
+                WRITE AUTHORITY:  @
+
+798.872,.01       ATTRIBUTE              0;1 POINTER TO ROR XML ITEM FILE (#799.31) (Multiply asked)
+
+                  INPUT TRANSFORM:  S:$D(X) DINUM=X
+                  LAST EDITED:      OCT 20, 2003 
+                  DESCRIPTION:
+                                    The ATTRIBUTE field references an XML attribute associated with the report element (tag).  
+
+                  DELETE AUTHORITY: @
+                  WRITE AUTHORITY:  @
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                  CROSS-REFERENCE:  798.872^B 
+                                    1)= S ^RORDATA(798.8,DA(2),"RI",DA(1),2,"B",$E(X,1,30),DA)=""
+                                    2)= K ^RORDATA(798.8,DA(2),"RI",DA(1),2,"B",$E(X,1,30),DA)
+                                    3)= Do not delete!
+
+
+798.872,1         VALUE                  1;E1,245 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                  LAST EDITED:      NOV 30, 2002 
+                  HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                  DESCRIPTION:      The VALUE field stores the attribute value.  For example, if "193" is stored as the value of the ID attribute of the PATIENT report element, then the corresponding fragment of the XML document will look like as follow:
+                                    <PATIENT ID="193">.  
+
+                  DELETE AUTHORITY: @
+                  WRITE AUTHORITY:  @
+
+
+
+798.87,3        TEXT                     3;0   WORD-PROCESSING #798.873   (NOWRAP)
+
+                  DESCRIPTION:      The TEXT field stores the text (multi-line) value of the element. For example, the corresponding fragment of the XML document for the DESCRIPTION element will look as follows: 
+                                     
+                                      <DESCRIPTION> 
+                                      ... Text from this field ...  
+                                      </DESCRIPTION> 
+
+                  WRITE AUTHORITY:  @
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 USER (#.08)
+
+ROR LOG (#798.7)                  LOG (#2.03)
+
+ROR REGISTRY PARAMETERS (#798.1)  REGISTRY (#.03)
+
+ROR REPORT PARAMETERS (#799.34)   REPORT (#.04)
+
+ROR XML ITEM (#799.31)            REPORT ELEMENT:REPORT ELEMENT (#.01)
+                                  ATTRIBUTE:ATTRIBUTE (#.01)
+
+
+Subfile #798.87
+
+  Record Indexes:
+
+  APSR (#369)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  Sort Elements
+      Description:   
+                     IEN  Element (int)   Parent IEN  Value 
+                     ---  --------------  ----------  ------------
+                       1  REPORT    ( 1)          0 
+                       2   PATIENTS ( 3)          1 
+                       3    PATIENT ( 5)          2 
+                       4     NAME   ( 9)          3   "DOU, JOHN" 
+                       5     DOB    (10)          3   "1950/03/25" 
+                       6    PATIENT ( 5)          2 
+                       7     NAME   ( 9)          6   "SMITH, BOB" 
+                       8     DOB    (10)          6   "1935/10/05" 
+                     
+                     
+                            Parent  Element 
+                             IEN     (int)   IEN 
+                            ------  -------  ---
+                     "APSR",  3,       9,     4 
+                     "APSR",  3,      10,     5 
+                     "APSR",  6,       9,     7 
+                     "APSR",  6,      10,     8 
+        Set Logic:  S ^RORDATA(798.8,DA(1),"RI","APSR",X(1),X(2),DA)=""
+         Set Cond:  S X=(X(3)>0)
+       Kill Logic:  K ^RORDATA(798.8,DA(1),"RI","APSR",X(1),X(2),DA)
+       Whole Kill:  K ^RORDATA(798.8,DA(1),"RI","APSR")
+             X(1):  PARENT  (798.87,.02)  (Subscr 1)  (forwards)
+             X(2):  REPORT ELEMENT  (798.87,.01)  (Subscr 2)  (forwards)
+             X(3):  SORT BY  (798.87,.03)  (forwards)
+
+  APSV1 (#371)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  Sorts the XML report on the server
+      Description:  The APSV1 index allows to sort the XML reports on the server side. 
+                     
+                    The APSV0 and APSV1 indexes work together and the entries of both indexes are created under the same "APSV" subscript.  
+                     
+                    The resulting index actually consists of several sub-indexes (lists). Each index sorts the items that comprise different parts of the XML document.  
+                     
+                    The index has the following structure: 
+                     
+                     ^RORDATA(798.8,Task,"RI", 
+                        "APSV",List,Sort,ItemValue,ItemIEN) = "" 
+                     
+                    'Task' is the IEN of the main task record (it is equal to the task number).  
+                     
+                    'List' is the IEN of the list.  
+                     
+                    'Sort' is the sorting mode. It is the internal value of the REPORT ELEMENT field (the IEN of the XML element in the ROR XML ELEMENT file). Each list can be sorted in different ways. The APSV0 index always uses 0 as the value of this 
+                    subscript.  
+                     
+                    'ItemValue' is the value of the list item. The APSV0 index always uses " " as the value of this subscript.  
+                     
+                    'ItemIEN' is the IEN of the list item.  
+                     
+                    To clarify, below is an example of some sample content of the REPORT ELEMENT multiple: 
+                     
+                     IEN  Element (int)   Parent IEN  Value 
+                     ---  --------------  ----------  ------------
+                       1  REPORT    ( 1)         0 
+                       2   PATIENTS ( 3)         1 
+                       3    PATIENT ( 5)         2 
+                       4     NAME   ( 9)         3    "DOU, JOHN" 
+                       5     DOB    (10)         3    "1950/03/25" 
+                       6    PATIENT ( 5)         2   
+                       7     NAME   ( 9)         6    "SMITH, BOB" 
+                       8     DOB    (10)         6    "1935/10/05" 
+                     
+                          Table 1. Sample Report Elements 
+                     
+                    The element names are indented to emphasize the hierarchical structure of the document.  
+                     
+                    The numbers in parentheses after the element names represent the internal values of the REPORT ELEMENT field (the IENs in the ROR XML ELEMENT file).  
+                     
+                    Several lists can be isolated from this example: 
+                     
+                      #   List      Items 
+                     ---  -------   -------------------------------
+                      1   REPORT    PATIENTS 
+                      2   PATIENTS  PATIENT, PATIENT 
+                      3   PATIENT   NAME, DOB 
+                      4   PATIENT   NAME, DOB 
+                     
+                      5   PATIENTS  "DOU, JOHN", "SMITH, BOB" 
+                      6   PATIENTS  "1935/10/05", "1950/03/25" 
+                     
+                          Table 2. The Lists 
+                     
+                    The first four lists contain just the report elements themselves. They are used to render the elements into XML tags in the same sequence as the elements were created by the report builder. For example, the <DOB> tag will always
+                    follow the <NAME> tag.  
+                     
+                    The logic of the APSV0 index handles these sub-indexes. They always have 0 as the sorting mode and " " as the item value.  
+                     
+                    The last two sub-indexes are handled by the logic of the "APSV1" index. As illustrated in the example, the lists are associated with the PATIENTS element, they comprise the PATIENT elements, and are sorted by the values of the NAME 
+                    and DOB elements. Three levels of the hierarchy are covered by each of these sub-indexes.  
+                     
+                    Let us look at the corresponding index. The numbers in the first column indicate the corresponding lists from Table 2. The sub-indexes are separated by empty lines: 
+                     
+                      #         List  Sort   ItemValue     ItemIEN 
+                     ---        ----  ----  -------------  -------
+                      1  "APSV",  1,    0,  " ",              2) 
+                     
+                      2  "APSV",  2,    0,  " ",              3) 
+                      2  "APSV",  2,    0,  " ",              6) 
+                     
+                      5  "APSV",  2,    9,  "DOU, JOHN",      3) 
+                      5  "APSV",  2,    9,  "SMITH, BOB",     6) 
+                     
+                      6  "APSV",  2,   10,  "1935/10/05",     6) 
+                      6  "APSV",  2,   10,  "1950/03/25",     3) 
+                     
+                      3  "APSV",  3,    0,  " ",              4) 
+                      3  "APSV",  3,    0,  " ",              5) 
+                     
+                      4  "APSV",  6,    0,  " ",              7) 
+                      4  "APSV",  6,    0,  " ",              8) 
+                     
+                    Let us look more closely at the first entry of the sub-index #5 (also see Table 1): 
+                     
+                     2  is the IEN of the REPORTS element in the 
+                        REPORT ELEMENT multiple; 
+                     
+                     9  is the sorting mode (the IEN of the NAME 
+                        element in the ROR XML ELEMENT file); 
+                     
+                     "DOU, JOHN" 
+                        is the value of the NAME element; 
+                     
+                     3  is the IEN of the corresponding PATIENT 
+                        element in the REPORT ELEMENT multiple.  
+                     
+                    If the sort mode 9 (NAME) is used then the resulting XML document will look like this: 
+                     
+                     <REPORT> 
+                      <PATIENTS> 
+                       <PATIENT> 
+                        <NAME>DOU, JOHN"</NAME> 
+                        <DOB>950/03/25</DOB> 
+                       </PATIENT> 
+                       <PATIENT> 
+                        <NAME>SMITH, BOB</NAME> 
+                        <DOB>1935/10/05</DOB> 
+                       </PATIENT> 
+                      </PATIENTS> 
+                     </REPORT> 
+                     
+                    If the sort mode 10 (DOB) is used, the resulting XML document will look as follow: 
+                     
+                     <REPORT> 
+                      <PATIENTS> 
+                       <PATIENT> 
+                        <NAME>SMITH, BOB</NAME> 
+                        <DOB>1935/10/05</DOB> 
+                       </PATIENT> 
+                       <PATIENT> 
+                        <NAME>DOU, JOHN"</NAME> 
+                        <DOB>950/03/25</DOB> 
+                       </PATIENT> 
+                      </PATIENTS> 
+                     </REPORT> 
+        Set Logic:  S ^RORDATA(798.8,DA(1),"RI","APSV",X(2),X(3),X(6),X(1))=""
+         Set Cond:  S X=(X(5)>0)
+       Kill Logic:  K ^RORDATA(798.8,DA(1),"RI","APSV",X(2),X(3),X(6),X(1))
+             X(1):  PARENT  (798.87,.02)  (Subscr 4)  (forwards)
+             X(2):  Computed Code: S X=$S(X(1)>0:$P($G(^RORDATA(798.8,DA(1),"RI",X(1),0)),U,2),1:"")
+                      (Subscr 1)
+             X(3):  REPORT ELEMENT  (798.87,.01)  (Subscr 2)  (forwards)
+             X(4):  VALUE  (798.87,1)  (Len 30)  (forwards)
+             X(5):  SORT BY  (798.87,.03)
+             X(6):  Computed Code: S X=$$SORTBY^RORDD01(X(5),X(4))
+                      (Subscr 3)  (Len 30)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

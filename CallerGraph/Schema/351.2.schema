@@ -1,0 +1,174 @@
+STANDARD DATA DICTIONARY #351.2 -- SPECIAL INPATIENT BILLING CASES FILE                                                                                                                                                           MAY 20,2014@15:35:29  PAGE 1
+STORED IN ^IBE(351.2,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to track inpatient episodes for Category C veterans who have claimed exposure to Agent Orange, Ionizing Radiation, and Environmental Contaminants.  
+ 
+These episodes, which are normally billed automatically by the system, require individual review to determine if the care provided was related to the claimed exposure.  If the care was determined to be related to exposure, the patient should not be
+billed, but the case disposition must be documented.  
+ 
+A case record will automatically be filed at admission for this special group of patients, and updated when the patient is discharged.  The site then has 45 days to disposition the case, i.e. determine if the care was related to the claimed exposure.  If
+the care was unrelated, and copayment and per diem charges are created in the Cancel/Edit/Add Patient Charges option, the case record will be automatically dispositioned.  If the patient is not going to be billed, the reason for not billing must be
+entered into this file.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: ADMISSION (#.02), PATIENT TYPE (#.03)
+
+CROSS
+REFERENCED BY: ADMISSION(AC), BILLING EVENT(AD), PATIENT(B)
+
+351.2,.01     PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      AUG 10, 1993 
+              DESCRIPTION:
+                                This is the patient whose inpatient episode must be tracked.  
+
+              CROSS-REFERENCE:  351.2^B 
+                                1)= S ^IBE(351.2,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(351.2,"B",$E(X,1,30),DA)
+
+
+351.2,.02     ADMISSION              0;2 POINTER TO PATIENT MOVEMENT FILE (#405)
+
+              LAST EDITED:      AUG 11, 1993 
+              DESCRIPTION:
+                                This field points to the admission in the PATIENT MOVEMENT (#405) file which is being tracked.  
+
+              CROSS-REFERENCE:  351.2^AC 
+                                1)= S ^IBE(351.2,"AC",$E(X,1,30),DA)=""
+                                2)= K ^IBE(351.2,"AC",$E(X,1,30),DA)
+
+
+351.2,.03     PATIENT TYPE           0;3 SET
+
+                                '1' FOR AGENT ORANGE; 
+                                '2' FOR IONIZING RADIATION; 
+                                '3' FOR SOUTHWEST ASIA; 
+                                '4' FOR SERVICE CONNECTED; 
+                                '5' FOR MILITARY SEXUAL TRAUMA; 
+                                '6' FOR HEAD/NECK CANCER; 
+                                '7' FOR COMBAT VETERAN; 
+                                '8' FOR PROJECT 112/SHAD; 
+              LAST EDITED:      AUG 02, 2006 
+              HELP-PROMPT:      Please enter a number from 1 to 8 that best represents the exposure being claimed. 
+              DESCRIPTION:
+                                This field is used to determine whether the patient has claimed exposure to Agent Orange, Ionizing Radiation, Southwest Asia, Military Sexual Trauma, Head/Neck Cancer or Project 112/SHAD.  
+
+
+351.2,.04     BILLING EVENT          0;4 POINTER TO INTEGRATED BILLING ACTION FILE (#350)
+
+              LAST EDITED:      AUG 11, 1993 
+              DESCRIPTION:
+                                This field points to the event record in the INTEGRATED BILLING ACTION (#350) file which may be used to reference all charges associated with the admission.  
+
+              CROSS-REFERENCE:  351.2^AD 
+                                1)= S ^IBE(351.2,"AD",$E(X,1,30),DA)=""
+                                2)= K ^IBE(351.2,"AD",$E(X,1,30),DA)
+
+
+351.2,.05     PATIENT STATUS         0;5 SET
+
+                                '1' FOR ADMITTED; 
+                                '2' FOR DISCHARGED; 
+              LAST EDITED:      AUG 10, 1993 
+              DESCRIPTION:
+                                This field indicates whether the patient is admitted or has been discharged.  The field is used to determine if monitoring of the billing case should begin.  
+
+
+351.2,.06     DATE DISCHARGE ENTERED 0;6 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 10, 1993 
+              DESCRIPTION:
+                                This field contains the date that the patient's discharge movement was entered into the system.  The date is used as the starting date in the 45-day period in which this case must be dispositioned.  
+
+
+351.2,.07     CARE RELATED TO CONDITION? 0;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 10, 1993 
+              DESCRIPTION:
+                                This field indicates whether this patient's inpatient episode of care has any component at all which is related to the patient's claimed exposure.  
+
+
+351.2,.08     CASE DISPOSITIONED?    0;8 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      AUG 10, 1993 
+              DESCRIPTION:
+                                This field indicates whether this billing case has been fully dispositioned.  Once the case has been dispositioned, then it will no longer be monitored by the nightly billing job.  
+
+
+351.2,1       REASON FOR NON-BILLING 1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<1) X
+              LAST EDITED:      AUG 10, 1993 
+              HELP-PROMPT:      Answer must be 1-80 characters in length. 
+              DESCRIPTION:
+                                This field allows the user to enter a free-text comment explaining why this inpatient episode of care was not billed.  
+
+
+351.2,2.01    USER ADDING ENTRY      2;1 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 10, 1993 
+              DESCRIPTION:
+                                This field contains a pointer to the user who caused this entry to be created.  This would normally be the user who enters the admission movement for the patient.  
+
+
+351.2,2.02    DATE/TIME ENTRY CREATED 2;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 10, 1993 
+              DESCRIPTION:
+                                This is the date/time that the entry was created.  
+
+
+351.2,2.03    USER LAST UPDATING     2;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 10, 1993 
+              DESCRIPTION:
+                                This field is a pointer to the user who last updated the entry.  
+
+
+351.2,2.04    DATE LAST UPDATED      2;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      AUG 10, 1993 
+              DESCRIPTION:
+                                This is the date/time that the entry was last updated.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INTEGRATED BILLING ACTION 
+                   (#350)         BILLING EVENT (#.04)
+
+NEW PERSON (#200)                 USER ADDING ENTRY (#2.01)
+                                  USER LAST UPDATING (#2.03)
+
+PATIENT (#2)                      PATIENT (#.01)
+
+PATIENT MOVEMENT (#405)           ADMISSION (#.02)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

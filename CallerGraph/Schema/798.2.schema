@@ -1,0 +1,246 @@
+STANDARD DATA DICTIONARY #798.2 -- ROR SELECTION RULE FILE                                                                                                                                                                        MAY 20,2014@15:31:10  PAGE 1
+STORED IN ^ROR(798.2,  (61 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                          (VERSION 1.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+The ROR SELECTION RULES file contains definitions of the selection rules that are used to screen patients for addition to the registries. There are two kinds of rules: top-level and lower level.  
+ 
+If a rule is referenced by the ROR REGISTRY PARAMETERS file, it is the top-level rule.  Non-zero value of any top-level rule expression directly determines that the patient should be added to the corresponding registry.  
+ 
+Lower level rules are referenced only by other rules (by rule macros in the expressions). Their expressions are evaluated in the proper order, and the result values are used in the expressions of other rules. Lower level rules have an indirect impact on
+the final result and can be used for complex processing of linked files and multiples.  
+ 
+For example, a lower level rule can calculate maximum and minimum values of a parameter in the sub-file, and a top-level rule will analyze these values and decide if the patient should be added to the registry. Moreover, they could be used to split a
+very complex rule into several simpler rules.  
+ 
+Records of the file are uniquely identified by the rule name (the "A" primary key and the uniqueness index "B" are used for this purpose).  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: 
+IDENTIFIED BY: 
+      "WRITE": D EN^DDIOL("  "_$P($G(^(0)),U,3),,"?30")
+
+SECONDARY KEY:      A (#7)
+  Uniqueness Index: B (#154)
+       File, Field: 1) RULE NAME (798.2,.01)
+
+POINTED TO BY: SELECTION RULE field (#.01) of the SELECTION RULE sub-field (#798.01) of the ROR REGISTRY RECORD File (#798) 
+               
+
+
+INDEXED BY:    RULE NAME (B)
+
+
+798.2,.01     RULE NAME              0;1 FREE TEXT (Key field)
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.2,$G(DA))  K:$L(X)>30!($L(X)<3)!'(X?1.UNP) X
+              LAST EDITED:      MAR 14, 2002 
+              HELP-PROMPT:      Enter a unique namespaced rule name (3-30 characters). 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS A PART OF NATIONAL REGISTRY DEFINITION! 
+                                 
+                                Selection rule name must be unique and name spaced. Names of the rules that are used for National Registries must start with "VA".  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.2,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              FIELD INDEX:      B (#154)    REGULAR    IR    LOOKUP & SORTING
+                   Unique for:  Key A (#7), File #798.2
+                  Short Descr:  Uniqueness Index for the "A" Key of File #798.2
+                    Set Logic:  S ^ROR(798.2,"B",X,DA)=""
+                   Kill Logic:  K ^ROR(798.2,"B",X,DA)
+                   Whole Kill:  K ^ROR(798.2,"B")
+                         X(1):  RULE NAME  (798.2,.01)  (Subscr 1)
+
+
+798.2,.09     NATIONAL               0;4 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.2,,-1)
+              LAST EDITED:      NOV 21, 2001 
+              DESCRIPTION:      ONLY AUTHORIZED NATIONAL REGISTRY DEVELOPERS CAN EDIT THIS FIELD! 
+                                 
+                                Selection rules of the national registries must have this field set to "YES". This prevents local editing of other fields of rule definitions.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.2,,-1)
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.2,1       EXPRESSION             1;E1,245 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.2,$G(DA))  K:$L(X)>250!($L(X)<1) X I $D(X) Q:$$EXPR^RORDD($P($G(^ROR(798.2,DA,0)),U,2))
+              LAST EDITED:      NOV 09, 2001 
+              HELP-PROMPT:      Enter M expression that implements the selection rule (1-250 characters). 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS A PART OF NATIONAL REGISTRY DEFINITION! 
+                                 
+                                Enter a MUMPS expression (it may contain special macros) that implements the selection rule.  
+
+              TECHNICAL DESCR:  MUMPS expression that implements the selection rule can contain special macros: 
+                                 
+                                 {E: Field Name} - External value of the field 
+                                 {E: Field Number} 
+                                 
+                                 {I: Field Name} - Internal value of the field 
+                                 {I: Field Number} 
+                                 
+                                 {Rule Name} - Result value of the lower level selection rule 
+                                 
+                                 {AVG: Rule Name} - Average value of the rule 
+                                 
+                                 {CNT: Rule Name} - Number of calculations of the rule 
+                                 
+                                 {MAX: Rule Name} - Maximum value of the rule 
+                                 
+                                 {MIN: Rule Name} - Minimum value of the rule 
+                                 
+                                 {SUM: Rule Name} - Total of the selection rule values 
+                                 
+                                 {LS: Lab Search Name} - This macro can be used only in the selection rules associated with the LAB DATA file (#63). It is evaluated as 1 if some of the patient lab results pass the Lab search criteria (from the file 
+                                #798.9). Otherwise, it is evaluated as zero.  
+                                 
+                                Return values of the top-level rules: 
+                                 
+                                 0        - Skip the patient 
+                                 Non-zero - Add the patient to the registry 
+                                 
+                                Return values of the lower level rules: 
+                                 
+                                Return values can be used in the expressions of the other rules. Some additional values are calculated automatically (minimum, maximum, average, etc.) for each rule.  
+                                 
+                                Avoid circular references in the expressions. If a rule directly or indirectly depends on itself, it cannot be evaluated. An example of the circular reference: 
+                                 
+                                 Rule A: {MAX:B}<10 
+                                 Rule B: {I:23}+{C} 
+                                 Rule C: {CNT:A} 
+                                 
+                                The rule A cannot be evaluated because it depends on the rule B, which depends on rule C, and C depends on A.  
+                                 
+                                Complex selection rules could be implemented by external MUMPS functions. In that case the expression should contains a full reference to the function ($$TAG^ROUTINE). Values of the necessary data elements can be loaded
+                                automatically (see description of the DATA ELEMENT multiple).  
+                                 
+                                See the Programmer's reference manual for more details regarding the selection rule expressions.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.2,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.2,2       FILE                   0;2 NUMBER (Required)
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.2,$G(DA))  K:+X'=X!(X>999999999999)!(X<1)!(X?.E1"."10N.N) X I $D(X) K:'$$VFILE^DILFD(X) X
+              LAST EDITED:      NOV 09, 2001 
+              HELP-PROMPT:      Enter (sub)file number between 1 and 999999999999, 9 Decimal Digits. 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS A PART OF NATIONAL REGISTRY DEFINITION! 
+                                 
+                                Enter a file/sub-file number that the selection rule is associated with. Each selection rule can be associated with only one file.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.2,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.2,4       SHORT DESCRIPTION      0;3 FREE TEXT
+
+              INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.2,$G(DA))  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      NOV 09, 2001 
+              HELP-PROMPT:      Enter a short description of the selection rule (3-30 characters). 
+              DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS A PART OF NATIONAL REGISTRY DEFINITION! 
+                                 
+                                The short description of the selection rule is used in the reports and GUI dialogs.  
+
+              DELETE TEST:      1,0)= I $$VADEL^RORDD(798.2,$G(DA))
+
+              DELETE AUTHORITY: @
+              WRITE AUTHORITY:  @
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+798.2,5       DESCRIPTION            3;0   WORD-PROCESSING #798.25
+
+              DESCRIPTION:
+                                You can enter any additional reference information related to the selection rule. The content of this field is not used by the application.  
+
+
+798.2,6       DATA ELEMENT           4;0 Multiple #798.26
+
+              LAST EDITED:      MAR 26, 2002 
+              DESCRIPTION:      The DATA ELEMENT multiple contains a list of additional data elements to load. 
+                                 
+                                Values of all the data elements referenced in the selection rule expression are loaded automatically.  
+                                 
+                                However, if the rule is implemented by an external function, you can enter the codes of all necessary data elements into this multiple. Their values will be loaded automatically and will be accessible in the function.  
+
+              WRITE AUTHORITY:  @
+
+              SECONDARY KEY:    A (#20)
+              Uniqueness Index: B (#155)
+                   File, Field: 1) ELEMENT CODE (798.26,.01)
+
+              INDEXED BY:       ELEMENT CODE (B)
+
+798.26,.01      ELEMENT CODE           0;1 NUMBER (Multiply asked) (Key field)
+
+                INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.2,$G(DA(1)))  K:+X'=X!(X>999999999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      MAR 26, 2002 
+                HELP-PROMPT:      Type a Number between 1 and 999999999, 0 Decimal Digits. 
+                DESCRIPTION:      YOU MUST NOT EDIT THIS FIELD IF IT IS A PART OF NATIONAL REGISTRY DEFINITION! 
+                                   
+                                  Enter the code of the data element that should be loaded before evaluation of the expression. Values of all data elements referenced in the selection rule expression are loaded automatically (you do not need to enter
+                                  them here).  
+
+                DELETE TEST:      1,0)= I $$VADEL^RORDD(798.2,$G(DA(1)))
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                FIELD INDEX:      B (#155)    REGULAR    IR    LOOKUP & SORTING
+                     Unique for:  Key A (#20), File #798.26
+                    Short Descr:  Uniqueness Index for the "A" Key of Subfile #798.26
+                      Set Logic:  S ^ROR(798.2,DA(1),4,"B",X,DA)=""
+                     Kill Logic:  K ^ROR(798.2,DA(1),4,"B",X,DA)
+                     Whole Kill:  K ^ROR(798.2,DA(1),4,"B")
+                           X(1):  ELEMENT CODE  (798.26,.01)  (Subscr 1)
+
+
+798.26,1        VALUE TYPE             0;2 SET (Required)
+
+                                  'E' FOR External; 
+                                  'I' FOR Internal; 
+                                  'EI' FOR Both; 
+                INPUT TRANSFORM:  Q:$$VAEDT^RORDD(798.2,$G(DA(1)))
+                LAST EDITED:      MAR 11, 2002 
+                DESCRIPTION:
+                                  This field holds required value type(s) of the data element. The type(s) must be supported by the search engine.  
+
+                DELETE AUTHORITY: @
+                WRITE AUTHORITY:  @
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

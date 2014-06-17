@@ -1,0 +1,382 @@
+STANDARD DATA DICTIONARY #618.4 -- MENTAL HEALTH INPT FILE                                                                                                                                                                        MAY 20,2014@15:38:04  PAGE 1
+STORED IN ^YSG("INP",  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 5.01)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This is the main data file for Mental Health Inpatient features.  It contains current and past treatment episodes.  Team information, clinician responsibility and treatment data are stored.  This is a flat file that may be easily archived and restored.  
+ 
+Cross-references: 
+ AC   ; xref for current admissions only by primary therapist.  
+ ACP  ; xref for current admissions only by physician.  
+ ACR  ; xref for current admissions only by resident.  
+ AIN  ; xref for all admissions by admit date.  
+ AOUT ; xref for all admissions by discharge/transfer date.  
+ AST  ; xref for current admissions only by ward and team.  
+ AWC  ; xref for current admissions only by ward and team.  
+ C    ; xref for all patients by DFN.  
+ CP   ; xref for current admissions only by DFN.  
+ 
+
+
+COMPILED CROSS-REFERENCE ROUTINE: YSXRAT
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: TEAM (#3)[R]
+
+CROSS
+REFERENCED BY: STAFF(AC), PHYSICIAN(ACP), RESIDENT(ACR), UNIT ENTRY DATE(AIN), DISCHARGE/TRANSFER DATE(AOUT), TEAM(AST), CURRENT TEAM(AWC), FILE ENTRY DATE(B), PATIENT(C), PATIENT(CP)
+
+618.4,.01     FILE ENTRY DATE        0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 01, 1992 
+              DESCRIPTION:
+                                This is a unique file entry date to allow a flat file structure.  
+
+              CROSS-REFERENCE:  618.4^B 
+                                1)= S ^YSG("INP","B",$E(X,1,30),DA)=""
+                                2)= K ^YSG("INP","B",$E(X,1,30),DA)
+
+
+618.4,1       PATIENT                0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      JAN 01, 1992 
+              HELP-PROMPT:      Enter a new patient name that has been admitted through administration or an existing name to edit. 
+              DESCRIPTION:
+                                Pointer to patient file.  
+
+              CROSS-REFERENCE:  618.4^C 
+                                1)= S ^YSG("INP","C",$E(X,1,30),DA)=""
+                                2)= K ^YSG("INP","C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  618.4^CP^MUMPS 
+                                1)= I $P($G(^YSG("INP",DA,7)),U,4) S ^YSG("INP","CP",X,DA)=""
+                                2)= K ^YSG("INP","CP",X,DA)
+
+
+618.4,2       UNIT ENTRY DATE        0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 01, 1992 
+              DESCRIPTION:
+                                This is the date of entry on to the psychiatry service for the current admission.  This is set automatically by the system but can be edited.  
+
+              CROSS-REFERENCE:  618.4^AIN^MUMPS 
+                                1)= S ^YSG("INP","AIN",9999999-X,DA)=""
+                                2)= K ^YSG("INP","AIN",9999999-X,DA)
+
+
+618.4,3       TEAM                   0;4 POINTER TO MENTAL HEALTH TEAM FILE (#618.2) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^YSG(""SUB"",+Y,1),U,5)'=1,$P(^YSG(""SUB"",+Y,1),U)=$P(^YSG(""INP"",DA,7),U)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      MAR 08, 1993 
+              DESCRIPTION:
+                                This is the clinical and/or nursing team to which the patient is assigned.  
+
+              SCREEN:           S DIC("S")="I $P(^YSG(""SUB"",+Y,1),U,5)'=1,$P(^YSG(""SUB"",+Y,1),U)=$P(^YSG(""INP"",DA,7),U)"
+              EXPLANATION:      ALLOWS ONLY ACTIVE TEAMS FOR APPROPRIATE WARD
+              CROSS-REFERENCE:  618.4^AST^MUMPS 
+                                1)= D CROSS^YSCEN5
+                                2)= Q
+
+              CROSS-REFERENCE:  ^^TRIGGER^618.4^23 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^YSG("INP",D0,7)):^(7),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X=DIV,X=X X ^DD(618.4,3,1,2,1.4)
+                                1.4)= S DIH=$S($D(^YSG("INP",DIV(0),7)):^(7),1:""),DIV=X S $P(^(7),U,4)=DIV,DIH=618.4,DIG=23 D ^DICR:$O(^DD(DIH,DIG,1,0))>0
+                                2)= Q
+                                CREATE VALUE)= INTERNAL(TEAM)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= CURRENT TEAM
+
+
+618.4,4       STAFF                  0;5 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JAN 01, 1992 
+              HELP-PROMPT:      Enter the name of the staff member to be linked to this patient. 
+              DESCRIPTION:
+                                This is the primary staff member assigned responsibility for patient care or charting.  Local definition of this title is allowed for in the package. Examples of this are: Case manager , Primary Therapist, and coordinator.  
+
+              CROSS-REFERENCE:  618.4^AC^MUMPS 
+                                1)= I $D(^YSG("INP",DA,7)),$P(^YSG("INP",DA,7),U,4)?1N.N S ^YSG("INP","AC",X,DA)=""
+                                2)= K ^YSG("INP","AC",X,DA)
+
+
+618.4,5       PHYSICIAN              0;6 POINTER TO NEW PERSON FILE (#200)
+
+              INPUT TRANSFORM:  S DIC("S")="I $S(+$G(^(""I""))=0:1,$G(^(""I""))'<DT:1,1:0)",D="AK.PROVIDER" D MIX^DIC1 K DIC S DIE=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 01, 1992 
+              HELP-PROMPT:      Enter the physician's name. 
+              DESCRIPTION:
+                                This is the primary physician providing care to this patient.  
+
+              SCREEN:           S DIC("S")="I $S(+$G(^(""I""))=0:1,$G(^(""I""))'<DT:1,1:0)"
+              EXPLANATION:      Selection must be made from active Physicians who hold the PROVIDER security key.
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  618.4^ACP^MUMPS 
+                                1)= I $D(^YSG("INP",DA,7)),$P(^YSG("INP",DA,7),U,4)?1N.N S ^YSG("INP","ACP",X,DA)=""
+                                2)= K ^YSG("INP","ACP",X,DA)
+
+
+618.4,6       RESIDENT               0;7 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JAN 01, 1992 
+              HELP-PROMPT:      Enter the name of the medical resident. 
+              DESCRIPTION:
+                                This is the resident assigned (if any) to provide care to this patient.  
+
+              CROSS-REFERENCE:  618.4^ACR^MUMPS 
+                                1)= I $D(^YSG("INP",DA,7)),$P(^YSG("INP",DA,7),U,4)?1N.N S ^YSG("INP","ACR",X,DA)=""
+                                2)= K ^YSG("INP","ACR",X,DA)
+
+
+618.4,7       LEGAL STATUS           1;1 SET
+
+                                'v' FOR VOLUNTARY; 
+                                'i' FOR INVOLUNTARY; 
+              DESCRIPTION:
+                                Set of codes: 'v' for Voluntary, 'i' for Involuntary.  
+
+
+618.4,8       OPEN/CLOSED            1;2 SET
+
+                                'o' FOR OPEN; 
+                                'c' FOR CLOSED; 
+              DESCRIPTION:
+                                This indicates whether the patient is on a security area.  
+
+
+618.4,9       LEVEL                  1;3 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>10)!(X<0)!(X?.E1"."1N.N) X
+              HELP-PROMPT:      Type a Number between 0 and 10, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is a field locally definable to assign treatment or privilege status.  It is only meaningful within local definitions.  
+
+
+618.4,10      MASTER TX PLAN         1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              HELP-PROMPT:      Enter date Master Treatment Plan was entered in the chart 
+              DESCRIPTION:
+                                Date the Master Treatment Plan was enterd in the chart.  
+
+
+618.4,11      TX PLAN UPDATE         1;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              HELP-PROMPT:      Enter the date of the latest treatmemt plan update. 
+              DESCRIPTION:
+                                Date the treatment plan was updated in the patient's chart.  
+
+
+618.4,12      HAIR COLOR             1;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<2) X
+              HELP-PROMPT:      Enter patient's hair color (2-10 characters) 
+              DESCRIPTION:
+                                For quick identification purposes.  Especially needed for patient searches.  
+
+
+618.4,13      EYE COLOR              1;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<2) X
+              HELP-PROMPT:      Enter patient's eye color (2-10 characters) 
+              DESCRIPTION:
+                                For quick identification.  Especially useful in patient searches.  
+
+
+618.4,14      HEIGHT (INCHES)        1;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<2) X
+              HELP-PROMPT:      Enter patient's height in inches 
+              DESCRIPTION:
+                                For quick identification.  Especially useful in patient searches.  
+
+
+618.4,14.2    WEIGHT                 1;9 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>450)!(X<50)!(X?.E1"."1N.N) X
+              LAST EDITED:      JAN 01, 1992 
+              HELP-PROMPT:      Enter patient's weight in pounds. 
+              DESCRIPTION:
+                                For quick identification.  Especially useful in patient searches.  
+
+
+618.4,15      PHYSICAL DESCRIPTION   2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<2) X
+              HELP-PROMPT:      Enter a short physical description of the patient (2-200 characters) 
+              DESCRIPTION:
+                                Short physical description of patient.  
+
+
+618.4,16      MEDICAL ALERT          3;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<2) X
+              HELP-PROMPT:      Enter any medical alerts (2-200 characters) 
+              DESCRIPTION:
+                                Any medical alert associated with the patient.  
+
+
+618.4,17      SPECIAL DIET           4;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<2) X
+              HELP-PROMPT:      Enter diet information (2-200 characters) 
+              DESCRIPTION:
+                                Patient's specical diet requirement.  
+
+
+618.4,18      INPATIENT COMMENTS     5;0 DATE Multiple #618.418
+
+              DESCRIPTION:
+                                Patient comments, multiple valued field with subfield.  
+
+
+618.418,.01     INPATIENT COMMENT DATE/TIME 0;1 DATE (Required) (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="ETSXR" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JAN 01, 1992 
+                DESCRIPTION:
+                                  DATE and TIME the INPATIENT COMMENT was entered.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  618.418^AB^MUMPS 
+                                  1)= S ^YSG("INP",DA(1),"AB",9999999-X,DA)=""
+                                  2)= K ^YSG("INP",DA(1),"AB",9999999-X,DA)
+
+
+618.418,1       ENTERED BY             0;2 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                LAST EDITED:      JAN 01, 1992 
+                DESCRIPTION:
+                                  Name of person who entered the comment.  Actually stored is the pointer value pointing to the NEW PERSON file #200.  
+
+
+618.418,2       COMMENT                1;0   WORD-PROCESSING #618.4182
+
+                DESCRIPTION:
+                                  The actual comment(s) concerning the patient.  This is a word processing field.  
+
+
+
+
+618.4,19      PAST TEAMS             6;0 POINTER Multiple #618.419 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                This data is automatically set by the package.  It keeps track of team changes within a psychiatric ward.  This is a multiple field with subfields.  
+
+
+618.419,.01     PAST TEAMS             0;1 POINTER TO MENTAL HEALTH TEAM FILE (#618.2)
+
+                DESCRIPTION:
+                                  Previous team assigned to the patient.  This data is automatically set by the package.  
+
+                CROSS-REFERENCE:  618.419^B 
+                                  1)= S ^YSG("INP",DA(1),6,"B",$E(X,1,30),DA)=""
+                                  2)= K ^YSG("INP",DA(1),6,"B",$E(X,1,30),DA)
+
+
+618.419,1       DATE ENTERED           0;2 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                DESCRIPTION:
+                                  Date the patient entered ward and was assigned the specific team.  
+
+
+618.419,2       ENTERED BY             0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+                DESCRIPTION:
+                                  This is the DUZ of the person implemating the transfer of the patient from one ward to another.  This is automatically upedted.  
+
+
+
+
+618.4,20      WARD                   7;1 POINTER TO WARD LOCATION FILE (#42) (Required)
+
+              LAST EDITED:      JAN 01, 1992 
+              DESCRIPTION:
+                                Name of the ward as pointer to the ward location file.  This is set automatically by the package.  
+
+
+618.4,21      DISCHARGE/TRANSFER DATE 7;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 01, 1992 
+              DESCRIPTION:
+                                Date patient is either discharged or transfered out of the current psychiatric ward.  This is not the same as the discharge date as defined by MAS.  It is meaningful only as regards to the current ward.  
+
+              CROSS-REFERENCE:  618.4^AOUT^MUMPS 
+                                1)= S ^YSG("INP","AOUT",9999999-X,DA)=""
+                                2)= K ^YSG("INP","AOUT",9999999-X,DA)
+
+
+618.4,22      ADMISSION POINTER      7;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<2) X
+              LAST EDITED:      APR 16, 1993 
+              HELP-PROMPT:      Enter pointer DA"~"pointer DA, such as 38104~38221 
+              DESCRIPTION:      The ADMISSION POINTER has two parts (PART ONE~PART TWO).  Part one is the ^DGPM file's "DA" or pointer to the ADMISSION Patient Movement record.  Part two which follows the "~" is the TRANSFER or DISCHARGE pointer to the
+                                ^DGPM Patient Movement record or it is the pointer to the LAST Patient Movement record.  Therefore, when the patient is initially admitted part one and part two are the same.  This piece is set automatically by the
+                                package.  
+
+
+618.4,23      CURRENT TEAM           7;4 POINTER TO MENTAL HEALTH TEAM FILE (#618.2)
+
+              LAST EDITED:      JAN 01, 1992 
+              DESCRIPTION:      This is the current team assigned to work with the patient.  When this field is blank this indicates that the patient was been transferred out of the ward or the patient was been discharged.  The CURRENT TEAM field is used
+                                to activate the SET and KILL of the following cross-references: "CP", "AC", "ACP", "ACR" and "AWC".  
+
+              WRITE AUTHORITY:  ^
+              NOTES:            TRIGGERED by the TEAM field of the MENTAL HEALTH INPT File 
+
+              CROSS-REFERENCE:  618.4^AWC^MUMPS 
+                                1)= D ENTRY^YSCEN5
+                                2)= D LEAVE^YSCEN5
+
+
+618.4,500000  LAST PHYSICAL EXAM      ;  COMPUTED
+
+              MUMPS CODE:       I $D(^MR(D1,"PE")) S X=$O(^MR(D1,"PE",0)),X=9999999-X,X=$$FMTE^XLFDT(X,"5ZD")
+                                9.2 = S Y(618.4,500000,80)=$S($D(D0):D0,1:""),Y(618.4,500000,1)=$S($D(^YSG("INP",D0,0)):^(0),1:""),D0=$P(Y(618.4,500000,1),U,2) S:'$D(^DPT(+D0,0)) D0=-1
+                                9.3 = X ^DD(618.4,500000,9.2) S Y(618.4,500000,180)=$S($D(D0):D0,1:""),D0=D0 S:'$D(^MR(+D0,0)) D0=-1 S Y(618.4,500000,280)=$S($D(D0):D0,1:"")
+                                9.4 = X ^DD(618.4,500000,9.3) S Y(618.4,500000,201)=$S($D(^MR(D0,0)):^(0),1:""),D0=$P(Y(618.4,500000,201),U) S:'$D(^DPT(+D0,0)) D0=-1 S Y(618.4,500000,380)=$S($D(D0):D0,1:"")
+                                9.5 = X ^DD(618.4,500000,9.4) S Y(618.4,500000,381)=$S($D(D1):D1,1:""),Y(618.4,500000,301)=X,Y(618.4,500000,402)=""
+                                9.6 = X ^DD(618.4,500000,9.5) X "F D1=0:0 S D1=$O(^MR(I(200,0),""PE"",D1)) Q:D1=""  S Y=$S($D(^(D1,0)):$P(^(0),U),1:"""") S:Y'?."" "" Y(618.4,500000,402)=Y" S D(1)=D1
+              ALGORITHM:        I $D(^MR(D1,"PE")) S X=$O(^MR(D1,"PE",0)),X=9999999-X,X=$$FMTE^XLFDT(X,"5ZD")
+              LAST EDITED:      NOV 30, 1992 
+              DESCRIPTION:
+                                This is a computed field (data is NOT stored by calculated).  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+MENTAL HEALTH TEAM (#618.2)       TEAM (#3)
+                                  CURRENT TEAM (#23)
+                                  PAST TEAMS:PAST TEAMS (#.01)
+
+NEW PERSON (#200)                 STAFF (#4)
+                                  PHYSICIAN (#5)
+                                  RESIDENT (#6)
+                                  INPATIENT COMMENTS:ENTERED BY (#1)
+                                  PAST TEAMS:ENTERED BY (#2)
+
+PATIENT (#2)                      PATIENT (#1)
+
+WARD LOCATION (#42)               WARD (#20)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

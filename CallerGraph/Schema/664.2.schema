@@ -1,0 +1,362 @@
+STANDARD DATA DICTIONARY #664.2 -- PROSTHETIC WORK ORDER FILE                                                                                                                                                                     MAY 20,2014@15:40:18  PAGE 1
+STORED IN ^RMPR(664.2,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 3.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains VAF 10-2529-3 Work Order information that will be stored for AMIS calculations.  This file will only be updated if the facility has an active Prosthetic Lab.  
+
+
+              DD ACCESS: @
+
+POINTED TO BY: WORK ORDER NUMBER field (#71) of the RECORD OF PROS APPLIANCE/REPAIR File (#660) 
+               WORK ORDER NUMBER field (#22) of the PROSTHETICS 1358 File (#664) 
+               NO COUNT WORK ORDER field (#34) of the PROSTHETIC 2529-3 File (#664.1) 
+               WORK ORDER NUMBER field (#6) of the ITEM sub-field (#664.16) of the PROSTHETIC 2529-3 File (#664.1) 
+               
+
+CROSS
+REFERENCED BY: MATERIALS USED(A1), INVENTORY POINT(AC), WORK ORDER NUMBER(B), APPLIANCE/REPAIR(C)
+
+664.2,.01     WORK ORDER NUMBER      0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1)!'(X'?1P.E) X
+              LAST EDITED:      NOV 02, 1993 
+              HELP-PROMPT:      Enter the WORK ORDER Number (Station Number-Fiscal Year-Quarter-Type of Lab-Sequence Number, e.g., 644-95-2-O-0016). 
+              DESCRIPTION:      This is the permanent number used to identify and track the Lab request.  It is built from both information the user enters and a sequence number assigned by the computer (e.g., 644-95-2-O-0016).  
+                                    644    =  Station Number 
+                                    95     =  Fiscal Year 
+                                    2      =  Quarter 
+                                    O      =  Type of Laboratory (Orthotic, Restoration, Shoe Last, 
+                                              Wheelchair Repair, National Foot Center, or Denver 
+                                              Distribution Center) 
+
+              CROSS-REFERENCE:  664.2^B 
+                                1)= S ^RMPR(664.2,"B",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(664.2,"B",$E(X,1,30),DA)
+
+
+664.2,1       APPLIANCE/REPAIR       0;2 POINTER TO RECORD OF PROS APPLIANCE/REPAIR FILE (#660)
+
+              LAST EDITED:      NOV 16, 1993 
+              HELP-PROMPT:      Enter the date of the associated RECORD OF PROS APPLIANCE/REPAIR file (#660). 
+              DESCRIPTION:
+                                Pointer to associated RECORD OF PROS APPLIANCE/REPAIR entry in file #660.  
+
+              CROSS-REFERENCE:  664.2^C 
+                                1)= S ^RMPR(664.2,"C",$E(X,1,30),DA)=""
+                                2)= K ^RMPR(664.2,"C",$E(X,1,30),DA)
+                                Used for lookup to update file 660 with materials costs.  
+
+
+
+664.2,1.5     STATION                0;3 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      NOV 18, 1993 
+              HELP-PROMPT:      Enter the Station Name or Station Number. 
+              DESCRIPTION:
+                                This field is a pointer to the INSTITUTION file (#4).  If a site is multidivisional, entries are screened out by site number.  
+
+
+664.2,1.7     JOB NUMBER             0;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 23, 1993 
+              HELP-PROMPT:      Type a Number between 1 and 999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This is a job number, which may be between 1 and 999.  Each job number is associated withan item on the 2529-3.  The numbers are not entered by the user, but set in the background in the lab routines.  
+
+
+664.2,1.8     DATE                   0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="ET" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 26, 1993 
+              HELP-PROMPT:      Enter the date. 
+              DESCRIPTION:
+                                This is the DATE the Lab Work Order was entered.  
+
+
+664.2,2       MATERIALS USED         1;0 POINTER Multiple #664.22 (Add New Entry without Asking)
+
+              LAST EDITED:      APR 03, 1994 
+              DESCRIPTION:
+                                Contains components required to complete the fabricated item.  May be the fabricated item if the item was taken from stock.  
+
+
+664.22,.01      MATERIALS USED         0;1 POINTER TO PROS ITEM MASTER FILE (#661) (Multiply asked)
+
+                OUTPUT TRANSFORM: .01:.01:SHORT DESCRIPTION
+                LAST EDITED:      NOV 18, 1993 
+                HELP-PROMPT:      Enter the materials used to provide the item/service requested on the Lab Work Order. 
+                DESCRIPTION:
+                                  Component or stock issue item(s) used to complete the item(s)/service(s) requested on the Lab Work Order.  
+
+                CROSS-REFERENCE:  664.22^B 
+                                  1)= S ^RMPR(664.2,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^RMPR(664.2,DA(1),1,"B",$E(X,1,30),DA)
+
+
+664.22,1        QTY                    0;2 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+                LAST EDITED:      NOV 16, 1993 
+                HELP-PROMPT:      Enter the number of units you wish to order.  Keep in mind what unit of issue you will be using (e.g., 1 pair or 2 each). 
+                DESCRIPTION:
+                                  This is the number of units ordered for this item.  Keep in mind that this will be governed by the unit of issue (e.g., pair, each).  
+
+
+664.22,2        MATERIALS COST         0;3 NUMBER
+
+                INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<0) X
+                LAST EDITED:      NOV 16, 1993 
+                HELP-PROMPT:      Type a Dollar Amount between 0 and 9999999.99, 2 Decimal Digits 
+                DESCRIPTION:
+                                  The charge associated with the item(s)/service(s) used on the Lab Work Order.  
+
+
+664.22,3        VA or COMMERCIAL SOURCE (V/C) 0;4 SET
+
+                                  'V' FOR VA; 
+                                  'C' FOR COMMERCIAL; 
+                LAST EDITED:      MAR 27, 1994 
+                HELP-PROMPT:      Enter `V` for VA Source or `C` for Commercial Source 
+                DESCRIPTION:
+                                  This is the source for the items ordered on VAF 10-2421 (V for VA or C for Commercial).  
+
+
+664.22,4        INVENTORY POINT        0;5 POINTER TO GENERIC INVENTORY FILE (#445)
+
+                LAST EDITED:      NOV 21, 1993 
+                HELP-PROMPT:      Select the appropriate Inventory Point for this request. 
+                DESCRIPTION:
+                                  This is the pointer to the GENERIC INVENTORY file (#445) that tells which inventory point is charged for the item(s).  
+
+                CROSS-REFERENCE:  664.2^AC 
+                                  1)= S ^RMPR(664.2,"AC",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^RMPR(664.2,"AC",$E(X,1,30),DA(1),DA)
+                                  Used to lookup inventory point from file 445 
+
+
+
+664.22,5        VENDOR                 0;6 POINTER TO VENDOR FILE (#440) (Required)
+
+                LAST EDITED:      APR 14, 1995 
+                HELP-PROMPT:      Enter the name of the Vendor for the item(s) ordered on this request. 
+                DESCRIPTION:
+                                  This is the name of the Vendor for the items(s) ordered on the request.  
+
+
+664.22,6        UNIT OF ISSUE          0;7 POINTER TO UNIT OF ISSUE FILE (#420.5)
+
+                LAST EDITED:      NOV 19, 1993 
+                HELP-PROMPT:      Enter the appropriate unit of issue for this item. 
+                DESCRIPTION:
+                                  This the is unit by which item(s)/service(s) are issued (e.g., each, pair, box, case, etc.).  
+
+
+664.22,7        SERIAL NBR             0;8 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>50!($L(X)<3) X
+                LAST EDITED:      NOV 20, 1993 
+                HELP-PROMPT:      Answer must be 3-50 characters in length. 
+                DESCRIPTION:
+                                  This is number assigned by the manufacturer of the item.  
+
+
+664.22,9        REMARKS                3;0   WORD-PROCESSING #664.229
+
+                DESCRIPTION:
+                                  These are the remarks entered by the Lab Technician concerning the materials used on the Lab Work Order.  
+
+
+664.22,10       REFERENCE              0;10 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>30!($L(X)<2) X
+                LAST EDITED:      NOV 24, 1993 
+                HELP-PROMPT:      Answer must be 2-30 characters in length. 
+                DESCRIPTION:
+                                  This is the VAF 10-2421 C Number from the VAF 4-1358 Daily Record entry.  
+
+
+664.22,11       PURCHASE FORM          0;11 POINTER TO PROSTHETICS 1358 FILE (#664)
+
+                LAST EDITED:      MAY 08, 1994 
+                DESCRIPTION:
+                                  Points to the Prosthetics 1358 file if the materials had to be purchased on a VAF 10-2421 and could not be taken from stock.  
+
+                CROSS-REFERENCE:  664.22^AC 
+                                  1)= S ^RMPR(664.2,DA(1),1,"AC",$E(X,1,30),DA)=""
+                                  2)= K ^RMPR(664.2,DA(1),1,"AC",$E(X,1,30),DA)
+                                  Used to determine if Work Order has a purchase that is pending delivery of the item.  
+
+
+                CROSS-REFERENCE:  664.22^AF^MUMPS 
+                                  1)= I $D(^RMPR(664.2,DA(1),0)),$P(^(0),U,2) S ^RMPR(664.2,"AF",$P(^(0),U,2),X,DA(1))=""
+                                  2)= I $D(^RMPR(664.2,DA(1),0)),$P(^(0),U,2) K ^RMPR(664.2,"AF",$P(^(0),U,2),X,DA(1))
+                                  Used to determine if specific job has a Purchased item pending Delivery.  
+
+
+
+664.22,12       APPLIANCE/REPAIR       0;12 POINTER TO RECORD OF PROS APPLIANCE/REPAIR FILE (#660)
+
+                LAST EDITED:      DEC 16, 1993 
+                HELP-PROMPT:      Enter the date of the associated RECORD OF PROS APPLIANCE/REPAIR from file #660. 
+                DESCRIPTION:
+                                  Pointer to associated RECORD OF PROS APPLIANCE/REPAIR file (#660).  
+
+
+664.22,13       PURCHASE STATUS        0;9 SET
+
+                                  'PD' FOR PENDING DELIVERY; 
+                                  'D' FOR DELIVERED; 
+                LAST EDITED:      AUG 29, 1994 
+                HELP-PROMPT:      Enter `PD` for Pending Delivery or `D` for Delivered. 
+                DESCRIPTION:
+                                  This field indicates if a purchase on a VAF 10-2421 is Pending Delivery (PD) or Delivered (D).  
+
+                CROSS-REFERENCE:  664.22^E^MUMPS 
+                                  1)= S ^RMPR(664.2,"E",X,DA(1),DA)=""
+                                  2)= K ^RMPR(664.2,"E",X,DA(1),DA)
+                                  Used to check status of pending 2421.  
+
+
+
+664.22,14       2529-3                 0;13 POINTER TO PROSTHETIC 2529-3 FILE (#664.1)
+
+                LAST EDITED:      SEP 14, 1994 
+                HELP-PROMPT:      Enter the VAF 10-2529-3 related to this work order. 
+                DESCRIPTION:
+                                  Contains VAF 10-2529-3 request used to obtain materials for current Work Order.  
+
+                CROSS-REFERENCE:  664.22^AR3^MUMPS 
+                                  1)= S ^RMPR(664.2,"AR3",DA(1),X,DA)=""
+                                  2)= K ^RMPR(664.2,"AR3",DA(1),X,DA)
+                                  X-ref is used to determine if materials where aquired using a Remote 2529-3 Request.  
+
+
+                CROSS-REFERENCE:  664.22^AR4^MUMPS 
+                                  1)= I $D(^RMPR(664.2,DA(1),0)),$P(^(0),U,2) S ^RMPR(664.2,"AR4",$P(^(0),U,2),X,DA(1),DA)=""
+                                  2)= I $D(^RMPR(664.2,DA(1),0)),$P(^(0),U,2) K ^RMPR(664.2,"AR4",$P(^(0),U,2),X,DA(1),DA)
+                                  Specifies if Item in 660 was procured by a 2529-3 so Amis Item cannot be edited.  
+
+
+
+
+                CROSS-REFERENCE:  664.2^A1 
+                                  1)= S ^RMPR(664.2,"A1",$E(X,1,30),DA)=""
+                                  2)= K ^RMPR(664.2,"A1",$E(X,1,30),DA)
+
+
+664.2,4       EST. SHIPPING CHARGE   0;6 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      DEC 16, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the estimated shipping cost for delivery of item(s) on VAF 10-2421.  
+
+
+664.2,5       ACTUAL SHIPPING CHARGE 0;7 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999.99)!(X<0) X
+              LAST EDITED:      DEC 16, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 9999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the actual shipping cost for delivery of item(s) on VAF 10-2421.  
+
+
+664.2,6       REFERRAL STATION       0;8 POINTER TO INSTITUTION FILE (#4)
+
+              LAST EDITED:      DEC 19, 1993 
+              HELP-PROMPT:      Enter the Station Name or Station Number. 
+              DESCRIPTION:
+                                This is the Station Name or Station Number of the facility that is referring the VAF 10-2529-3 to a Prosthetic Laboratory.  
+
+
+664.2,7       WORK FOR OTHER STATION 0;9 SET
+
+                                '1' FOR OTHER STATION; 
+              LAST EDITED:      DEC 19, 1993 
+              HELP-PROMPT:      Enter a `1` to indicate work done by a Prosthetic Laboratory for another station. 
+              DESCRIPTION:      Prosthetic Laboratories processing a Work Order for another facility should enter a `1` in order to get the appropriate AMIS credit.  The referring facility receives the administrative AMIS credit, and the facility
+                                processing the Work Order receives the laboratory AMIS credit.  
+
+
+664.2,8       DATE COMPLETED         0;10 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 02, 1994 
+              HELP-PROMPT:      Enter the date that the Item/Job was completed. 
+              DESCRIPTION:
+                                This is the date that the Item/Job on the Lab Work Order was completed.  
+
+
+664.2,9       COMPLETED BY           0;11 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      AUG 16, 1994 
+              HELP-PROMPT:      Enter the name of the person who completed this Item/Job. 
+              DESCRIPTION:
+                                This is the name of the person who completed the Item/Job.  
+
+
+664.2,10      DATE MEASURED          0;5 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 11, 1994 
+              HELP-PROMPT:      Enter the date the patient was measured for the items/services requested on the Lab Work Order. 
+              DESCRIPTION:
+                                This is the date that the Lab Technician measured or fitted the patient for the items/services requested on the Lab Work Order.  
+
+
+664.2,11      CHECKED BY             0;12 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      SEP 13, 1994 
+              HELP-PROMPT:      Enter the name of the inspecting official. 
+              DESCRIPTION:
+                                This is the name of the person checking the completed item/service requested on the Lab Work Order for quality control monitoring.  
+
+
+664.2,12      REMARKS                3;0   WORD-PROCESSING #664.212
+
+              DESCRIPTION:
+                                Additional comments noted on the Lab Work Order.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+GENERIC INVENTORY (#445)          MATERIALS USED:INVENTORY POINT (#4)
+
+INSTITUTION (#4)                  STATION (#1.5)
+                                  REFERRAL STATION (#6)
+
+NEW PERSON (#200)                 COMPLETED BY (#9)
+                                  CHECKED BY (#11)
+
+PROS ITEM MASTER (#661)           MATERIALS USED:MATERIALS USED (#.01)
+
+PROSTHETIC 2529-3 (#664.1)        MATERIALS USED:2529-3 (#14)
+
+PROSTHETICS 1358 (#664)           MATERIALS USED:PURCHASE FORM (#11)
+
+RECORD OF PROS APPLIANCE/REPAI 
+                   (#660)         APPLIANCE/REPAIR (#1)
+                                  MATERIALS USED:APPLIANCE/REPAIR (#12)
+
+UNIT OF ISSUE (#420.5)            MATERIALS USED:UNIT OF ISSUE (#6)
+
+VENDOR (#440)                     MATERIALS USED:VENDOR (#5)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+RMPR 2529 VIEW                JAN 19, 1994@16:19  USER #0                                                                                                                                                                                                    @
+     View a 2529.
+RMPR JOB LST                  APR 26, 1994@14:33  USER #0                                                                                                                                                                                                    @
+     Prints a Prosthetic Job Record Section Screen.
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

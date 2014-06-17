@@ -1,0 +1,217 @@
+STANDARD DATA DICTIONARY #351.81 -- LTC COPAY CLOCK FILE                                                                                                                                                                          MAY 20,2014@15:35:33  PAGE 1
+STORED IN ^IBA(351.81,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DO NOT delete entries in this file.  DO NOT edit data in this file with VA File Manager.  
+ 
+Entries in this file will be added and updated my menu options, event triggers, and a nightly background job.  Entries in this file will not be deleted.  
+ 
+This file stores Long Term Care billing information that is used to make a billing determination for LTC rates.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: PATIENT (#.02)[R], CLOCK BEGIN DATE (#.03)[R], STATUS (#.05)[R]
+
+CROSS
+REFERENCED BY: CURRENT EVENTS DATE(AD), FACILITY CLOCK NUMBER(B), PATIENT(C)
+
+INDEXED BY:    PATIENT & CLOCK BEGIN DATE (AE)
+
+
+351.81,.01    FACILITY CLOCK NUMBER  0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999999)!(X<1000)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 24, 2002 
+              HELP-PROMPT:      Type a Number between 1000 and 999999999999, 0 Decimal Digits. 
+              DESCRIPTION:
+                                This number is formed by Concatenating the Facility Site number with the next available entry number in the file.  
+
+              CROSS-REFERENCE:  351.81^B 
+                                1)= S ^IBA(351.81,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(351.81,"B",$E(X,1,30),DA)
+
+
+351.81,.02    PATIENT                0;2 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      APR 23, 2002 
+              HELP-PROMPT:      Please enter the Patient's name. 
+              DESCRIPTION:
+                                This is the patient that is associated with this LTC clock.  
+
+              CROSS-REFERENCE:  351.81^C 
+                                1)= S ^IBA(351.81,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBA(351.81,"C",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AE (#149)
+
+351.81,.03    CLOCK BEGIN DATE       0;3 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 24, 2002 
+              HELP-PROMPT:      Please enter the Begin Date of the Clock <LTC ANNIVERSARY DATE>. 
+              DESCRIPTION:
+                                This is the beginning date of the clock entry.  
+
+              RECORD INDEXES:   AE (#149)
+
+351.81,.04    CLOCK EXPIRATION DATE  0;4 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 23, 2002 
+              HELP-PROMPT:      Please enter the Clock Expiration Date. This should be one year from the Clock Begin Date - 1 day. 
+              DESCRIPTION:
+                                This is the date this LTC clock will expire.  After which a new clock entry will be created.  
+
+
+351.81,.05    STATUS                 0;5 SET (Required)
+
+                                '1' FOR OPEN; 
+                                '2' FOR CLOSED; 
+                                '3' FOR CANCELLED; 
+              LAST EDITED:      APR 23, 2002 
+              HELP-PROMPT:      Please enter 1 or 2 or 3 for the correct status. 
+              DESCRIPTION:
+                                This is the current status of this LTC clock.  
+
+
+351.81,.06    EXEMPT DAYS REMAINING  0;6 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 23, 2002 
+              HELP-PROMPT:      Please enter the total EXEMPT DAYS REMAINING. 
+              DESCRIPTION:
+                                This is the number of free (exempt) days that have not been used yet.  
+
+
+351.81,.07    CURRENT EVENTS DATE    0;7 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JAN 25, 2002 
+              HELP-PROMPT:      Enter the earliest date to review for LTC transactions. 
+              DESCRIPTION:
+                                This is a flag indicating this patient needs to be reviewed for LTC transactions.  The date stored here is the earliest date to review from.  
+
+              CROSS-REFERENCE:  351.81^AD 
+                                1)= S ^IBA(351.81,"AD",$E(X,1,30),DA)=""
+                                2)= K ^IBA(351.81,"AD",$E(X,1,30),DA)
+
+
+351.81,1      EXEMPT DAY NUMBER      1;0 Multiple #351.811
+
+
+351.811,.01     EXEMPT DAY NUMBER      0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>21)!(X<1)!(X?.E1"."1.N) X S:$G(X) DINUM=X
+                LAST EDITED:      JAN 24, 2002 
+                HELP-PROMPT:      Enter the Exempt Day number for this care 
+                DESCRIPTION:
+                                  This is the number (count) for this exempt day.  
+
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                CROSS-REFERENCE:  351.811^B 
+                                  1)= S ^IBA(351.81,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^IBA(351.81,DA(1),1,"B",$E(X,1,30),DA)
+
+
+351.811,.02     EXEMPT DATE            0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:X<1 X
+                LAST EDITED:      FEB 22, 2002 
+                HELP-PROMPT:      Enter a date this exemption was used on. 
+                DESCRIPTION:
+                                  This is the date the exemption number was used on.  
+
+                CROSS-REFERENCE:  351.811^AC 
+                                  1)= S ^IBA(351.81,DA(1),1,"AC",$E(X,1,30),DA)=""
+                                  2)= K ^IBA(351.81,DA(1),1,"AC",$E(X,1,30),DA)
+                                  Used to sort the dates in date order.  
+
+
+
+
+
+351.81,4.01   USER ADDING ENTRY      4;1 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      APR 24, 2002 
+              HELP-PROMPT:      Enter the name of the person who created the entry. 
+              DESCRIPTION:
+                                This is the name of the person who created the entry.  
+
+              TECHNICAL DESCR:
+                                This is a pointer to file #200 NEW PERSONS.  
+
+
+351.81,4.02   DATE ENTRY ADDED       4;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      APR 23, 2002 
+              HELP-PROMPT:      Please enter the date the entry was created. 
+              DESCRIPTION:
+                                This is the date the entry was added.  
+
+              TECHNICAL DESCR:
+                                This field contains the date that this entry was created.  
+
+
+351.81,4.03   USER LAST UPDATING     4;3 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 23, 2002 
+              HELP-PROMPT:      Please enter the name of the person last updating this field. 
+              DESCRIPTION:
+                                This is the name of the last person to update this field.  
+
+              TECHNICAL DESCR:
+                                This field is a pointer to file #200 NEW PERSONS.  
+
+
+351.81,4.04   DATE LAST UPDATED      4;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      DEC 31, 2001 
+              HELP-PROMPT:      Please enter the date this entry was last updated. 
+              DESCRIPTION:
+                                This field contains the last date that this entry was updated.  
+
+              TECHNICAL DESCR:
+                                This is the date the entry was last updated.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 USER ADDING ENTRY (#4.01)
+                                  USER LAST UPDATING (#4.03)
+
+PATIENT (#2)                      PATIENT (#.02)
+
+
+File #351.81
+
+  Record Indexes:
+
+  AE (#149)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Used to find the last beginning date clock for a patient.
+        Set Logic:  S ^IBA(351.81,"AE",X(1),X(2),DA)=""
+       Kill Logic:  K ^IBA(351.81,"AE",X(1),X(2),DA)
+       Whole Kill:  K ^IBA(351.81,"AE")
+             X(1):  PATIENT  (351.81,.02)  (Subscr 1)  (forwards)
+             X(2):  CLOCK BEGIN DATE  (351.81,.03)  (Subscr 2)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

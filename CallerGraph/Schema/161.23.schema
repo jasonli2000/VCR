@@ -1,0 +1,127 @@
+STANDARD DATA DICTIONARY #161.23 -- FEE BASIS CNH AUTHORIZATION RATE FILE                                                                                                                                                         MAY 20,2014@15:33:05  PAGE 1
+STORED IN ^FBAA(161.23,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 3.5)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+In order to keep track of rate changes for an authorization in the CNH program, this file was developed.  It stores the rate that is paid for an authorization time frame.  When new contracts are negotiated for a CNH new entries must be created in this
+file.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: #
+              WR ACCESS: #
+             DEL ACCESS: #
+           LAYGO ACCESS: #
+           AUDIT ACCESS: #
+
+CROSS
+REFERENCED BY: ASSOCIATED 7078(AC), ASSOCIATED 7078(AD), TO DATE(ADR1), CONTRACT(AE), PER DIEM RATE(AE1), FROM DATE(B), PATIENT(C)
+
+161.23,.01    FROM DATE              0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAR 03, 1993 
+              DESCRIPTION:
+                                This is the beginning date of the authorization rate.  
+
+              CROSS-REFERENCE:  161.23^B 
+                                1)= S ^FBAA(161.23,"B",$E(X,1,30),DA)=""
+                                2)= K ^FBAA(161.23,"B",$E(X,1,30),DA)
+
+
+161.23,.02    TO DATE                0;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 22, 1993 
+              DESCRIPTION:
+                                This is the ending date for this patients care at a given rate.  
+
+              CROSS-REFERENCE:  161.23^ADR1^MUMPS 
+                                1)= S:$P(^FBAA(161.23,DA,0),U,3) ^FBAA(161.23,"AD",$E($P(^FBAA(161.23,DA,0),U,3),1,30),-X,DA)=""
+                                2)= K:$P(^FBAA(161.23,DA,0),U,3) ^FBAA(161.23,"AD",$P(^FBAA(161.23,DA,0),U,3),-X,DA)
+                                Updates the AD X-Reference on field .03 if the To Date for this CNH Authorization Rate changes.  
+
+
+
+161.23,.03    ASSOCIATED 7078        0;3 POINTER TO VA FORM 10-7078 FILE (#162.4) (Required)
+
+              LAST EDITED:      APR 04, 1993 
+              DESCRIPTION:
+                                This field holds the pointer to file 162.4, 7078 FILE.  The field is populated by the system.  
+
+              CROSS-REFERENCE:  161.23^AC^MUMPS 
+                                1)= S ^FBAA(161.23,"AC",$E(X,1,30),DA)=""
+                                2)= K ^FBAA(161.23,"AC",$E(X,1,30),DA)
+                                Allows the look-up of all dates associated with this authorization.  
+
+
+              CROSS-REFERENCE:  161.23^AD^MUMPS 
+                                1)= S ^FBAA(161.23,"AD",$E(X,1,30),-$P(^FBAA(161.23,DA,0),U,2),DA)=""
+                                2)= K ^FBAA(161.23,"AD",X,-$P(^FBAA(161.23,DA,0),U,2),DA)
+                                This inverse date crossreference puts the newest rate for a given authorization at the top of the stack.  
+
+
+
+161.23,.04    PATIENT                0;4 POINTER TO FEE BASIS PATIENT FILE (#161) (Required)
+
+              LAST EDITED:      APR 03, 1993 
+              DESCRIPTION:
+                                The name of the Fee Basis Patient.  
+
+              CROSS-REFERENCE:  161.23^C 
+                                1)= S ^FBAA(161.23,"C",$E(X,1,30),DA)=""
+                                2)= K ^FBAA(161.23,"C",$E(X,1,30),DA)
+                                Used to locate entries for a patient 
+
+
+
+161.23,.05    PER DIEM RATE          0;5 NUMBER (Required)
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>9999999.99)!(X<.01) X
+              LAST EDITED:      AUG 18, 1993 
+              HELP-PROMPT:      Type a Dollar Amount between .01 and 9999999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                This is the dollar amount for this patient's care for a given timeframe.  
+
+              CROSS-REFERENCE:  161.23^AE1^MUMPS 
+                                1)= S:$P(^FBAA(161.23,DA,0),"^",6) ^FBAA(161.23,"AE",$P(^FBAA(161.23,DA,0),"^",6),X,DA)=""
+                                2)= K:$P(^FBAA(161.23,DA,0),"^",6) ^FBAA(161.23,"AE",$P(^FBAA(161.23,DA,0),"^",6),X,DA)
+                                Cross Reference built on Contract Number.  It uses the Perdium Rate as a second piece in the X-Ref.  Whenever a change is made to the perdium rate, an update to the AE X-Ref. will be made.  
+
+
+
+161.23,.06    CONTRACT               0;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>15!($L(X)<3) X
+              LAST EDITED:      JUN 16, 1993 
+              HELP-PROMPT:      Answer must be 3-15 characters in length. 
+              DESCRIPTION:
+                                Contains the contract number associated with this authorization period as listed in the FEE Basis CNH Contract file.  
+
+              CROSS-REFERENCE:  161.23^AE^MUMPS 
+                                1)= S:$P(^FBAA(161.23,DA,0),"^",5) ^FBAA(161.23,"AE",X,$P(^FBAA(161.23,DA,0),"^",5),DA)=""
+                                2)= K:$P(^FBAA(161.23,DA,0),"^",5) ^FBAA(161.23,"AE",X,$P(^FBAA(161.23,DA,0),"^",5),DA)
+                                Cross Reference on Contract # field used to identify all rates associated with a particular contract.  The rate is a secondary piece of the X-Ref, and an associated entry is made to update the X-Ref whenever a rate changes
+                                or is added.  
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+FEE BASIS PATIENT (#161)          PATIENT (#.04)
+
+VA FORM 10-7078 (#162.4)          ASSOCIATED 7078 (#.03)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,99 @@
+STANDARD DATA DICTIONARY #355.95 -- IB PROVIDER ID CARE UNIT FILE                                                                                                                                                                 MAY 20,2014@15:35:47  PAGE 1
+STORED IN ^IBA(355.95,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                           (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the data values (referred to as care units) to be used to match a provider on a claim to the correct provider id #. The entries in this file are specific to an insurance company.  
+
+
+              DD ACCESS: @
+              RD ACCESS: 
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: 
+IDENTIFIED BY: DESCRIPTION (#.02), INSURANCE COMPANY (#.03)[R]
+
+POINTED TO BY: CARE UNITS field (#.03) of the FACILITY BILLING ID File (#355.92) 
+               CARE UNIT field (#.01) of the IB INS CO PROVIDER ID CARE UNIT File (#355.96) 
+               
+
+CROSS
+REFERENCED BY: CARE UNIT(B)
+
+INDEXED BY:    INSURANCE COMPANY & CARE UNIT (C)
+
+
+355.95,.01    CARE UNIT              0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1)!'(X'?1P.E) X
+              LAST EDITED:      APR 26, 2001 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:      This is the care unit value that will be used by the insurance co to identify a particular provider on a bill.  The definition of care value is specific to the insurance co, but usually indicates an area or type of care
+                                that the insurance co wants to use to categorize the care being issued by the care-giver.  
+
+              DELETE TEST:      .01,0)= I $D(^IBA(355.96,"ACARE",D0)) D EN^DDIOL("Can't delete this entry - a provider ID is still using it","","?5")
+
+                                1,0)= I $O(^IBA(355.96,"AE",DA,0)) D EN^DDIOL("Can't be deleted - at least 1 ins co is still referencing it","","!,*7,?6")
+
+              CROSS-REFERENCE:  355.95^B 
+                                1)= S ^IBA(355.95,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(355.95,"B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   C (#123)
+
+355.95,.02    DESCRIPTION            0;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>50!($L(X)<1) X
+              LAST EDITED:      MAR 28, 2001 
+              HELP-PROMPT:      Answer must be 1-50 characters in length. 
+              DESCRIPTION:
+                                This is a short description of the care unit.  It will be displayed next to the value whenever a lookup on this entry is done.  This is an optional field that may be 1-50 characters in length.  
+
+
+355.95,.03    INSURANCE COMPANY      0;3 POINTER TO INSURANCE COMPANY FILE (#36) (Required)
+
+              LAST EDITED:      APR 27, 2001 
+              HELP-PROMPT:      ENTER THE NAME OF THE INSURANCE CO 
+              DESCRIPTION:
+                                This is the insurance company that is using this care unit 
+
+              RECORD INDEXES:   C (#123)
+
+355.95,.04    DIVISION               0;4 POINTER TO MEDICAL CENTER DIVISION FILE (#40.8)
+
+              LAST EDITED:      MAR 09, 2006 
+              HELP-PROMPT:      Enter the Division that this Care Unit is associated with. 
+              DESCRIPTION:      This is the division for which the care unit is being defined for this insurance company.  Entries with divisions are for billing provider secondary IDs while those with out divisions are used for people providers 
+                                (rendering/attending, referring, etc)   
+
+
+
+      FILES POINTED TO                      FIELDS
+
+INSURANCE COMPANY (#36)           INSURANCE COMPANY (#.03)
+
+MEDICAL CENTER DIVISION (#40.8)   DIVISION (#.04)
+
+
+File #355.95
+
+  Record Indexes:
+
+  C (#123)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  LOOKUP XREF BY INSURANCE CO AND CARE UNIT NAME
+        Set Logic:  S ^IBA(355.95,"C",X(1),$E(X(2),1,30),DA)=""
+       Kill Logic:  K ^IBA(355.95,"C",X(1),$E(X(2),1,30),DA)
+       Whole Kill:  K ^IBA(355.95,"C")
+             X(1):  INSURANCE COMPANY  (355.95,.03)  (Subscr 1)  (forwards)
+             X(2):  CARE UNIT  (355.95,.01)  (Subscr 2)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

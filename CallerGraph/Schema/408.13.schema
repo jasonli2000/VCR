@@ -1,0 +1,373 @@
+STANDARD DATA DICTIONARY #408.13 -- INCOME PERSON FILE                                                                                                                                                                            MAY 20,2014@15:41:02  PAGE 1
+STORED IN ^DGPR(408.13,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains demographic information (name, social security number, date of birth, and sex) for non-veteran relations of patients seen at this facility.  This information is collected for use in the means test and income screening modules of MAS. 
+This data will also be used for IVM (Income Verification Matching) with the IRS (Internal Revenue Service).  
+
+
+              DD ACCESS: @
+              RD ACCESS: d
+              WR ACCESS: Dd
+             DEL ACCESS: Dd
+           LAYGO ACCESS: Dd
+
+POINTED TO BY: PERSON field (#.03) of the PATIENT RELATION File (#408.12) 
+               INCOME PERSON field (#.1) of the MEANS TEST CHANGES File (#408.41) 
+               
+
+CROSS
+REFERENCED BY: STREET ADDRESS [LINE 1](AC), STREET ADDRESS [LINE 2](AD), DATE OF BIRTH(ADOB), STREET ADDRESS [LINE 3](AE), NAME(AENR01), SEX(AENR02), DATE OF BIRTH(AENR03), SOCIAL SECURITY NUMBER(AENR09), PSEUDO SSN REASON(AENR1), MAIDEN NAME(AENR11), 
+               CITY(AF), STATE(AG), ZIP(AH), TELEPHONE NUMBER(AI), SOCIAL SECURITY NUMBER(AIVM), NAME(B), SOCIAL SECURITY NUMBER(BS), SOCIAL SECURITY NUMBER(BS5), SOCIAL SECURITY NUMBER(SSN)
+
+408.13,.01    NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!(X?1P.E)!(X'?1U.ANP)!(X'[",") X I $D(X) D UP^DGHELP S Y=", " F I=0:0 Q:$F(X,Y)<1  S X=$E(X,1,($F(X,Y)-2))_$E(X,$F(X,Y),99)
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Answer must be 3-30 characters in length.  The name must be in the format LASTNAME,FIRSTNAME MIDDLENAME where middlename is optional.  The name must not begin with punctuation. 
+              DESCRIPTION:      Enter the name of the relative of the veteran.  The name should be entered in the same format as that for the veteran:  LASTNAME,FIRSTNAME MIDDLENAME.  If a space is entered between the comma and the first name, it will 
+                                automatically be removed.  The relation's full name should be used to avoid potential duplicates.  
+
+              DELETE TEST:      1,0)= I 1 W !,*7,"Relations cannot be deleted, they must be inactivated!!"
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  408.13^B 
+                                1)= S ^DGPR(408.13,"B",$E(X,1,30),DA)=""
+                                2)= K ^DGPR(408.13,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  408.13^AENR01^MUMPS 
+                                1)= D E40813^DGRTRIG(DA)
+                                2)= D E40813^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+408.13,.02    SEX                    0;2 SET (Required)
+
+                                'M' FOR MALE; 
+                                'F' FOR FEMALE; 
+              LAST EDITED:      SEP 13, 2005 
+              DESCRIPTION:
+                                Enter the sex of the relative.  This question must be answered in order for this relative to remain on file.  Enter M or Male for male or F or FEMALE for female.  
+
+              TECHNICAL DESCR:  This field is used to screen the allowable relationships as selectable from the PATIENT RELATION file.  Entry of FEMALE will, for example, screen out relationships such as BROTHER, FATHER, etc. which allowing entries such
+                                as SISTER and MOTHER.  
+
+              CROSS-REFERENCE:  408.13^AENR02^MUMPS 
+                                1)= D E40813^DGRTRIG(DA)
+                                2)= D E40813^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+408.13,.03    DATE OF BIRTH          0;3 DATE (Required)
+
+              DOB                                                                                                              
+              INPUT TRANSFORM:  S %DT="EP" D ^%DT S X=Y K:1701231>X!((($E(DT,1,3)-1)_1231)<X) X
+              OUTPUT TRANSFORM: NUMDATE4(DOB)
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Enter the date this dependent was born.  The date must not be during the current calendar year.  Only persons that were dependents before the current year may be entered. 
+              DESCRIPTION:      Enter the date on which this relative was born.  This information is necessary for use in the income screening and means test portions of MAS.  
+                                 
+                                The date entered must not be during the current calendar year.  That is, it must be on or before December 31 or the prior calendar year.  The reason for this is that this data is used for collecting income information for 
+                                the purposes of comparing this data with the Internal Revenue Service (IRS).  Children born during the current calendar year can not be entered until next year.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  408.13^ADOB 
+                                1)= S ^DGPR(408.13,"ADOB",$E(X,1,30),DA)=""
+                                2)= K ^DGPR(408.13,"ADOB",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  408.13^AENR03^MUMPS 
+                                1)= D E40813^DGRTRIG(DA)
+                                2)= D E40813^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+408.13,.09    SOCIAL SECURITY NUMBER 0;9 FREE TEXT (Required)
+
+              SSN                                                                                                              
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) D SSN^DGMTDD1
+              LAST EDITED:      JUL 12, 2006 
+              HELP-PROMPT:      Answer with the individual's social security number.  Answer must be 9 numbers in length or a "P" or a pseudo SSN. 
+              DESCRIPTION:      Answer with the individual's social security number.  Answer must be 9 numbers in length. The SSN will be sent to the SSA for verification. This status will be displayed next to the SSN.  Once an SSN has received a status
+                                of Verified, it is locked from user updating and a "VERIFIED" will be displayed by the SSN field.  Only HEC staff are able to change a Spouse or Dependents verified SSN.  If SSA indicates the SSN is invalid, "INVALID" will
+                                appear next to the invalid SSN of the individual. Facilities should make every effort to obtain the accurate SSN from the individual for any invalid or pseudo SSN.  
+                                 
+                                If a valid SSN is not known, then a "P" will be entered at the SSN prompt for the system to automatically assign a Pseudo-SSN.  If a Pseudo SSN is entered, a Reason for entering it will be required.  
+
+              TECHNICAL DESCR:
+                                This contains the SSN of the veteran's dependents.  This is not required.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  408.13^BS^MUMPS 
+                                1)= S ^DGPR(408.13,"BS",$E(X,6,9),DA)=""
+                                2)= K ^DGPR(408.13,"BS",$E(X,6,9),DA)
+
+              CROSS-REFERENCE:  408.13^BS5^MUMPS 
+                                1)= S ^DGPR(408.13,"BS5",$E(^DGPR(408.13,DA,0),1)_$E(X,6,9),DA)=""
+                                2)= K ^DGPR(408.13,"BS5",$E(^DGPR(408.13,DA,0),1)_$E(X,6,9),DA)
+
+              CROSS-REFERENCE:  408.13^SSN 
+                                1)= S ^DGPR(408.13,"SSN",$E(X,1,30),DA)=""
+                                2)= K ^DGPR(408.13,"SSN",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  408.13^AIVM^MUMPS 
+                                1)= S IVMX=X,X="IVMPXFR" X ^%ZOSF("TEST") D:$T SPSSN^IVMPXFR S X=IVMX K IVMX
+                                2)= S IVMX=X,X="IVMPXFR" X ^%ZOSF("TEST") D:$T SPSSN^IVMPXFR S X=IVMX K IVMX
+                                This cross-reference will check the IVM PATIENT file to see if a change to this field will require transmission to the IVM Center.  If it does, the IVM PATIENT file entry's TRANSMISSION STATUS will be set to 0 and the
+                                nightly background job will transmit the updated information.  
+
+
+              CROSS-REFERENCE:  408.13^AENR09^MUMPS 
+                                1)= D E40813^DGRTRIG(DA)
+                                1.4)= S DIH=$G(^DGPR(408.13,DIV(0),0)),DIV=X S $P(^(0),U,10)=DIV,DIH=408.13,DIG=.1 D ^DICR
+                                2)= D E40813^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                CREATE CONDITION)= #.09'["P"
+                                CREATE VALUE)= @
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PSEUDO SSN REASON
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^408.13^.1 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=Y(0)'["P" I X S X=DIV S Y(1)=$S($D(^DGPR(408.13,D0,0)):^(0),1:"") S X=$P(Y(1),U,10),X=X S DIU=X K Y S X="" X ^DD(408.13,.09,1,6,1.4)
+                                1.4)= S DIH=$G(^DGPR(408.13,DIV(0),0)),DIV=X S $P(^(0),U,10)=DIV,DIH=408.13,DIG=.1 D ^DICR
+                                2)= Q
+                                3)= DO NOT DELETE
+                                CREATE CONDITION)= #.09'["P"
+                                CREATE VALUE)= @
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= PSEUDO SSN REASON
+                                Pseudo SSN Reason will have a value only if SSN is a Pseudo SSN.  
+
+
+
+408.13,.1     PSEUDO SSN REASON      0;10 SET (Required)
+
+                                'R' FOR REFUSED TO PROVIDE; 
+                                'S' FOR SSN UNKNOWN/FOLLOW-UP REQUIRED; 
+                                'N' FOR NO SSN ASSIGNED; 
+              LAST EDITED:      SEP 30, 2005 
+              DESCRIPTION:      This field is used to document the reason the individual was assigned a pseudo SSN.  Based on your selection, the Pseudo SSN Report (Dependent) option located in the Means Test Menu can provide you a current report of the
+                                reasons entered at this prompt.  The following reasons are available for selection: 
+                                 
+                                Refused to Provide - use this reason when the individual was asked for his/her SSN and refused to provide the number.  
+                                 
+                                SSN Unknown/Follow-up required - use this reason when the individual is not available to ask/answer the request for SSN.  The facility should initiate Follow-up activity to obtain the SSN.  
+                                 
+                                No SSN Assigned - use this reason when the individual has not been assigned an SSN.  This generally applies to spouses or dependents of veterans who are not US citizens and infrequently, non-citizen beneficiaries.  
+
+              NOTES:            TRIGGERED by the SOCIAL SECURITY NUMBER field of the INCOME PERSON File 
+                                TRIGGERED by the SOCIAL SECURITY NUMBER field of the INCOME PERSON File 
+
+              CROSS-REFERENCE:  408.13^AENR1^MUMPS 
+                                1)= D E40813^DGRTRIG(DA)
+                                2)= D E40813^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+408.13,.11    SSN VERIFICATION STATUS 0;11 SET
+
+                                '4' FOR VERIFIED; 
+                                '2' FOR INVALID; 
+              LAST EDITED:      APR 06, 2006 
+              DESCRIPTION:
+                                This field designates whether or not the SSN has been verified. This field will be received in the HL7 record.  It is not editable by the user.  Once the SSN is verified by the SSA, it is no longer editable.  
+
+
+408.13,1.1    MAIDEN NAME            1;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>35!($L(X)<2) X I $D(X) S DG20NAME=X,(X,DG20NAME)=$$FORMAT^XLFNAME7(.DG20NAME,3,35,,2,,1) K:'$L(X) X,DG20NAME
+              LAST EDITED:      SEP 13, 2005 
+              HELP-PROMPT:      Answer must be 2-35 characters in length. 
+              DESCRIPTION:      Enter the spouse's maiden name in 'LAST,FIRST MIDDLE SUFFIX' format.  Entry of the LAST name only is permitted and the comma may be omitted.  If the response contains no comma, one will be appended to the value.  Including
+                                the comma, the value must be at least 3 characters in length.  
+
+              TECHNICAL DESCR:  This field was added via patch DG*5.3*597, distributed with EAS*1.0*51.  
+                                 
+                                The purpose of this field is to store in the INCOME PERSON file the maiden name of the Veteran's spouse as reported on the 1010EZ application.  
+                                 
+                                However, the field may be used to add the maiden name of any dependent of the Veteran.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  408.13^AENR11^MUMPS 
+                                1)= D E40813^DGRTRIG(DA)
+                                2)= D E40813^DGRTRIG(DA)
+                                3)=  DO NOT DELETE
+                                This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+
+408.13,1.2    STREET ADDRESS [LINE 1] 1;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      AUG 18, 2008 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                The first line of the spouse's residence street address.  
+
+              EXECUTABLE HELP:  D HELPSA1^DGRPEIS3
+              DELETE TEST:      1,0)= D SDD^DGLOCK2 I '$D(X)
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  408.13^AC^MUMPS 
+                                1)= D TRIGGER^IVMCM9(DA) Q
+                                2)= D TRIGGER^IVMCM9(DA) Q
+                                Sets the Spouse Address Last Updated DT/TM field (1.9). If $D(IVMSPFLG) - ORU~Z10 - don't update DT/TM with trigger.  
+
+
+
+408.13,1.3    STREET ADDRESS [LINE 2] 1;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      AUG 18, 2008 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                The second line of the spouse's residence street address.  
+
+              EXECUTABLE HELP:  D HELPSA2^DGRPEIS3
+              DELETE TEST:      1,0)= D SDD^DGLOCK2 I '$D(X)
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  408.13^AD^MUMPS 
+                                1)= D TRIGGER^IVMCM9(DA) Q
+                                2)= D TRIGGER^IVMCM9(DA) Q
+                                Sets the Spouse Address Last Updated DT/TM field (1.9). If $D(IVMSPFLG) - ORU~Z10 - don't update DT/TM with trigger.  
+
+
+
+408.13,1.4    STREET ADDRESS [LINE 3] 1;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      AUG 18, 2008 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                The third line of the spouse's residence street address.  
+
+              EXECUTABLE HELP:  D HELPSA3^DGRPEIS3
+              DELETE TEST:      1,0)= D SDD^DGLOCK2 I '$D(X)
+
+              CROSS-REFERENCE:  408.13^AE^MUMPS 
+                                1)= D TRIGGER^IVMCM9(DA) Q
+                                2)= D TRIGGER^IVMCM9(DA) Q
+                                Sets the Spouse Address Last Updated DT/TM field (1.9). If $D(IVMSPFLG) - ORU~Z10 - don't update DT/TM with trigger.  
+
+
+
+408.13,1.5    CITY                   1;5 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X
+              LAST EDITED:      AUG 18, 2008 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                The city where the spouse's residence is located.  
+
+              EXECUTABLE HELP:  D HELPCITY^DGRPEIS3
+              DELETE TEST:      1,0)= D SDD^DGLOCK2 I '$D(X)
+
+              CROSS-REFERENCE:  408.13^AF^MUMPS 
+                                1)= D TRIGGER^IVMCM9(DA) Q
+                                2)= D TRIGGER^IVMCM9(DA) Q
+                                Sets the Spouse Address Last Updated DT/TM field (1.9). If $D(IVMSPFLG) - ORU~Z10 - don't update DT/TM with trigger.  
+
+
+
+408.13,1.6    STATE                  1;6 POINTER TO STATE FILE (#5)
+
+              LAST EDITED:      AUG 18, 2008 
+              DESCRIPTION:
+                                The state where the spouse's residence is located.  
+
+              EXECUTABLE HELP:  D HELPSTAT^DGRPEIS3
+              DELETE TEST:      1,0)= D SDD^DGLOCK2 I '$D(X)
+
+              CROSS-REFERENCE:  408.13^AG^MUMPS 
+                                1)= D TRIGGER^IVMCM9(DA) Q
+                                2)= D TRIGGER^IVMCM9(DA) Q
+                                Sets the Spouse Address Last Updated DT/TM field (1.9). If $D(IVMSPFLG) - ORU~Z10 - don't update DT/TM with trigger.  
+
+
+
+408.13,1.7    ZIP                    1;7 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<5)!'((X?5N)!(X?5N1"-"4N)) X
+              LAST EDITED:      AUG 18, 2008 
+              HELP-PROMPT:      Answer must be 5-10 characters in length. 
+              DESCRIPTION:
+                                The zip code where the spouse's residence is located.  
+
+              EXECUTABLE HELP:  D HELPZIP^DGRPEIS3
+              CROSS-REFERENCE:  408.13^AH^MUMPS 
+                                1)= D TRIGGER^IVMCM9(DA) Q
+                                2)= D TRIGGER^IVMCM9(DA) Q
+                                Sets the Spouse Address Last Updated DT/TM field (1.9). If $D(IVMSPFLG) - ORU~Z10 - don't update DT/TM with trigger.  
+
+
+
+408.13,1.8    TELEPHONE NUMBER       1;8 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<4) X
+              LAST EDITED:      AUG 18, 2008 
+              HELP-PROMPT:      Answer must be 4-20 characters in length. 
+              DESCRIPTION:
+                                The telephone number for the spouse's residence.  
+
+              TECHNICAL DESCR:  May be exactly 10 digits or may be formatted up to 13 characters as: 
+                                 
+                                   (nnn)nnn-nnnn 
+                                   i.e., (<area_code>)<exchange>-<number> 
+                                   or 
+                                   nnn.nnn.nnnn 
+                                   i.e., <area_code>.<exchange>.<number> 
+
+              EXECUTABLE HELP:  D HELPPHON^DGRPEIS3
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  408.13^AI^MUMPS 
+                                1)= D TRIGGER^IVMCM9(DA) Q
+                                2)= D TRIGGER^IVMCM9(DA) Q
+                                Sets the Spouse Address Last Updated DT/TM field (1.9). If $D(IVMSPFLG) - ORU~Z10 - don't update DT/TM with trigger.  
+
+
+
+408.13,1.9    SPOUSE ADDR LAST DT/TM UPDATED 1;9 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:X<1 X
+              LAST EDITED:      AUG 14, 2008 
+              DESCRIPTION:      This field will contain the date and time of the last update to the Spouse's address.  
+                                 
+                                VistA shall upload all of the Spouse Address fields during the HL7 Z10 receiver process if 1. the Address Line 1 (field 1.2) is NOT null 2. the received Changed Date/Time is greater than the Spouse Address Last 
+                                   Date/Time Updated that is on VistA.  
+                                 
+                                Any change to the following Spouse Address fields will trigger an update: Street Address [Line 1], Street Address [Line 2], Street Address [Line 3], City, State, Zip, and Telephone Number 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+STATE (#5)                        STATE (#1.6)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,352 @@
+STANDARD DATA DICTIONARY #52.5 -- RX SUSPENSE FILE                                                                                                                                                                                MAY 20,2014@15:39:19  PAGE 1
+STORED IN ^PS(52.5,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 7.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file simply keeps an ordered list of all the prescriptions that have been put on suspense for a certain date.  It is typically used to print all prescriptions on suspense for a given date range, usually in order of entry.  After an entry has been
+printed, a printed flag is set to keep it from being inadvertantly reprinted.  
+ 
+The outpatient pharmacy package supplies an option to clean out printed prescriptions that have accumulated over time.  This is up to the center to determine when it will routinely perform this task.  
+
+
+IDENTIFIED BY: SUSPENSE DATE (#.02)[R], PATIENT (#.03)[R]
+
+CROSS
+REFERENCED BY: PRINTED(AC), SUSPENSE DATE(AD), PRINTED(ADL), DIVISION(ADV), PATIENT(AE), PATIENT(AF), CMOP INDICATOR(AF), CMOP INDICATOR(AG), PRINTED BY(AH), RX #(AJ), CMOP INDICATOR(AL), DIVISION(AO), CMOP INDICATOR(AQ), PRINT DATE(AS), SEQUENCE(AW), 
+               CMOP INDICATOR(AX), RX #(B), SUSPENSE DATE(C), PATIENT(D)
+
+INDEXED BY:    CMOP INDICATOR & DIVISION & SUSPENSE DATE & PATIENT (CMP)
+
+
+52.5,.01      RX #                   0;1 POINTER TO PRESCRIPTION FILE (#52) (Required)
+
+              LAST EDITED:      APR 28, 1995 
+              DESCRIPTION:
+                                This field is the pointer to the Prescription File (#52).  
+
+              CROSS-REFERENCE:  52.5^B 
+                                1)= S ^PS(52.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.5,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  52.5^AJ^MUMPS 
+                                1)= D SET^PSOSUTL
+                                2)= D KILL^PSOSUTL
+                                This cross-reference is used to set the DEA Special Handling field.  It sets piece 10 of ^PS(52.5,DA,0) to the DEA Special Handling field of the drug.  
+
+
+
+52.5,.02      SUSPENSE DATE          0;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 23, 2002 
+              DESCRIPTION:
+                                This field is used to indicate the date the prescription will be printed from the suspense file.  
+
+              CROSS-REFERENCE:  52.5^C 
+                                1)= S ^PS(52.5,"C",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.5,"C",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  52.5^AD^MUMPS 
+                                1)= K:+$G(^("P"))=1 ^PS(52.5,"AC",+$P(^PS(52.5,DA,0),"^",3),X,DA) S:+$G(^PS(52.5,DA,"P"))'=1&($P($G(^PS(52.5,DA,0)),"^",3))&($P($G(^PS(52.5,DA,0)),"^",7)="") ^PS(52.5,"AC",$P(^PS(52.5,DA,0),"^",3),X,DA)=""
+                                2)= K ^PS(52.5,"AC",+$P(^PS(52.5,DA,0),"^",3),X,DA)
+                                If the suspense date is changed, the "AC" cross-reference is updated.  It set the global ^PS(52.5,"AC",Patient Pointer,Suspense Date,DA)="".  
+
+
+              RECORD INDEXES:   CMP (#248)
+
+52.5,.03      PATIENT                0;3 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      DEC 23, 2002 
+              DESCRIPTION:
+                                Refers to whom the medication is prescribed for. 
+
+              TECHNICAL DESCR:
+                                This field contains the name of the patient for whom the prescription is written.  
+
+              CROSS-REFERENCE:  52.5^D^MUMPS 
+                                1)= S:$D(^DPT(X,0)) ^PS(52.5,"D",$P(^DPT(X,0),"^"),DA)=""
+                                2)= K:$D(^DPT(X,0)) ^PS(52.5,"D",$P(^DPT(X,0),"^"),DA)
+                                This cross reference lists the patients in name order. It sets the global ^PS(52.5,"D",Patient name,DA)="".  
+
+
+              CROSS-REFERENCE:  52.5^AE^MUMPS 
+                                1)= K:+$G(^("P"))=1 ^PS(52.5,"AC",X,+$P($G(^PS(52.5,DA,0)),"^",2),DA) S:+$G(^PS(52.5,DA,"P"))'=1&($P($G(^PS(52.5,DA,0)),"^",2))&($P($G(^PS(52.5,DA,0)),"^",7)="") ^PS(52.5,"AC",X,+$P($G(^PS(52.5,DA,0)),"^",2),DA)=""
+                                2)= K ^PS(52.5,"AC",X,+$P(^PS(52.5,DA,0),"^",2),DA)
+                                If the patient changes, the "AC" cross-reference will be changed. It sets the global ^PS(52.5,"AC",Patient,Suspense Date,DA)="".  
+
+
+              CROSS-REFERENCE:  52.5^AF 
+                                1)= S ^PS(52.5,"AF",$E(X,1,30),DA)=""
+                                2)= K ^PS(52.5,"AF",$E(X,1,30),DA)
+                                This is a cross-reference on patient internal entry number.  
+
+
+              RECORD INDEXES:   CMP (#248)
+
+52.5,.04      TYPE                   0;4 SET (Required)
+
+                                'M' FOR MAIL; 
+                                'W' FOR WINDOW; 
+                                'I' FOR INPATIENT; 
+              DESCRIPTION:
+                                `TYPE' refers to how the prescription is to be destributed.  Respond by indicating M for Mail, W for Window or I for Inpatient.  
+
+              TECHNICAL DESCR:
+                                Indicate MAIL if prescription is to be mailed to patient, WINDOW if prescription is to be picked up at the site, INPATIENT for patients at the hospital.  
+
+
+52.5,.05      PARTIAL                0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 08, 1992 
+              HELP-PROMPT:      Type a Number between 0 and 9, 0 Decimal Digits 
+              DESCRIPTION:
+                                Respond with Y for YES or N for NO depending upon whether or not this is a partial or full prescription.  
+
+
+52.5,.06      DIVISION               0;6 POINTER TO OUTPATIENT SITE FILE (#59)
+
+              LAST EDITED:      DEC 23, 2002 
+              HELP-PROMPT:      Enter division where medication is suspened. 
+              DESCRIPTION:
+                                This field is used to enter the division where the prescription was filled.  
+
+              TECHNICAL DESCR:
+                                pointer 
+
+              CROSS-REFERENCE:  52.5^AO^MUMPS 
+                                1)= D SDIVAS^PSOSUTL1
+                                2)= D KDIVAS^PSOSUTL1
+                                This cross reference is used to maintain resetting and reprinting functionality. For non-CMOP prescriptions, it sets the global ^PS(52.5,"AS",Print Date,Printed By,Division,Sequence,DA)="".  For CMOP prescriptions it sets
+                                the global ^PS(52.5,"APR",Print Date,Printed By,Division,Sequence,DA)="".  
+
+
+              CROSS-REFERENCE:  52.5^ADV^MUMPS 
+                                1)= D SDIV^PSOSUTL
+                                2)= Q
+                                This cross reference is used to keep File 52 Division updated if the Division for an Rx is changed in the Suspense File. For a partial Rx, it sets piece 9 of ^PSRX(DA(1),"P",DA,0)=Division.  For an original Rx, it sets
+                                piece 9 of ^PSRX(DA,2)=Division.  For a refill, it sets piece 9 of ^PSRX(DA(1),1,DA,0)=Division.  
+
+
+              RECORD INDEXES:   CMP (#248)
+
+52.5,1        DRUG                    ;  COMPUTED
+
+              MUMPS CODE:       S Y(1,2)=$S($D(D0):D0,1:""),Y(1,1)=$S($D(^PS(52.5,D0,0)):^(0),1:""),D0=$P(Y(1,1),U,1) S:'$D(^PSRX(+D0,0)) D0=-1 S Y(1,101)=$S($D(^PSRX(D0,0)):^(0),1:"") S X=$S('$D(^PSDRUG(+$P(Y(1,101),U,6),0)):"",1:$P(^(0),U,1)) S D0=Y(1,
+                                2)
+              ALGORITHM:        RX #:DRUG
+              LAST EDITED:      JAN 18, 1983 
+              DESCRIPTION:
+                                `DRUG' refers to the name of the actual drug/supplies specified by the prescription.  
+
+              TECHNICAL DESCR:
+                                Respond with the name of the drug/supplies stated in the prescription.  
+
+
+52.5,2        PRINTED                P;1 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JAN 10, 1996 
+              HELP-PROMPT:      Data should not be entered directly with file manager.  Please use option to enter data into this field. 
+              DESCRIPTION:
+                                This field is used to indicate if the prescription was printed from suspense.  '1' is used to indicate 'Yes' the prescription has printed, '0' for 'No' the prescription has not printed.  
+
+              TECHNICAL DESCR:
+                                set of codes.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  52.5^AC^MUMPS 
+                                1)= K:X=1 ^PS(52.5,"AC",$P(^PS(52.5,DA,0),"^",3),$P(^PS(52.5,DA,0),"^",2),DA) S:X'=1&($P($G(^PS(52.5,DA,0)),"^",7)="") ^PS(52.5,"AC",$P(^PS(52.5,DA,0),"^",3),$P(^PS(52.5,DA,0),"^",2),DA)=""
+                                2)= K ^PS(52.5,"AC",$P(^PS(52.5,DA,0),"^",3),$P(^(0),"^",2),DA)
+                                This cross reference is used to indicate which entries in the file have not yet been printed. It sets the global ^PS(52.5,"AC",Patient,Suspense Date,DA)="".  
+
+
+              CROSS-REFERENCE:  52.5^ADL^MUMPS 
+                                1)= D SADL^PSOSUTL1
+                                2)= D KADL^PSOSUTL1
+                                This cross-reference is used for deletion of printed Rx's.  It sets the global ^PS(52.5,"ADL",Print Date,DA)="".  
+
+
+
+52.5,3        CMOP INDICATOR         0;7 SET
+
+                                'Q' FOR QUEUED FOR TRANSMISSION; 
+                                'X' FOR TRANSMISSION COMPLETED; 
+                                'L' FOR LOADING FOR TRANSMISSION; 
+                                'P' FOR PRINTED LOCALLY; 
+              LAST EDITED:      DEC 23, 2002 
+              DESCRIPTION:
+                                This field indicates the current status of a Consolidated Mail Outpatient Pharmacy prescription.  
+
+              TECHNICAL DESCR:
+                                Set of codes.  
+
+              CROSS-REFERENCE:  52.5^AQ^MUMPS 
+                                1)= S:X="Q" ^PS(52.5,"AQ",$P(^PS(52.5,DA,0),"^",2),$P(^PS(52.5,DA,0),"^",3),DA)="" K:X="Q" ^PS(52.5,"AC",+$P(^PS(52.5,DA,0),"^",3),+$P(^PS(52.5,DA,0),"^",2),DA)
+                                2)= K ^PS(52.5,"AQ",$P(^PS(52.5,DA,0),"^",2),$P(^PS(52.5,DA,0),"^",3),DA)
+                                This cross reference indicates the prescription is 'Queued' for transmission to a Consolidated Mail Outpatient Pharmacy system.  
+
+
+              CROSS-REFERENCE:  52.5^AX^MUMPS 
+                                1)= S:X="X" ^PS(52.5,"AX",$P(^PS(52.5,DA,0),"^",2),$P(^PS(52.5,DA,0),"^",3),DA)="" K:X="X" ^PS(52.5,"AC",+$P(^PS(52.5,DA,0),"^",3),+$P(^PS(52.5,DA,0),"^",2),DA)
+                                2)= K ^PS(52.5,"AX",$P(^PS(52.5,DA,0),"^",2),$P(^PS(52.5,DA,0),"^",3),DA)
+                                This cross reference indicates the data has been 'Transmitted' to a Consolidated Mail Outpatient system.  
+
+
+              CROSS-REFERENCE:  52.5^AL^MUMPS 
+                                1)= S:X="L" ^PS(52.5,"AL",$P(^PS(52.5,DA,0),"^",2),$P(^PS(52.5,DA,0),"^",3),DA)="" K:X="L" ^PS(52.5,"AC",+$P(^PS(52.5,DA,0),"^",3),+$P(^PS(52.5,DA,0),"^",2),DA)
+                                2)= K ^PS(52.5,"AL",$P(^PS(52.5,DA,0),"^",2),$P(^PS(52.5,DA,0),"^",3),DA)
+                                This cross reference indicates the data is building for transmission to a Consolidated Mail Outpatient system.  
+
+
+              CROSS-REFERENCE:  52.5^AF^MUMPS 
+                                1)= S:X="P" ^PS(52.5,"AP",$P(^PS(52.5,DA,0),"^",2),$P(^PS(52.5,DA,0),"^",3),DA)="" K:X="P" ^PS(52.5,"AC",+$P(^PS(52.5,DA,0),"^",3),+$P(^PS(52.5,DA,0),"^",2),DA)
+                                2)= K ^PS(52.5,"AP",$P(^PS(52.5,DA,0),"^",2),$P(^PS(52.5,DA,0),"^",3),DA)
+                                This cross reference indicates a label was printed locally for this entry.  
+
+
+              CROSS-REFERENCE:  52.5^AG^MUMPS 
+                                1)= S:$G(X)="P"!($G(X)="Q") ^PS(52.5,"AG",+$P(^PS(52.5,DA,0),"^",3),DA)="" K:$G(X)="Q"!($G(X)="P") ^PS(52.5,"AC",+$P(^PS(52.5,DA,0),"^",3),+$P(^PS(52.5,DA,0),"^",2),DA)
+                                2)= K ^PS(52.5,"AG",$P(^PS(52.5,DA,0),"^",3),DA)
+                                This cross reference is by DFN first and is set if the rx is flagged as 'Queued' or 'Printed'.  It is used to quickly locate records that fit either category.  
+
+
+              RECORD INDEXES:   CMP (#248)
+
+52.5,4        PRINT DATE             0;8 DATE
+
+              INPUT TRANSFORM:  S %DT="ETXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      DEC 11, 1995 
+              HELP-PROMPT:      Data should not be entered with File Manager. This data is entered by the Outpatient package when the label is printed from suspense. 
+              DESCRIPTION:
+                                This indicates the date/time that this entry was queued to print. It is entered by the Outpatient package at the time of label print.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  52.5^AS^MUMPS 
+                                1)= D SPDTAS^PSOSUTL1
+                                2)= D KPDTAS^PSOSUTL1
+                                This cross-reference is used for batching suspense prints, so different batches within a day can be reset. This cross-reference also sets the 'APR' cross-reference. The 'APR' cross-reference will list CMOP Rx's by batch
+                                for reseting. Only the 'AS' or the 'APR' will exist for an Rx.  For non-CMOP prescriptions, it sets the global ^PS(52.5,"AS",Print Date,Printed By,Division,Sequence,DA)="".  For CMOP prescriptions, it sets the global 
+                                ^PS(52.5,"APR",Print Date,Printed By,Division,Sequence,DA)="".  
+
+
+
+52.5,5        PRINTED BY             0;9 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      DEC 11, 1995 
+              HELP-PROMPT:      Data should not be entered through FileMan. The Outpatient package will make the entry when the label for this entry prints from suspense. 
+              DESCRIPTION:
+                                This indicates the user who queued this entry to print from suspense.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  52.5^AH^MUMPS 
+                                1)= D SPBYAS^PSOSUTL1
+                                2)= D KPBYAS^PSOSUTL1
+                                This cross reference is used to set printed Rx's from suspense in a batch,for resetting and reprinting capabilities. It is entered by the Outpatient package at the time of label print from suspense. The 'APR' 
+                                cross-reference is also set to list the CMOP Rx's that were printed locally. The 'APR' cross-reference is used for resetting CMOP Rx's by batch. Only the 'AS" or the 'APR' will exist for an Rx.  For non-CMOP prescriptions,
+                                it sets the global ^PS(52.5,"AS",Print Date,Printed By,Division,Sequence,DA)="".  For CMOP prescriptions, it sets the global ^PS(52.5,"APR",Print Date,Printed By,Division,Sequence,DA)="".  
+
+
+
+52.5,6        DEA, SPECIAL HDLG      0;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<1) X
+              LAST EDITED:      APR 26, 1995 
+              HELP-PROMPT:      Answer must be 1-6 characters in length. 
+              DESCRIPTION:
+                                This is taken from the DRUG File(#50) and entered by the Outpatient Package when the entry goes into the suspense file.  
+
+
+52.5,7        SEQUENCE               0;11 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 11, 1995 
+              HELP-PROMPT:      This will be entered by the Outpatient Package, and is used for the Reset and Reprint functionality. 
+              DESCRIPTION:
+                                This field is used by Outpatient for printing labels in the proper sequence when labels are Reset for Reprinting. This field should not be edited through FileMan.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  52.5^AW^MUMPS 
+                                1)= D SSEQAS^PSOSUTL1
+                                2)= D KSEQAS^PSOSUTL1
+                                This cross reference is used to batch printed Rx's from suspense for resetting and reprinting purposes. It is set by the Outpatient package at the time of label print. The 'APR' cross-reference is also set to list the CMOP
+                                Rx's that were printed locally. The 'APR' cross-reference is used to reset CMOP Rx's. For non-CMOP prescriptions, it sets the global ^PS(52.5,"AS",Print Date,Printed By,Division,Sequence,DA)="".  For CMOP prescriptions, it
+                                sets the global ^PS(52.5,"APR",Print Date,Printed By,Division,Sequence,DA)="".  
+
+
+
+52.5,8        REPRINT                0;12 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      OCT 20, 1995 
+              HELP-PROMPT:      This indicates if the Rx is a suspended Reprint. 
+              DESCRIPTION:
+                                If set to Yes, it means the entry is a suspended reprint, either through the Edit option or the Reprint option.  
+
+                                UNEDITABLE
+
+52.5,9        FILL                   0;13 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>11)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 17, 1997 
+              HELP-PROMPT:      Type a Number between 0 and 11, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field indicates the fill number for the Rx if the Rx is not a partial.  
+
+
+52.5,10       SUSPENSE HOLD DATE     0;14 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 11, 2008 
+              HELP-PROMPT:      Enter the date/time when 3/4 of days supply will elapse. 
+              DESCRIPTION:      This field is populated when the Print from Suspense function is executed and for ePharmacy prescriptions only.  It will contain the date when 3/4 of the Days Supply will have elapsed.  ePharmacy prescriptions will be left
+                                on suspense until this date.  Otherwise, the prescription will print on or after the date stored in this field.  
+                                 
+                                Non-ePharmacy prescriptions are not affected by this functionality.  
+
+              TECHNICAL DESCR:  This field is used for ePharmacy prescriptions only. If 3/4 of the days supply has not yet elapsed this field will be populated with the date that the prescription will be allowed to be printed from suspense.  Note that 
+                                prescriptions may be pulled early from suspense without regard to this field.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 PRINTED BY (#5)
+
+OUTPATIENT SITE (#59)             DIVISION (#.06)
+
+PATIENT (#2)                      PATIENT (#.03)
+
+PRESCRIPTION (#52)                RX # (#.01)
+
+
+File #52.5
+
+  Record Indexes:
+
+  CMP (#248)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  CMOP STATUS,RX TYPE (C OR N),DIVISION,DATE,PATIENT
+        Set Logic:  S ^PS(52.5,"CMP",X(1),$E(X(2),1,2),X(3),X(4),X(5),DA)=""
+       Kill Logic:  K ^PS(52.5,"CMP",X(1),$E(X(2),1,2),X(3),X(4),X(5),DA)
+       Whole Kill:  K ^PS(52.5,"CMP")
+             X(1):  CMOP INDICATOR  (52.5,3)  (Subscr 1)  (forwards)
+             X(2):  Computed Code: S X=$$CMPRXTYP^PSOCMOP(DA)
+                      (Subscr 2)  (Len 2)  (forwards)
+                      Lookup Prompt:  TYPE - C or N
+             X(3):  DIVISION  (52.5,.06)  (Subscr 3)  (forwards)
+             X(4):  SUSPENSE DATE  (52.5,.02)  (Subscr 4)  (forwards)
+             X(5):  PATIENT  (52.5,.03)  (Subscr 5)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+PSO SUSPENSE LIST             SEP 13, 1993@14:13  USER #0                                                                                                                                                                                     RX SUSPENSE LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

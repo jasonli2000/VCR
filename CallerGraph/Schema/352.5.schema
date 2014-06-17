@@ -1,0 +1,108 @@
+STANDARD DATA DICTIONARY #352.5 -- IB CLINIC STOP CODE BILLABLE TYPES FILE                                                                                                                                                        MAY 20,2014@15:35:35  PAGE 1
+STORED IN ^IBE(352.5,  (732 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                         (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to store the outpatient clinic stop code and billable type based on an effective date.  An internal lookup on the AEFFDT cross reference for a clinic stop code and visit date will provide the billable type.  The billable type determines 
+the billable rate for each outpatient visit.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: 
+      "WRITE": N %,IB S IB=$G(^(0)) W ?12," ",$P(IB,U,4) S %=$P(IB,U,2) S:'% %="???????" W ?46," EffDate:",$E(%,4,5),"/",$E(%,6,7),"/",$E(%,2,3) S %=$P(IB,U,3) W ?64," ",$S(%=1:"Basic",%=2:"Specialty",1:"Non-Billable")
+
+POINTED TO BY: CLINIC STOP field (#.2) of the INTEGRATED BILLING ACTION File (#350) 
+               
+
+CROSS
+REFERENCED BY: CLINIC STOP CODE(B)
+
+INDEXED BY:    CLINIC STOP CODE & EFFECTIVE DATE (AEFFDT)
+
+
+352.5,.01     CLINIC STOP CODE       0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<3) X
+              LAST EDITED:      AUG 28, 2002 
+              HELP-PROMPT:      Enter the 3 or 6 digit clinic stop code. 
+              DESCRIPTION:      This field stores the three or six digit stop code used for determining the billable rate as either billable for primary care, billable for specialty care, or non-billable based on effective date.  This field is not
+                                DINUMed to allow duplicate stop code entries with different billable rates depending on the visit date (effective date of the rate).  
+                                 
+                                Data in this file is static and should not be added, deleted, or changed.  This file will be maintained and populated with the release of future IB patches.  
+
+              CROSS-REFERENCE:  352.5^B 
+                                1)= S ^IBE(352.5,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBE(352.5,"B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AEFFDT (#107)
+
+352.5,.02     EFFECTIVE DATE         0;2 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 28, 2001 
+              HELP-PROMPT:      Please enter an effective date. 
+              DESCRIPTION:
+                                This is the date on which billing for this clinic stop code should be activated or ignored.  
+
+              RECORD INDEXES:   AEFFDT (#107)
+
+352.5,.03     BILLABLE TYPE          0;3 SET (Required)
+
+                                '0' FOR NON-BILLABLE; 
+                                '1' FOR BASIC CARE; 
+                                '2' FOR SPECIALTY CARE; 
+              LAST EDITED:      AUG 22, 2002 
+              HELP-PROMPT:      Enter they type of billing this entry applies to. 
+              DESCRIPTION:
+                                This specifies if the clinic stop is billable under basic care or specialty care, or if the clinic stop code is non-billable.  
+
+              TECHNICAL DESCR:
+                                Since IB*2.0*187 the name of the billable type code (1) has been changed from "PRIMARY CARE" to "BASIC CARE".  
+
+
+352.5,.04     DESCRIPTION            0;4 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      DEC 03, 2001 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                This field stores the description of the stop code for display on lookup and reports.  
+
+
+352.5,.05     OVERRIDE FLAG          0;5 SET
+
+                                '1' FOR OVERRIDE; 
+              LAST EDITED:      AUG 20, 2002 
+              HELP-PROMPT:      Enter OVERRIDE type if the code belongs to override table 
+              DESCRIPTION:
+                                OVERRIDE FLAG is 1 if the code belongs to override table 
+
+
+File #352.5
+
+  Record Indexes:
+
+  AEFFDT (#107)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  This is a regular index on the clinic stop and effective date fields.
+      Description:  This cross-reference on the CLINIC STOP CODE (#.01) field and the EFFECTIVE DATE (#.02) field is used to locate the billable type for a clinic stop code on a specific effective date.  
+        Set Logic:  S ^IBE(352.5,"AEFFDT",X(1),X(2),DA)=""
+       Kill Logic:  K ^IBE(352.5,"AEFFDT",X(1),X(2),DA)
+       Whole Kill:  K ^IBE(352.5,"AEFFDT")
+             X(1):  CLINIC STOP CODE  (352.5,.01)  (Subscr 1)  (forwards)
+             X(2):  EFFECTIVE DATE  (352.5,.02)  (Subscr 2)  (forwards)
+                      Transform (Storage):  S X=-X
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

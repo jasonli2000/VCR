@@ -1,0 +1,865 @@
+STANDARD DATA DICTIONARY #50.8 -- IV STATS FILE                                                                                                                                                                                   MAY 20,2014@15:35:18  PAGE 1
+STORED IN ^PS(50.8,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+  This file contains information concerning the IV workload of the pharmacy.  The file is updated each time the Compile IV Stats option is run and the data stored is used as the basis for the IV AMIS report.  
+
+
+              DD ACCESS: @
+              WR ACCESS: ^
+             DEL ACCESS: ^
+           LAYGO ACCESS: ^
+
+CROSS
+REFERENCED BY: IV DRUG(AC), IV ROOM(AIVC)
+
+50.8,.01      IV ROOM                0;1 POINTER TO IV ROOM FILE (#59.5) (Required)
+
+              INPUT TRANSFORM:  S DINUM=X
+              LAST EDITED:      MAY 25, 1988 
+              DESCRIPTION:
+                                Looks at the IV Room file.  
+
+              GROUP:            PSJI
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  50.8^AIVC^MUMPS 
+                                1)= S ^PS(50.8,"AIVC")=$S($D(^PS(59.7,1,20)):$P(^(20),"^"),1:"")
+                                2)= Q
+                                Sets cross-ref equal to UD Stats/200 conversion date.  S ^PS(50.8,"AIVC")=VERSION NUMBER LAST INITS RUN 
+
+
+
+50.8,.2       LAST COMPILATION       .2;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 02, 1990 
+              DESCRIPTION:        This is the date when the IV STATS file was last successfully compiled.  When an IV cost report is run, this date is displayed on the user's screen.  If the last compilation date is more than one day in the past, a
+                                message is printed warning the user that the cost data may not be accurate.  
+
+
+50.8,1        PATIENT                1;0 POINTER Multiple #50.801
+
+              DESCRIPTION:
+                                Identifies patients which have statistical information in the IV STATS file (50.8).  
+
+              GROUP:            PSJI
+
+50.801,.01      PATIENT                0;1 POINTER TO PATIENT FILE (#2) (Multiply asked)
+
+                INPUT TRANSFORM:  D EN^DDIOL(" ... This field CANNOT and SHOULD NOT be edited using FileMan !!") K X
+                LAST EDITED:      JUN 19, 1986 
+                DESCRIPTION:        This field is the holding file for IV STATS that are to be counted.  When a COUNTED IV label is run, this field is updated by the computer.  Pertinent information about the 'COUNTED IV LABEL' is saved and will be
+                                  compiled later by a job that is automatically queued to run at 1 AM in the morning.  All IV STATS can be compiled immediately by running the 'COMPILE IV STATS' option in the supervisor menu.  The 'COMPILE IV STATS'
+                                  option should not be used regularly, since it is very CPU intensive and is automatically run each day.  
+
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.801,1        TRANSACTION NUMBER     1;0 Multiple #50.802
+
+                DESCRIPTION:
+                                  This number is the transaction number in "hold" status until stats are compiled.  
+
+                GROUP:            PSJI
+
+50.802,.01        TRANSACTION NUMBER     0;1 NUMBER (Multiply asked)
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X S:$D(X) DINUM=X
+                  HELP-PROMPT:      Type a whole number between 1 and 9999999. 
+                  DESCRIPTION:
+                                      This number is the transaction number in "hold" status until stats are compiled.  
+
+                  GROUP:            PSJI
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.802,1          ORDER NUMBER           0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      Type a whole number between 1 and 9999999. 
+                  DESCRIPTION:
+                                      Order Number for the order on "hold" 
+
+                  GROUP:            PSJI
+
+50.802,2          STATUS                 0;3 SET
+
+                                    '1' FOR DISPENSED; 
+                                    '2' FOR RETURNED; 
+                                    '3' FOR DESTROYED; 
+                                    '4' FOR CANCELED; 
+                  LAST EDITED:      JUL 04, 1989 
+                  DESCRIPTION:
+                                      Status of the order on "hold",1 for Dispensed, 2 for returned and 3 for destroyed, 4 for canceled.  
+
+                  GROUP:            PSJI
+
+50.802,3          DATE OF TRANSACTION    0;4 DATE
+
+                  INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X
+                  LAST EDITED:      JUN 19, 1986 
+                  DESCRIPTION:
+                                      The date of the transaction in "hold".  
+
+                  GROUP:            PSJI
+
+50.802,4          NUMBER OF ORDERS       0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                  HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                  DESCRIPTION:
+                                      Number of orders on "hold" status.  
+
+                  GROUP:            PSJI
+
+50.802,5          WARD                   0;6 POINTER TO WARD LOCATION FILE (#42)
+
+                  LAST EDITED:      APR 15, 1988 
+                  DESCRIPTION:
+                                      Identifies the ward associated with this transaction.  
+
+                  GROUP:            PSJI
+
+50.802,6          DRUG WITH NO COST      0;7 FREE TEXT
+
+                  INPUT TRANSFORM:  K:$L(X)>15!($L(X)<6)!'(X?.E1";".E) X
+                  LAST EDITED:      JAN 04, 1989 
+                  HELP-PROMPT:      Answer must be 6-15 characters in length. 
+                  DESCRIPTION:        When compiling IV Statistics, if an order is found which contains a drug that has no cost data entered, the file number (either 52.6 or 52.7) and the print name of that drug is placed in this field. A mail message is
+                                    then sent to all users holding the "PSJI MGR" security key (excluding IRM staff), identifying the drug missing cost data, and whether it is an additive or a solution.  The dispensing information is not added to the
+                                    statistics file until the cost has been entered.  
+
+                  GROUP:            PSJI
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+
+
+
+
+50.8,2        DATE                   2;0 DATE Multiple #50.803
+
+              DESCRIPTION:
+                                  Date of order (the statistics file stores the entries in date order).  
+
+              GROUP:            PSJI
+
+50.803,.01      DATE                   0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X S:$D(X) DINUM=X
+                LAST EDITED:      JUN 25, 1986 
+                DESCRIPTION:
+                                    Date of order (the statistics file stores the entries in date order).  
+
+                GROUP:            PSJI
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.803,1        WARD                   1;0 POINTER Multiple #50.804
+
+                DESCRIPTION:
+                                   Ward for which statistics have been gathered (looks at Ward Location File (#42) 
+
+                GROUP:            PSJI
+
+50.804,.01        WARD                   0;1 POINTER TO WARD LOCATION FILE (#42) (Multiply asked)
+
+                  INPUT TRANSFORM:  S DINUM=X
+                  OUTPUT TRANSFORM: S Y=$S(Y="":"*** Unknown Ward ***",Y=.5:"Outpatient IV",$D(^DIC(42,Y,0)):$P(^(0),"^"),1:"*** Undefined Ward")
+                  DESCRIPTION:
+                                      Ward for which statistics have been gathered (looks at ward location file (#42).  
+
+                  GROUP:            PSJI
+                  NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.804,1          IVPB DISPENSED         0;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      APR 17, 1987 
+                  HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                  DESCRIPTION:
+                                      IV Piggybacks dispensed for this ward.  
+
+                  GROUP:            PSJI
+
+50.804,2          LVP DISPENSED          0;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      APR 17, 1987 
+                  HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                  DESCRIPTION:
+                                      Large Volume Admixtures administered for this ward.  
+
+                  GROUP:            PSJI
+
+50.804,3          HYPERAL DISPENSED      0;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      APR 17, 1987 
+                  HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                  DESCRIPTION:
+                                      Hyperals administered for this ward.  
+
+                  GROUP:            PSJI
+
+50.804,4          WARD RETURNS           R;1 POINTER TO WARD LOCATION FILE (#42)
+
+                  LAST EDITED:      FEB 01, 1988 
+                  DESCRIPTION:
+                                    Ward for which IV products were returned. Pointer to WARD LOCATION file (42).  
+
+                  GROUP:            PSJI
+
+50.804,5          WARD RETURNS (IVPB)    R;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 01, 1988 
+                  HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+                  DESCRIPTION:
+                                      Ward for which IV IVPBs (IV Piggybacks) returned for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,6          WARD RETURNS (LVP)     R;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 01, 1988 
+                  HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of LVPs (Large Volume Parenterals) returned for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,7          WARD RETURNS (HYPERAL) R;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 01, 1988 
+                  HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of Hyperals returned for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,8          WARD DESTROYED         D;1 POINTER TO WARD LOCATION FILE (#42)
+
+                  LAST EDITED:      FEB 01, 1988 
+                  DESCRIPTION:
+                                      Ward for which IV products were destroyed.  
+
+                  GROUP:            PSJI
+
+50.804,9          WARD DESTROYED (IVPB)  D;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 01, 1988 
+                  HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of IVPBs (IV piggybacks) destroyed for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,10         WARD DESTROYED (LVP)   D;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 01, 1988 
+                  HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of LVPs (large volume parenterals) destroyed for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,11         WARD DESTROYED (HYPERAL) D;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      FEB 01, 1988 
+                  HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of hyperals returned for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,12         SYRINGE DISPENSED      0;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of syringes dispensed for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,13         CHEMOTHERAPY DISPENSED 0;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of chemotherapy IVs dispensed for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,14         WARD RETURNS (CHEMO)   R;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of chemotherapy IVs returned for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,15         WARD RETURNS (SYRINGE) R;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of syringe IVs returned for the specified ward and date.  
+
+                  GROUP:             
+
+50.804,16         WARD DESTROYED (SYRINGE) D;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of syringe IVs which were destroyed for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,17         WARD DESTROYED (CHEMO) D;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of chemotherapy IVs returned for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,18         WARD CANCELED (IVPB)   C;2 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                    This is the number of IVPBs (IV piggybacks) which were canceled for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,19         WARD CANCELED (LVP)    C;3 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of LVPs (large volume parenterals) which were cancelled for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,20         WARD CANCELED (HYPERAL) C;4 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of hyperals which were cancelled for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,21         WARD CANCELED (SYRINGE) C;6 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of syringe IVs which were cancelled for the specified ward and date.  
+
+                  GROUP:            PSJI
+
+50.804,22         WARD CANCELED (CHEMO)  C;5 NUMBER
+
+                  INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                  LAST EDITED:      JUN 27, 1989 
+                  HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                  DESCRIPTION:
+                                      This is the number of chemotherapy IVs which were cancelled for the specified ward and shift.  
+
+                  GROUP:            PSJI
+
+
+
+50.803,2        IV DRUG                  2;0 Multiple #50.805 (Add New Entry without Asking)
+
+                  DESCRIPTION:
+                                    IV drug administered.  
+
+                  GROUP:            PSJI
+
+50.805,.01        IV DRUG                  0;1 FREE TEXT
+
+                    INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) D EN^DDIOL(" ... This field CANNOT be edited using FileMan !!") K X
+                    LAST EDITED:      FEB 17, 1988 
+                    HELP-PROMPT:      Not editable through VA FileMan. 
+                    DESCRIPTION:
+                                        IV drug administered.  
+
+                    GROUP:            PSJI
+                    NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+                    CROSS-REFERENCE:  50.803^B 
+                                      1)= S ^PS(50.8,DA(2),2,"B",$E(X,1,30),DA(1),DA)=""
+                                      2)= K ^PS(50.8,DA(2),2,"B",$E(X,1,30),DA(1),DA)
+
+                    CROSS-REFERENCE:  50.8^AC^MUMPS 
+                                      1)= I '$D(PSIVV),$D(^PS(50.8)) D ^PSIVXREF Q
+                                      2)= Q
+                                       Cross-reference by: IV ROOM, DATE, IV DRUG.  
+                                       S ^PS(50.8,IV ROOM,2,DATE,2,"AC",FILE(52.6 or 52.7),IV DRUG ien,IV DRUG)="" 
+
+
+
+50.805,1          DISPENSED UNITS (IV DRUG) 0;2 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."3N.N) X
+                    HELP-PROMPT:      Type a number between 0 and 9999999. 
+                    DESCRIPTION:
+                                        Number of units dispensed for this drug.  
+
+                    GROUP:            PSJI
+
+50.805,2          RETURNED UNITS (IV DRUG) 0;3 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."3N.N) X
+                    HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                    DESCRIPTION:
+                                        Number of units returned for this drug.  
+
+                    GROUP:            PSJI
+
+50.805,3          DESTROYED UNITS (IV DRUG) 0;4 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                    LAST EDITED:      FEB 15, 1991 
+                    HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits 
+                    DESCRIPTION:
+                                        This is the number of units destroyed from this ward of the selected drug on this date.  
+
+                    GROUP:            PSJI
+
+50.805,4          AVERAGE DRUG COST PER UNIT 0;5 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."4N.N) X
+                    HELP-PROMPT:      Type a number between 0 and 9999999. 
+                    DESCRIPTION:
+                                        Average cost of drug per unit.  This information is taken from the additive or solution file (whichever is appropriate).  
+
+                    GROUP:            PSJI
+
+50.805,5          DRUG UNIT                0;6 SET (Required)
+
+                                      '1' FOR ML; 
+                                      '2' FOR LITER; 
+                                      '3' FOR MCG; 
+                                      '4' FOR MG; 
+                                      '5' FOR GM; 
+                                      '6' FOR UNITS; 
+                                      '7' FOR IU; 
+                                      '8' FOR MEQ; 
+                                      '9' FOR MM; 
+                                      '10' FOR MU; 
+                                      '11' FOR THOUU; 
+                                      '12' FOR MG-PE; 
+                                      '13' FOR NANOGRAM; 
+                    LAST EDITED:      JUN 30, 2005 
+                    DESCRIPTION:
+                                        Unit of measure. This is used in calculating cost of drug.  
+
+                    GROUP:            PSJI
+
+50.805,6          TYPE                     0;7 SET (Required)
+
+                                      '52.6' FOR IV ADDITVE; 
+                                      '52.7' FOR IV SOLUTION; 
+                    DESCRIPTION:
+                                        Indicates whether drug is additive or solution.  
+
+                    GROUP:            PSJI
+
+50.805,7          DISPENSING OCCURRENCES   0;8 NUMBER
+
+                    INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                    HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                    DESCRIPTION:
+                                        Number of times drug was dispensed (or number of bags hung).  
+
+                    GROUP:            PSJI
+
+50.805,8          PATIENT                  1;0 POINTER Multiple #50.806
+
+                    DESCRIPTION:
+                                      These fields specify how many units of the IV drug were dispensed, returned, canceled, or destroyed, for each patient who was to receive this drug.  
+
+                    GROUP:            PSJI
+
+50.806,.01          PATIENT                  0;1 POINTER TO PATIENT FILE (#2) (Multiply asked)
+
+                      INPUT TRANSFORM:  S DINUM=X
+                      DESCRIPTION:
+                                         Patient to whom IV was administered.  
+
+                      GROUP:            PSJI
+                      NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.806,1            DISPENSED UNITS (PATIENT) 0;2 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."3N.N) X
+                      HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                      DESCRIPTION:
+                                        Number of units patient was administered 
+
+                      GROUP:            PSJI
+
+50.806,2            RETURNED UNITS (PATIENT) 0;3 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."3N.N) X
+                      HELP-PROMPT:      Type a number between 0 and 9999999. 
+                      DESCRIPTION:
+                                          Units returned to Pharmacy and not administered to patient.  
+
+                      GROUP:            PSJI
+
+50.806,3            DESTROYED UNITS (PATIENT) 0;4 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."3N.N) X
+                      HELP-PROMPT:      Type a number between 0 and 9999999. 
+                      DESCRIPTION:
+                                          Units destroyed by pharmacy and not administered to patient.  
+
+                      GROUP:            PSJI
+
+50.806,4            WARD PTR                 0;5 POINTER TO WARD LOCATION FILE (#42)
+
+                      LAST EDITED:      OCT 05, 1987 
+                      DESCRIPTION:
+                                          Ward in which IV drug was administered.  
+
+                      GROUP:            PSJI
+
+50.806,5            CANCELED UNITS (PATIENT) 0;6 NUMBER
+
+                      INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                      LAST EDITED:      JUN 28, 1989 
+                      HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                      DESCRIPTION:
+                                          This is the number of units of the IV drug for this patient which were cancelled on the selected date.  
+
+                      GROUP:            PSJI
+
+
+
+50.805,9          PROVIDER                   2;0 POINTER Multiple #50.807
+
+                      DESCRIPTION:
+                                        These fields specify how many units of the IV drug selected were dispensed, returned, canceled, or destroyed, for each physician prescribing this drug.  
+
+                      GROUP:            PSJI
+
+50.807,.01          PROVIDER                   0;1 POINTER TO NEW PERSON FILE (#200) (Multiply asked)
+
+                        INPUT TRANSFORM:  S DINUM=X
+                        LAST EDITED:      JUL 08, 1991 
+                        DESCRIPTION:
+                                            Person who authorized the IV order.  
+
+                        TECHNICAL DESCR:
+                                           Pointer to NEW PERSON file (200).  
+
+                        GROUP:            PSJI
+                        NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.807,1            DISPENSED UNITS (PROVIDER) 0;2 NUMBER
+
+                        INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."3N.N) X
+                        HELP-PROMPT:      Type a number between 0 and 9999999. 
+                        DESCRIPTION:
+                                            Number of units dispensed for provider's order.  
+
+                        GROUP:            PSJI
+
+50.807,2            RETURNED UNITS (PROVIDER)  0;3 NUMBER
+
+                        INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                        LAST EDITED:      OCT 05, 1987 
+                        HELP-PROMPT:      Type a Number between 0 and 999999, 2 Decimal Digits. 
+                        DESCRIPTION:
+                                            Units returned to the Pharmacy and not administered to the patient.  
+
+                        GROUP:            PSJI
+
+50.807,3            DESTROYED UNITS (PROVIDER) 0;4 NUMBER
+
+                        INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."3N.N) X
+                        LAST EDITED:      OCT 05, 1987 
+                        HELP-PROMPT:      Type a Number between 0 and 99999, 2 Decimal Digits. 
+                        DESCRIPTION:      Number of units destroyed by the pharmacy and not administered to the 
+                                           patient 
+
+                        GROUP:            PSJI
+
+50.807,4            CANCELED UNITS (PROVIDER)  0;5 NUMBER
+
+                        INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                        LAST EDITED:      JUN 28, 1989 
+                        HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                        DESCRIPTION:
+                                            This is the number of units of the IV drug which were cancelled for the specified provider on the selected date.  
+
+                        GROUP:            PSJI
+
+
+
+50.805,10         WARD                         3;0 POINTER Multiple #50.808
+
+                        DESCRIPTION:
+                                          These fields specify how many units of the selected IV drug were dispensed, returned, canceled, or destroyed, for each ward housing patients who were to receive this drug.  
+
+                        GROUP:            PSJI
+
+50.808,.01          WARD                         0;1 POINTER TO WARD LOCATION FILE (#42) (Multiply asked)
+
+                          INPUT TRANSFORM:  S DINUM=X
+                          OUTPUT TRANSFORM: S Y=$S(Y="":"*** Unknown Ward ***",Y=.5:"Outpatient IV",$D(^DIC(42,Y,0)):$P(^(0),"^"),1:"*** Undefined Ward")
+                          DESCRIPTION:
+                                              Ward in which IV drug was administered.  
+
+                          GROUP:            PSJI
+                          NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+50.808,1            TYPE                         1;0 SET Multiple #50.809 (Add New Entry without Asking)
+
+                          DESCRIPTION:
+                                            This contains information concerning each type of IV ordered for the selected ward, IV drug, and date.  
+
+                          GROUP:            PSJI
+
+50.809,.01            TYPE                         0;1 SET
+
+                                              'P' FOR PIGGYBACK; 
+                                              'H' FOR HYPERAL; 
+                                              'A' FOR ADMIXTURE; 
+                                              'S' FOR SYRINGE; 
+                                              'C' FOR CHEMOTHERAPY; 
+                            LAST EDITED:      DEC 18, 1990 
+                            DESCRIPTION:
+                                                Type of IV administered: 'P' for  piggyback, 'H' for hyperal and 'A' for admixture 'S' for syringe, 'C' for chemotherapy.  
+
+                            GROUP:            PSJI
+                            CROSS-REFERENCE:  50.809^B 
+                                              1)= S ^PS(50.8,DA(4),2,DA(3),2,DA(2),3,DA(1),1,"B",$E(X,1,30),DA)=""
+                                              2)= K ^PS(50.8,DA(4),2,DA(3),2,DA(2),3,DA(1),1,"B",$E(X,1,30),DA)
+
+
+50.809,1              DISPENSED UNITS              0;2 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 17, 1987 
+                            HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                            DESCRIPTION:
+                                                Units dispensed for this type IV.  
+
+                            GROUP:            PSJI
+
+50.809,2              RETURNED UNITS               0;3 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 17, 1987 
+                            HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                            DESCRIPTION:
+                                                Units for this type IV returned to pharmacy and not administered to the patient.  
+
+                            GROUP:            PSJI
+
+50.809,3              DESTROYED UNITS              0;4 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 17, 1987 
+                            HELP-PROMPT:      Type a whole number between 0 and 9999999. 
+                            DESCRIPTION:
+                                                Units for this type IV destroyed by the Pharmacy and not administered to the patient.  
+
+                            GROUP:            PSJI
+
+50.809,4              DISPENSING OCCURRENCES       0;8 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 25, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of times this type of IV was dispensed for the ward, drug, and date selected.  
+
+                            GROUP:            PSJI
+
+50.809,5              RETURNED OCCURRENCES         0;9 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 25, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of times this type of IV was returned for the ward, drug, and date selected.  
+
+                            GROUP:            PSJI
+
+50.809,6              DESTROYED OCCURRENCES        0;10 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      APR 25, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of times this type of IV was destroyed for the ward, drug, and date selected.  
+
+                            GROUP:            PSJI
+
+50.809,7              CANCELLED UNITS              0;5 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JUN 21, 1994 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of units of this type which were cancelled for the ward, drug, and date selected.  
+
+                            GROUP:            PSJI
+
+50.809,8              CANCELLED OCCURRENCES        0;11 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JUN 28, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of times an order of this type was cancelled for the ward, drug, and date selected.  
+
+                            GROUP:            PSJI
+
+
+
+50.808,2            DISPENSED UNITS (WARD)         0;2 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."3N.N) X
+                            LAST EDITED:      OCT 05, 1987 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 2 Decimal Digits. 
+                            DESCRIPTION:
+                                                Units dispensed for this ward.  
+
+                            GROUP:            PSJI
+
+50.808,3            RETURNED UNITS (WARD)          0;3 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JUN 28, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of units of the specified drug returned from the selected ward on this date.  
+
+                            GROUP:            PSJI
+
+50.808,4            DESTROYED UNITS (WARD)         0;4 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JUN 28, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of units destroyed for this ward and drug on the selected date.  
+
+                            GROUP:            PSJI
+
+50.808,5            CANCELED UNITS                 0;5 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JUN 28, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of units cancelled for this ward and drug on the selected date.  
+
+                            GROUP:            PSJI
+
+
+
+50.805,11         RETURNED OCCURRENCES             0;9 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JAN 09, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 9999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of times an order for the specified drug was destroyed on the selected date.  
+
+                            GROUP:            PSJI
+
+50.805,12         DESTROYED OCCURRENCES            0;10 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JAN 09, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of times an order for the specified drug was destroyed on the selected date.  
+
+                            GROUP:            PSJI
+
+50.805,13         CANCELLED OCCURRENCES            0;11 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JUN 28, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of times an order for the specified drug was cancelled on the selected date.  
+
+                            GROUP:            PSJI
+
+50.805,14         CANCELLED UNITS (IV DRUG)        0;12 NUMBER
+
+                            INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+                            LAST EDITED:      JUN 28, 1989 
+                            HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits. 
+                            DESCRIPTION:
+                                                This is the number of units of an IV drug which were cancelled on the date selected.  
+
+                            GROUP:            PSJI
+
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+IV ROOM (#59.5)                   IV ROOM (#.01)
+
+NEW PERSON (#200)                 PROVIDER:PROVIDER (#.01)
+
+PATIENT (#2)                      PATIENT:PATIENT (#.01)
+                                  PATIENT:PATIENT (#.01)
+
+WARD LOCATION (#42)               TRANSACTION NUMBER:WARD (#5)
+                                  WARD:WARD (#.01)
+                                  WARD RETURNS (#4)
+                                  WARD DESTROYED (#8)
+                                  PATIENT:WARD PTR (#4)
+                                  WARD:WARD (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

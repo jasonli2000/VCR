@@ -1,0 +1,206 @@
+STANDARD DATA DICTIONARY #56 -- DRUG INTERACTION FILE                                                                                                                                                                             MAY 20,2014@15:38:14  PAGE 1
+STORED IN ^PS(56,  (7686 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                            (VERSION 4.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to store DRUG-DRUG interactions.  This file will be sent out with data.  Data can only be added.  
+ 
+LOCAL additions and deletions are allowed.  
+
+
+IDENTIFIED BY: INGREDIENT 1 (#1)[R], INGREDIENT 2 (#2)[R], SEVERITY (#3)[R]
+
+CROSS
+REFERENCED BY: INGREDIENT 1(AE1), INGREDIENT 2(AE2), INGREDIENT 1(AI1), INGREDIENT 2(AI2), INGREDIENT 1(APD), INGREDIENT 2(APE), NAME(B), NAME(C)
+
+56,.01        NAME                   0;1 FREE TEXT (Required) (audited)
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>50!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      JUL 10, 1998 
+              HELP-PROMPT:      Answer must be 3-50 characters in length. 
+              DESCRIPTION:
+                                This field is used to store the name of the drug interaction.  
+
+              TECHNICAL DESCR:
+                                Name of interaction.  
+
+              AUDIT:            YES, ALWAYS
+              DELETE TEST:      .01,0)= I 1 D EN^DDIOL("DELETIONS ARE NOT ALLOWED")
+
+              LAYGO TEST:       .01,0)= N ZZZ S ZZZ=$D(PSSDF)!$D(PSNDF) D:'ZZZ EN^DDIOL("ADDITIONS MUST BE MADE THROUGH STANDARD PDM OPTIONS") I ZZZ
+
+              GROUP:            PSO
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  56^B 
+                                1)= S ^PS(56,"B",$E(X,1,30),DA)=""
+                                2)= K ^PS(56,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  56^C^KWIC 
+                                1)= S %1=1 F %=1:1:$L(X)+1 S I=$E(X,%) I "/"[I S I=$E($E(X,%1,%-1),1,30),%1=%+1 I $L(I)>2,^DD("KWIC")'[I S ^PS(56,"C",I,DA)=""
+                                2)= S %1=1 F %=1:1:$L(X)+1 S I=$E(X,%) I "/"[I S I=$E($E(X,%1,%-1),1,30),%1=%+1 I $L(I)>2 K ^PS(56,"C",I,DA)
+                                3)= This cross-reference should not be deleted
+                                This cross-reference is used as a key word lookup to allow lookup based on either of the two ingredients selected.  
+
+
+
+56,1          INGREDIENT 1           0;2 POINTER TO DRUG INGREDIENTS FILE (#50.416) (Required) (audited)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^PS(50.416,+Y,0),""^"",2),+Y'=$P(^PS(56,DA,0),""^"",3)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 10, 1998 
+              HELP-PROMPT:      Enter name of primary ingredient. 
+              DESCRIPTION:
+                                This field is used to stored the first ingredient of adverse drug/drug reactions.  
+
+              TECHNICAL DESCR:
+                                Pointer to file #50.416.  
+
+              SCREEN:           S DIC("S")="I '$P(^PS(50.416,+Y,0),""^"",2),+Y'=$P(^PS(56,DA,0),""^"",3)"
+              EXPLANATION:      Only primary ingredients are selected.
+              AUDIT:            YES, ALWAYS
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  56^AI1 
+                                1)= S ^PS(56,"AI1",$E(X,1,30),DA)=""
+                                2)= K ^PS(56,"AI1",$E(X,1,30),DA)
+                                3)= Do not delete  !
+                                This xref will be used to track changes to the Drug Ingredient file (#50.416).  
+
+
+              CROSS-REFERENCE:  56^APD^MUMPS 
+                                1)= S DEL=0 D:$P(^PS(56,DA,0),"^",3) ^PSNDDI1 K DEL
+                                2)= S DEL=1 D:$P(^PS(56,DA,0),"^",3) ^PSNDDI1 K DEL
+                                3)= This XREF should not be deleted.
+                                This XREF is used to index file by drug adverse reactions.  This XREF is executed if ingredient 2 is filled in.  In the form of: ^PS(56,"APD",Drug Indentifier(Ingredient 1),Drug Identifier (Ingredient 2,DA) 
+
+
+              CROSS-REFERENCE:  56^AE1^MUMPS 
+                                1)= N ZZZ S ZZZ=$P(^PS(56,DA,0),"^",3) I ZZZ S ^PS(56,"AE",X,ZZZ,DA)="",^PS(56,"AE",ZZZ,X,DA)=""
+                                2)= N ZZZ S ZZZ=$P(^PS(56,DA,0),"^",3) I ZZZ K ^PS(56,"AE",X,ZZZ,DA),^PS(56,"AE",ZZZ,X,DA)
+                                Cross-reference checks for duplicate ingredient combinations.  In the form of: ^PS(56,"AE",Ingredient 1,Ingredient 2,DA) 
+
+
+
+56,2          INGREDIENT 2           0;3 POINTER TO DRUG INGREDIENTS FILE (#50.416) (Required) (audited)
+
+              INPUT TRANSFORM:  S DIC("S")="I '$P(^PS(50.416,+Y,0),""^"",2),+Y'=$P(^PS(56,DA,0),""^"",2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 10, 1998 
+              HELP-PROMPT:      Enter name of second ingredient for adverse drug reaction. 
+              DESCRIPTION:
+                                This field is used to store the name of the second ingredient for drug/drug adverse reaction.  This ingredient cannot be the same as the first ingredient.  
+
+              TECHNICAL DESCR:
+                                Pointer to file #50.416.  
+
+              SCREEN:           S DIC("S")="I '$P(^PS(50.416,+Y,0),""^"",2),+Y'=$P(^PS(56,DA,0),""^"",2)"
+              EXPLANATION:      Only primary ingredients are to be selected.
+              AUDIT:            YES, ALWAYS
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  56^AI2 
+                                1)= S ^PS(56,"AI2",$E(X,1,30),DA)=""
+                                2)= K ^PS(56,"AI2",$E(X,1,30),DA)
+                                3)= Do not delete  !
+                                This xref is used to track changes to the Drug Ingredient file (#50.416).  
+
+
+              CROSS-REFERENCE:  56^APE^MUMPS 
+                                1)= S DEL=0 D:$P(^PS(56,DA,0),"^",2) ^PSNDDI1 K DEL
+                                2)= S DEL=1 D:$P(^PS(56,DA,0),"^",2) ^PSNDDI1 K DEL
+                                3)= This XREF should not be deleted.
+                                This XREF is used to index the file by the drug adverse reactions.  This XREF is only executed if ingredient 1 field is filled in.  In the form of: ^PS(56,"APD",Drug Identifier(Ingredient 2),Drug Identifier (Ingredient
+                                1,DA) 
+
+
+              CROSS-REFERENCE:  56^AE2^MUMPS 
+                                1)= N ZZZ S ZZZ=$P(^PS(56,DA,0),"^",2) I ZZZ S ^PS(56,"AE",X,ZZZ,DA)="",^PS(56,"AE",ZZZ,X,DA)=""
+                                2)= N ZZZ S ZZZ=$P(^PS(56,DA,0),"^",2) I ZZZ K ^PS(56,"AE",X,ZZZ,DA),^PS(56,"AE",ZZZ,X,DA)
+                                Cross-reference checks for duplicate ingredient combinations.  In the form of: ^PS(56,"AE",Ingredient 2,Ingredient 1,DA) 
+
+
+
+56,3          SEVERITY               0;4 SET (Required) (audited)
+
+                                '1' FOR CRITICAL; 
+                                '2' FOR SIGNIFICANT; 
+              LAST EDITED:      MAR 19, 1992 
+              HELP-PROMPT:      Enter severity of drug/drug interaction/ 
+              DESCRIPTION:
+                                This field is used to indicate the type of reaction from the interaction.  
+
+              TECHNICAL DESCR:
+                                Set of Codes.  
+
+              AUDIT:            YES, ALWAYS
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+
+56,4          NATIONALLY ENTERED     0;5 SET (audited)
+
+                                '1' FOR YES; 
+              LAST EDITED:      MAR 19, 1992 
+              DESCRIPTION:
+                                This field is used to indicate if this data was sent out by the ISC.  
+
+              TECHNICAL DESCR:
+                                set of codes 
+
+              AUDIT:            YES, ALWAYS
+
+56,5          TOTAL INDEXES          0;6 NUMBER (audited)
+
+              INPUT TRANSFORM:  K X
+              LAST EDITED:      APR 23, 1992 
+              HELP-PROMPT:      Data is not entered using File Manager. 
+              DESCRIPTION:
+                                This field is used to store the total number of interaction for an entry into the file.  This data is not entered directly through FM.  
+
+              TECHNICAL DESCR:
+                                Data is stuffed.  
+
+              AUDIT:            YES, ALWAYS
+              SOURCE OF DATA:   Data comes from index routine.
+              GROUP:            PSO
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+56,6          LOCALLY EDITED         L;1 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 29, 1998 
+              DESCRIPTION:      This field is set if the severity of this interaction has been edited locally.  This will allow a site to change the severity of a nationally entered interaction from significant to critical and later change it back. 
+                                Nationally entered critical interactions can not be edited.  
+
+              DELETE AUTHORITY: ^
+              WRITE AUTHORITY:  ^
+
+56,7          INACTIVATION DATE      0;7 DATE (audited)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 15, 1998 
+              DESCRIPTION:
+                                This is the date when this interaction became inactive.  
+
+              AUDIT:            YES, ALWAYS
+
+
+      FILES POINTED TO                      FIELDS
+
+DRUG INGREDIENTS (#50.416)        INGREDIENT 1 (#1)
+                                  INGREDIENT 2 (#2)
+
+
+
+INPUT TEMPLATE(S):
+PSO INTERACT                  JUL 07, 1992@15:44  USER #0    
+PSS INTERACT                  NOV 18, 1996@13:33  USER #0    
+
+PRINT TEMPLATE(S):
+PSNACTION                     MAR 15, 2006@09:35  USER #0                                                                                                                                                                                DRUG INTERACTION LIST
+PSNLOCAL                      FEB 24, 1999@08:36  USER #0                                                                                                                                                                                DRUG INTERACTION LIST
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,0 +1,150 @@
+STANDARD DATA DICTIONARY #409.31 -- SD WL SERVICE/SPECIALTY FILE                                                                                                                                                                  MAY 20,2014@15:41:37  PAGE 1
+STORED IN ^SDWL(409.31,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 5.3)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains the list of DSS Identifiers that can be used by an institution in the Wait List (Sch/PCMM) package as a Service/Specialty. Each DSS ID is assigned an institution, date activated and date inactivated. The Service/Specialty represents a
+collection of clinics that have this DSS ID as the primary stop code that a patient is waiting for an appointment.  
+
+
+              DD ACCESS: @
+              RD ACCESS:  
+              WR ACCESS: D
+             DEL ACCESS: @
+           LAYGO ACCESS: D
+           AUDIT ACCESS: @
+
+POINTED TO BY: WL SERVICE/SPECIALTY field (#7) of the SD WAIT LIST File (#409.3) 
+               
+
+CROSS
+REFERENCED BY: SERVICE/SPECIALTY(B), INSTITUTION(C), INSTITUTION(D), INSTITUTION(E), DATE INACTIVATED(F), DATE ACTIVATED(G)
+
+409.31,.01    SERVICE/SPECIALTY      0;1 POINTER TO CLINIC STOP FILE (#40.7) (Required)
+
+              LAST EDITED:      OCT 22, 2002 
+              HELP-PROMPT:      Enter an active DSS ID that can be used by the institution for assigning wait list. 
+              DESCRIPTION:
+                                Enter DSS ID that are approved to be used by the Wait List(Sch/PCMM) application.  Only active DSS IDs in the Clinic Stop file can be added.  
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  409.31^B 
+                                1)= S ^SDWL(409.31,"B",$E(X,1,30),DA)=""
+                                2)= K ^SDWL(409.31,"B",$E(X,1,30),DA)
+
+
+409.31,1      INSTITUTION            I;0 POINTER Multiple #409.311
+
+
+409.311,.01     INSTITUTION            0;1 POINTER TO INSTITUTION FILE (#4) (Required)
+
+                INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,11)=""N"",$$TF^XUAF4(+Y)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      MAR 04, 2003 
+                HELP-PROMPT:      ENTER INSTITUTION FOR THIS SERVICE/SPECIALTY.  INSTITUTION MUST BE NATIONAL AND A TREATING FACILITY. 
+                DESCRIPTION:
+                                  The institution that allows the DSS ID as a wait list selection.  
+
+                SCREEN:           S DIC("S")="I $P(^(0),U,11)=""N"",$$TF^XUAF4(+Y)"
+                EXPLANATION:      Institution must be NATIONAL and a TREATING FACILITY
+                CROSS-REFERENCE:  409.311^B 
+                                  1)= S ^SDWL(409.31,DA(1),"I","B",$E(X,1,30),DA)=""
+                                  2)= K ^SDWL(409.31,DA(1),"I","B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  409.31^C^MUMPS 
+                                  1)= I $D(X) S ^SDWL(409.31,"C",DA(1),DA)=""
+                                  2)= K ^SDWL(409.31,"C",DA(1),DA)
+
+                CROSS-REFERENCE:  409.31^D^MUMPS 
+                                  1)= I $D(X) S ^SDWL(409.31,"D",DA(1),X)=""
+                                  2)= K ^SDWL(409.31,"D",DA(1),X)
+
+                CROSS-REFERENCE:  409.31^E^MUMPS 
+                                  1)= I $D(X) S ^SDWL(409.31,"E",X,DA(1))=""
+                                  2)= K ^SDWL(409.31,"E",X,DA(1))
+
+
+409.311,1       DATE ACTIVATED         0;2 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 11, 2002 
+                HELP-PROMPT:      Enter the date when this Service/Specialty can be selected 
+                DESCRIPTION:
+                                  Date that this DSS ID can be used as a wait list selectable Service/Specialty 
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  ^^TRIGGER^409.311^2 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^SDWL(409.31,D0,"I",D1,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(409.311,1,1,1,1.4)
+                                  1.4)= S DIH=$G(^SDWL(409.31,DIV(0),"I",DIV(1),0)),DIV=X S $P(^(0),U,3)=DIV,DIH=409.311,DIG=2 D ^DICR
+                                  2)= Q
+                                  CREATE VALUE)= S X=DUZ
+                                  DELETE VALUE)= NO EFFECT
+                                  FIELD)= ACTIVATION DATE ENTERED BY
+
+                CROSS-REFERENCE:  409.31^G^MUMPS 
+                                  1)= I $D(X) S ^SDWL(409.31,"ACT",$P(^SDWL(409.31,DA(1),"I",DA,0),U,1),X,DA(1),DA)=""
+                                  2)= K ^SDWL(409.31,"ACT",$P(^SDWL(409.31,DA(1),"I",DA,0),U,1),X,DA(1),DA),^SDWL(409.31,"DEL",$P(^SDWL(409.31,DA(1),"I",DA,0),U,1))
+
+
+409.311,2       ACTIVATION DATE ENTERED BY 0;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUL 15, 2002 
+                DESCRIPTION:
+                                  User that entered the activation date for this DSS ID 
+
+                WRITE AUTHORITY:  ^
+                NOTES:            TRIGGERED by the DATE ACTIVATED field of the INSTITUTION sub-field of the SD WL SERVICE/SPECIALTY File 
+
+
+409.311,3       DATE INACTIVATED       0;4 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      AUG 14, 2002 
+                HELP-PROMPT:      Enter the date when this Service/Specialty can no longer be selected 
+                DESCRIPTION:
+                                  Date that this DSS ID can no longer be used as a wait list selectable 
+
+                CROSS-REFERENCE:  ^^TRIGGER^409.311^4 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^SDWL(409.31,D0,"I",D1,0)):^(0),1:"") S X=$P(Y(1),U,5),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(409.311,3,1,1,1.4)
+                                  1.4)= S DIH=$G(^SDWL(409.31,DIV(0),"I",DIV(1),0)),DIV=X S $P(^(0),U,5)=DIV,DIH=409.311,DIG=4 D ^DICR
+                                  2)= Q
+                                  CREATE VALUE)= S X=DUZ
+                                  DELETE VALUE)= NO EFFECT
+                                  FIELD)= INACTIVATED DATE
+
+                CROSS-REFERENCE:  409.31^F^MUMPS 
+                                  1)= I $D(X) S ^SDWL(409.31,"DEL",$P(^SDWL(409.31,DA(1),"I",DA,0),U,1),X,DA(1),DA)=""
+                                  2)= K ^SDWL(409.31,"DEL",$P(^SDWL(409.31,DA(1),"I",DA,0),U,1),X,DA(1),DA)
+
+
+409.311,4       INACTIVATED DATE ENTERED BY 0;5 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      JUL 15, 2002 
+                DESCRIPTION:
+                                  The user that entered the inactivated date for this DSS ID 
+
+                WRITE AUTHORITY:  ^
+                NOTES:            TRIGGERED by the DATE INACTIVATED field of the INSTITUTION sub-field of the SD WL SERVICE/SPECIALTY File 
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CLINIC STOP (#40.7)               SERVICE/SPECIALTY (#.01)
+
+INSTITUTION (#4)                  INSTITUTION:INSTITUTION (#.01)
+
+NEW PERSON (#200)                 INSTITUTION:ACTIVATION DATE ENTERED BY (#2)
+                                  INACTIVATED DATE ENTERED BY (#4)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

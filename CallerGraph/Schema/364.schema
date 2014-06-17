@@ -1,0 +1,188 @@
+STANDARD DATA DICTIONARY #364 -- EDI TRANSMIT BILL FILE                                                                                                                                                                              MAY 20,2014@15:36  PAGE 1
+STORED IN ^IBA(364,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                              (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains a record for each bill for each time it is included in a batch for EDI transmissions.  This file allows a bill to be tracked throughout its transmission life and gives the bill's current EDI status.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: BATCH NUMBER (#.02), TRANSMISSION STATUS (#.03)[R], STATUS DATE (#.04)
+
+POINTED TO BY: TRANSMIT BILL field (#.11) of the BILL STATUS MESSAGE File (#361) 
+               TRANSMIT BILL field (#.19) of the EXPLANATION OF BENEFITS File (#361.1) 
+               TRANSMIT BILL field (#.05) of the EDI MESSAGES File (#364.2) 
+               
+
+CROSS
+REFERENCED BY: TRANSMISSION STATUS(ASTAT), BILL NUMBER(B), BATCH NUMBER(C)
+
+INDEXED BY:    BILL NUMBER & BATCH NUMBER (ABABI), BATCH NUMBER & TRANSMISSION STATUS (ABAST), BILL NUMBER & STATUS DATE (ABDT), BILL NUMBER & COB SEQUENCE & TRANSMISSION STATUS (ACOB)
+
+
+364,.01       BILL NUMBER            0;1 POINTER TO BILL/CLAIMS FILE (#399) (Required)
+
+              LAST EDITED:      MAY 23, 2000 
+              HELP-PROMPT:      Enter the bill number that was EDI transmitted. 
+              CROSS-REFERENCE:  364^B 
+                                1)= S ^IBA(364,"B",$E(X,1,30),DA)=""
+                                2)= K ^IBA(364,"B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   ABABI (#134), ABDT (#136), ACOB (#137)
+
+364,.02       BATCH NUMBER           0;2 POINTER TO EDI TRANSMISSION BATCH FILE (#364.1)
+
+              LAST EDITED:      NOV 15, 1999 
+              DESCRIPTION:
+                                The EDI transmission batch that includes this bill entry.  
+
+              CROSS-REFERENCE:  364^C 
+                                1)= S ^IBA(364,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBA(364,"C",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+                                Lookup by batch 
+
+
+              RECORD INDEXES:   ABABI (#134), ABAST (#135)
+
+364,.03       TRANSMISSION STATUS    0;3 SET (Required)
+
+                                'X' FOR READY FOR EXTRACT; 
+                                'P' FOR PENDING AUSTIN RECEIPT; 
+                                'A0' FOR RECEIVED IN AUSTIN; 
+                                'A1' FOR ACCEPTED BY NON-PAYER; 
+                                'A2' FOR ACCEPTED PAYER; 
+                                'E' FOR ERROR CONDITION; 
+                                'C' FOR CANCELLED; 
+                                'R' FOR CORRECTED/RETRANSMITTED; 
+                                'Z' FOR CLOSED; 
+              LAST EDITED:      SEP 27, 2001 
+              HELP-PROMPT:      Enter the current status for this bill transmission. 
+              DESCRIPTION:
+                                The current transmission status of this EDI transmission attempt for the bill.  
+
+              CROSS-REFERENCE:  364^ASTAT 
+                                1)= S ^IBA(364,"ASTAT",$E(X,1,30),DA)=""
+                                2)= K ^IBA(364,"ASTAT",$E(X,1,30),DA)
+                                3)= DO NOT DELETE
+
+              RECORD INDEXES:   ABAST (#135), ACOB (#137)
+
+364,.04       STATUS DATE            0;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:Y<1 X I $D(X) S X=$E(X,1,12)
+              LAST EDITED:      NOV 15, 1999 
+              HELP-PROMPT:      Enter the date/time that the current status occurred. 
+              DESCRIPTION:
+                                The date/time that the current status occurred.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              RECORD INDEXES:   ABDT (#136)
+
+364,.06       RESUBMIT BATCH NUMBER  0;6 POINTER TO EDI TRANSMISSION BATCH FILE (#364.1)
+
+              LAST EDITED:      SEP 18, 1996 
+              HELP-PROMPT:      Enter the batch number this bill was included in when resubmitted. 
+              DESCRIPTION:
+                                This is the batch number this bill was included in when resubmitted.  
+
+
+364,.07       TEST BILL              0;7 SET
+
+                                '0' FOR NO; 
+                                '1' FOR YES; 
+              LAST EDITED:      JUN 02, 1997 
+              HELP-PROMPT:      Enter 0 or nothing for a live transmission, 1 for a test 
+              DESCRIPTION:
+                                This indicates whether or not the bill is being transmitted to the test queue or live queue.  
+
+
+364,.08       COB SEQUENCE           0;8 SET
+
+                                'P' FOR PRIMARY; 
+                                'S' FOR SECONDARY; 
+                                'T' FOR TERTIARY; 
+              LAST EDITED:      MAY 23, 2000 
+              HELP-PROMPT:      Enter the COB sequence that this bill was in when this entry was created 
+              DESCRIPTION:
+                                This is the COB sequence for the bill when it was transmitted.  This is used to relate the return messages with the correct COB sequence payer.  
+
+              RECORD INDEXES:   ACOB (#137)
+
+
+      FILES POINTED TO                      FIELDS
+
+BILL/CLAIMS (#399)                BILL NUMBER (#.01)
+
+EDI TRANSMISSION BATCH (#364.1)   BATCH NUMBER (#.02)
+                                  RESUBMIT BATCH NUMBER (#.06)
+
+
+File #364
+
+  Record Indexes:
+
+  ABABI (#134)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  XREF BY BATCH # AND BILL #
+        Set Logic:  S ^IBA(364,"ABABI",X2(3),X2(2),DA)=""
+         Set Cond:  I X2(2)=""!(X2(3)="") S X=0
+       Kill Logic:  K ^IBA(364,"ABABI",X1(3),X1(2),DA)
+        Kill Cond:  I X1(2)=""!(X1(3)="") S X=0
+       Whole Kill:  K ^IBA(364,"ABABI")
+             X(2):  BILL NUMBER  (364,.01)  (Subscr 2)  (forwards)
+             X(3):  BATCH NUMBER  (364,.02)  (Subscr 1)  (forwards)
+
+  ABAST (#135)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  This cross reference is the batch entry # and status of the record.
+        Set Logic:  S ^IBA(364,"ABAST",X2(1),X2(2),DA)=""
+         Set Cond:  I X2(1)=""!(X2(2)="") S X=0
+       Kill Logic:  K ^IBA(364,"ABAST",X1(1),X1(2),DA)
+        Kill Cond:  I X1(1)=""!(X1(2)="") S X=0
+       Whole Kill:  K ^IBA(364,"ABAST")
+             X(1):  BATCH NUMBER  (364,.02)  (Subscr 1)  (forwards)
+             X(2):  TRANSMISSION STATUS  (364,.03)  (Subscr 2)  (forwards)
+
+  ABDT (#136)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Used to determine the latest status of any record for a bill
+        Set Logic:  S ^IBA(364,"ABDT",X2(1),X2(2),DA)=""
+         Set Cond:  I X2(1)=""!(X2(2)="") S X=0
+       Kill Logic:  K ^IBA(364,"ABDT",X1(1),X1(2),DA)
+        Kill Cond:  I X1(1)=""!(X1(2)="") S X=0
+       Whole Kill:  K ^IBA(364,"ABDT")
+             X(1):  BILL NUMBER  (364,.01)  (Subscr 1)  (forwards)
+             X(2):  STATUS DATE  (364,.04)  (Subscr 2)  (forwards)
+
+  ACOB (#137)    RECORD    MUMPS    IR    SORTING ONLY
+      Short Descr:  XREF USED TO DETERMINE BILLS NEEDING COB PROCESSING
+      Description:  This cross references all transmitted bills that have subsequent insurance, but no subsequent bill and are still active in this file (status starts with 'A') and must be in status of 3, 4 or 6.  
+                     
+                    Subsequent insurance: check the "I#" (I2,I3) node of the bill is defined 
+                                          for the COB sequence (field .08) Subsequent bill: None found if the piece of the "M1" node of the bill 
+                                     entry (calculated by 4+numeric COB translation) is not 
+                                     there Bill status must be 3 or 4 Depends on the settings in fields .01, .03, .08 
+        Set Logic:  S ^IBA(364,"ACOB",X2(1),DA)=""
+         Set Cond:  I 'X2(1)!'X2(4) S X=0
+       Kill Logic:  K ^IBA(364,"ACOB",X1(1),DA)
+        Kill Cond:  I 'X1(1) S X=0
+       Whole Kill:  K ^IBA(364,"ACOB")
+             X(1):  BILL NUMBER  (364,.01)  (Subscr 1)  (forwards)
+             X(2):  TRANSMISSION STATUS  (364,.03)  (forwards)
+             X(3):  COB SEQUENCE  (364,.08)  (forwards)
+             X(4):  Computed Code: S X=$$COBPOSS^IBCECOB(DA)
+                      (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

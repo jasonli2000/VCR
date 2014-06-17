@@ -1,0 +1,672 @@
+STANDARD DATA DICTIONARY #373 -- PFSS CHARGE CACHE FILE                                                                                                                                                                           MAY 20,2014@15:36:13  PAGE 1
+STORED IN ^IBBAD(373,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file is used to store charge data from various VistA applications so that a background process can create an HL7 P03 message from each record.  The messages are batched and sent to the external medical billing system.  
+  
+Under no circumstances may records be created or modified directly via FileMan or other methods.  Record creation and data update is allowed only through CHARGE^IBBAPI.  
+ 
+Per VHA Directive 10-93-142, this file definition should not be modified.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: PATIENT(AC), DEPARTMENT(AOX), HL7 MESSAGE ID(AOX), UNIQUE CHARGE ID(C)
+
+373,.01       CHARGE NUMBER          0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  S DINUM=X K:+X'=X!(X>9999999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 26, 2005 
+              DESCRIPTION:
+                                A sequential integer used for both the internal entry number and #.01 field for each record created in the file.  
+
+              TECHNICAL DESCR:
+                                The file is DINUM'd; the internal entry number and #.01 field are the same value.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+373,.02       PFSS ACCOUNT REFERENCE 0;2 POINTER TO PFSS ACCOUNT FILE (#375) (Required)
+
+              LAST EDITED:      JUN 10, 2005 
+              DESCRIPTION:
+                                The PFSS Account Reference (i.e., internal entry number to PFSS ACCOUNT file #375) associated with the charge (debit or credit) contained in this record.  
+
+              TECHNICAL DESCR:  This pointer to the PFSS ACCOUNT file (#375) is used to retrieve the value in the EXTERNAL ACCOUNT NUMBER field (#02) for the PFSS HL7 DFT message, PV1 Segment, Sequence 19.  All additional data for both the PV1 and PV2
+                                Segments is also taken directly from the PFSS ACCOUNT record.  
+
+
+373,.03       PATIENT                0;3 POINTER TO PATIENT FILE (#2) (Required)
+
+              LAST EDITED:      JUN 02, 2005 
+              DESCRIPTION:
+                                The Patient identifier associated with the billing account identified in field #.02.  
+
+              TECHNICAL DESCR:  This pointer to the PATIENT file (#2) is used to construct the HL7 PID Segment for PFSS DFT messages.  
+                                  
+                                The "OX" cross-reference depends upon field #.03.  
+                                  
+                                S ^IBBAD(373,"OX",X1,X2,DA)="" 
+                                   where:  X1=field #.03 
+                                           X2=field #.04 
+                                  
+                                The "OX" cross-reference should be set only through SAOX^IBBAADD; it should be killed only through KAOX^IBBAADD.  
+
+              CROSS-REFERENCE:  373^AC 
+                                1)= S ^IBBAD(373,"AC",$E(X,1,30),DA)=""
+                                2)= K ^IBBAD(373,"AC",$E(X,1,30),DA)
+                                The is a regular cross-reference by PATIENT (field #.03).  The principal purpose of this cross-reference is to allow the Patient Merge processor (Kernel) to operate efficiently in the event that patient's with records in
+                                file #373 are merged.  
+
+
+
+373,.04       UNIQUE CHARGE ID       0;4 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      SEP 20, 2005 
+              HELP-PROMPT:      Type a Number between 0 and 0, 0 Decimal Digits 
+              DESCRIPTION:      A numeric identifier of not more than 8 digits that uniquely identifies the charge item in the external medical billing system.  
+                                  
+                                This data item is referred to as the "PFSS Charge Identifier" within the PFSS project documentation.  
+
+              TECHNICAL DESCR:  The application providing the data to the PFSS CHARGE CACHE file uses $$GETCHGID^IBBAPI to obtain a unique identifying number for the original charge.  
+                                  
+                                The "OX" cross-reference depends upon field #.04.  
+                                  
+                                S ^IBBAD(373,"OX",X1,X2,DA)="" 
+                                   where:  X1=field #.03 
+                                           X2=field #.04 
+                                  
+                                The "OX" cross-reference should be set only through SAOX^IBBAADD; it should be killed only through KAOX^IBBAADD.  
+
+              CROSS-REFERENCE:  373^C 
+                                1)= S ^IBBAD(373,"C",$E(X,1,30),DA)=""
+                                2)= K ^IBBAD(373,"C",$E(X,1,30),DA)
+                                A simple cross-reference using the Unique Charge ID.  
+
+
+
+373,.05       TYPE                   0;5 SET (Required)
+
+                                'CG' FOR CHARGE; 
+                                'CD' FOR CREDIT; 
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                Identifies the charge item as either account debit or account credit.  
+
+
+373,.06       DEPARTMENT             0;6 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+              LAST EDITED:      APR 18, 2005 
+              HELP-PROMPT:      Answer must be 3 characters in length. 
+              DESCRIPTION:      The Department code associated by the sending-application with the charge.  
+                                  
+                                Department Codes are defined as follows for the various service areas: 
+                                  
+                                108 - Laboratory; 160 - Pharmacy; 419 - Anesthesiology; 423 - Prosthetics; 
+                                  
+                                Surgery (based on Surgical Specialty): 180 - Oral Surgery; 401 - General Surgery; 402 - Cardiac Surgery; 403 - Otorhinolaryngology (ENT); 404 - Gynecology; 406 - Neurosurgery; 407 - Ophthalmology; 409 - Orthopedics; 410 -
+                                Plastic Surgery (inc. H&N); 411 - Podiatry; 412 - Proctology; 413 - Thoracic Surgery; 415 - Peripheral Vascular; 457 - Transplantation; 
+                                  
+                                Radiology (based on Imaging Type): 105 - General Radiology; 109 - Nuclear Medicine; 109 - Cardiology Studies (Nuc Med); 115 - Ultrasound; 150 - CT Scan; 151 - Magnetic Resonance Imaging; 152 - Angio-Neuro-Interventional; 
+                                421 - Vascular Lab; 703 - Mammography; 
+                                  
+                                All CPT-based charges coming through PCE, which are not already associated with one of the Department Codes listed above, are assigned a Department Code.  The Department Code assigned is the Stop Code associated (in the 
+                                HOSPITAL LOCATION file, #44) with the Hospital Location of the patient visit/encounter.  
+
+              CROSS-REFERENCE:  373^AOX^MUMPS 
+                                1)= I X D SAOX^IBBAADD(DA)
+                                2)= Q
+
+
+373,.07       SERVICE CODE           0;7 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<6) X
+              LAST EDITED:      FEB 24, 2005 
+              HELP-PROMPT:      Answer must be 6 characters in length. 
+              DESCRIPTION:      The value for SERVICE CODE is taken from the PFSS SERVICE MASTER file (#374), SERVICE CODE field (#.01).  
+                                 
+                                Selection of a SERVICE CODE from file #374 is based upon the CPT or HCPCS Code and Date of Service provided by the application sending data to the PFSS CHARGE CACHE file.  
+
+
+373,.08       ORDER IEN              0;8 POINTER TO ORDER FILE (#100)
+
+              LAST EDITED:      MAR 18, 2005 
+              DESCRIPTION:      The ORDER file (#100) internal entry number for the service order which resulted in this charge in PFSS.  
+                                  
+                                All data provided to the PFSS CHARGE CACHE file by PCE will include the ORDER file IEN, if known by PCE.  If the charge is the result of a Radiology exam, then IBB will query OERR to obtain the PFSS Account Reference
+                                associated with the order IEN.  IBB will then convert that PFSS Account Reference to its external medical billing system equivalent using $$EXTNUM^IBBAACCT.  This external billing system number is included in the outbound
+                                charge message as a Secondary Visit Number, so that the Radiology charge can be related to back to the original outpatient visit or inpatient episode by the billing system.  
+
+
+373,.09       CLINICAL EVENT ID      0;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>18!($L(X)<3) X
+              LAST EDITED:      NOV 03, 2005 
+              HELP-PROMPT:      Answer must be 3-18 characters in length. 
+              DESCRIPTION:      The Clinical Event Identifier is passed to CHARGE^IBBAPI in IBBFT1(2).  The free text data item is used by certain applications, such as PCE, as a way of linking billable items to a specific event (e.g., visit).  
+                                  
+                                The format of the identifier is 
+                                   <package_namespace>_<package_file_ien> 
+                                  
+
+
+373,.1        DATE/TIME CREATED      0;10 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                The date/time at which the charge cache record was created.  
+
+
+373,.11       HL7 MESSAGE ID         0;11 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>24!($L(X)<3) X
+              LAST EDITED:      APR 18, 2005 
+              HELP-PROMPT:      Answer must be 3-24 characters in length. 
+              DESCRIPTION:      he batch message identifier (from CREATE^HLTF) followed by a hyphen and the sequence number for the individual charge message.  Identifies the exact batch location in which data from this charge record is transmitted to
+                                the external medical billing system.  
+
+              CROSS-REFERENCE:  373^AOX^MUMPS 
+                                1)= I X'="" D KAOX^IBBAADD(DA)
+                                2)= Q
+
+
+373,.2        TEST PATIENT           0;20 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      MAY 11, 2005 
+              DESCRIPTION:
+                                If the DFN for this patient indicates a test patient as a result of a call to $$TESTPAT^VADPT, then this field is set to "YES".  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 messages will not be constructed for any record in this file where TEST PATIENT = "YES".  
+
+
+373,3.03      PROCEDURE CODE         PR1;3 POINTER TO CPT FILE (#81) (Required)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:      Charge data being filed into the PFSS CHARGE CACHE comes from one of three sources - Outpatient Pharmacy, Prosthetics, or PCE.  
+                                  
+                                Charges passed to IBB via PCE are ultimately based on CPT Codes, while those from Prosthetics are based on HCPCS Codes, both of which are found in the CPT file (#81).  This field holds the file #81 pointer related to the
+                                charge from PCE or Prosthetics.  
+                                  
+                                Outpatient Pharmacy charges are not associated with file #81.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; PR1 Segment, Sequence 3.  
+
+
+373,3.05      PROCEDURE DATE/TIME    PR1;5 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:      Charge data being filed into the PFSS CHARGE CACHE comes from one of three sources - Outpatient Pharmacy, Prosthetics, or PCE.  
+                                  
+                                For charges passed to IBB via PCE this field contains the EVENT DATE AND TIME (field #1201) from the V CPT file (#900010.18).  
+                                  
+                                Outpatient Pharmacy and Prosthetics charges do not use this field.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; PR1 Segment, Sequence 5.  
+
+
+373,3.06      FUNCTIONAL TYPE        PR1;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+              LAST EDITED:      MAY 27, 2005 
+              HELP-PROMPT:      Answer must be 1 character in length. 
+              DESCRIPTION:      Charge data being filed into the PFSS CHARGE CACHE comes from one of three sources - Outpatient Pharmacy, Prosthetics, or PCE.  
+                                  
+                                For charges passed to IBB by Prosthetics, this field contains a coded-value as follows: 
+                                   O = Home Oxygen 
+                                   P = Purchasing 
+                                   I = Stock Issue 
+                                  
+                                Outpatient Pharmacy and PCE charges do not use this field.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 ADT message data; PR1 Segment; Sequence 6.  
+
+
+373,3.11      SURGEON                PR1;11 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 26, 2005 
+              DESCRIPTION:      Charge data being filed into the PFSS CHARGE CACHE comes from one of three sources - Outpatient Pharmacy, Prosthetics, or PCE.  
+                                  
+                                If PCE passes to IBB charge data that originated in Surgery, then this field provides the identity of the Principal Surgeon as a pointer to the NEW PERSON file (#200).  
+                                  
+                                Outpatient Pharmacy and Prosthetics charges do not use this field.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; PR1 Segment, Sequence 11.  
+
+
+373,3.12      ATTENDING SURGEON      PR1;12 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      MAY 26, 2005 
+              DESCRIPTION:      Charge data being filed into the PFSS CHARGE CACHE comes from one of three sources - Outpatient Pharmacy, Prosthetics, or PCE.  
+                                  
+                                If PCE passes to IBB charge data that originated in Surgery, then this field provides the identity of the Attending Surgeon as a pointer to the NEW PERSON file (#200).  
+                                  
+                                Outpatient Pharmacy and Prosthetics charges do not use this field.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; PR1 Segment, Sequence 12.  
+
+
+373,3.16      PROCEDURE CODE MODIFIER(S) PR1;16 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>25!($L(X)<1) X
+              LAST EDITED:      FEB 24, 2005 
+              HELP-PROMPT:      Answer must be 1-25 characters in length. 
+              DESCRIPTION:      Charge data being filed into the PFSS CHARGE CACHE comes from one of three sources - Outpatient Pharmacy, Prosthetics, or PCE.  
+                                  
+                                Charges passed to IBB via PCE or from Prosthetics are based on codes contained the CPT file (#81).  These CPT or HCPCS codes may be "modified" by the sending application using codes found in the CPT MODIFIER file (#81.3).  
+                                  
+                                This field may contain one or more modifiers as a string of numbers delimited by semi-colons; each number is a pointer to the CPT MODIFIER file (#81.3).  Example: 68;245;74;318; 
+                                  
+                                Outpatient Pharmacy charges do not use this field.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; PR1 Segment, Sequence 16.  
+
+
+373,4         DIAGNOSIS              DG1;0 Multiple #373.04 (Add New Entry without Asking)
+
+              DESCRIPTION:
+                                Multiple DG1 Segments are allowed within a DFT-PO3 message.  Each subrecord in subfile #373.04 contains data for an individual DG1 Segment.  
+
+
+373.04,.01      SET ID                 0;1 NUMBER (Required)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 24, 2005 
+                HELP-PROMPT:      Type a Number between 1 and 99, 0 Decimal Digits 
+                DESCRIPTION:      Charge data being filed into the PFSS CHARGE CACHE comes from one of three sources - Outpatient Pharmacy, Prosthetics, or PCE.  
+                                    
+                                  Each application sending charge data to IBB will provide one or more related diagnoses.  If more than one, then these diagnoses are passed to IBB in priority order; i.e., the first diagnosis is the primary diagnosis
+                                  related to the charge, the second diagnosis is the secondary diagnosis related to the charge, etc.  IBB files the data into subfile #373.04 in that same order.  This field indicates the exact order in which the diagnoses
+                                  were received and filed.  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 DFT message data; DG1 Segment, Sequence 1.  
+
+                CROSS-REFERENCE:  373.04^B 
+                                  1)= S ^IBBAD(373,DA(1),"DG1","B",$E(X,1,30),DA)=""
+                                  2)= K ^IBBAD(373,DA(1),"DG1","B",$E(X,1,30),DA)
+
+
+373.04,.03      DIAGNOSIS CODE         0;3 POINTER TO ICD DIAGNOSIS FILE (#80) (Required)
+
+                LAST EDITED:      FEB 24, 2005 
+                DESCRIPTION:      Charge data being filed into the PFSS CHARGE CACHE comes from one of three sources - Outpatient Pharmacy, Prosthetics, or PCE.  
+                                    
+                                  The applications sending charge data to IBB will provide one or more related diagnoses.  Each diagnosis is provided as a pointer to the ICD DIAGNOSIS file (#80).  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 DFT message data; DG1 Segment, Sequence 3.  
+
+
+373.04,.06      DIAGNOSIS TYPE         0;6 SET (Required)
+
+                                  'A' FOR ADMITTING; 
+                                  'D' FOR DISCHARGE; 
+                                  'W' FOR WORKING; 
+                                  'F' FOR FINAL; 
+                LAST EDITED:      APR 20, 2005 
+                DESCRIPTION:
+                                  The applications passing charge data to IBB must define each diagnosis code included in the charge data as being one of the following: A(dmitting), W(orking), D(ischarging), or F(inal).  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 DFT message data; DG1 Segment, Sequence 6.  
+
+
+
+
+373,5         SC/EI CLASSIFICATION   ZCL;0 Multiple #373.05 (Add New Entry without Asking)
+
+              LAST EDITED:      MAR 04, 2005 
+              DESCRIPTION:
+                                Multiple ZCL Segments are allowed within a DFT-PO3 message.  Each subrecord in subfile #373.05 contains data for an individual ZCL Segment.  
+
+
+373.05,.01      SET ID                 0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      JUL 14, 2005 
+                HELP-PROMPT:      Type a Number between 1 and 9, 0 Decimal Digits 
+                DESCRIPTION:      SC/EI Classification data related to the charge is usually a set of classification codes, which causes multiple records to be created in subfile #373.05.  The value in this field merely indicates the order in which the
+                                  subfile record was created.  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 DFT message data; ZCL Segment, Sequence 1.  
+
+
+373.05,.02      TYPE                   0;2 SET
+
+                                  '1' FOR AO; 
+                                  '2' FOR IR; 
+                                  '3' FOR SC; 
+                                  '4' FOR EC; 
+                                  '5' FOR MST; 
+                                  '6' FOR HNC; 
+                                  '7' FOR CV; 
+                                  '8' FOR SHAD; 
+                LAST EDITED:      MAY 26, 2005 
+                DESCRIPTION:
+                                  SC/EI Classification data related to the charge can only be one of the following types: AO, IR, SC, EC, MST, HNC, CV, or SHAD.  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 DFT message data; ZCL Segment, Sequence 2.  
+
+
+373.05,.03      VALUE                  0;3 SET
+
+                                  '1' FOR YES; 
+                                  '0' FOR NO; 
+                LAST EDITED:      MAR 04, 2005 
+                DESCRIPTION:
+                                  SC/EI Classification data related to the charge can have any of the following values: Yes (1), No (0), or Unknown (null).  
+
+                TECHNICAL DESCR:
+                                  PFSS HL7 DFT message data; ZCL Segment, Sequence 3.  
+
+
+
+
+373,6.04      TRANSACTION DATE       FT1;4 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 14, 2005 
+              DESCRIPTION:
+                                The definition of this data item depends upon the application that is the originating source of the data.  PCE - Event Date and Time OP PHARMACY - Fill Date or Refill Date PROSTHETICS - Delivery Date 
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 4.  
+
+
+373,6.06      TRANSACTION TYPE       FT1;6 SET (Required)
+
+                                'CG' FOR CHARGE; 
+                                'CD' FOR CREDIT; 
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                An indicator to the external medical billing system that tells whether the data in this charge transaction should be handled as a debit ("CG") or a credit ("CD") to the account.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 6.  
+
+
+373,6.07      CHARGE CODE            FT1;7 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999999)!(X<100000000)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 11, 2005 
+              HELP-PROMPT:      Type a Number between 100000000 and 999999999, 0 Decimal Digits 
+              DESCRIPTION:
+                                The value in this field descibes the charge and is formed by concatenating the 6-digit SERVICE CODE (field #.07) to the 3-digit DEPARTMENT CODE (field #.06).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 7.  
+
+
+373,6.1       TRANSACTION QUANTITY   FT1;10 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 24, 2005 
+              HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+              DESCRIPTION:
+                                This field will hold an integer value that describes the quantity being charged.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 10.  
+
+
+373,6.13      DEPARTMENT CODE        FT1;13 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+              LAST EDITED:      FEB 24, 2005 
+              HELP-PROMPT:      Answer must be 3 characters in length. 
+              DESCRIPTION:
+                                The 3-digit Department Code provided by the sending application.  The data value in this field is the same as in field #.06, DEPARTMENT.  It is placed here to simplify the message build.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 13.  
+
+
+373,6.16      ASSIGNED PATIENT LOCATION FT1;16 POINTER TO HOSPITAL LOCATION FILE (#44)
+
+              LAST EDITED:      FEB 24, 2005 
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 16.  
+
+
+373,6.18      PATIENT TYPE           FT1;18 SET
+
+                                '0' FOR NOT RX COPAY EXEMPT; 
+                                '1' FOR RX COPAY EXEMPT; 
+              LAST EDITED:      MAR 24, 2005 
+              DESCRIPTION:
+                                Used by Ooutpatient Pharmacy only; holds an indicator to show whether the patient being charged for the prescription is "Rx Copay Exempt" or "Not Exempt".  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment; Sequence 18.  
+
+
+373,6.2       PERFORMED BY           FT1;20 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                Used for charge data from PCE only; a pointer to the NEW PERSON file (#200) which supplies the identity of the Rendering Provider for the procedure.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 20.  
+
+
+373,6.21      ORDERED BY             FT1;21 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 13, 2005 
+              DESCRIPTION:
+                                A pointer to the NEW PERSON file (#200) which supplies the identity of the Odering Provider for the CPT procedure, HCPCS item, or Prescription Fill/Refill.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 21.  
+
+
+373,6.22      UNIT COST              FT1;22 NUMBER
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>99999.99)!(X<0) X
+              LAST EDITED:      FEB 24, 2005 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 99999.99, 2 Decimal Digits 
+              DESCRIPTION:
+                                Used by Outpatient Pharmacy and Prosthetics to indicate the cost per unit of the HCPCS item or pharmacy item being charged.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 22.  
+
+
+373,6.29      NDC                    FT1;29 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>65!($L(X)<3) X
+              LAST EDITED:      MAR 24, 2005 
+              HELP-PROMPT:      Answer must be 3-65 characters in length. 
+              DESCRIPTION:      Used by Outpatient Pharmacy only to provide the National Drug Code and Generic Drug Name for the prescription being charged.  
+                                 
+                                1st ";  piece is NDC Code and 2nd ";  piece is Generic Drug Name.  Example: 0258-3581-05;THEOPHYLLINE (THEOCHRON) 300MG SA TAB 
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment, Sequence 29.  
+
+
+373,6.31      TRANSACTION REF. KEY   FT1;31 SET
+
+                                '1' FOR PSO NSC RX COPAY; 
+                                '2' FOR PSO SC RX COPAY; 
+                                '3' FOR PSO NSC RX COPAY CANCEL; 
+                                '4' FOR PSO NSC RX COPAY UPDATE; 
+                                '5' FOR PSO SC RX COPAY CANCEL; 
+                                '6' FOR PSO SC RX COPAY UPDATE; 
+              LAST EDITED:      MAY 05, 2005 
+              DESCRIPTION:      Used by Outpatient Pharmacy only; indicates the type of copay transaction that has been associated with the pharmacy item.  The following types are available: PSO NSC RX COPAY; FOR PSO SC RX COPAY; FOR PSO NSC RX COPAY
+                                CANCEL; FOR PSO NSC RX COPAY UPDATE; FOR PSO SC RX COPAY CANCEL; FOR PSO SC RX COPAY UPDATE.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; FT1 Segment; Sequence 31.  
+
+
+373,7.01      QUANTITY/TIMING        RXE;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>12!($L(X)<3) X
+              LAST EDITED:      MAR 24, 2005 
+              HELP-PROMPT:      Answer must be 3-12 characters in length. 
+              DESCRIPTION:      Used by Outpatient Pharmacy only to specify the Quantity and Days Supply for the pharmacy item being charged.  
+                                 
+                                1st ";" piece is Quantity and 3rd ";" piece is Days Supply.  Example:  180;;90 
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; RXE Segment; Sequence 1.  
+
+
+373,7.15      RX NUMBER              RXE;15 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      JUN 13, 2005 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              DESCRIPTION:
+                                The Rx number for the presciption fill/refill being charged.  Data is taken from field #1.5 of the PFSS ACCOUNT file (#375) record pointed to by field #.02 of this record.  
+
+
+373,7.17      REFILLS DISPENSED      RXE;17 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAR 24, 2005 
+              HELP-PROMPT:      Type a Number between 0 and 99, 0 Decimal Digits 
+              DESCRIPTION:
+                                Used by Outpatient Pharmacy only to indicate the number of refills dispensed for the prescription being charged.  The charge data for the original fill will show 0 in this field.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; RXE Segment; Sequence 17.  
+
+
+373,7.18      DATE OF MOST RECENT FILL RXE;18 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUN 01, 2005 
+              DESCRIPTION:
+                                Used by Outpatient Pharmacy only to indicate the date/time of the most recent fill for the prescription being charged.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; RXE Segment; Sequence 18.  
+
+
+373,7.31      SUPPLEMENTARY CODE     RXE;31 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>6!($L(X)<1) X
+              LAST EDITED:      MAR 24, 2005 
+              HELP-PROMPT:      Answer must be 1-6 characters in length. 
+              DESCRIPTION:
+                                Used by Outpatient Pharmacy only to send all DEA and Special Handling codes associated with the prescription being charged.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; RXE Segment; Sequence 31.  
+
+
+373,11        PROCEDURE TEXT         11;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<3) X
+              LAST EDITED:      MAY 05, 2005 
+              HELP-PROMPT:      Answer must be 3-200 characters in length. 
+              DESCRIPTION:
+                                The calling application may provide data for this field that is used to enhance or add detail to the CPT or HCPCS code provided in field #3.03.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; PR1 Segment; Sequence 4.  
+
+
+373,23.01     VENDOR                 23;1 POINTER TO VENDOR FILE (#440)
+
+              LAST EDITED:      MAR 17, 2005 
+              DESCRIPTION:
+                                Used for charges related to Prosthetics only; the Vendor associated with the Prosthetics item.  Provided by Prosthetics as a pointer to the VENDOR file (#440).  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; RQ1 Segment, Sequence 4.  
+
+
+373,23.02     OBL#                   23;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      MAR 17, 2005 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              DESCRIPTION:
+                                Used for charges related to Prosthetics only; the OBL# associated with the Prosthetics item.  
+
+              TECHNICAL DESCR:
+                                PFSS HL7 DFT message data; RQ1 Segment, Sequence 5.  
+
+
+373,99.01     STATUS                 99;1 SET
+
+                                'E' FOR ERROR; 
+              LAST EDITED:      FEB 24, 2005 
+              DESCRIPTION:
+                                The status of the charge record.  A status of "Error  indicates that a fatal HL7 error condition was encountered during batch charge processing.  
+
+
+373,99.02     ERROR TEXT             99;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>200!($L(X)<3) X
+              LAST EDITED:      APR 26, 2005 
+              HELP-PROMPT:      Answer must be 3-200 characters in length. 
+              DESCRIPTION:
+                                If a fatal HL7 error condition was encountered during batch charge processing on this record, the HL7 error text will be placed in this field.  
+
+
+373,99.03     ERROR DATE/TIME        99;3 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 26, 2005 
+              DESCRIPTION:
+                                If a fatal HL7 error condition was encountered during batch charge processing on this record, the error date/time will be placed in this field.  
+
+
+
+      FILES POINTED TO                      FIELDS
+
+CPT (#81)                         PROCEDURE CODE (#3.03)
+
+HOSPITAL LOCATION (#44)           ASSIGNED PATIENT LOCATION (#6.16)
+
+ICD DIAGNOSIS (#80)               DIAGNOSIS:DIAGNOSIS CODE (#.03)
+
+NEW PERSON (#200)                 SURGEON (#3.11)
+                                  ATTENDING SURGEON (#3.12)
+                                  PERFORMED BY (#6.2)
+                                  ORDERED BY (#6.21)
+
+ORDER (#100)                      ORDER IEN (#.08)
+
+PATIENT (#2)                      PATIENT (#.03)
+
+PFSS ACCOUNT (#375)               PFSS ACCOUNT REFERENCE (#.02)
+
+VENDOR (#440)                     VENDOR (#23.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
