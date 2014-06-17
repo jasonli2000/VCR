@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #2006.1 -- IMAGING SITE PARAMETERS FILE                                                                                                                                                                  MAY 20,2014@15:34:44  PAGE 1
-STORED IN ^MAG(2006.1,  (1 ENTRY)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                            (VERSION 3.0)   
+STANDARD DATA DICTIONARY #2006.1 -- IMAGING SITE PARAMETERS FILE                                                                                                                                                                  JUN 17,2014@15:19:35  PAGE 1
+STORED IN ^MAG(2006.1,  (1 ENTRY)   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                                      (VERSION 3.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -35,7 +35,8 @@ software for quick access to the specific data. Some of the fields defined may n
 POINTED TO BY: PLACE field (#.04) of the NETWORK LOCATION File (#2005.2) 
                PLACE field (#.04) of the IMAGE BACKGROUND QUEUE File (#2006.03) 
                PLACE field (#.04) of the IMAGE BACKGROUND QUEUE POINTER File (#2006.031) 
-               PLACE field (#.04) of the BP SERVERS File (#2006.8) 
+               PLACE field (#.04) of the JUKEBOX File (#2006.032) 
+               PLACE field (#.04) of the BP WORKSTATIONS File (#2006.8) 
                PLACE field (#.04) of the IMAGING WINDOWS WORKSTATIONS File (#2006.81) 
                PLACE field (#.04) of the IMAGING WINDOWS SESSIONS File (#2006.82) 
                
@@ -62,7 +63,7 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
               LAST EDITED:      APR 11, 2002 
               HELP-PROMPT:      Answer must be 1-45 characters in length. 
               DESCRIPTION:
-                                The Image file is 14 characters. Each facility has its own unique namespace (e.g., Washington is WAS, Baltimore is BAL).  
+                                The Image file is 14 characters. Each facility has it's own unique namespace (e.g., Washington is WAS, Baltimore is BAL).  
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
@@ -71,20 +72,9 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
               LAST EDITED:      SEP 09, 1993 
               HELP-PROMPT:      Current Network Write Location for Image Storage 
-              DESCRIPTION:
-                                This field identifies the current network share for image file captures and archive retrieval.  This field will need to be manually changed when a share reaches low water mark.  
-
-
-2006.1,.031   CURRENT RAID GROUP     0;10 POINTER TO NETWORK LOCATION FILE (#2005.2)
-
-              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,7)=""GRP""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
-              LAST EDITED:      MAR 18, 2009 
-              DESCRIPTION:
-                                This field indicates the RAID group of shares that the system is currently writing to.  This group is an entry in the NETWORK LOCATION file and has a GRP storage type.  
-
-              SCREEN:           I $P(^(0),U,7)="GRP"
-              EXPLANATION:      This selection should be restricted to the 'GRP' storage type.
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+              DESCRIPTION:      This field is a pointer to the Network Location file defining the current NETWORK WRITE location for captured images. Enter the server that you have designated as the current write server.  There is a separate option to 
+                                edit this field when this server either "goes down", or runs out of space.  There is a cross-reference on the field ^MAG(2006.1,"ARITE")=X where X equals the Network Write Location pointer. The software checks this node 
+                                before writing the DOS Image file to disk.  
 
 
 2006.1,.04    ASSOCIATED INSTITUTIONS INSTS;0 POINTER Multiple #2006.12
@@ -98,7 +88,7 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
                 LAST EDITED:      JAN 27, 2006 
                 HELP-PROMPT:      Select an Institution that is a member of the Medical Division file. 
                 DESCRIPTION:
-                                  This field allows users to associate this institution's logon to an imaging site platform.  Only institutions in the Medical Division file are listed.  
+                                  This set of institution values will allow users to associate one institutions logon to an imaging network that hosts or stores the images.  
 
                 NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
@@ -109,7 +99,7 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
                 CROSS-REFERENCE:  2006.1^C^MUMPS 
                                   1)= S ^MAG(2006.1,"B",$E(X,1,30),DA(1))=""
                                   2)= K ^MAG(2006.1,"B",$E(X,1,30),DA(1))
-                                  This associates the institution with a set of site parameters.  
+                                  This associates the institution with a set of site paramters.  
 
 
 
@@ -143,9 +133,8 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
               INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,6,7)=""1^GCC""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
               LAST EDITED:      NOV 02, 2004 
-              HELP-PROMPT:      Enter the GCC EXPORT network share. 
               DESCRIPTION:
-                                This field identifies the external network share for Generic Carbon Copy (GCC) where image files are copied to.  
+                                This field is a pointer to the Network Location file defining the Generic Carbon Copy (GCC) share were copies of files are sent.  When the software makes an export request, the file is copied here.  
 
               SCREEN:           S DIC("S")="I $P(^(0),U,6,7)=""1^GCC"""
               EXPLANATION:      Select GCC Network locations only.
@@ -156,8 +145,10 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
               LAST EDITED:      APR 12, 1994 
               HELP-PROMPT:      Enter the Network Location to which Images are imported. 
-              DESCRIPTION:
-                                This field identifies the IMPORT network share where the IMPORT queues are copied to. This share is within the local Imaging Network.  
+              DESCRIPTION:      Analogous to the Export location, the image IMPORT location is the directory specified to receive incoming images.  This points to the Network Location file, and a MUMPS cross-reference permits quick access to the site
+                                specific location.  
+                                 
+                                The format of this subdirectory must be x:\IMPORT\MAIL\.  It must be located on a file server that supports NFS so that it can be accessed by the main VistA systems.  
 
 
 2006.1,.09    SITE CODE              0;9 FREE TEXT
@@ -187,7 +178,7 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
               LAST EDITED:      APR 11, 1994 
               HELP-PROMPT:      Enter Network Location where PACS images are written. 
               DESCRIPTION:
-                                This field identifies the DICOM Gateway network location share where PACS images are written by the Commercial PACS SYSTEM, and where VistA first reads them.  
+                                This is a pointer to the Network Location file giving the location where PACS images are written by the Commercial PACS SYSTEM, and where VistA first reads them.  (Used mainly if site has a GE PACS using ACRNEMA format.) 
 
               TECHNICAL DESCR:  The PACS SYSTEM, to which VistA is interfaced, will write images to a designated network location, as defined by this field which can be changed if necessary. VistA will read from the directory specified by this field. It
                                 points to the Network location file - so the full network location must be defined in that file for this to work.  
@@ -197,30 +188,35 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
               LAST EDITED:      OCT 06, 2000 
               HELP-PROMPT:      Enter Network location where converted DICOM IMAGES are written. 
+              DESCRIPTION:      This field points to the Network Location file and informs the DICOM Image Gateway of the current write drive. DICOM images are first read from the DICOM directory and later converted and copied to the network location 
+                                specified by this field.  
+
+
+2006.1,2.01   JUKEBOX DEVICE         JBX;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>2!($L(X)<2)!'(X?1.A.1":") X
+              LAST EDITED:      OCT 06, 2000 
+              HELP-PROMPT:      Answer must be 2 characters in length. 
+              DESCRIPTION:      If you do not have a jukebox in your Imaging System, press "Enter" to leave this field "null" - this will signify that there is no jukebox.  
+                                 
+                                This is the name of the DRIVE for the Jukebox e.g., S: and is the root of the path for the jukebox files. If you have a jukebox in your Imaging System, define this field and the following associated jukebox fields.  
+
+
+2006.1,2.02   TOTAL #Platters        JBX;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<1)!(X?.E1"."1.N) X
+              LAST EDITED:      NOV 16, 2005 
+              HELP-PROMPT:      Type a number between 1 and 100, 0 Decimal Digits 
               DESCRIPTION:
-                                This field identifies the current write network share for the DICOM Image Gateways. DICOM images are first read from the DICOM directory and later converted and copied to the network location specified by this field.  
+                                This is the total number of platters in the jukebox installed with your Imaging System. The total number of platters will be a function of the make of the jukebox.  
 
 
-2006.1,2.01   JUKEBOX WRITE LOCATION 1;6 POINTER TO NETWORK LOCATION FILE (#2005.2)
+2006.1,2.03   CURRENT PLATTER        JBX;3 POINTER TO NETWORK LOCATION FILE (#2005.2)
 
-              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,6,7)[""1^WORM"""  D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
-              LAST EDITED:      DEC 27, 2007 
-              DESCRIPTION:
-                                This field identifies the JUKEBOX 'current write' network share that will receive the Background Processor JUKEBOX queues for newly acquired Image files. 
-
-              SCREEN:           S DIC("S")="I $P(^(0),U,6,7)[""1^WORM"""
-              EXPLANATION:      This Network Location selection must be an archival type so designated by the term "WORM" and have an 'On Line' OPERATIONAL STATUS.
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
-
-2006.1,3.01   IHE PACS HL7 INTERFACE ACTIVE IHE;1 SET
-
-                                'Y' FOR YES; 
-                                'N' FOR NO; 
-              LAST EDITED:      JAN 20, 2006 
-              HELP-PROMPT:      Enter 'Y' to activate IHE-based HL7 messaging, or 'N' to retain legacy (HL7 V2.1) messaging. 
-              DESCRIPTION:
-                                This field contains a flag that indicates whether HL7 ADT messages should be sent using the IHE-based interface developed in Imaging Patch MAG*3.0*49.  
+              LAST EDITED:      NOV 16, 2005 
+              HELP-PROMPT:      CURRENT PLATTER BEING USED 
+              DESCRIPTION:      This is a pointer to the Network Location file and defines the jukebox platter currently being used to copy images from the Network Write Location file to the jukebox. When the current platter is filled, this field is
+                                automatically changed to point to the next platter, which then becomes the "current" platter.  
 
 
 2006.1,6      TRACK ABSTRACT ACCESSES 1;3 SET
@@ -229,46 +225,35 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
                                 '0' FOR NO; 
               LAST EDITED:      OCT 06, 2000 
               HELP-PROMPT:      Enter YES to use abstract accesses in determining archive times 
-              DESCRIPTION:      This field controls whether user access to image abstracts will cause the LAST ACCESS DATE field in the Image file to be updated.  The LAST ACCESS DATE field is used to determine when full and abstract images are removed
+              DESCRIPTION:      This field controls whether user accesses to image abstracts will cause the LAST ACCESS DATE field in the Image file to be updated.  The LAST ACCESS DATE field is used to determine when full and abstract images are removed
                                 from magnetic disks and become available only from optical disk.  
 
 
 2006.1,8      PURGE-RETENTION DAYS FULL FILE 1;2 NUMBER (Required)
 
-              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1.N) X
-              LAST EDITED:      JUN 14, 2006 
-              HELP-PROMPT:      Type a number between 0 and 99999, 0 Decimal Digits 
-              DESCRIPTION:      This field is used by the Background Processor Purge to determine the number of days to retain full image files. All FULL images that have not been accessed in this many days will be removed from magnetic storage by the
-                                Background Processor Purge.  
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUN 09, 1998 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:      This field is used by the Background Processor purge to determine the number of days to retain full image files. All FULL images that have not been accessed in this many days will be removed from magnetic storage by the
+                                Background Processor purge.  
 
 
-2006.1,9      RETENTION DAYS HL7 & DICOM 1;5 NUMBER (Required)
+2006.1,9      PURGE-RETENTION DAYS PACS FILE 1;5 NUMBER
 
-              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1.N) X
-              LAST EDITED:      FEB 08, 2011 
-              HELP-PROMPT:      Type a number between 1 and 999999, 0 Decimal Digits 
-              DESCRIPTION:      This field is used as the default value, in days, by the DICOM Text Gateway for three different user menu driven purges.  
-                                 
-                                1) This field is used by the Purge Old Modality Worklist Entries menu option to determine the number of retention days from the date of creation of the Modality Worklist Entries.  
-                                 
-                                2) This field is used by the Purge Old DICOM Message Files menu option to determine the number of retention days from the date of creation of the DICOM messages that were sent to commercial PACS.  
-                                 
-                                3) This field is used by the Purge Old HL7 Transaction Global Nodes menu option to determine the number of retention days from the date of creation of the HL7 messages sent from VistA to the DICOM Text Gateway.  
-                                                                
-                                This value may be overridden by the user when executing any of these menu options.  
-
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 06, 2000 
+              HELP-PROMPT:      Type a Number between 0 and 999999, 0 Decimal Digits 
+              DESCRIPTION:      This field is used by the Background Processor purge to determine the number of days to retain DICOM image files. All DICOM images that have not been accessed in this many days will be removed from magnetic storage by 
+                                automatic file migration procedures.  
 
 
 2006.1,10     SERVER TASK            1;7 NUMBER
 
               INPUT TRANSFORM:  K:+X'=X!(X>9999999999)!(X<0)!(X?.E1"."1N.N) X
               LAST EDITED:      OCT 25, 2005 
-              HELP-PROMPT:      Enter the task number for the monthly site report, type a number between 0 and 9999999999, 0 Decimal Digits 
-              DESCRIPTION:      This field identifies the Kernel scheduled task number for the monthly site report.  The Background Processor Monitor utility (menu option [MAGQ BPMONITOR]) reads and updates this field when verifying the monthly site
-                                report has been tasked or re-tasked by this utility.  
-                                 
-                                This automated process reports version and Imaging system statusback to the development site in order to serve the site better.  
+              HELP-PROMPT:      Type a Number between 0 and 9999999999, 0 Decimal Digits 
+              DESCRIPTION:      Maintains the last tasked Imaging site usage task number.  This field facilitates the site reporting mechanism.  This automated process reports version and Imaging system status back to the development site in order to
+                                serve the site better.  
 
               CROSS-REFERENCE:  2006.1^AE^MUMPS 
                                 1)= D SAME^MAGDRPC2(1,DA,1,7,X)
@@ -279,41 +264,45 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
 2006.1,11     PERCENT SERVER RESERVE 1;8 NUMBER
 
-              INPUT TRANSFORM:  K:+X'=X!(X>50)!(X<1)!(X?.E1"."1N.N) X
+              INPUT TRANSFORM:  K:+X'=X!(X>50)!(X<2)!(X?.E1"."1N.N) X
               LAST EDITED:      JUN 08, 2005 
-              HELP-PROMPT:      Enter the free space percentage, type a number between 1 and 50, 0 Decimal Digits 
-              DESCRIPTION:      This field allows sites to increase the amount of space that is maintained in reserve for each individual Image server share.  The minimum value is 1. The default value is 5.  The RPC, MAGQ FS CHNGE, uses this value to
-                                determine the RAID Group advance and is part of the automatic Purge algorithm.  When this value cannot be maintained, a CRITICAL LOW MESSAGE is triggered. 
+              HELP-PROMPT:      Type a Number between 5 and 35, 0 Decimal Digits 
+              DESCRIPTION:      This field allows sites to increase the amount of space that is maintained in reserve for each individual Image server share.  The minimum value is 5, which is the default value that the server reset process uses to 
+                                determine the eligibility of the share for current write location.  Also, when this value cannot be maintained by the 'autowrite location update' function of the Background processor for any current online server the 
+                                CRITICAL LOW MESSAGE is triggered. Be sure to add the local Image support staff person into the local MAG SERVER mail group and at least one pager number in the MEMBERS - REMOTE multiple.  
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+2006.1,11.5   CRITICAL LOW MESSAGE INTERVAL 3;7 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>96)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 01, 1999 
+              HELP-PROMPT:      Type a Number between 1 and 96, 0 Decimal Digits. This represents the hours between message transmissions. 
+              DESCRIPTION:      This represents the hours between message transmissions. The Default value set during the package install is 6.  Be sure to add the local Image support staff person into the local MAG SERVER mail group and at least one 
+                                pager number in the MEMBERS - REMOTE multiple.  
 
 
 2006.1,11.9   DATE OF LAST CRITICAL MESSAGE 3;11 DATE
 
               INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:Y<1 X
-              OUTPUT TRANSFORM: S Y=$$FMTE^XLFDT(Y,"5D")
-              LAST EDITED:      AUG 14, 2008 
+              LAST EDITED:      OCT 30, 1999 
               HELP-PROMPT:      This date/time field is automatically set each time a critical message is sent. 
-              DESCRIPTION:      It is a parameter used in combination with the CRITICAL LOW MESSAGE INTERVAL to determine if it is appropriate to send a new message when the VistA cache space falls below the PERCENT SERVER RESERVE value. This field
+              DESCRIPTION:      It is a parameter used in combination with the CRITICAL LOW MESSAGE INTERVAL to determine if it is appropriate to send a new message when the Vista cache space falls below the PERCENT SERVER RESERVE value.  This field
                                 should not be edited directly by a user.  
 
 
 2006.1,12     FILE TYPES             2;0 Multiple #2006.112
 
               DESCRIPTION:
-                                This field identifies acceptable file types on image captures and is read by the Background Processor to migrate files across the network shares and jukeboxes.  
+                                This multiple is used by the background processor to allow control of file migration from the magnetic servers to the jukebox and allow site specific file types to be managed.  
 
 
 2006.112,.01    FILE TYPES             0;1 FREE TEXT (Multiply asked)
 
-                INPUT TRANSFORM:  S X=$$UPPER^MAGQE4(X) K:($L(X)>3)!($L(X)<3)!($D(^MAG(2006.1,DA(1),2,"B",X))) X
-                LAST EDITED:      JAN 26, 2010 
-                HELP-PROMPT:      File extensions for background copies. 
-                DESCRIPTION:
-                                  This field identifies the acceptable file types on image captures and is read by the Background Processor to migrate files across the network share and jukeboxes.  
-
-                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
+                INPUT TRANSFORM:  K:$L(X)>3!($L(X)<3) X
+                LAST EDITED:      FEB 27, 1998 
+                HELP-PROMPT:      File extensions for background copies 
                 CROSS-REFERENCE:  2006.112^B 
                                   1)= S ^MAG(2006.1,DA(1),2,"B",$E(X,1,30),DA)=""
                                   2)= K ^MAG(2006.1,DA(1),2,"B",$E(X,1,30),DA)
@@ -332,8 +321,8 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
 2006.11,.01     MULTI NAMESPACE        0;1 FREE TEXT (Multiply asked)
 
-                INPUT TRANSFORM:  S X=$$UPPER^MAGQE4(X) K:($L(X)>45)!($L(X)<1)!($D(^MAG(2006.1,DA(1),4,"B",X))) X
-                LAST EDITED:      MAR 25, 2010 
+                INPUT TRANSFORM:  K:$L(X)>45!($L(X)<1) X
+                LAST EDITED:      APR 11, 2002 
                 HELP-PROMPT:      Answer must be 1-45 characters in length 
                 DESCRIPTION:
                                   This multiple field is used to store all previously used image prefixes from the CURRENT NAMESPACE field. Any time the CURRENT NAMESPACE field is changed, enter the previous name in this multiple field.  
@@ -348,44 +337,137 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
 
 
+2006.1,13     RADIOLOGY HOLDS        1;9 SET
+
+                                '0' FOR NO RADIOLOGY HOLDS; 
+                                '1' FOR RADIOLOGY HOLDS; 
+              LAST EDITED:      MAR 26, 1998 
+              DESCRIPTION:
+                                In order to configure a site which wants to screen out radiology images from the purge process if the radiology hold node is set.  
+
+
+2006.1,14     JBX ALL                JBEX;1 SET
+
+                                '0' FOR false; 
+                                '1' FOR true; 
+              INPUT TRANSFORM:  K X Q
+              LAST EDITED:      DEC 22, 2000 
+              DESCRIPTION:      Purge control which defines the outcome of purge if magnetic file is associated with 2005 entry with no Jukebox reference.  If set to 1 then ALL images with no Jukebox reference will be purged within the date of last
+                                access aging criteria.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+2006.1,15     JBX ALL PACS           JBEX;2 SET
+
+                                '0' FOR false; 
+                                '1' FOR true; 
+              INPUT TRANSFORM:  K X Q
+              LAST EDITED:      DEC 22, 2000 
+              DESCRIPTION:      Purge control which defines the outcome of purge if magnetic file is associated with 2005 entry with no Jukebox reference.  If set to 1 then ALL PACS images with no Jukebox reference will be purged within the date of last
+                                access aging criteria.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+2006.1,16     JBX PACS BIG           JBEX;3 SET
+
+                                '0' FOR FALSE; 
+                                '1' FOR TRUE; 
+              INPUT TRANSFORM:  K X Q
+              LAST EDITED:      DEC 22, 2000 
+              DESCRIPTION:
+                                Purge control which defines the outcome of purge if magnetic file is associated with 2005 entry with no Jukebox reference.  If set to 1 then BIG PACS images with no Jukebox reference will be purged.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+2006.1,17     JBX BIG NON-PACS       JBEX;4 SET
+
+                                '0' FOR FALSE; 
+                                '1' FOR TRUE; 
+              INPUT TRANSFORM:  K X Q
+              LAST EDITED:      DEC 22, 2000 
+              DESCRIPTION:
+                                Purge control which defines the outcome of purge if magnetic file is associated with 2005 entry with no Jukebox reference.  If set to 1 then BIG / NON-PACS images with no Jukebox reference will be purged.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+2006.1,18     NO JB DELETE ENTRY     JBEX;5 SET
+
+                                '0' FOR DON'T DELETE ENTRY; 
+                                '1' FOR DELETE ENTRY; 
+              INPUT TRANSFORM:  K X Q
+              LAST EDITED:      DEC 22, 2000 
+              DESCRIPTION:
+                                This field is used during the purge at sites without jukeboxes to determine whether to delete the 2005 entry or clear the pointers.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+2006.1,19     JBX PACS BIG VER TGA   JBEX;6 SET
+
+                                '0' FOR FALSE; 
+                                '1' FOR TRUE; 
+              INPUT TRANSFORM:  K X Q
+              LAST EDITED:      DEC 22, 2000 
+              HELP-PROMPT:      Purge PACS BIG files only if TGA file is in cache. 
+              DESCRIPTION:      Purge control which defines the outcome of purge if magnetic file is associated with 2005 entry with no Jukebox reference.  If set to "1" then BIG PACS files will be purged from the magnetic servers, but only if the
+                                companion TGA file is present.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
 2006.1,20     NO AUTOWRITE UPDATE    1;10 SET
 
                                 '0' FOR AUTOWRITE UPDATE OK; 
                                 '1' FOR NO AUTOWRITE UPDATE; 
               LAST EDITED:      MAY 12, 1998 
-              DESCRIPTION:      This field enables or disables the Background Processor function which evaluates the space availability on each of the online magnetic shares and assigns the current write location to the share with the greatest space
-                                available both for PACS and regular image capture.  
-                                 
-                                RPC, MAGQ FS CHNGE, utilizes this field when evaluating the current write location.  
+              DESCRIPTION:      This field enables or disables the background processor function which evaluates the space availability on each of the online magnetic shares and assigns the current write location to the share with the greatest space
+                                available both for PACS and regular image capture. 
+
+
+2006.1,21     PURGE-RETEN DAYS PACS BIG FILE 3;1 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 06, 2000 
+              HELP-PROMPT:      Type a Number between 1 and 99999, 0 Decimal Digits 
+              DESCRIPTION:      This field is used by the Background Processor purge to determine the number of days to retain BIG DICOM files. All BIG DICOM images that have not been accessed in this many days will be removed from magnetic storage by
+                                the Background Processor purge.  
 
 
 2006.1,22     PURGE-RETENTION DAYS BIG FILE 3;2 NUMBER
 
               INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
-              LAST EDITED:      FEB 11, 2009 
+              LAST EDITED:      DEC 10, 1998 
               HELP-PROMPT:      Type a Number between 0 and 99999, 0 Decimal Digits 
               DESCRIPTION:      This field is used by the Background Processor purge to determine the number of days to retain BIG files. All BIG images that have not been accessed in this many days will be removed from magnetic storage by the Background
                                 Processor purge.  
 
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
 
 2006.1,23     PURGE-RETENTION DAYS ABS FILE 3;3 NUMBER
 
-              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1.N) X
-              LAST EDITED:      JUN 14, 2006 
-              HELP-PROMPT:      Type a number between 0 and 99999, 0 Decimal Digits 
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      FEB 25, 1999 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
               DESCRIPTION:      This field is used by the Background Processor purge to determine the number of days to retain ABS files. All ABS images that have not been accessed in this many days will be removed from magnetic storage by the Background
                                 Processor purge.  
 
 
-2006.1,24     PURGE-RETENTION DAYS PHOTOID 3;4 NUMBER
+2006.1,24     PURGE-RETENTION DAYS PACS ABS 3;4 NUMBER
 
-              INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1.N) X
-              LAST EDITED:      MAY 21, 2009 
-              HELP-PROMPT:      Type a number between 0 and 99999, 0 Decimal Digits 
-              DESCRIPTION:      This field is used by the Background Processor purge to determine the number of days to retain images designate as PHOTO IDs by the Image file. All PhotoID images that have not been accessed  in this many days will be
-                                removed from magnetic storage by the Background Processor purge.  
+              INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      OCT 06, 2000 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
+              DESCRIPTION:      This field is used by the Background Processor purge to determine the number of days to retain DICOM ABS files. All DICOM ABS images that have not been accessed in this many days will be removed from magnetic storage by 
+                                the Background Processor purge.  
 
 
 2006.1,25     IMPORT QUEUE SECURITY  3;12 SET
@@ -408,7 +490,7 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
 2006.1,51     NET PASSWORD           NET;2 FREE TEXT
 
-              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X S MAGPAS=X S X=$$ENCRYP^ROUTINE(MAGPAS)
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X S MAGPAS=X S X=$$ENCRYP^XUSRB1(MAGPAS)
               OUTPUT TRANSFORM: S Y="<Hidden>"
               LAST EDITED:      NOV 30, 1999 
               HELP-PROMPT:      The encrypted network password (between 3 and 30 characters in length) for the NET USERNAME entity. 
@@ -437,6 +519,14 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
                                 workstations will update from.  
 
 
+2006.1,54     JUKEBOX DEFAULT        1;6 POINTER TO JUKEBOX FILE (#2006.032)
+
+              LAST EDITED:      AUG 04, 1997 
+              HELP-PROMPT:      If you have more than 1 jukebox, you will need to enter the active jukebox here 
+              DESCRIPTION:
+                                This field will point to the currently active jukebox if more than 1 exists 
+
+
 2006.1,55     NET SITE SERVICE       NET;5 POINTER TO NETWORK LOCATION FILE (#2005.2)
 
               LAST EDITED:      JUL 22, 2005 
@@ -445,376 +535,69 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
                                 The VistA Site Service is used by Remote Image Views to gain access to remote sites.  
 
 
-2006.1,60     AUTOPURGE              BPPURGE;1 SET
+2006.1,60     NEW AUTOPURGE          5;1 SET
 
                                 '0' FOR OFF; 
                                 '1' FOR ON; 
-              LAST EDITED:      DEC 15, 2008 
+              LAST EDITED:      DEC 05, 2003 
               HELP-PROMPT:      This value is used by the Background processor to determine whether to start a purge process when the Vista Cache low water mark has been reached. 
-              TECHNICAL DESCR:  This enables the Background Processor the ability to launch the Purge when the VistA RAID low water mark has been reached. This field is also required for the Scheduled Purge. 
-                                 
-                                The RPC, MAGQ FS CHNGE, evaluates this field when setting the current write location, and is part of the automatic Purge algorithm.  
-
-
-2006.1,60.1   PURGE BY               BPPURGE;2 SET
-
-                                'DA' FOR DATE ACCESSED; 
-                                'DC' FOR DATE CREATED; 
-                                'DM' FOR DATE MODIFIED; 
-              LAST EDITED:      DEC 15, 2008 
-              HELP-PROMPT:      This will determine the criteria applied to the purge logic. 
               DESCRIPTION:
-                                This parameter is used by the Purge application. These date criteria apply to the dates within the Master File Table of the network share being purged. 
+                                This boolean value is used by the Background Processor to determine whether to launch the purge when the Vista Cache low water mark has been reached.  
 
 
-2006.1,60.2   EXPRESS PURGE          BPPURGE;3 SET
+2006.1,61     CONTINUOUS PURGE       5;2 SET
 
                                 '0' FOR OFF; 
                                 '1' FOR ON; 
-              LAST EDITED:      DEC 15, 2008 
-              HELP-PROMPT:      This field enables and disables the Express purge method. 
+              INPUT TRANSFORM:  S:X=1 $P(^MAG(2006.1,DA,5),U,3)=0
+              LAST EDITED:      DEC 05, 2003 
+              HELP-PROMPT:      This value is used to determine whether the BP Queue processor should maintain a continuous Vista Cache purge process. 
               DESCRIPTION:
-                                This enables the Purge application to expedite the purge on a given share if no files are actively being purged.  This works with field EXPRESS PURGE RATE (#60.3).  
+                                This boolean value is used to determine whether the BP Queue processor should maintain a continuous purge process.  This process cannot be co-enabled with the scheduled purge process.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
 
-2006.1,60.3   EXPRESS PURGE RATE     BPPURGE;4 NUMBER
-
-              INPUT TRANSFORM:  K:+X'=X!(X>9000000)!(X<10000)!(X?.E1"."1N.N) X
-              LAST EDITED:      FEB 18, 2009 
-              HELP-PROMPT:      Enter the number of idle Image file entries to be evaluated, type a number between 10000 and 9000000. 
-              DESCRIPTION:
-                                This value determines if there is enough idle purge activity on a share to cease processing on the share.  
-
-
-2006.1,60.4   LAST PURGE BPWS        BPPURGE;5 POINTER TO BP SERVERS FILE (#2006.8)
-
-              LAST EDITED:      DEC 15, 2008 
-              HELP-PROMPT:      This is the last BP Server to run a purge. 
-              TECHNICAL DESCR:  This field references the BP Server that executed the Purge process and therefore has the log files that document that activity.  The intention of this field is to assist the support staff in locating the BP Purge activity
-                                log files for the last purge.  
-                                 
-                                This field is updated by the BP Purge application when it completes the purge activity.  
-
-
-2006.1,60.5   RAID PURGE FACTOR      BPPURGE;8 NUMBER
-
-              INPUT TRANSFORM:  K:+X'=X!(X>100)!(X<0)!(X?.E1"."1.N) X
-              LAST EDITED:      FEB 18, 2009 
-              HELP-PROMPT:      Type a number between 0 and 100, 0 Decimal Digits 
-              DESCRIPTION:      This factor (a number between 0 and 100), when multiplied by the Percent Server Reserve (#11), determines the automatic purge event triggered by the BP Queue Processor.  
-                                 
-                                The RPC, MAGQ FS CHNGE, uses this value and is part of the automatic Purge algorithm.  
-
-
-2006.1,61     SCHEDULED PURGE        BPPURGE;6 SET
+2006.1,62     SCHEDULED PURGE        5;3 SET
 
                                 '0' FOR OFF; 
                                 '1' FOR ON; 
-              LAST EDITED:      DEC 15, 2008 
+              INPUT TRANSFORM:  S:X=1 $P(^MAG(2006.1,DA,5),U,2)=0
+              LAST EDITED:      DEC 05, 2003 
               HELP-PROMPT:      This value is used to determine whether the BP Queue Processor will trigger a purge process on a scheduled frequency. 
-              DESCRIPTION:      This field is used to determine whether the BP Queue Processor enables a scheduled purge process. The frequency is determined by the frequency days and the date of the last purge. A default value of 28 days is used if the
-                                frequency value is null.  A default value of 2400 hours is used if the PURGE TIME is not set.  
+              DESCRIPTION:      This boolean value is used to determine whether the BP Queue Processor will trigger a scheduled purge process.  This value cannot be co-enabled with the continuous purge process.  The frequency will be determined by the
+                                frequency days and the date of the last purge. A default value of 28 days will be used if the frequency value is null.  A default vault of 2400 hour will be used if the Purge Time is not set.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
 
-2006.1,61.1   DATE OF LAST PURGE     BPPURGE;7 DATE
+2006.1,63     SCHEDULED PURGE FREQUENCY 5;4 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      DEC 05, 2003 
+              HELP-PROMPT:      Type a Number between 1 and 365, 0 Decimal Digits 
+              DESCRIPTION:      When Scheduled Purge process is enabled this value will be added to the date of the last purge for the BP Queue processor to evaluate for launching a purge process.  If the Schedule Purge process is enabled and this value
+                                is not set, then the default value of 28 days will be used.  
+
+
+2006.1,64     SCHEDULED PURGE TIME   5;5 NUMBER
+
+              INPUT TRANSFORM:  S X=+X K:(X>2400)!(X<0)!(X?.E1"."1N.N)!($E(X,$L(X)-1,$L(X))>59) X
+              LAST EDITED:      DEC 05, 2003 
+              HELP-PROMPT:      Type a Number between 0000 and 2400, 0 Decimal Digits 
+              DESCRIPTION:      This military time value is used to determine what time of day the scheduled purge will be triggered.  A default value of 2400 will be used by the BP Queue Processor if the Scheduled Purge option is enabled and the 
+                                frequency days plus date of last purge threshold has been reached and this value is undefined.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+2006.1,65     DATE OF LAST PURGE     5;6 DATE
 
               INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
-              OUTPUT TRANSFORM: S Y=$$FMTE^XLFDT(Y,"5D")
-              LAST EDITED:      DEC 19, 2008 
-              HELP-PROMPT:      Last scheduled purge date. (This is not a user editable field.) 
+              LAST EDITED:      DEC 05, 2003 
+              HELP-PROMPT:      This date is automatically set by the purge process when that process has successfully completed. 
               DESCRIPTION:
-                                This is the date of a last scheduled purge process was executed and is automatically set at the beginning of a scheduled purge.  
-
-              TECHNICAL DESCR:
-                                This parameter is used by RPC, MAGQ FS CHNGE,when evaluating Scheduled Purge.  
-
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
-
-2006.1,61.2   SCHEDULED PURGE FREQUENCY BPPURGE;9 NUMBER
-
-              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<1)!(X?.E1"."1N.N) X
-              LAST EDITED:      DEC 15, 2008 
-              HELP-PROMPT:      Type a number between 1 and 365 days.  
-              DESCRIPTION:
-                                When the Scheduled Purge process is enabled, this value in days (between 1 and 365) is added to the date of the last purge for the BP Queue Processor to evaluate for launching a purge process.  
-
-
-2006.1,61.3   DATE OF SCHEDULED PURGE BPPURGE;10 DATE
-
-              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X Q:'$P($G(^MAG(2006.1,DA,"BPPURGE")),U,6)  K:(Y<$P($$NOW^XLFDT,".")) X
-              OUTPUT TRANSFORM: S Y=$$FMTE^XLFDT(Y,"5D")
-              LAST EDITED:      JAN 06, 2009 
-              HELP-PROMPT:      The date may not be to earlier than today. 
-              DESCRIPTION:      This is the scheduled date of the next scheduled purge.  It is set at the end of an automated purge by adding the SCHEDULE PURGE FREQUENCY (#61.2) parameter to the date of the last purge.  It may be set by the user to
-                                establish a new schedule.  
-
-              TECHNICAL DESCR:
-                                This parameter is used by RPC MAGQ FS CHNGE when evaluating a scheduled purge. 
-
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
-
-2006.1,61.4   SCHEDULED PURGE TIME   BPPURGE;11 NUMBER
-
-              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>2359)!(X<0) X
-              LAST EDITED:      DEC 15, 2008 
-              HELP-PROMPT:      Type a Number between 0 and 2359 (military time). 
-              DESCRIPTION:      This number (between 0 and 2359) for military time determines the time of day to trigger the Scheduled Purge.  If this number is undefined, the BP Queue Processor uses the default value of 0 if the Scheduled Purge option
-                                is enabled and the frequency days plus date of last purge threshold are reached.  
-
-              TECHNICAL DESCR:
-                                This time is used by RPC, MAGQ FS CHNGE, when evaluating scheduled purge. 
-
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
-
-2006.1,62     SCHEDULED VERIFIER     BPVERIFIER;1 SET
-
-                                '0' FOR OFF; 
-                                '1' FOR ON; 
-              LAST EDITED:      DEC 19, 2008 
-              HELP-PROMPT:      This value is monitored by the BP Queue processor to determine if scheduled BP Verifier.  
-              DESCRIPTION:
-                                This field is used to determine whether the BP Queue Processor enables a scheduled verifier process.  
-
-              TECHNICAL DESCR:
-                                This parameter is used by RPC, MAGQ FS CHNGE, when evaluating scheduled verifier process logic.  
-
-
-2006.1,62.1   DATE OF LAST VERIFY    BPVERIFIER;2 DATE
-
-              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
-              OUTPUT TRANSFORM: S Y=$$FMTE^XLFDT(Y,"5D")
-              LAST EDITED:      DEC 19, 2008 
-              HELP-PROMPT:      Last scheduled verifier date.  (This is not a user editable field.) 
-              DESCRIPTION:
-                                This is the date of a last scheduled verifier application and is automatically set at the beginning of a scheduled verifier execution. 
-
-              TECHNICAL DESCR:
-                                This parameter is used by RPC, MAGQ FS CHNGE, when evaluating scheduled verifier.  
-
-
-2006.1,62.2   SCHEDULED VERIFIER FREQUENCY BPVERIFIER;3 NUMBER
-
-              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<1)!(X?.E1"."1N.N) X
-              LAST EDITED:      DEC 19, 2008 
-              HELP-PROMPT:      Type a number between 1 and 365 days. 
-              DESCRIPTION:
-                                When the Scheduled Verifier process is enabled, this number in days (between 1 and 365) is added to the date of the last verify for the BP Queue Processor to evaluate in launching a verify process.  
-
-              TECHNICAL DESCR:
-                                This parameter is used by RPC, MAGQ FS CHNGE, when evaluating scheduled verifier process logic.  
-
-
-2006.1,62.3   DATE OF SCHEDULED VERIFIER BPVERIFIER;4 DATE
-
-              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X Q:'$P($G(^MAG(2006.1,DA,"BPVERIFIER")),U,1)  K:(Y<$P($$NOW^XLFDT,".")) X
-              OUTPUT TRANSFORM: S Y=$$FMTE^XLFDT(Y,"5D")
-              LAST EDITED:      JAN 06, 2009 
-              HELP-PROMPT:      This should be date in the future to run your next Verifier process. 
-              DESCRIPTION:
-                                This is evaluated by active BP Processors to trigger a BP Verifier process at the date and time designated by the user.  In conjunction with the SCHEDULED VERIFER time, this field co-defines the timing of this process.  
-
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
-
-2006.1,62.4   SCHEDULED VERIFIER TIME BPVERIFIER;5 NUMBER
-
-              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>2359)!(X<0) X
-              LAST EDITED:      DEC 19, 2008 
-              HELP-PROMPT:      Type a Number between 0 and 2359 (military time). 
-              DESCRIPTION:      This number (between 0 and 2359) for military time is used to determine the time of the day to trigger the Scheduled Verifier. If this number is undefined, the BP Verifier uses the default value of 0 if the Scheduled
-                                Verify option is enabled and the frequency days plus date of last verify threshold are reached.  
-
-              TECHNICAL DESCR:
-                                This parameter is used by RPC, MAGQ FS CHNGE, when evaluating scheduled verifier.  
-
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
-
-2006.1,62.5   LAST VERIFY BP WS      BPVERIFIER;6 POINTER TO BP SERVERS FILE (#2006.8)
-
-              LAST EDITED:      DEC 19, 2008 
-              HELP-PROMPT:      Last BP Server that exected the Verifier process. 
-              DESCRIPTION:      This field references the BP Server that executed the Verifier process and therefore has the log files that document that activity.  The intention of this field is to assist the support staff in locating the BP Verifier
-                                activity log files for the last purge.  
-
-              TECHNICAL DESCR:
-                                This field is updated by the BP Purge application when it completes the purge activity.  
-
-
-2006.1,62.6   SCHEDULED VERIFY TEXT CHECK BPVERIFIER;7 SET
-
-                                '0' FOR NO; 
-                                '1' FOR YES; 
-              LAST EDITED:      APR 07, 2009 
-              HELP-PROMPT:      This value controls whether the scheduled Verifier will check the RAID TXT files. 
-              DESCRIPTION:
-                                This field enables the BP Verifier to validate the RAID text files for patient identification consistencies.  
-
-
-2006.1,63     SCHEDULED RG ADVANCE   RGADVANCE;1 SET
-
-                                '0' FOR OFF; 
-                                '1' FOR ON; 
-              LAST EDITED:      DEC 19, 2008 
-              HELP-PROMPT:      This switch enables the schedule RAID group advance. 
-              DESCRIPTION:
-                                This field enables the automatic RAID Group Advance.  It is necessary to set the date of the next RG ADVANCE DATE (63.3) and the RG ADVANCE TIME (63.4).  If the RG ADVANCE TIME is null, the default is 0.  
-
-              TECHNICAL DESCR:  The BP Queue Processor advances the current RAID Group during the RPC MAGQ FS CHNGE execution. The RAID Group advance feature will change the Current RAID group (#.031) under the following conditions: A)  AutoWrite (#20))
-                                is enabled.  B)  The current RAID Group has reached the watermark (#11).  C)  There is enough space in an alternative RAID Group.  D)  The event can be schedule to occur (#63).  
-
-
-2006.1,63.1   RG ADVANCE FREQUENCY   RGADVANCE;2 NUMBER
-
-              INPUT TRANSFORM:  K:+X'=X!(X>365)!(X<1)!(X?.E1"."1N.N) X
-              LAST EDITED:      DEC 19, 2008 
-              HELP-PROMPT:      Type a Number between 1 and 365 days. 
-              DESCRIPTION:
-                                This number in days (between 1 and 365) and the RG ADVANCE TIME determine the date and time of the next scheduled RAID Group Advance. 
-
-
-2006.1,63.2   DATE OF LAST RG ADVANCE RGADVANCE;3 DATE
-
-              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
-              OUTPUT TRANSFORM: S Y=$$FMTE^XLFDT(Y,"5D")
-              LAST EDITED:      DEC 19, 2008 
-              HELP-PROMPT:      Last scheduled RAID Group Advance execution date. (This is not a user editable field.) 
-              DESCRIPTION:
-                                This is the date of the last scheduled RAID Group Advance was executed and is automatically set at the beginning of a RAID Group Advance execution. 
-
-              TECHNICAL DESCR:
-                                This parameter is used by RPC, MAGQ FS CHNGE, when evaluating scheduled RAID Group Advance.  
-
-
-2006.1,63.3   RG ADVANCE DATE        RGADVANCE;4 DATE
-
-              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X Q:'$P($G(^MAG(2006.1,DA,"RGADVANCE")),U,1)  K:(Y<$P($$NOW^XLFDT,".")) X K:Y<1 X
-              OUTPUT TRANSFORM: S Y=$$FMTE^XLFDT(Y,"5D")
-              LAST EDITED:      JAN 06, 2009 
-              HELP-PROMPT:      The date may not be to earlier than today. 
-              DESCRIPTION:
-                                This is the scheduled date (today or later) of the next RAID GROUP advance.  
-
-              TECHNICAL DESCR:
-                                This parameter is used by the RPC MAGQ FS CHNGE procedure during the evaluation for scheduling the RG Advance process. 
-
-              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
-
-
-2006.1,63.4   RG ADVANCE TIME        RGADVANCE;5 NUMBER
-
-              INPUT TRANSFORM:  K:+X'=X!(X>2359)!(X<0)!(X?.E1"."1N.N) X
-              LAST EDITED:      FEB 23, 2010 
-              HELP-PROMPT:      Type a number between 0 and 2359 (military time). 
-              DESCRIPTION:      This number (between 0 and 2359) for military time is the time of day of the RAID Group advance function. If this number is undefined, the BP Queue Processor uses the default value of 0 if the Scheduled RAID Group Advance
-                                option is enabled and the frequency days plus date of last RAID Group Advance threshold are reached.  
-
-              TECHNICAL DESCR:
-                                This field is used by the RPC MAGQ FS CHNGE procedure during the evaluation for scheduling the RG Advance process.  
-
-
-2006.1,66     BP MAIL MESSAGE        6;0 Multiple #2006.166 (Add New Entry without Asking)
-
-              DESCRIPTION:
-                                This table allows each Imaging site to manage the local distribution of all BP Queue Processor messages as well as the monthly and ad hoc site usage reports.  
-
-
-2006.166,.01    BP MAIL MESSAGE        0;1 FREE TEXT
-
-                INPUT TRANSFORM:  K:$L(X)>40!($L(X)<8) X
-                LAST EDITED:      JUN 19, 2006 
-                HELP-PROMPT:      Enter the Imaging Mail message subject, answer must be 8-30 characters in length. 
-                DESCRIPTION:      This field is for message subject text (8-30 characters) intended for all Imaging applications.  The entries in this sub-file namespaced by MAGxxx (where xxx is the site code) followed by the subject index text.  The
-                                  site code facilitates sorting for multi-divisional platforms.  
-
-                CROSS-REFERENCE:  2006.166^B 
-                                  1)= S ^MAG(2006.1,DA(1),6,"B",$E(X,1,30),DA)=""
-                                  2)= K ^MAG(2006.1,DA(1),6,"B",$E(X,1,30),DA)
-
-
-2006.166,1      Message Interval       0;2 NUMBER
-
-                INPUT TRANSFORM:  K:+X'=X!(X>999)!(X<0)!(X?.E1"."1N.N) X
-                LAST EDITED:      SEP 05, 2007 
-                HELP-PROMPT:      Type a number between 0 and 999 hours. 
-                DESCRIPTION:
-                                  The Imaging mail processing method uses this number of hours (between 0 and 999) for the message interval.  Subsequent messages sent within the time framed of the current time and this parameter will not be sent.  
-
-
-2006.166,2      Mail Group             1;0 POINTER Multiple #2006.1662 (Add New Entry without Asking)
-
-                DESCRIPTION:
-                                  This sub-file identifies the Kernel mail group recipients for the Imaging mail message. 
-
-
-2006.1662,.01     Mail Group             0;1 POINTER TO MAIL GROUP FILE (#3.8) (Multiply asked)
-
-                  INPUT TRANSFORM:  S DIC("S")="I $E($P(^(0),U,1),1,3)[""MAG""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
-                  LAST EDITED:      FEB 23, 2010 
-                  DESCRIPTION:
-                                    Select the Imaging mail group to receive the mail message.  The Imaging MAG namespace should be used to maintain database standards.  
-
-                  SCREEN:           S DIC("S")="I $E($P(^(0),U,1),1,3)[""MAG"""
-                  EXPLANATION:      This is intended to support the Imaging "MAG" namespace.
-                  CROSS-REFERENCE:  2006.1662^B 
-                                    1)= S ^MAG(2006.1,DA(2),6,DA(1),1,"B",$E(X,1,30),DA)=""
-                                    2)= K ^MAG(2006.1,DA(2),6,DA(1),1,"B",$E(X,1,30),DA)
-
-
-
-
-2006.166,3      DATE OF LAST MESSAGE     2;1 DATE
-
-                  INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
-                  LAST EDITED:      FEB 23, 2010 
-                  HELP-PROMPT:      (No range limit on date) 
-                  DESCRIPTION:
-                                    This field is set by the Imaging mail processing method and contains the date of the last message sent for this Subject Text.  This field is not editable.  
-
-
-2006.166,4      MESSAGE RECIPIENTS       3;0 POINTER Multiple #2006.1664
-
-                  DESCRIPTION:
-                                    This is the list of active Mail users to add to the recipient list of Imaging mail messages.  
-
-
-2006.1664,.01     MESSAGE RECIPIENTS       0;1 POINTER TO NEW PERSON FILE (#200)
-
-                    LAST EDITED:      APR 07, 2009 
-                    HELP-PROMPT:      This should be an active Mail user from the New Person file. 
-                    DESCRIPTION:
-                                      This field identifies individual recipients for this Imaging mail message.  
-
-                    CROSS-REFERENCE:  2006.1664^B 
-                                      1)= S ^MAG(2006.1,DA(2),6,DA(1),3,"B",$E(X,1,30),DA)=""
-                                      2)= K ^MAG(2006.1,DA(2),6,DA(1),3,"B",$E(X,1,30),DA)
-
-
-
-
-2006.166,5      SECURITY KEYS              4;0 POINTER Multiple #2006.1665
-
-                    DESCRIPTION:
-                                      This is a list of SECURITY KEYS whose members will be recipients of Imaging mail messages.  
-
-
-2006.1665,.01     SECURITY KEYS              0;1 POINTER TO SECURITY KEY FILE (#19.1)
-
-                      LAST EDITED:      APR 07, 2009 
-                      HELP-PROMPT:      Select a security key that you would have holders receive this message type. 
-                      DESCRIPTION:
-                                        This is a VistA Imaging namespace security key.  All holders of this key are added to the mail message recipient list of automated VistA Imaging mail messages.  
-
-                      CROSS-REFERENCE:  2006.1665^B 
-                                        1)= S ^MAG(2006.1,DA(2),6,DA(1),4,"B",$E(X,1,30),DA)=""
-                                        2)= K ^MAG(2006.1,DA(2),6,DA(1),4,"B",$E(X,1,30),DA)
-
-
-
-
+                                This date is set by the BP Purge process.  It is used in conjunction with the Scheduled purge process to automated the purge process execution.  
 
 
 2006.1,70     CT PRESETS             CT;1 FREE TEXT
@@ -872,7 +655,7 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
               Number of days to retain DICOM messages                                                                          
               INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<0)!(X?.E1"."1N.N) X
               LAST EDITED:      NOV 30, 1999 
-              HELP-PROMPT:      Enter the number of days (between 0 and 99999) that DICOM messages are to be retained on the DICOM Gateway(s).  
+              HELP-PROMPT:      Enter the number of days (Enter the number of days (between 0 and 99999) that DICOM messages are to be retained.) that DICOM messages are to be retained. 
               DESCRIPTION:
                                 The value of this parameter is the number of days that DICOM messages are to be retained.  The subroutine that purges old DICOM messages will only remove messages that are older than this number of days.  
 
@@ -920,13 +703,13 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
 2006.1,124    DICOM GATEWAY ACCESS CODE GW;1 FREE TEXT
 
-              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X Q:'$D(X)  S X=$$ENCRYP^ROUTINE(X)
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X Q:'$D(X)  S X=$$ENCRYP^XUSRB1(X)
               OUTPUT TRANSFORM: S Y="<hidden>"
               LAST EDITED:      NOV 20, 2003 
               HELP-PROMPT:      Enter the access code that DICOM Gateways may use. 
               DESCRIPTION:      The value of this field is a string that may be used by a DICOM Gateway when it needs to provide an ACCESS CODE to the VistA system.  
                                  
-                                This field is also used for auto-login for the BP Queue Processor, Purge and Verifier applications. This value is stored encrypted.  
+                                This value is stored encrypted.  
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
@@ -939,13 +722,13 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
 2006.1,125    DICOM GATEWAY VERIFY CODE GW;2 FREE TEXT
 
-              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X Q:'$D(X)  S X=$$ENCRYP^ROUTINE(X)
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3) X Q:'$D(X)  S X=$$ENCRYP^XUSRB1(X)
               OUTPUT TRANSFORM: S Y="<hidden>"
               LAST EDITED:      NOV 20, 2003 
               HELP-PROMPT:      Enter the verify code that DICOM Gateways may use. 
-              DESCRIPTION:      The value of this field is a string that may be used by a DICOM Gateway when it needs to provide a VERIFY CODE to a VistA system.  
+              DESCRIPTION:      >The value of this field is a string that may be used by a DICOM Gateway when it needs to provide a VERIFY CODE to a VistA system.  
                                  
-                                This field is also used for auto-login for the BP Queue Processor, Purge and Verifier applications. This value is stored encrypted.  
+                                This value is stored encrypted.  
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
@@ -975,43 +758,31 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
                                 The value of this field is a date (FileMan format, date only, no time part). This value indicates the most recent date on which a check was performed whether or not Routing is still active at the current site.  
 
 
-2006.1,130    *VERSION CHECKING      KEYS;5 SET
+2006.1,130    VERSION CHECKING       KEYS;5 SET
 
                                 '0' FOR NO; 
                                 '1' FOR YES; 
-              LAST EDITED:      DEC 21, 2009 
-              HELP-PROMPT:      No longer supported field. 
-              DESCRIPTION:
-                                This field is obsolete.  The value of the field does not control which Imaging Clients are supported.  
-
-              TECHNICAL DESCR:
-                                The field was made obsolete by patch MAG*3.0*94.  
+              LAST EDITED:      JAN 10, 2005 
+              HELP-PROMPT:      Turn ON to stop Imaging Clients that are no longer supported, from connecting to VistA. 
+              DESCRIPTION:      Turn ON to stop old versions of Imaging Display and Capture Clients from connecting to VistA.  Old versions of the client software will sometimes not perform correctly and will not have the latest updates and
+                                functionality.  When turned ON: 
+                                     The most recent versions of Client software will continue to 
+                                     work okay, but the user will be informed that a newer version 
+                                     exists.  
+                                     Old Client versions will not be allowed to connect to VistA.  
+                                     A message will be shown to the user, informing them that the 
+                                     version is too old, and will be aborted.  
+                                     Check the Imaging Patch Description for a list of 
+                                     previous versions that will be allowed to connect.  
 
 
 2006.1,131    TELEREADER TIMEOUT (MINUTES) KEYS;6 NUMBER
 
               INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
-              LAST EDITED:      MAR 01, 2010 
+              LAST EDITED:      MAR 30, 2006 
               HELP-PROMPT:      Type a Number between 1 and 999999, 0 Decimal Digits 
               DESCRIPTION:
-                                The number of minutes that the TeleReader application will remain active before closing due to inactivity. If this field is undefined, the application will not timeout.  Max value is 999999, no decimals allowed.  
-
-
-2006.1,132    VERSION NAG MESSAGE    KEYS;7 SET
-
-                                '0' FOR NO; 
-                                '1' FOR YES; 
-              LAST EDITED:      APR 26, 2010 
-              HELP-PROMPT:      Enter Yes to display a message to users of supported clients that are not the released version. 
-              DESCRIPTION:       Enter Yes to display a message to clients that are supported, but 
-                                 are not the released version.   This message will inform the user 
-                                 that they should update their version of Imaging Client 
-                                 to the released version.  
-                                 
-                                 Enter No to suppress the message.  No message will display.  
-
-              TECHNICAL DESCR:
-                                Added in patch MAG*3.0*94 
+                                The number of minutes that the TeleReader application will remain active before closing due to inactivity.  
 
 
 2006.1,201    VISTARAD GROUPING      201;0 POINTER Multiple #2006.1201
@@ -1038,33 +809,8 @@ REFERENCED BY: DICOM GATEWAY ACCESS CODE(AC), DICOM GATEWAY VERIFY CODE(AD), SER
 
 
 
-2006.1,202    DEFAULT VISTARAD USERPREF RAD 5;7 POINTER TO MAGJ USER DATA FILE (#2006.68)
-
-              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)>.5" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
-              LAST EDITED:      JUL 13, 2010 
-              HELP-PROMPT:      Enter the VistARad user whose settings you want to use for the Default Radiologist user settings. 
-              DESCRIPTION:
-                                Points to a reference MAGJ USER DATA file entry which will serve as the default for initializing new radiologist's profiles.  
-
-              SCREEN:           S DIC("S")="I $P(^(0),U,2)>.5"
-              EXPLANATION:      (The System's User Entry is Not Selectable.)
-
-2006.1,203    DEFAULT VISTARAD USERPREF NON 5;8 POINTER TO MAGJ USER DATA FILE (#2006.68)
-
-              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)>.5" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
-              LAST EDITED:      JUL 13, 2010 
-              HELP-PROMPT:      Enter the VistARad user whose settings you want to use for the Default Non-Radiologist user settings. 
-              DESCRIPTION:
-                                Points to a reference MAGJ USER DATA file entry which will serve as the default for initializing new NON-radiologist's profiles.  
-
-              SCREEN:           S DIC("S")="I $P(^(0),U,2)>.5"
-              EXPLANATION:      (The System's User Entry is Not Selectable.)
-
 
       FILES POINTED TO                      FIELDS
-
-BP SERVERS (#2006.8)              LAST PURGE BPWS (#60.4)
-                                  LAST VERIFY BP WS (#62.5)
 
 IMAGING USER PREFERENCE (#2006.18)  DEFAULT USER PREFERENCE (#100)
 
@@ -1073,25 +819,17 @@ INSTITUTION (#4)                  INSTITUTION NAME (#.01)
                                   VISTARAD GROUPING:VISTARAD GROUP (#.01)
                                   VISTARAD GROUPING:VISTARAD GROUP (#.01)
 
-MAGJ USER DATA (#2006.68)         DEFAULT VISTARAD USERPREF RAD (#202)
-                                  DEFAULT VISTARAD USERPREF NON (#203)
-
-MAIL GROUP (#3.8)                 Mail Group:Mail Group (#.01)
+JUKEBOX (#2006.032)               JUKEBOX DEFAULT (#54)
 
 NETWORK LOCATION (#2005.2)        IMAGE NETWORK WRITE LOCATION (#.03)
-                                  CURRENT RAID GROUP (#.031)
                                   GCC EXPORT LOC (#.07)
                                   IMAGE NETWORK IMPORT LOCATION (#.08)
                                   PACS DIRECTORY (#1.02)
                                   PACS IMAGE WRITE LOCATION (#1.03)
-                                  JUKEBOX WRITE LOCATION (#2.01)
+                                  CURRENT PLATTER (#2.03)
                                   NET UPDATE DIRECTORY (#52)
                                   NET UPDATE TEST DIRECTORY (#53)
                                   NET SITE SERVICE (#55)
-
-NEW PERSON (#200)                 MESSAGE RECIPIENTS:MESSAGE RECIPIENTS (#.01)
-
-SECURITY KEY (#19.1)              SECURITY KEYS:SECURITY KEYS (#.01)
 
 
 

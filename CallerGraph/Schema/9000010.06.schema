@@ -1,45 +1,45 @@
-STANDARD DATA DICTIONARY #9000010.06 -- V PROVIDER FILE                                                                                                                                                                           MAY 20,2014@15:39:40  PAGE 1
-STORED IN ^AUPNVPRV(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             
+STANDARD DATA DICTIONARY #9000010.06 -- V PROVIDER FILE                                                                                                                                                                           JUN 17,2014@15:24:36  PAGE 1
+STORED IN ^AUPNVPRV(  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                                       
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
 --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-This file has been designed for joint use by the Indian Health Service and the Department of Veteran Affairs.  
- 
-In IHS, this record, along with a purpose of visit, is required for each patient encounter at a facility, or at a visit in the home or other field location.  This same requirement does not exist in the VA.  
- 
-Data must exist in both the Patient/IHS file and the Visit file before data can be entered here.  There can be multiple providers for a given visit. The primary/secondary field identifies which provider is considered the primary provider for this visit.  
+This record, along with a purpose of visit, is required for each patient encounter, whether at an IHS, tribal or CHS facility, or at a visit in the home or other field location.  It has backward pointers to the IHS Patient file, and the visit file, and
+data must exist in both of these files for this visit before data can be entered here.  There can be multiple providers for a given visit.  The primary/secondary field identifies which provider is considered the primary provider for this visit.  The
+provider must exist in the Provider File (#6).  
 
 
               DD ACCESS: @
 IDENTIFIED BY: PATIENT NAME (#.02)[R], VISIT (#.03)[R]
 
+POINTED TO BY: PARENT field (#1208) of the V PROVIDER File (#9000010.06) 
+               
+
 CROSS
-REFERENCED BY: VISIT(AD), VISIT(AV10), PROVIDER(B), PATIENT NAME(C)
+REFERENCED BY: PATIENT NAME(AC), VISIT(AD), VISIT(AV10), PROVIDER(AV9), PROVIDER(B), PATIENT NAME(C)
 
 9000010.06,.01PROVIDER               0;1 POINTER TO NEW PERSON FILE (#200) (Required)
 
               LAST EDITED:      MAY 13, 1996 
               HELP-PROMPT:      Enter the provider of the patient encounter. 
-              DESCRIPTION:
-                                This is the provider giving patient care at this encounter.  
-
               CROSS-REFERENCE:  9000010.06^B 
                                 1)= S ^AUPNVPRV("B",$E(X,1,30),DA)=""
                                 2)= K ^AUPNVPRV("B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000010.06^AV9^MUMPS 
+                                1)= S:$D(APCDLOOK) DIC("DR")=""
+                                2)= Q
 
 
 9000010.06,.02PATIENT NAME           0;2 POINTER TO PATIENT/IHS FILE (#9000001) (Required)
 
               LAST EDITED:      AUG 10, 1995 
               HELP-PROMPT:      Enter the patient name. 
-              DESCRIPTION:
-                                Patient Name.  
-
-              TECHNICAL DESCR:
-                                Pointer to the Patient file.  Always stuffed by data entry, no editing allowed.  
-
                                 UNEDITABLE
+              CROSS-REFERENCE:  9000010.06^AC 
+                                1)= S ^AUPNVPRV("AC",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVPRV("AC",$E(X,1,30),DA)
+
               CROSS-REFERENCE:  9000010.06^C 
                                 1)= S ^AUPNVPRV("C",$E(X,1,30),DA)=""
                                 2)= K ^AUPNVPRV("C",$E(X,1,30),DA)
@@ -92,17 +92,14 @@ REFERENCED BY: VISIT(AD), VISIT(AV10), PROVIDER(B), PATIENT NAME(C)
               TECHNICAL DESCR:  In the VA's PCE interfaces, "primary" is the default for provider entries where a provider has not been entered yet for the visit.  "Secondary" is the default for provider entries where a provider already exist for the 
                                 visit. 
 
-              SOURCE OF DATA:   028/PSPRIME
 
-9000010.06,.05OPERATING/ATTENDING    0;5 SET
+9000010.06,.05PROVIDER STATUS        0;5 SET
 
                                 'A' FOR ATTENDING; 
                                 'O' FOR OPERATING; 
+                                'C' FOR CONSULTING; 
               LAST EDITED:      APR 27, 1994 
               HELP-PROMPT:      Enter A if the provider was "Attending" at this encounter.  Enter O if the provider was "Operating" at this encounter. 
-              DESCRIPTION:
-                                A Provider may be furthur identified as the "Attending" provider or an "Operating" provider for the encounter.  
-
 
 9000010.06,.06PERSON CLASS           0;6 POINTER TO PERSON CLASS FILE (#8932.1)
 
@@ -130,6 +127,52 @@ REFERENCED BY: VISIT(AD), VISIT(AV10), PROVIDER(B), PATIENT NAME(C)
                                 credit.  
                                  
                                 PCE Data Sources for automatic (scanning) data capture will be blank unless the event date and time are passed to PCE for filing.  
+
+
+9000010.06,1202ORDERING PROVIDER     12;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 09, 1996 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTPRV") 
+
+
+9000010.06,1203CLINIC                12;3 POINTER TO CLINIC STOP FILE (#40.7)
+
+              LAST EDITED:      JUL 09, 1996 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTCLN") 
+
+
+9000010.06,1204ENCOUNTER PROVIDER    12;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 09, 1996 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTEPR") 
+
+
+9000010.06,1208PARENT                12;8 POINTER TO V PROVIDER FILE (#9000010.06)
+
+              LAST EDITED:      JUL 09, 1996 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTPNT") 
+
+
+9000010.06,1209EXTERNAL KEY          12;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      SEP 24, 1996 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTEXK") 
+
+
+9000010.06,1210OUTSIDE PROVIDER NAME 12;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      SEP 24, 1996 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTOPR") 
 
 
 9000010.06,80101EDITED FLAG          801;1 SET
@@ -191,7 +234,11 @@ REFERENCED BY: VISIT(AD), VISIT(AV10), PROVIDER(B), PATIENT NAME(C)
 
       FILES POINTED TO                      FIELDS
 
+CLINIC STOP (#40.7)               CLINIC (#1203)
+
 NEW PERSON (#200)                 PROVIDER (#.01)
+                                  ORDERING PROVIDER (#1202)
+                                  ENCOUNTER PROVIDER (#1204)
 
 PACKAGE (#9.4)                    PACKAGE (#81202)
 
@@ -200,6 +247,8 @@ PATIENT/IHS (#9000001)            PATIENT NAME (#.02)
 PCE DATA SOURCE (#839.7)          DATA SOURCE (#81203)
 
 PERSON CLASS (#8932.1)            PERSON CLASS (#.06)
+
+V PROVIDER (#9000010.06)          PARENT (#1208)
 
 VISIT (#9000010)                  VISIT (#.03)
 

@@ -1,0 +1,132 @@
+STANDARD DATA DICTIONARY #21610.1 -- VFD MESSAGE TEXT FILE                                                                                                                                                                        JUN 17,2014@15:17:13  PAGE 1
+STORED IN ^VFD(21610.1,  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                                    
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: NAME(B), PROCESSING APPLICATION(C), DATE/TIME RECEIVED(D)
+
+21610.1,.01   NAME                   0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!(X?.N)!($L(X)<3)!'(X'?1P.E) X
+              HELP-PROMPT:      NAME MUST BE 3-30 CHARACTERS, NOT NUMERIC OR STARTING WITH PUNCTUATION 
+              CROSS-REFERENCE:  21610.1^B 
+                                1)= S ^VFD(21610.1,"B",$E(X,1,30),DA)=""
+                                2)= K ^VFD(21610.1,"B",$E(X,1,30),DA)
+
+
+21610.1,.02   DATE/TIME RECEIVED     0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 28, 2007 
+              CROSS-REFERENCE:  21610.1^D 
+                                1)= S ^VFD(21610.1,"D",$E(X,1,30),DA)=""
+                                2)= K ^VFD(21610.1,"D",$E(X,1,30),DA)
+                                Primarily intended to be used by the VFD MESSAGE PURGE option for comparison to the "DAYS TO KEEP" parameter, this cross-reference also facilitates lookup by date/time received.  
+
+
+
+21610.1,.03   LAST PROCESSED DATE/TIME 0;3 DATE
+
+              INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      OCT 11, 2007 
+              DESCRIPTION:
+                                Triggered from PROCESSING HISTORY multiple, #.01 field.  This indicates the last date/time the message was processed by any application.  
+
+              NOTES:            TRIGGERED by the DATE/TIME PROCESSED field of the PROCESSING HISTORY sub-field of the VFD MESSAGE TEXT File 
+
+
+21610.1,.04   NO PURGE FLAG          0;4 SET
+
+                                '1' FOR YES; 
+              LAST EDITED:      NOV 28, 2007 
+              HELP-PROMPT:      Enter '1' YES to protect entry from automatic deletion. 
+              DESCRIPTION:
+                                If this field is set to '1' YES, the entry will not be deleted by the background purge option.  
+
+
+21610.1,1     DATA                   1;0   WORD-PROCESSING #21610.11   (NOWRAP)
+
+
+21610.1,2     PROCESSING HISTORY     2;0 DATE Multiple #21610.12 (Add New Entry without Asking)
+
+
+21610.12,.01    DATE/TIME PROCESSED    0;1 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      OCT 11, 2007 
+                HELP-PROMPT:      Set automatically by processing application 
+                DESCRIPTION:
+                                  Each document can be processed by one or more applications, one or more times.  This multiple records an entry for each time the message is processed, and the identity of the processing application.  
+
+                CROSS-REFERENCE:  21610.12^B 
+                                  1)= S ^VFD(21610.1,DA(1),2,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VFD(21610.1,DA(1),2,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  ^^TRIGGER^21610.1^.03 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^VFD(21610.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=DIV S DIH=$G(^VFD(21610.1,DIV(0),0)),DIV=X S $P(^(0),U,3)=DIV,DIH=21610.1,DIG=.03 D ^DIC
+                                  R
+
+                                  2)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA S Y(1)=$S($D(^VFD(21610.1,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S Y(1)=$S($D(^VFD(21610.1,D0,2,D1,0)):^(0),1:"") S X=$P(Y(1),U,1) X ^DD(21610.12,.01,1,2,2.4
+                                  )
+
+                                  2.4)= S DIH=$G(^VFD(21610.1,DIV(0),0)),DIV=X S $P(^(0),U,3)=DIV,DIH=21610.1,DIG=.03 D ^DICR
+
+                                  CREATE VALUE)= DATE
+                                  DELETE VALUE)= DATE
+                                  FIELD)= LAST
+                                  This cross-reference updates the LAST PROCESSED DATE/TIME field to the value of the current PROCESSING HISTORY entry DATE/TIME.  
+
+
+
+21610.12,.02    PROCESSING APPLICATION 0;2 POINTER TO VFD MESSAGE APPLICATION FILE (#21610.2)
+
+                LAST EDITED:      OCT 11, 2007 
+                HELP-PROMPT:      Set automatically by processing application 
+                DESCRIPTION:
+                                  This is the application that processed the message.  
+
+                CROSS-REFERENCE:  21610.1^C 
+                                  1)= S ^VFD(21610.1,"C",$E(X,1,30),DA(1),DA)=""
+                                  2)= K ^VFD(21610.1,"C",$E(X,1,30),DA(1),DA)
+                                  Allows an application to determine whether a message has been previously proccessed either by itself or by another application.  
+
+
+
+21610.12,1      RESULT TEXT            1;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                LAST EDITED:      OCT 11, 2007 
+                HELP-PROMPT:      Result text, 1-245 characters in length. 
+                DESCRIPTION:
+                                  The processing routine may return optional text in the variable VFDRSLT.  This text could be a processing exception or success code or anything that the application wants to include with the processing history.  
+
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+VFD MESSAGE APPLICATION (#21610.2)  PROCESSING HISTORY:PROCESSING APPLICATION (#.02)
+
+VFD MESSAGE TEXT (#21610.1)       PROCESSING HISTORY:DATE/TIME PROCESSED (#.01)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #727.817 -- TREATING SPECIALTY CHANGE EXTRACT FILE                                                                                                                                                       MAY 20,2014@15:31:55  PAGE 1
-STORED IN ^ECX(727.817,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                          (VERSION 3.0)   
+STANDARD DATA DICTIONARY #727.817 -- TREATING SPECIALTY CHANGE EXTRACT FILE                                                                                                                                                       JUN 17,2014@15:17:04  PAGE 1
+STORED IN ^ECX(727.817,  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                    (VERSION 3.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -70,13 +70,13 @@ REFERENCED BY: EXTRACT NUMBER(AC)
 
               Facility                                                                                                         
               INPUT TRANSFORM:  K:$L(X)>7!($L(X)<1) X
-              LAST EDITED:      FEB 27, 2012 
+              LAST EDITED:      OCT 15, 1996 
               HELP-PROMPT:      Enter the station number where this extract was performed. 
               DESCRIPTION:
-                                This is the facility/division where the extract was performed.  
+                                Identifies the facility for this extract record.  
 
               TECHNICAL DESCR:
-                                Currently, FACILITY field is null.  
+                                For the Treating Specialty Change extract, the FACILITY field is null.  
 
 
 727.817,4     PATIENT NO. - DFN      0;5 POINTER TO PATIENT FILE (#2)
@@ -97,8 +97,9 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               INPUT TRANSFORM:  K:$L(X)>10!($L(X)<9)!'(X?9N!X?9N1"P") X
               LAST EDITED:      OCT 04, 1996 
               HELP-PROMPT:      Your answer must be 9 to 10 characters in length. 
-              DESCRIPTION:
-                                The patient's social security number.  
+              DESCRIPTION:      The patient's social security number.  
+                                 
+                                Any patient with an SSN beginning with "00000" is considered a "test patient" and will not be included in the extract.  
 
               TECHNICAL DESCR:  Using the patient pointer (DFN) stored in the PATIENT NO. - DFN field (4) in the TREATING SPECIALTY CHANGE EXTRACT file (#727.817), SSN data is derived from the SOCIAL SECURITY NUMBER field (.09) in the PATIENT file (#2).  
                                  
@@ -116,24 +117,19 @@ REFERENCED BY: EXTRACT NUMBER(AC)
 
               TECHNICAL DESCR:  Using the patient pointer (DFN) stored in the PATIENT NO. - DFN field (4) in the TREATING SPECIALTY CHANGE EXTRACT file (#727.817), NAME data is derived from the NAME field (.01) in the PATIENT file (#2). The first four
                                 characters of the first "," piece are used, padded with trailing spaces if necessary.  
-                                 
-                                The name value is returned by the supported call DEM^VADPT.  
 
 
-727.817,7     IN OUT PATIENT INDICATOR 0;8 SET
+727.817,7     IN OUT PATIENT INDICATOR 0;8 FREE TEXT
 
               In Out Patient Indicator                                                                                         
-                                'I' FOR INPATIENT; 
-                                'O' FOR OUTPATIENT; 
-              LAST EDITED:      MAR 08, 2012 
-              HELP-PROMPT:      Enter the patient's status at the time of the treating specialty change. 
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+              LAST EDITED:      DEC 06, 2001 
+              HELP-PROMPT:      Answer must be 1 character in length. 
               DESCRIPTION:
                                 Indicates whether the patient was an inpatient or an outpatient for this extract entry.  
 
-              TECHNICAL DESCR:  To determine the value of this field a call is made to $$PATDEM^ECXUTL2. Within this call, $$INP^ECXUTL2 is called to determine inpatient/outpatient status.  If the patient is an outpatient, processing stops and the field
-                                is set to O.   If the patient is an inpatient then $$INOUTP^ECXUTL4 is called to look at the treating specialty.  If the patient's treating specialty exists in the DSS TREATING SPECIALTY TRANSLATION (#727.831) file then
-                                the value of the INPAT/OUTPAT CODE field (#5) of the DSS TREATING SPECIALTY TRANSLATION (#727.831) file is used.  If the treating specialty is not found in the DSS TREATING SPECIALTY TRANSLATION (#727.831) file then the
-                                indicator is set to I.  
+              TECHNICAL DESCR:  This field formerly contained the pointer to the LOCATION TYPE file (#40.9) which was either 1=Outpatient or 3=Inpatient.  Pointing to this file has become obsolete, and in FY2002 this field has been changed to free text
+                                and will contain "O"=Outpatient or "I"=Inpatient.  
 
 
 727.817,8     DAY                    0;9 FREE TEXT
@@ -175,7 +171,7 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               LAST EDITED:      SEP 24, 1997 
               HELP-PROMPT:      Answer must be 8 characters in length. 
               DESCRIPTION:
-                                Patient's admission date.  
+                                An 8-character numeric string that represents the date of the Admission associated with this Treating Specialty change.  
 
               TECHNICAL DESCR:  Data source: 
                                  
@@ -193,7 +189,7 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               LAST EDITED:      SEP 24, 1997 
               HELP-PROMPT:      Answer must be 8 characters in length. 
               DESCRIPTION:
-                                Patient's discharge date.  
+                                An 8-character numeric string that represents the date of Discharge associated with this Treating Specialty change, if it is the last specialty change prior to discharge.  Otherwise, this field is null.  
 
               TECHNICAL DESCR:  Data source: 
                                  
@@ -211,9 +207,8 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               DESCRIPTION:
                                 Current patient movement record associated with this extract record.  
 
-              TECHNICAL DESCR:  A number used as an index into the patient movement file.  
-                                 
-                                The ^DGPM("ATT3" or "ATT6",DATE,D0) cross reference is used to obtain the current movement IEN associated with this patient. 
+              TECHNICAL DESCR:
+                                The ^DGPM("ATT3" or "ATT6",DATE,D0) cross reference is used to obtain the current movement number associated with this patient. It is a pointer to the PATIENT MOVEMENT file (#405).  
 
 
 727.817,13    TYPE                   0;14 FREE TEXT
@@ -236,7 +231,7 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               LAST EDITED:      APR 13, 2007 
               HELP-PROMPT:      PTF Code from Specialty File (42.4) 
               DESCRIPTION:
-                                The treating specialty code for this patient at the date and time of this record.  
+                                The Specialty PTF CODE associated with the Facility Treating Specialty to which patient is being moved.  
 
               TECHNICAL DESCR:  Source: Field #.09; file #405 Field #7; file #45.7 
                                  
@@ -250,8 +245,8 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               INPUT TRANSFORM:  K:$L(X)>3!($L(X)<2) X
               LAST EDITED:      MAY 02, 2007 
               HELP-PROMPT:      Answer must be 2-3 characters in length. 
-              DESCRIPTION:
-                                The patient's treating specialty code from prior treating specialty record.  
+              DESCRIPTION:      The Specialty PTF CODE associated with the losing Facility Treating Specialty for this patient movement.  If this movement is not an actual treating specialty change, then it is possible for this field to be the same as
+                                NEW TREATING SPECIALTY field (#14).  
 
               TECHNICAL DESCR:  Using the "ATT3" or "ATT6" cross reference on the PATIENT MOVEMENT file (#405) and the patient pointer (DFN) stored in the PATIENT NO. - DFN field (4) in the TREATING SPECIALTY CHANGE EXTRACT file (#727.817), NEW TREATING
                                 SPECIALTY data is derived from the FACILITY TREATING SPECIALTY field (.09) in the PATIENT MOVEMENT file (#405). This facility treating specialty data is a pointer to the FACILITY TREATING SPECIALTY file (#45.7). Using the
@@ -269,7 +264,7 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               LAST EDITED:      JAN 16, 1998 
               HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
               DESCRIPTION:
-                                The length of stay, in days, on the prior treating specialty.  
+                                The length of stay on the losing treating specialty.  
 
               TECHNICAL DESCR:  Calculated as current treating specialty date minus the date (DATE/TIME field (.01) of the PATIENT MOVEMENT file (#405)) of the last treating specialty change.  
                                  
@@ -327,7 +322,7 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               LAST EDITED:      SEP 24, 1997 
               HELP-PROMPT:      Answer must be 6 characters in length. 
               DESCRIPTION:
-                                The time at which the patient admission occurred in HHMMSS.  A 24 hour clock format is used (e.g. 8:31:12 p.m. would be 203112).  
+                                A 6-character numeric string that represent the time of day of the Admission associated with this Treating Specialty change.  
 
               TECHNICAL DESCR:  Data source: 
                                  
@@ -394,7 +389,7 @@ REFERENCED BY: EXTRACT NUMBER(AC)
                                 A national VA system identifier which uniquely identifies a patient.  
 
               TECHNICAL DESCR:
-                                Derived by calling API, $$GETICN^MPI001 (Supported DBIA #2701), that returns the Integration Control Number (ICN) for the given patient in the Patient file (#2).  
+                                The source is not known at this time, but will likely become available in an FY2000 enhancement to the Vista system.  
 
 
 727.817,25    DSS DEPT.              1;2 FREE TEXT
@@ -461,15 +456,9 @@ REFERENCED BY: EXTRACT NUMBER(AC)
 
               INPUT TRANSFORM:  K:+X'=X!(X>9999)!(X<0)!(X?.E1"."1N.N) X
               LAST EDITED:      JUL 23, 1998 
-              HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits. 
+              HELP-PROMPT:      Type a Number between 0 and 9999, 0 Decimal Digits 
               DESCRIPTION:
                                 The patient's length of stay with the losing attending physician.  
-
-              TECHNICAL DESCR:  The ATTENDING PHYSICIAN LOS is determined by looping through both the treating specialty/provider change movements and the discharge movements of the PATIENT MOVEMENT file (#405).  
-                                 
-                                For each movement, a call is made to PREVATT^ECXTRT1.  If the attending physician has changed since the last movement, or if the movement is a discharge, then the call returns the length of stay (LOS) to be associated with
-                                the attending physician of the previous movement.  For the treating specialty/provider change movement associated with an admission, this field will be left blank.  This field will also be blank if the attending physician
-                                for the current movement or the previous movement cannot be determined.  Maximum value for this field is 9999.  
 
 
 727.817,31    PRIMARY WARD PROVIDER LOS 1;8 NUMBER
@@ -480,48 +469,23 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               DESCRIPTION:
                                 The patient's length of stay with the losing primary ward provider.  
 
-              TECHNICAL DESCR:  The PRIMARY WARD PROVIDER LOS is determined by looping through both the treating specialty/provider change movements and the discharge movements of the PATIENT MOVEMENT file (#405).  
-                                 
-                                For each movement, a call is made to PREVPRV^ECXTRT1.  If the primary provider has changed since the last movement, or if the movement is a discharge, then the call returns the length of stay (LOS) to be associated with
-                                the primary provider of the previous movement.  For the treating specialty/provider change movement associated with an admission, this field will be left blank.  This field will also be blank if the primary provider for
-                                the current movement or the previous movement cannot be determined.  Maximum value for this field is 9999.  
+
+727.817,32    DOM,PRRTP AND SAARTP INDICATOR 1;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>1!($L(X)<1) X
+              LAST EDITED:      OCT 10, 2000 
+              HELP-PROMPT:      Answer must be 1 character in length. DOM, PRRTP and SARTP Indicator indicates the patient status at the time of hospital service. 
+              DESCRIPTION:       DOM, PRRTP and SAARTP Indicator indicates if the patient is admitted to either a DOM, PRRTP or SAARTP at the time hospital service is provided.  Domiciliary (DOM) Psychiatric Residential Rehabilitation Treatment Program
+                                (PRRTP) Substance Abuse Residential Rehabiltation Treatment Program (SARRTP) 
 
 
-727.817,32    DOM,PRRTP AND SAARTP INDICATOR 1;9 SET
+727.817,33    OBSERVATION PATIENT INDICATOR 1;10 FREE TEXT
 
-                                'P' FOR GEN. PRRTP; 
-                                'T' FOR PTSD PRRTP; 
-                                'S' FOR DOM. PRRTP; 
-                                'H' FOR HOMELESS CWT/TR; 
-                                'A' FOR SA CWT/TR; 
-                                'D' FOR DOMICILIARY; 
-                                'B' FOR PTSD CWT/TR; 
-                                'C' FOR GEN. CWT/TR; 
-              LAST EDITED:      MAR 08, 2012 
-              HELP-PROMPT:      Enter the indicator associated with the treating specialty assigned to this record. 
+              INPUT TRANSFORM:  K:$L(X)>4!($L(X)<1) X
+              LAST EDITED:      AUG 14, 2001 
+              HELP-PROMPT:      Answer must be 1-4 characters in length. 
               DESCRIPTION:
-                                Indicates if the patient is admitted to either a RRTP, PRRTP or SARRTP at the time care is provided.  
-
-              TECHNICAL DESCR:  If the patient's treating specialty exists in the DSS TREATING SPECIALTY TRANSLATION (#727.831) file, data is derived from the DOM/PRRTP/SARRTP CODE field (#2) of the DSS TREATING SPECIALTY TRANSLATION (#727.831) file.  
-                                Otherwise, the value is null.  
-
-
-727.817,33    OBSERVATION PATIENT INDICATOR 1;10 SET
-
-                                'NO' FOR NO; 
-                                'YES' FOR YES; 
-              LAST EDITED:      MAR 08, 2012 
-              HELP-PROMPT:      Enter observation patient status for this record. 
-              DESCRIPTION:
-                                Indicates if patient is considered to be an observation patient.  
-
-              TECHNICAL DESCR:  Data (YES, NO) is retrieved from API call $$OBSPAT^ECXUTL4: 
-                                 
-                                If the patient's treating specialty exists in the DSS TREATING SPECIALTY TRANSLATION (#727.831) file, data is derived from the OBSERVATION PAT INDICATOR field (#4) of the DSS TREATING SPECIALTY TRANSLATION (#727.831) file.  
-                                 
-                                If patient is outpatient and treating specialty not in file, AND Feeder Key (CLI) or DSS ID (MTL,IVP,ECQ,QSR,NOS,SUR) is 290-297, Observation Patient Ind=YES.  Else, Observation Patient Ind=NO.  
-                                 
-                                Otherwise, Observation Patient Ind=NO.  
+                                This field is derived from the inpatient/outpatient status, treating specialty, and DSS Identifier or feeder key values in the record.  
 
 
 727.817,34    ENCOUNTER NUMBER       1;11 FREE TEXT
@@ -530,10 +494,7 @@ REFERENCED BY: EXTRACT NUMBER(AC)
               LAST EDITED:      MAY 03, 2001 
               HELP-PROMPT:      Answer must be 1-18 characters in length 
               DESCRIPTION:
-                                The unique number assigned for DSS. 
-
-              TECHNICAL DESCR:  This field is determined by a call to $$ENCNUM^ECXUTL4.  Within this call the inpatient/outpatient status, SSN, admit/visit date, treating specialty, observation patient indicator, and DSS Identifier or feeder key values
-                                of the record are used to create a unique encounter number.  
+                                This field is derived from the inpatient/outpatient status, SSN, admit/visit date, treating specialty, observation patient indicator, and DSS Identifier or feeder key values in the record.  
 
 
 727.817,35    PRODUCTION DIVISION CODE 1;12 FREE TEXT
@@ -642,27 +603,6 @@ REFERENCED BY: EXTRACT NUMBER(AC)
 
               TECHNICAL DESCR:  NEW PRIMARY WARD PROVIDER NPI is a standard unique life-long identifier of the new primary ward provider associated with the current movement record in File (#405).  The qualified identifier shall be retrieved via the
                                 supporting Kernel API:$$NPI^XUSNPI.  
-
-
-727.817,44    PATCAT                 1;21 SET
-
-                                'AD' FOR Active Duty; 
-                                'ADD' FOR Active Duty Dependent; 
-                                'FNRS' FOR Former Non-Remarried Spouse; 
-                                'RET' FOR Retired; 
-                                'RETD' FOR Retiree Dependent; 
-                                'RES' FOR Reservist; 
-                                'REC' FOR Recruit; 
-                                'TDRL' FOR Temporary Disability; 
-                                'TFL' FOR TRICARE for Life; 
-              LAST EDITED:      SEP 03, 2010 
-              HELP-PROMPT:      Select the Patient's Category for the FHCC Reconciliation process. 
-              DESCRIPTION:      This is the Patient's category which will be used for FHCC (Federal Health Care Center) Reconciliation.  DSS must capture and report DoD patients so that the FHCC reconciliation process can function as designed.
-                                "Reconciliation" is the process used within the new FHCC to determine which patients DoD pays for and which VA pays for.  
-
-              TECHNICAL DESCR:  If the VistA Patient Type Code (TYPE (#391) field of the Patient (#2) file) = Active Duty, Military Retiree, or TRICARE, then the value(s) in the VistA Other  Eligibility multiple (PATIENT ELIGIBILITIES (#361) field of the
-                                PATIENT (#2) file), which points to locally modifiable ELIGIBILITY CODE (#8) file should be evaluated. If the value in the ELIGIBILITY CODE is equal to any entry in the set of codes in this field, the value should be
-                                placed in this field.  
 
 
 

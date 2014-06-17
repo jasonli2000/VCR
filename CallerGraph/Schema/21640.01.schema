@@ -1,0 +1,225 @@
+STANDARD DATA DICTIONARY #21640.01 -- VFD IHTSDO FILE                                                                                                                                                                             JUN 17,2014@15:17:18  PAGE 1
+STORED IN ^VFD(21640.01,  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                              (VERSION 2011.1.2)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file will store SNOMED (IHTSDO) codes if captured by vxVistA.  vxVistA 2010.1.1 or later will have modification to vxCPRS to allow for the entering of these codes.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+IDENTIFIED BY: PATIENT NAME (#.02)[R], VISIT (#.03)[R]
+
+CROSS
+REFERENCED BY: VISIT(AD), ORDER REFERENCE(AOR), VISIT(AV10), SNOMED CODE(B), PATIENT NAME(C)
+
+INDEXED BY:    PATIENT NAME & VISIT (AA), VISIT & USAGE & SNOMED CODE (ASCT)
+
+
+21640.01,.01  SNOMED CODE            0;1 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<3)!'(X'?1P.E) X
+              LAST EDITED:      APR 16, 2011 
+              HELP-PROMPT:      Answer must be 3-30 characters in length. 
+              DESCRIPTION:
+                                This is the external SNOMED CT code that will be needed to get the description via the API - CODE^LEXTRAN.  
+
+              CROSS-REFERENCE:  21640.01^B 
+                                1)= S ^VFD(21640.01,"B",$E(X,1,30),DA)=""
+                                2)= K ^VFD(21640.01,"B",$E(X,1,30),DA)
+
+              RECORD INDEXES:   ASCT (#805)
+
+21640.01,.02  PATIENT NAME           0;2 POINTER TO PATIENT/IHS FILE (#9000001) (Required)
+
+              LAST EDITED:      APR 25, 2011 
+              DESCRIPTION:
+                                Enter the name of the patient associated with this record.  
+
+              CROSS-REFERENCE:  21640.01^C 
+                                1)= S ^VFD(21640.01,"C",$E(X,1,30),DA)=""
+                                2)= K ^VFD(21640.01,"C",$E(X,1,30),DA)
+
+              RECORD INDEXES:   AA (#804)
+
+21640.01,.03  VISIT                  0;3 POINTER TO VISIT FILE (#9000010) (Required)
+
+              LAST EDITED:      APR 25, 2011 
+              DESCRIPTION:
+                                Enter the VISIT (file 9000010) associated with this record.  
+
+              CROSS-REFERENCE:  21640.01^AD 
+                                1)= S ^VFD(21640.01,"AD",$E(X,1,30),DA)=""
+                                2)= K ^VFD(21640.01,"AD",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  21640.01^AV10^MUMPS 
+                                1)= D ADD^AUPNVSIT
+                                2)= D SUB^AUPNVSIT
+
+              RECORD INDEXES:   AA (#804), ASCT (#805)
+
+21640.01,.04  PROVIDER NARRATIVE     0;4 POINTER TO PROVIDER NARRATIVE FILE (#9999999.27) (Required)
+
+              LAST EDITED:      APR 23, 2011 
+              DESCRIPTION:
+                                Enter any PCE provider narrative that the user may have entered.  
+
+
+21640.01,.05  USAGE                  0;5 SET (Required)
+
+                                'D' FOR DISORDER; 
+                                'P' FOR PROCEDURE; 
+              LAST EDITED:      APR 16, 2011 
+              DESCRIPTION:
+                                This is needed for reports to determine if the code in question is a disorder/diagnosis or a procedure.  
+
+              RECORD INDEXES:   ASCT (#805)
+
+21640.01,.17  ORDER REFERENCE        0;17 POINTER TO ORDER FILE (#100)
+
+              LAST EDITED:      APR 23, 2011 
+              DESCRIPTION:
+                                Enter the order number associated with the entry if it is available.  
+
+              CROSS-REFERENCE:  21640.01^AOR 
+                                1)= S ^VFD(21640.01,"AOR",$E(X,1,30),DA)=""
+                                2)= K ^VFD(21640.01,"AOR",$E(X,1,30),DA)
+
+
+21640.01,1201 EVENT DATE AND TIME    12;1 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      APR 16, 2011 
+
+21640.01,1202 ORDERING PROVIDER      12;2 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 23, 2011 
+              DESCRIPTION:
+                                This field can be used to document the provider whose order resulted in this record being created.  
+
+
+21640.01,1204 ENCOUNTER PROVIDER     12;4 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      APR 23, 2011 
+              DESCRIPTION:
+                                This is the provider who had the encounter that caused this record to be created.  
+
+
+21640.01,80101EDITED FLAG            801;1 SET
+
+                                '1' FOR EDITED; 
+              LAST EDITED:      APR 16, 2011 
+              DESCRIPTION:
+                                This field is automatically set to 1 if PCE detects that any original SNOMED data is being edited.  
+
+              TECHNICAL DESCR:
+                                PCE filing logic automatically compares the before and after pictures of the record to determine if the edited flag should be set to "1".  
+
+
+21640.01,80102AUDIT TRAIL            801;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>85!($L(X)<2) X
+              LAST EDITED:      APR 16, 2011 
+              HELP-PROMPT:      Answer is automatically entered by the PCE filing logic. 
+              DESCRIPTION:
+                                This field is populated automatically by the PCE filing logic.. The format of the field is as follows:  Pointer to PCE data source file_"-"_A for Add or E for Edit_" "_DUZ of the person who entered the data_";"...  
+
+              TECHNICAL DESCR:  The PCE filing logic requires a pointer to the PCE data source file.  If this is not passed, the PCE filing logic will not process the data.  
+                                 
+                                If the record is a new record, then an "A" is used to specify the source that added the data.  If the record existed previously, PCE filing logic compares the old and new records of information.  An "E" will be 
+                                automatically used if the filing logic finds the data has been edited.  If "E" is used, then the Edited Flag field is automatically set to 1.  
+                                 
+                                The DUZ is stored in its internal format to represent the user who performed the adding or editing of data for this record.  
+                                 
+                                Iterations of editing will be concatenated to the previous data source value, up to 85 characters.  
+
+
+21640.01,80201PROVIDER NARRATIVE CATEGORY 802;1 POINTER TO PROVIDER NARRATIVE FILE (#9999999.27)
+
+              LAST EDITED:      APR 23, 2011 
+              DESCRIPTION:      This field is the heading or category used to represent the provider narrative on the scanner form.  It may be useful for understanding how providers are grouping data for use on the encounter form, and may help determine
+                                clinical data base definitions in the future.  
+
+
+21640.01,81101COMMENTS               811;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+              LAST EDITED:      APR 16, 2011 
+              HELP-PROMPT:      Answer must be 1-245 characters in length. 
+              DESCRIPTION:
+                                This is a commented related to the procedure performed.  The provider may enter this manually via the PCE User Interface.  
+
+
+21640.01,81201VERIFIED               812;1 SET
+
+                                '1' FOR ELECTRONICALLY SIGNED; 
+                                '2' FOR VERIFIED BY PACKAGE; 
+              LAST EDITED:      APR 16, 2011 
+
+21640.01,81202PACKAGE                812;2 POINTER TO PACKAGE FILE (#9.4)
+
+              LAST EDITED:      APR 16, 2011 
+
+21640.01,81203DATA SOURCE            812;3 POINTER TO PCE DATA SOURCE FILE (#839.7)
+
+              LAST EDITED:      APR 16, 2011 
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 ORDERING PROVIDER (#1202)
+                                  ENCOUNTER PROVIDER (#1204)
+
+ORDER (#100)                      ORDER REFERENCE (#.17)
+
+PACKAGE (#9.4)                    PACKAGE (#81202)
+
+PATIENT/IHS (#9000001)            PATIENT NAME (#.02)
+
+PCE DATA SOURCE (#839.7)          DATA SOURCE (#81203)
+
+PROVIDER NARRATIVE (#9999999.27)  PROVIDER NARRATIVE (#.04)
+                                  PROVIDER NARRATIVE CATEGORY (#80201)
+
+VISIT (#9000010)                  VISIT (#.03)
+
+
+File #21640.01
+
+  Record Indexes:
+
+  AA (#804)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  Sort file by patient,inverse visit date
+        Set Logic:  S ^VFD(21640.01,"AA",X(1),X(3),DA)=""
+         Set Cond:  S X=(X2(3)'=9999999)
+       Kill Logic:  K ^VFD(21640.01,"AA",X(1),X(3),DA)
+        Kill Cond:  S X=(X1(3)'=9999999)
+       Whole Kill:  K ^VFD(21640.01,"AA")
+             X(1):  PATIENT NAME  (21640.01,.02)  (Subscr 1)  (forwards)
+             X(2):  VISIT  (21640.01,.03)  (forwards)
+             X(3):  Computed Code: S X=9999999-$G(^AUPNVSIT(+X(2),0))
+                      (Subscr 2)
+
+  ASCT (#805)    RECORD    REGULAR    IR    SORTING ONLY
+      Short Descr:  BY VISIT BY USAGE BY SNOMED CODE
+      Description:  This index will be used at least minimally for the STK and VTE reports to group procedures and disorders for a visit.  
+        Set Logic:  S ^VFD(21640.01,"ASCT",X(1),X(2),$E(X(3),1,30),DA)=""
+       Kill Logic:  K ^VFD(21640.01,"ASCT",X(1),X(2),$E(X(3),1,30),DA)
+       Whole Kill:  K ^VFD(21640.01,"ASCT")
+             X(1):  VISIT  (21640.01,.03)  (Subscr 1)  (forwards)
+             X(2):  USAGE  (21640.01,.05)  (Subscr 2)  (forwards)
+             X(3):  SNOMED CODE  (21640.01,.01)  (Subscr 3)  (Len 30)  (forwards)
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

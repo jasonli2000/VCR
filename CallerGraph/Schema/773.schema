@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #773 -- HL7 MESSAGE ADMINISTRATION FILE                                                                                                                                                                  MAY 20,2014@15:33:38  PAGE 1
-STORED IN ^HLMA(  (23 ENTRIES)   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                               (VERSION 1.6)   
+STANDARD DATA DICTIONARY #773 -- HL7 MESSAGE ADMINISTRATION FILE                                                                                                                                                                  JUN 17,2014@15:18:31  PAGE 1
+STORED IN ^HLMA(  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                           (VERSION 1.6)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -10,15 +10,15 @@ This file is used to create and maintain unique message IDs.  It also contains a
 IDENTIFIED BY: MESSAGE ID (#2)
 
 POINTED TO BY: HL7 MESSAGE field (#.05) of the HL7 Message Exceptions File File (#79.3) 
-               HL7_MESSAGE_ADMINISTRATION field (#.04) of the CP_HL7_LOG File (#704.002) 
                INITIAL MESSAGE field (#6) of the HL7 MESSAGE ADMINISTRATION File (#773) 
                ACKNOWLEDGEMENT TO field (#12) of the HL7 MESSAGE ADMINISTRATION File (#773) 
+               HLMTIENS field (#1.02) of the VXVISTA EXCEPTION File (#21603) 
                
 
 CROSS
-REFERENCED BY: LOGICAL LINK(AC), LAST DATE/TIME UPDATED(AD), RECEIVING APPLICATION(AE), INITIAL MESSAGE(AF), LAST DATE/TIME UPDATED(AF), STATUS(AG), MESSAGE ID(AH), DATE/TIME ENTERED(B)
+REFERENCED BY: LOGICAL LINK(AC), DATE/TIME PROCESSED(AD), RECEIVING APPLICATION(AE), INITIAL MESSAGE(AF), STATUS(AG), MESSAGE ID(AH), DATE/TIME ENTERED(B)
 
-INDEXED BY:    MESSAGE ID (AHNEW), STATUS (AI), FAST PURGE DT/TM (AJ), MESSAGE ID (C)
+INDEXED BY:    STATUS (AI), FAST PURGE DT/TM (AJ), MESSAGE ID (C)
 
 
 773,.001      NUMBER                     NUMBER
@@ -38,7 +38,7 @@ INDEXED BY:    MESSAGE ID (AHNEW), STATUS (AI), FAST PURGE DT/TM (AJ), MESSAGE I
 773,2         MESSAGE ID             0;2 FREE TEXT
 
               INPUT TRANSFORM:  K:$L(X)>60!($L(X)<1) X
-              LAST EDITED:      MAY 15, 2008 
+              LAST EDITED:      AUG 01, 2007 
               HELP-PROMPT:      Answer must be 1-60 characters in length 
               DESCRIPTION:
                                 This is an unique identifier associated with a message.  
@@ -56,13 +56,6 @@ INDEXED BY:    MESSAGE ID (AHNEW), STATUS (AI), FAST PURGE DT/TM (AJ), MESSAGE I
                     Set Logic:  S ^HLMA("C",$E(X,1,60),DA)=""
                    Kill Logic:  K ^HLMA("C",$E(X,1,60),DA)
                    Whole Kill:  K ^HLMA("C")
-                         X(1):  MESSAGE ID  (773,2)  (Subscr 1)  (Len 60)  (forwards)
-
-              FIELD INDEX:      AHNEW (#799)    MUMPS    IR    ACTION
-                  Short Descr:  This x-ref is used to look up the original message to check duplicate
-                    Set Logic:  N HDR,FLD S HDR=$G(^HLMA(DA,"MSH",1,0)) Q:HDR']""  S:$G(^HLMA(DA,"MSH",2,0))]"" HDR=HDR_$G(^HLMA(DA,"MSH",2,0)) S FLD=$E(HDR,4) Q:FLD']""  S HDR=$P(HDR,FLD,3,6) S:HDR]"" ^HLMA("AH-NEW",HDR,X,DA)=""
-                   Kill Logic:  N HDR,FLD S HDR=$G(^HLMA(DA,"MSH",1,0)) Q:HDR']""  S:$G(^HLMA(DA,"MSH",2,0))]"" HDR=HDR_$G(^HLMA(DA,"MSH",2,0)) S FLD=$E(HDR,4) Q:FLD']""  S HDR=$P(HDR,FLD,3,6) K:HDR]"" ^HLMA("AH-NEW",HDR,X,DA)
-                   Whole Kill:  K ^HLMA("AH-NEW")
                          X(1):  MESSAGE ID  (773,2)  (Subscr 1)  (Len 60)  (forwards)
 
 
@@ -497,20 +490,13 @@ INDEXED BY:    MESSAGE ID (AHNEW), STATUS (AI), FAST PURGE DT/TM (AJ), MESSAGE I
                                 free-text data, this field will hold an "A" (for array.)  If overwritten by M code this field will hold "M".  
 
 
-773,100       LAST DATE/TIME UPDATED S;1 DATE
+773,100       DATE/TIME PROCESSED    S;1 DATE
 
               INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
-              LAST EDITED:      FEB 24, 2009 
+              LAST EDITED:      DEC 08, 2003 
               HELP-PROMPT:      The date and time this transmission was processed. 
-              DESCRIPTION:      For outgoing message: 
-                                  1. Date/time of its commit ACK received.  
-                                  2. Date/time of its application ACK message received (overwriting 
-                                     #1).  
-                                 
-                                And for incoming message: 
-                                  1. Date/time of the message received.  
-                                  2. Date/time of the message has been processed by the application 
-                                     (overwriting #1).  
+              DESCRIPTION:
+                                The date and time this message was processed (sent or received).  For outgoing messages, it is the time the message was actually transmitted.  For incoming messages, it is the time the application processed the message.  
 
               CROSS-REFERENCE:  773^AD^MUMPS 
                                 1)= S ^HLMA("AD",X,DA)="" N %,%1 S %=$G(^HLMA(DA,0)),%1=$P(%,U,3),%=$P(%,U,7) K:%1]""&% ^HLMA("AC",%1,%,DA)
@@ -519,68 +505,9 @@ INDEXED BY:    MESSAGE ID (AHNEW), STATUS (AI), FAST PURGE DT/TM (AJ), MESSAGE I
                                 This cross-reference is used to remove messages from the 'AC' x-ref. after they have been processed.  It also set the 'AD' x-ref for the date processed.  
 
 
-              CROSS-REFERENCE:  773^AF 
-                                1)= S ^HLMA("AF",$E(X,1,30),DA)=""
-                                2)= K ^HLMA("AF",$E(X,1,30),DA)
 
+773,200       MSH                    MSH;0   WORD-PROCESSING #773.01   (NOWRAP)
 
-773,102       TIME START TO SEND     S;2 DATE
-
-              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
-              LAST EDITED:      FEB 23, 2009 
-              HELP-PROMPT:      (No range limit on date) 
-              DESCRIPTION:
-                                This is the date/time the transmission of this outgoing message began.  
-
-
-773,103       TIME SENT              S;3 DATE
-
-              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
-              LAST EDITED:      FEB 23, 2009 
-              HELP-PROMPT:      (No range limit on date) 
-              DESCRIPTION:
-                                This is the date/time the transmission of this outgoing message finished.  
-
-
-773,104       TIME OF COMMIT/APP ACK S;4 DATE
-
-              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
-              LAST EDITED:      FEB 23, 2009 
-              HELP-PROMPT:      (No range limit on date) 
-              DESCRIPTION:
-                                This is the date/time this message received the commit ACK, or application ACK of original mode or direct connect transmission (API: DIRECT^HLMA).  
-
-
-773,105       TIME OF APPLICATION ACK S;5 DATE
-
-              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
-              LAST EDITED:      FEB 23, 2009 
-              HELP-PROMPT:      (No range limit on date) 
-              DESCRIPTION:
-                                This is the date/time this message received the application ACK.  
-
-
-773,106       TIME START PROCESSING  S;6 DATE
-
-              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
-              LAST EDITED:      FEB 23, 2009 
-              HELP-PROMPT:      (No range limit on date) 
-              DESCRIPTION:
-                                This is the date/time the application began processing this message.  
-
-
-773,107       TIME PROCESSED         S;7 DATE
-
-              INPUT TRANSFORM:  S %DT="ESTR" D ^%DT S X=Y K:X<1 X
-              LAST EDITED:      FEB 23, 2009 
-              HELP-PROMPT:      (No range limit on date) 
-              DESCRIPTION:
-                                This is the date/time the application finished processing this message.  
-
-
-773,200       MSH                    MSH;0   WORD-PROCESSING #773.01   (NOWRAP)   (IGNORE "|")
-
-              LAST EDITED:      JUN 14, 2004 
 
 
       FILES POINTED TO                      FIELDS

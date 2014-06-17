@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #9000010.07 -- V POV FILE                                                                                                                                                                                MAY 20,2014@15:39:41  PAGE 1
-STORED IN ^AUPNVPOV(  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                                             
+STANDARD DATA DICTIONARY #9000010.07 -- V POV FILE                                                                                                                                                                                JUN 17,2014@15:24:37  PAGE 1
+STORED IN ^AUPNVPOV(  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                                       
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -11,7 +11,7 @@ The V POV file is used to store clinical data related to the "purpose of visit" 
  
 There should be at least one "purpose of visit" (descriptive name used by IHS) or one "problem of visit" (descriptive name used by the VA) in the V POV file for each patient visit whether it is an inpatient, outpatient or field visit, and regardless of
 the discipline of the provider (i.e.  dental, CHN, mental health, etc.). There is no limit to the number of POV's that can be entered for a patient for a given encounter.  
-  
+ 
 At IHS facilities, POV's are generated automatically for this file at time of discharge from the Admission, Discharge and Transfer (ADT) system.  POV's are entered in narrative form, and coded automatically to the appropriate ICD9 code. Physician entered
 narrative which modifies the diagnosis, such as "doubtful, suspect, resolved" are entered by the data entry person in the MODIFIER field.  Narrative qualifiers, such as "not healing well", "date of onset", "severe" etc.. are stored in the NARRATIVE 
 QUALIFIER field.  STAGE is used only as a local option.  The file contains pointers to the IHS Patient file, and visit file, and data must exist in both of these files for this visit before a POV can be entered here.  
@@ -28,10 +28,11 @@ by IHS.)
 IDENTIFIED BY: PATIENT NAME (#.02)[R], VISIT (#.03)[R]
 
 POINTED TO BY: PURPOSE OF VISIT field (#.03) of the TIU PROBLEM LINK File (#8925.9) 
+               PARENT field (#1208) of the V POV File (#9000010.07) 
                
 
 CROSS
-REFERENCED BY: VISIT(AA), PATIENT NAME(AATOO), VISIT(AD), VISIT(AV10), POV(B), PATIENT NAME(C)
+REFERENCED BY: VISIT(AA), PATIENT NAME(AATOO), POV(ABAT), PATIENT NAME(AC), VISIT(AD), POV(AE), VISIT(AV10), POV(AV9), POV(B), PATIENT NAME(C)
 
 INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
 
@@ -41,17 +42,6 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
               INPUT TRANSFORM:  S:$D(APCDEIN) APCDTPCC="" S DIC("S")="D ^AUPNSICD" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
               LAST EDITED:      AUG 31, 1995 
               HELP-PROMPT:      Enter the ICD Diagnosis code or text for the problem treated at the encounter. 
-              DESCRIPTION:      POV is an abbreviation for "Purpose of Visit".  Since Purpose of Visit is often confused with "Chief complaint", another abbreviation might better be  "Problem of Visit".  This is the Provider's conclusion about what was 
-                                treated at the visit.  The Provider should be able to indicate a preferred narrative for what was treated and an ICD Diagnosis code.  If the problem treated is from the Problem List, then the problem list entry information 
-                                can be used for the "Problem of Visit" entry.  The provider can alternatively have this information automatically captured via scanned Encounter Forms (e.g., AICS - the VA's Encounter Form Data Capture package).  
-                                 
-                                At VA facilites, the ICD Diagnosis is screened by Inactive Code and it must be appropriate for the Patient's age and sex.  
-                                 
-                                At IHS facilities, the ICD Diagnosis is screened by Inactive Code, appropriate for the Patient's age and sex, and Not "E" codes.  
-
-              TECHNICAL DESCR:
-                                This is a pointer to the ICD Diagnosis (#80) file.  
-
               SCREEN:           S DIC("S")="D ^AUPNSICD"
               EXPLANATION:      POV CANNOT BE AN INACTIVE CODE
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
@@ -59,6 +49,18 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
               CROSS-REFERENCE:  9000010.07^B 
                                 1)= S ^AUPNVPOV("B",$E(X,1,30),DA)=""
                                 2)= K ^AUPNVPOV("B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000010.07^AV9^MUMPS 
+                                1)= S:$D(APCDLOOK) DIC("DR")=""
+                                2)= Q
+
+              CROSS-REFERENCE:  9000010.07^AE^MUMPS 
+                                1)= S ATXSAVE=X,X="ATXPOV" X ^%ZOSF("TEST") S X=ATXSAVE K ATXSAVE I $T S ATXAD="" D ^ATXPOV K ATXAD
+                                2)= K ATXAD S ATXSAVE=X,X="ATXPOV" X ^%ZOSF("TEST") S X=ATXSAVE K ATXSAVE I $T D ^ATXPOV
+
+              CROSS-REFERENCE:  9000010.07^ABAT^MUMPS 
+                                1)= I $T(EP^BATREG)]"",$E($P(^ICD9(X,0),U),1,3)=493,$D(^BATREG(0)),$G(APCDPAT),$G(APCDVSIT) D EP^BATREG(APCDPAT,DA,APCDVSIT)
+                                2)= Q
 
               RECORD INDEXES:   ACR (#472)
 
@@ -75,13 +77,11 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
 
               LAST EDITED:      AUG 31, 1995 
               HELP-PROMPT:      Enter the name of the patient who had the POV treated. 
-              DESCRIPTION:
-                                This is the patient whose problem or diagnosis was treated.  
-
-              TECHNICAL DESCR:
-                                This is a pointer to the Patient/IHS file (#9000001), which is dinumed to the Patient file (#2).  This field is always stuffed by the application.  No editing is allowed.  
-
                                 UNEDITABLE
+              CROSS-REFERENCE:  9000010.07^AC 
+                                1)= S ^AUPNVPOV("AC",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVPOV("AC",$E(X,1,30),DA)
+
               CROSS-REFERENCE:  9000010.07^AATOO^MUMPS 
                                 1)= I $P(^AUPNVPOV(DA,0),U,3)]"" S ^AUPNVPOV("AA",X,(9999999-$P(+^AUPNVSIT($P(^AUPNVPOV(DA,0),U,3),0),".",1)),DA)=""
                                 2)= I $P(^AUPNVPOV(DA,0),U,3)]"" K ^AUPNVPOV("AA",X,(9999999-$P(+^AUPNVSIT($P(^AUPNVPOV(DA,0),U,3),0),".",1)),DA)
@@ -168,6 +168,15 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
               SCREEN:           S DIC(0)=$S($D(PXKLAYGO):"LOX",$D(APCDALVR):"LO",$D(ZTQUEUED):"LO",1:"EMQLO")
               EXPLANATION:      IHS OLD LOOKUP or VA Exact Match
 
+9000010.07,.05STAGE                  0;5 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>9)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      APR 07, 1993 
+              HELP-PROMPT:      Type a Number between 0 and 9, 0 Decimal Digits 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTSTG") 
+
+
 9000010.07,.06MODIFIER               0;6 SET
 
                                 'C' FOR CONSIDER; 
@@ -189,7 +198,56 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
 
               SCREEN:           S:DUZ("AG")="V" DIC("S")="I ""FOT""[Y"
               EXPLANATION:      VA screens for Rule Out, Follow Up, and Status Post
-              SOURCE OF DATA:   061/DISPEC
+
+9000010.07,.07CAUSE OF DX            0;7 SET
+
+                                '1' FOR HOSPITAL ACQUIRED; 
+                                '2' FOR ALCOHOL RELATED; 
+                                '3' FOR BATTERED CHILD; 
+                                '4' FOR EMPLOYMENT RELATED; 
+                                '5' FOR DOMESTIC VIOLENCE RELATED; 
+              LAST EDITED:      JUN 01, 1997 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTCD") 
+
+
+9000010.07,.08FIRST/REVISIT          0;8 SET
+
+                                '1' FOR FIRST VISIT; 
+                                '2' FOR REVISIT; 
+              LAST EDITED:      APR 07, 1987 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTFR") 
+
+
+9000010.07,.09CAUSE (E-CODE)         0;9 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  S DIC("S")="I $E(^(0))=""E"",$E(^(0),2)>7,$P(^(0),U,9)=""""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 23, 1998 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTCI") 
+
+              SCREEN:           S DIC("S")="I $E(^(0))=""E"",$E(^(0),2)>7,$P(^(0),U,9)="""""
+              EXPLANATION:      MUST BE VALID "E" CODE
+
+9000010.07,.11PLACE OF ACCIDENT      0;11 SET
+
+                                'A' FOR HOME-INSIDE; 
+                                'B' FOR HOME-OUTSIDE; 
+                                'C' FOR FARM; 
+                                'D' FOR SCHOOL; 
+                                'E' FOR INDUSTRIAL PREMISES; 
+                                'F' FOR RECREATIONAL AREA; 
+                                'G' FOR STREET/HIGHWAY; 
+                                'H' FOR PUBLIC BUILDING; 
+                                'I' FOR RESIDENT INSTITUTION; 
+                                'J' FOR HUNTING/FISHING; 
+                                'K' FOR OTHER; 
+                                'L' FOR UNKNOWN; 
+              LAST EDITED:      APR 26, 1990 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTPA") 
+
 
 9000010.07,.12PRIMARY/SECONDARY      0;12 SET
 
@@ -200,7 +258,6 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
               DESCRIPTION:
                                 This field represents the clinically pertinent ranking of problems treated.  There is no limit on how many POV's may be identified as primary or secondary problems treated at the visit.  
 
-              SOURCE OF DATA:   061/DIPRIME
               RECORD INDEXES:   ACR (#472)
 
 9000010.07,.13DATE OF INJURY         0;13 DATE
@@ -211,6 +268,13 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
               DESCRIPTION:      This is the date the injury occurred for the problem being treated.  
                                  
                                 At VA facilities, the date of injury is prompted for when the ICD Diagnosis in the POV field (.01) is for an injury with a code between 800-999.999.  
+
+
+9000010.07,.14OVERRIDE/ACCEPT        0;14 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      SEP 23, 1992 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTACC") 
 
 
 9000010.07,.15CLINICAL TERM          0;15 POINTER TO EXPRESSIONS FILE (#757.01)
@@ -252,6 +316,27 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
                                 Ordering diagnoses are used for facility charges in billing, resulting diagnoses are used in professional services billing.  
 
 
+9000010.07,.18E-CODE 2               0;18 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  S DIC("S")="I $E(^(0))=""E"",$E(^(0),2)>7,$P(^(0),U,9)=""""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 09, 2001 
+              SCREEN:           S DIC("S")="I $E(^(0))=""E"",$E(^(0),2)>7,$P(^(0),U,9)="""""
+              EXPLANATION:      MUST BE A VALID ECODE.
+
+9000010.07,.19E-CODE 3               0;19 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  S DIC("S")="I $E(^(0))=""E"",$E(^(0),2)>7,$P(^(0),U,9)=""""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 09, 2001 
+              SCREEN:           S DIC("S")="I $E(^(0))=""E"",$E(^(0),2)>7,$P(^(0),U,9)="""""
+              EXPLANATION:      MUST BE A VALID E CODE.
+
+9000010.07,.21PLACE OF OCCURRENCE    0;21 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  S DIC("S")="I $E($P(^(0),U),1,4)=""E849""" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      DEC 28, 2004 
+              SCREEN:           S DIC("S")="I $E($P(^(0),U),1,4)=""E849"""
+              EXPLANATION:      Must be a code in the range E849.0-E849.9
+
 9000010.07,1201EVENT DATE AND TIME   12;1 DATE
 
               INPUT TRANSFORM:  S %DT="ESTX" D ^%DT S X=Y K:Y<1 X
@@ -275,6 +360,13 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
                                 this field may be able to represent the provider responsible for the encounter providers work.  
 
 
+9000010.07,1203CLINIC STOP           12;3 POINTER TO CLINIC STOP FILE (#40.7)
+
+              LAST EDITED:      JUL 09, 1996 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTCLN") 
+
+
 9000010.07,1204ENCOUNTER PROVIDER    12;4 POINTER TO NEW PERSON FILE (#200)
 
               LAST EDITED:      DEC 19, 1994 
@@ -282,6 +374,36 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
               DESCRIPTION:
                                 This is the provider who treated the diagnosis at the encounter.  
 
+
+9000010.07,1208PARENT                12;8 POINTER TO V POV FILE (#9000010.07)
+
+              LAST EDITED:      JUL 09, 1996 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTPNT") 
+
+
+9000010.07,1209EXTERNAL KEY          12;9 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>20!($L(X)<1) X
+              LAST EDITED:      SEP 24, 1996 
+              HELP-PROMPT:      Answer must be 1-20 characters in length. 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTEXK") 
+
+
+9000010.07,1210OUTSIDE PROVIDER NAME 12;10 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>30!($L(X)<1) X
+              LAST EDITED:      SEP 24, 1996 
+              HELP-PROMPT:      Answer must be 1-30 characters in length. 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTOPR") 
+
+
+9000010.07,1501DATE PASSED TO EXTERNAL 15;1 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 15, 2000 
 
 9000010.07,80001SERVICE CONNECTED    800;1 SET
 
@@ -322,17 +444,17 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
                                 problem is defined as related to ionizing radiation exposure, then the POV Ionizing Radiation Exposure will be set to "1".  
 
 
-9000010.07,80004SW ASIA CONDITIONS   800;4 SET
+9000010.07,80004PERSIAN GULF EXPOSURE 800;4 SET
 
                                 '1' FOR YES; 
                                 '0' FOR NO; 
-              LAST EDITED:      JUN 27, 2006 
-              HELP-PROMPT:      If this problem treated is related to SW Asia Conditions exposure, enter "YES" here. 
+              LAST EDITED:      MAR 31, 1994 
+              HELP-PROMPT:      If this problem treated is related to Persian Gulf exposure, enter "YES" here. 
               DESCRIPTION:
-                                This field is used in the VA to indicate that this problem treated at this visit was related to Southwest Asia Conditions exposure.  
+                                This field is used in the VA to indicate that this problem treated at this visit was related to Persian Gulf exposure.  
 
               TECHNICAL DESCR:  This field is only passed to PCE from the automated data capture of encounter form data.  If a problem on the Active Problem List is identified as the problem treated at the visit, and the problem defined as being related
-                                to Southwest Asia Conditions Exposure in the Problem List, then the POV Southwest Asia Conditions Exposure will automatically be set to "1".  
+                                to Persian Gulf Exposure in the Problem List, then the POV Persian Gulf Exposure will automatically be set to "1".  
 
 
 9000010.07,80005MILITARY SEXUAL TRAUMA 800;5 SET
@@ -433,11 +555,18 @@ INDEXED BY:    POV & PATIENT NAME & VISIT & PRIMARY/SECONDARY (ACR)
 
       FILES POINTED TO                      FIELDS
 
+CLINIC STOP (#40.7)               CLINIC STOP (#1203)
+
 EXPRESSIONS (#757.01)             CLINICAL TERM (#.15)
 
 ICD DIAGNOSIS (#80)               POV (#.01)
+                                  CAUSE (E-CODE) (#.09)
+                                  E-CODE 2 (#.18)
+                                  E-CODE 3 (#.19)
+                                  PLACE OF OCCURRENCE (#.21)
 
-NEW PERSON (#200)                 ORDERING PROVIDER (#1202)
+NEW PERSON (#200)                 OVERRIDE/ACCEPT (#.14)
+                                  ORDERING PROVIDER (#1202)
                                   ENCOUNTER PROVIDER (#1204)
 
 PACKAGE (#9.4)                    PACKAGE (#81202)
@@ -450,6 +579,8 @@ PROBLEM (#9000011)                PROBLEM LIST ENTRY (#.16)
 
 PROVIDER NARRATIVE (#9999999.27)  PROVIDER NARRATIVE (#.04)
                                   PROVIDER NARRATIVE CATEGORY (#80201)
+
+V POV (#9000010.07)               PARENT (#1208)
 
 VISIT (#9000010)                  VISIT (#.03)
 
@@ -474,19 +605,19 @@ File #9000010.07
 
 
 INPUT TEMPLATE(S):
+APCD CCPV (MOD)               FEB 03, 2000@10:18  USER #0    
+APCD FUD POV                  FEB 02, 1993@13:16  USER #0    
+     PCC Data Entry - Used to edit uncoded ICD diagnoses entered into the
+     V POV file.
 
 PRINT TEMPLATE(S):
-ONC DISEASE INDEX             APR 08, 2010@13:52  USER #0                                                                                                                                                                                        DISEASE INDEX
+ONC DISEASE INDEX             JUL 28, 2000@11:01  USER #0                                                                                                                                                                                        DISEASE INDEX
 
 SORT TEMPLATE(S):
 ONC DISEASE INDEX             JUN 30, 2000@10:37  USER #0    
 SORT BY: 'VISIT//    (User is asked range)
   WITHIN VISIT, SORT BY: 'POV//    (User is asked range)
     WITHIN POV, SORT BY: PATIENT NAME// (PATIENT NAME not null)
-
-ONC DISEASE INDEX CASEFINDING APR 08, 2010@14:22  USER #0    
-SORT BY: 'VISIT//    (User is asked range)
-  WITHIN VISIT, SORT BY: PATIENT NAME// (PATIENT NAME not null)
 
 
 FORM(S)/BLOCK(S):

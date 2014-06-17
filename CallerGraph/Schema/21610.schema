@@ -1,0 +1,174 @@
+STANDARD DATA DICTIONARY #21610 -- VFD MESSAGE PARAMETER FILE                                                                                                                                                                     JUN 17,2014@15:17:13  PAGE 1
+STORED IN ^VFD(21610,  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                                      
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+CROSS
+REFERENCED BY: ONE(B)
+
+21610,.01     ONE                    0;1 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>1)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      AUG 10, 2007 
+              HELP-PROMPT:      Enter the number 1. 
+              CROSS-REFERENCE:  21610^B 
+                                1)= S ^VFD(21610,"B",$E(X,1,30),DA)=""
+                                2)= K ^VFD(21610,"B",$E(X,1,30),DA)
+
+
+21610,.02     DAYS TO KEEP           0;2 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      NOV 28, 2007 
+              HELP-PROMPT:      Enter number of days to protect VFD MESSAGE TEXT entries from automatic deletion. 
+              DESCRIPTION:
+                                The background purge option deletes VFD MESSAGE TEXT entries unless entries are protected from deletion.  This field determines the number of days that an entry will be preserved, i.e., not purged.  The default is 30 days.  
+
+
+21610,1       PORT                   1;0 Multiple #21610.01
+
+
+21610.01,.01    PORT                   0;1 NUMBER
+
+                INPUT TRANSFORM:  K:+X'=X!(X>99999)!(X<1000)!(X?.E1"."1N.N) X
+                LAST EDITED:      AUG 10, 2007 
+                HELP-PROMPT:      Enter a port number between 1000 and 99999, 0 Decimal Digits 
+                CROSS-REFERENCE:  21610.01^B 
+                                  1)= S ^VFD(21610,DA(1),1,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VFD(21610,DA(1),1,"B",$E(X,1,30),DA)
+
+
+21610.01,.02    STATUS                 0;2 SET
+
+                                  '0' FOR NOT IN USE; 
+                                  '1' FOR ASKED TO START; 
+                                  '2' FOR ASKED TO STOP; 
+                LAST EDITED:      AUG 10, 2007 
+                HELP-PROMPT:      Controlled by listener start/stop routine.  Do no edit. 
+
+21610.01,.03    AUTOMATIC LINE BREAKS  0;3 SET
+
+                                  '0' FOR DISABLED; 
+                                  '1' FOR XML; 
+                LAST EDITED:      OCT 31, 2007 
+                HELP-PROMPT:      Enter '1' to allow insertion of automatic linebreaks in XML data. 
+                DESCRIPTION:      Under some circumstances, a document may be received as one continuous string or blob of text, longer than FileMan's 245 character line length, and possibly longer than the M platform's string length limit.  
+                                   
+                                  Setting this field to '1' or 'XML' allows the Generic Document Receiver to insert line breaks automatically in an XML document.  
+
+
+21610.01,.04    SPLIT STRING AT END    0;4 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      NOV 16, 2007 
+                HELP-PROMPT:      Set to YES to split string when IS END DOCUMENT is minimally satisfied. 
+                DESCRIPTION:      If set to YES, when an input string satisfies the IS END DOCUMENT logic, the receiver will compute the minimal left substring that satisfies this test, and will return this substring as the current line.  The remainder 
+                                  of the string (if any) will be inserted before the next input characters.  
+
+
+21610.01,.05    DELETE AFTER PROCESSING 0;5 SET
+
+                                  '0' FOR DO NOT DELETE; 
+                                  '1' FOR DELETE DATA ONLY; 
+                                  '2' FOR DELETE DOCUMENT; 
+                LAST EDITED:      NOV 16, 2007 
+                HELP-PROMPT:      Set to '1' to delete word processing data, or '2' to delete document entry. 
+                DESCRIPTION:      This parameter will be checked after return from ALL associated processing routines for the document.  If set to '1' the document text (word-processing data) will be deleted, and the file entry including processing
+                                  history retained.  If set to '2' the entire entry will be deleted from the file.  
+                                   
+                                  Note that a processing routine can override this parameter by setting the variable VFDSAVE=1.  If any processing routine sets this variable the current document will not be deleted.  
+
+
+21610.01,.06    PERSISTENT             0;6 SET
+
+                                  '0' FOR NO; 
+                                  '1' FOR YES; 
+                LAST EDITED:      NOV 29, 2007 
+                HELP-PROMPT:      Enter '1' if receiver should not disconnect. 
+                DESCRIPTION:
+                                  Overrides disconnect on READ timeout.  If PERSISTENT=YES, receiver will test the connection on read timeout, and will close if and only if the sender has disconnected.  
+
+
+21610.01,1      IS NEW DOCUMENT        1;E1,245 MUMPS
+
+                INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+                LAST EDITED:      SEP 04, 2007 
+                HELP-PROMPT:      This is Standard MUMPS code that sets $T=1 for a new document. 
+                DESCRIPTION:      If present this code will be executed for each line of text received, until $TEST=1 (true).  On this condition a new document will be started and the IS END DOCUMENT code will be executed for each subsequent line.  
+                                   
+                                  At the time this code is executed the variable X contains the current line of input text.  Thus, the general form of this MUMPS code is, 
+                                   
+                                      IF f(X) 
+                                   
+                                  The function should evaluate to TRUE if and only if the current line starts a new document.  
+
+
+21610.01,2      SET DOCUMENT NAME      2;E1,245 MUMPS
+
+                INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+                LAST EDITED:      SEP 04, 2007 
+                HELP-PROMPT:      This is Standard MUMPS code that sets X equal to the document name. 
+                DESCRIPTION:      This code should set X. When this code is executed the variable X will contain the line of text that includes the document start indicator.  Any control characters that were in the original line will have been removed. 
+                                  However, quotes in the received text are preserved at the time this code is executed.  Thus, the general form of this MUMPS code is, 
+                                      SET X=f(X) where X on the right is the new document text line and X on the left is the document name.  
+
+
+21610.01,3      IS END DOCUMENT        3;E1,245 MUMPS
+
+                INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+                LAST EDITED:      SEP 04, 2007 
+                HELP-PROMPT:      This is Standard MUMPS code that sets $T=1 if and only if the input indicates end of document. 
+                DESCRIPTION:      If present this code will be executed for each line of text received, until $TEST=1 (true).  On this condition the current document will end (inclusive of the current line) and the IS NEW DOCUMENT code will be executed
+                                  for each subsequent line.  
+                                   
+                                  At the time this code is executed the variable X contains the current line of input text.  Thus, the general form of this MUMPS code is, 
+                                   
+                                      IF f(X) 
+                                   
+                                  The function should evaluate to TRUE if and only if the current line is the last line of the current document.  
+
+
+21610.01,4      IS XML                 4;E1,245 MUMPS
+
+                INPUT TRANSFORM:  K:$L(X)>245 X D:$D(X) ^DIM
+                LAST EDITED:      OCT 30, 2007 
+                HELP-PROMPT:      This is Standard MUMPS code that sets $T=1 if and only if the input indicates an XML document. 
+                DESCRIPTION:      If the XML AWARE field is set to YES, this code will be executed for each partial line of text ending in ">" until $TEST=1 (true).  On this condition the current message will be assumed to contain an XML blob.  
+                                   
+                                  The general form of the MUMPS code is - 
+                                   
+                                      IF f(x) 
+                                   
+                                  The code should evaluate true if an only if the current message is XML.  
+                                   
+                                  For example, 
+                                   
+                                      IF X?1"<HL7Message>".E 
+                                   
+                                  might identify an XML encoded HL7 message.  
+                                   
+                                  If the XML is not in blob form, but rather formatted into lines, each not exceeding 245 characters in length, then the XML AWARE field should be set to NO and the present field left unvalued.  The purpose of this field 
+                                  is to enable the receiver to break an XML blob into manageable lengths, by creating a line break at each ">" character.  
+
+
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

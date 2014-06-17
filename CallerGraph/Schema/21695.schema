@@ -1,0 +1,282 @@
+STANDARD DATA DICTIONARY #21695 -- VFD ORDER GROUPS FILE                                                                                                                                                                          JUN 17,2014@15:17:20  PAGE 1
+STORED IN ^VFD(21695,  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                 (VERSION 2011.1.1)   
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+DSS Order Groups file.  
+ 
+This file should only be populated via software.  
+
+
+              DD ACCESS: @
+              RD ACCESS: @
+              WR ACCESS: @
+             DEL ACCESS: @
+           LAYGO ACCESS: @
+           AUDIT ACCESS: @
+
+PRIMARY KEY:        A (#43)
+  Uniqueness Index: C (#809)
+       File, Field: 1) GROUP NUMBER (21695,.01)
+
+CROSS
+REFERENCED BY: GROUP NUMBER(B)
+
+INDEXED BY:    GROUP NUMBER (AC), ID (AD), ID (AE), GROUP NUMBER (C)
+
+
+   CREATED ON: NOV 12,2009 by VISTA,DBA
+
+21695,.01     GROUP NUMBER           0;1 NUMBER (Key field)
+
+              INPUT TRANSFORM:  K X
+              LAST EDITED:      FEB 05, 2010 
+              HELP-PROMPT:      NOT EDITABLE 
+              DESCRIPTION:
+                                The Order Group Number.  This is a unique number.  
+
+                                UNEDITABLE
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  21695^B 
+                                1)= S ^VFD(21695,"B",$E(X,1,30),DA)=""
+                                2)= K ^VFD(21695,"B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  ^^TRIGGER^21695^.02 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VFD(21695,D0,0)):^(0),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=$$NOW^XLFDT() S DIH=$G(^VFD(21695,DIV(0),0)),DIV=X S $P(^(0),U,2)=DIV,DIH=21695,DIG=.02 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=$$NOW^XLFDT()
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= DATE
+                                Trigger for DATE field.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^21695^.03 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^VFD(21695,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=$G(DUZ) S DIH=$G(^VFD(21695,DIV(0),0)),DIV=X S $P(^(0),U,3)=DIV,DIH=21695,DIG=.03 D ^DICR
+                                2)= Q
+                                CREATE VALUE)= S X=$G(DUZ)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= CREATED BY
+                                Trigger to populate CREATED BY field with DUZ.  
+
+
+              FIELD INDEX:      AC (#806)    MUMPS    IR    SORTING ONLY
+                  Short Descr:  Order Group number (without checksum)
+                  Description:  ^VFD(21695,"AC",Group Number (no checksum),DA)="" 
+                    Set Logic:  S ^VFD(21695,"AC",$E(X(1),1,$L(X(1))-1),DA)=""
+                   Kill Logic:  K ^VFD(21695,"AC",$E(X(1),1,$L(X(1))-1),DA)
+                   Whole Kill:  K ^VFD(21695,"AC")
+                         X(1):  GROUP NUMBER  (21695,.01)  (Subscr 1)  (forwards)
+
+              FIELD INDEX:      C (#809)    REGULAR    IR    LOOKUP & SORTING
+                   Unique for:  Key A (#43), File #21695
+                  Short Descr:  Uniqueness Index for Key 'A' of File #21695
+                    Set Logic:  S ^VFD(21695,"C",X,DA)=""
+                   Kill Logic:  K ^VFD(21695,"C",X,DA)
+                   Whole Kill:  K ^VFD(21695,"C")
+                         X(1):  GROUP NUMBER  (21695,.01)  (Subscr 1)
+
+
+21695,.02     DATE CREATED           0;2 DATE
+
+              INPUT TRANSFORM:  S %DT="ESTXR" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      NOV 13, 2009 
+              DESCRIPTION:
+                                Date/Time this record was created.  
+
+              TECHNICAL DESCR:
+                                Populated via Trigger on #.01 field.  
+
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the GROUP NUMBER field of the VFD ORDER GROUPS File 
+
+
+21695,.03     CREATED BY             0;3 POINTER TO NEW PERSON FILE (#200) (Required)
+
+              LAST EDITED:      NOV 19, 2009 
+              DESCRIPTION:
+                                User that created this record.  
+
+              TECHNICAL DESCR:
+                                Populated via Trigger on #.01 field.  
+
+                                UNEDITABLE
+              NOTES:            TRIGGERED by the GROUP NUMBER field of the VFD ORDER GROUPS File 
+
+
+21695,.04     EVENT                  0;4 SET
+
+                                '0' FOR UNKNOWN; 
+                                '1' FOR ORDER; 
+                                '2' FOR na; 
+                                '3' FOR PRINT; 
+                                '4' FOR REPRINT; 
+              LAST EDITED:      MAY 06, 2010 
+              DESCRIPTION:
+                                The event that caused this record to be created.  
+
+              TECHNICAL DESCR:  Event 1: Order.  This event is when the order in CPRS is signed off.  This is the only Order Group that will contain all of the orders for all PACKAGE types.  
+                                 
+                                Event 2: na.  (formerly named REPRINT).  This event is when the CPRS user has selected tests to reprint.  The order list is sent to LAB^VFDLRST.  If any other tests are found that weren't included on the user's order list, 
+                                those tests are added in the 'INFO' data elements and returned to CPRS.  The CPRS user is prompted if they want to include those 'missed' tests as well.  This event only produces the data array -- it does not create a new 
+                                Order Group entry.  
+                                 
+                                Event 3: PRINT   This event occurs immediately after Event #1 via CPRS.  This Order Group will only contain the orders of one PACKAGE type.  
+                                 
+                                Event 4: REPRINT   This event occurs once the user has verified that this is the order list they wish to reprint.  It is the last step in the reprint process.  
+
+                                UNEDITABLE
+
+21695,5       RELATED ORDER GROUPS   5;0 Multiple #21695.0002
+
+
+21695.0002,.01  RELATED GROUP NUMBER   0;1 NUMBER (Multiply asked)
+
+                INPUT TRANSFORM:  K:+X'=X!(X>999999999999999)!(X<1)!(X?.E1"."1N.N) X
+                LAST EDITED:      FEB 05, 2010 
+                HELP-PROMPT:      Type a Number between 1 and 999999999999999, 0 Decimal Digits 
+                                  UNEDITABLE
+                CROSS-REFERENCE:  21695.0002^B 
+                                  1)= S ^VFD(21695,DA(1),5,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VFD(21695,DA(1),5,"B",$E(X,1,30),DA)
+
+
+
+
+21695,10      IDS                    10;0 Multiple #21695.0001
+
+              DESCRIPTION:
+                                The order ID, which is usually the order's OERR number.  
+
+
+21695.0001,.01  ID                     0;1 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                LAST EDITED:      JAN 04, 2010 
+                HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                DESCRIPTION:
+                                  The Identifier to use for this record, usually the OERR # (File #100 IEN).  
+
+                                  UNEDITABLE
+                CROSS-REFERENCE:  21695.0001^B 
+                                  1)= S ^VFD(21695,DA(1),10,"B",$E(X,1,30),DA)=""
+                                  2)= K ^VFD(21695,DA(1),10,"B",$E(X,1,30),DA)
+
+                CROSS-REFERENCE:  ^^TRIGGER^21695.0001^2.2 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^VFD(21695,D0,10,D1,2)):^(2),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=$$NOW^XLFDT() X ^DD(21695.0001,.01,1,2,1.4)
+                                  1.4)= S DIH=$G(^VFD(21695,DIV(0),10,DIV(1),2)),DIV=X S $P(^(2),U,2)=DIV,DIH=21695.0001,DIG=2.2 D ^DICR
+                                  2)= Q
+                                  CREATE VALUE)= S X=$$NOW^XLFDT()
+                                  DELETE VALUE)= NO EFFECT
+                                  FIELD)= #2.2
+                                  Set the DTAE CREATED field to current date/time when Field #.01 is created.  
+
+
+                CROSS-REFERENCE:  ^^TRIGGER^21695.0001^2.3 
+                                  1)= K DIV S DIV=X,D0=DA(1),DIV(0)=D0,D1=DA,DIV(1)=D1 S Y(1)=$S($D(^VFD(21695,D0,10,D1,2)):^(2),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=DUZ X ^DD(21695.0001,.01,1,3,1.4)
+                                  1.4)= S DIH=$G(^VFD(21695,DIV(0),10,DIV(1),2)),DIV=X S $P(^(2),U,3)=DIV,DIH=21695.0001,DIG=2.3 D ^DICR
+                                  2)= Q
+                                  CREATE VALUE)= S X=DUZ
+                                  DELETE VALUE)= NO EFFECT
+                                  FIELD)= #2.3
+                                  Set the CREATED BY field to the DUZ when Field #.01 is created.  
+
+
+                FIELD INDEX:      AD (#807)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#21695)
+                    Short Descr:  Whole file xref for Group ID
+                    Description:  ^VFD(21695,"AD",Group Number,Type,DA(1),DA)="" 
+                      Set Logic:  S ^VFD(21695,"AD",$E(X(1),1,240),X(2),DA(1),DA)=""
+                     Kill Logic:  K ^VFD(21695,"AD",$E(X(1),1,240),X(2),DA(1),DA)
+                     Whole Kill:  K ^VFD(21695,"AD")
+                           X(1):  ID  (21695.0001,.01)  (Subscr 1)  (Len 240)  (forwards)
+                           X(2):  Computed Code: S X=$P($G(^VFD(21695,DA(1),0)),U,3)
+                                    (Subscr 2)
+
+                FIELD INDEX:      AE (#808)    REGULAR    IR    SORTING ONLY    WHOLE FILE (#21695)
+                    Short Descr:  ID + Group number xref
+                      Set Logic:  S ^VFD(21695,"AE",$E(X(1),1,30),X(2),DA(1),DA)=""
+                     Kill Logic:  K ^VFD(21695,"AE",$E(X(1),1,30),X(2),DA(1),DA)
+                     Whole Kill:  K ^VFD(21695,"AE")
+                           X(1):  ID  (21695.0001,.01)  (Subscr 1)  (Len 30)  (forwards)
+                           X(2):  Computed Code: S X=$P($G(^VFD(21695,DA(1),0)),U,1)
+                                    (Subscr 2)
+
+
+21695.0001,1    RECORD LOCATOR         1;E1,254 FREE TEXT
+
+                INPUT TRANSFORM:  K:$L(X)>245!($L(X)<1) X
+                LAST EDITED:      FEB 05, 2010 
+                HELP-PROMPT:      Answer must be 1-245 characters in length. 
+                DESCRIPTION:      This is a free text field which is used to determine the order that this ID is in reference to.  
+                                   
+                                  For example, for Lab orders, the RECORD LOCATOR is: 
+                                       #69 IEN;#69.01 IEN;#69.03 IEN which gets the record locator down to the ordered test level.  
+
+                                  UNEDITABLE
+
+21695.0001,2    PACKAGE                2;1 POINTER TO PACKAGE FILE (#9.4)
+
+                LAST EDITED:      FEB 05, 2010 
+                DESCRIPTION:
+                                  The PACKAGE (File #9.4) this record belongs to.  
+
+                                  UNEDITABLE
+
+21695.0001,2.2  DATE CREATED           2;2 DATE
+
+                INPUT TRANSFORM:  S %DT="EST" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      FEB 05, 2010 
+                DESCRIPTION:
+                                  The date/time this record was created.  
+
+                TECHNICAL DESCR:
+                                  Populated via Trigger on #.01 field.  
+
+                                  UNEDITABLE
+                NOTES:            TRIGGERED by the ID field of the IDS sub-field of the VFD ORDER GROUPS File 
+
+
+21695.0001,2.3  CREATED BY             2;3 POINTER TO NEW PERSON FILE (#200)
+
+                LAST EDITED:      FEB 05, 2010 
+                DESCRIPTION:
+                                  The person that created this record.  
+
+                TECHNICAL DESCR:
+                                  Populated via Trigger on #.01 field.  
+
+                                  UNEDITABLE
+                NOTES:            TRIGGERED by the ID field of the IDS sub-field of the VFD ORDER GROUPS File 
+
+
+21695.0001,2.4  CREATED REASON         2;4 SET
+
+                                  '0' FOR UNKNOWN; 
+                                  '1' FOR NORMAL; 
+                                  '2' FOR ORDER ADDED; 
+                LAST EDITED:      FEB 05, 2010 
+                DESCRIPTION:
+                                  The reason this record was created.  
+
+                                  UNEDITABLE
+
+
+
+
+      FILES POINTED TO                      FIELDS
+
+NEW PERSON (#200)                 CREATED BY (#.03)
+                                  IDS:CREATED BY (#2.3)
+
+PACKAGE (#9.4)                    IDS:PACKAGE (#2)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

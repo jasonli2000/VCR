@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #160 -- ONCOLOGY PATIENT FILE                                                                                                                                                                            MAY 20,2014@15:38:43  PAGE 1
-STORED IN ^ONCO(160,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.MED.VA.GOV   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.11)   
+STANDARD DATA DICTIONARY #160 -- ONCOLOGY PATIENT FILE                                                                                                                                                                            JUN 17,2014@15:23:35  PAGE 1
+STORED IN ^ONCO(160,  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                      (VERSION 2.11)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -79,9 +79,12 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
 
 160,.015      MIDDLE NAME             ;  COMPUTED
 
-              MUMPS CODE:       D MNI^ONCOES
-              ALGORITHM:        D MNI^ONCOES
-              LAST EDITED:      MAY 29, 2009 
+              MUMPS CODE:       D ^ONCOMNI
+                                9.2 = S Y(160,.015,1)=$S($D(^ONCO(160,D0,0)):^(0),1:"")
+                                9.3 = X ^DD(160,.015,9.2) S X=$P(Y(160,.015,1),U,1),C=$S(X="":-1,'$D(@(U_$P(X,";",2)_"0)")):-1,1:$P(^(0),U,2)),X=$S(X="":X,'$D(^(+X,0)):"",1:$P(^(0),U,1)),Y=X,C=$S($D(^DD(+C,.01,0)):$P(^(0),U,2),1:"D") D:X]"" Y^DIQ:C'["D" 
+                                S X=Y,C=","
+              ALGORITHM:        D ^ONCOMNI
+              LAST EDITED:      NOV 01, 2002 
               DESCRIPTION:      Identifies the middle name or middle initial of the patient.  
                                  
                                 For further information see FORDS page 41.  
@@ -131,11 +134,10 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
 
 160,.117      COUNTY                  ;  COMPUTED
 
-              MUMPS CODE:       D CTY^ONCOES
-              ALGORITHM:        D CTY^ONCOES
-              LAST EDITED:      JUN 02, 2009 
+              MUMPS CODE:       D CT^ONCOES
+              ALGORITHM:        D CT^ONCOES
               DESCRIPTION:
-                                Computes the patient's current COUNTY of residence.  COUNTY is derived from COUNTY (2,.117).  
+                                RECORD THE COUNTY OF RESIDENCE.  
 
 
 160,.118      ZIP-COUNTY              ;  COMPUTED
@@ -314,7 +316,6 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
               DESCRIPTION:
                                 The case number is issued by the SEER participant to identify the person.  Each computer record pertaining to the same person must have an identical case number.  It uses eight digits with leading zeros as necessary.  
 
-              SOURCE OF DATA:   SEER I.02
               GROUP:            SEER
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
@@ -530,8 +531,7 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
 
 160,19        CAUSE OF DEATH         1;3 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 19, 2012 
+              LAST EDITED:      DEC 01, 1999 
               DESCRIPTION:       Record the CAUSE OF DEATH listed on the death certificate.  Central registries are the primary users of this data item.  Use the underlying CAUSE OF DEATH (ICD code) identified by state health department.  
                                  
 
@@ -551,9 +551,8 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                 '7777' FOR State death certificate or listing not available; 
                                 '7797' FOR State death cert available, cause of death not coded; 
               LAST EDITED:      APR 09, 1998 
-              HELP-PROMPT:      Enter the status of the state death certificate. 
-              DESCRIPTION:
-                                This field stores special CAUSE OF DEATH values which are not ICD codes.  
+              DESCRIPTION:      This field stores values for State Death Certificate.  If the ICD CAUSE OF DEATH field (#19) has data then this field will be NULL.  If the cause of death is 7777 or 7797 then ICD CAUSE OF DEATH field (#19) will be NULL
+                                and this field will be used.  
 
 
 160,20        ICD REVISION           1;4 SET
@@ -569,7 +568,6 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
               TECHNICAL DESCR:
                                 This field is referenced directly by UVSALIVE^ONCOCRFA and by UVSDEAD^ONCOCRFA.  
 
-              SOURCE OF DATA:   SEER VI.03
               GROUP:            SEER
 
 160,21        PLACE OF DEATH         1;5 POINTER TO GEOCODES FILE (#165.2)
@@ -638,10 +636,10 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
 
 160,25        COMORBIDITY/COMPLICATION #1 0;19 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
-              DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer using ICD-CM codes.  All are considered
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      APR 19, 2002 
+              DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer using ICD-9-CM codes.  All are considered
                                 secondary diagnoses.  
                                  
                                 NOTE: If no comorbid conditions or complications were documented, 
@@ -649,179 +647,179 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                       export a blank value will be converted to "00000" as per 
                                       the NAACCR instructions. 
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                  
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                  
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                  
                                 For further information see FORDS pages 69-70.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 1st pre-existing condition and/or complication using the ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.  Blank values will be converted to "00000" for
-                                 NAACCR export.
+              EXPLANATION:      Record the patient's 1st pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.  Blank values will be converted to "00000" for N
+                                AACCR export.
 
 160,25.1      COMORBIDITY/COMPLICATION #2 0;20 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      APR 22, 2002 
               DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer.  Both are considered secondary diagnoses.  
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                  
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                  
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                  
                                 For further information see FORDS page 71.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 2nd pre-existing condition and/or complication using ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
+              EXPLANATION:      Record the patient's 2nd pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
 
 160,25.2      COMORBIDITY/COMPLICATION #3 0;21 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      APR 22, 2002 
               DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer.  Both are considered secondary diagnoses.  
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                  
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                  
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                  
                                 For further information see FORDS page 72.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 3rd pre-existing condition and/or complication using ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
+              EXPLANATION:      Record the patient's 3rd pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
 
 160,25.3      COMORBIDITY/COMPLICATION #4 0;22 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      APR 22, 2002 
               DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer.  Both are considered secondary diagnoses.  
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                  
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                  
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                  
                                 For further information see FORDS page 73.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 4th pre-existing condition and/or complication using ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
+              EXPLANATION:      Record the patient's 4th pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
 
 160,25.4      COMORBIDITY/COMPLICATION #5 0;23 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      APR 22, 2002 
               DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer.  Both are considered secondary diagnoses.  
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                  
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                  
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                  
                                 For further information see FORDS page 74.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 5th pre-existing condition and/or complication using ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
+              EXPLANATION:      Record the patient's 5th pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
 
 160,25.5      COMORBIDITY/COMPLICATION #6 0;24 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      APR 22, 2002 
               DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer.  Both are considered secondary diagnoses.  
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                  
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                  
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                  
                                 For further information see FORDS page 75.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 6th pre-existing condition and/or complication using ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
+              EXPLANATION:      Record the patient's 6th pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
 
 160,25.6      COMORBIDITY/COMPLICATION #7 0;28 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      DEC 21, 2005 
               DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer.  Both are considered secondary diagnoses.  
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                         
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                         
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                         
                                 For further information see FORDS page 75A.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 7th pre-existing condition and/or complication using ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
+              EXPLANATION:      Record the patient's 7th pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
 
 160,25.7      COMORBIDITY/COMPLICATION #8 0;29 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      DEC 21, 2005 
               DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer.  Both are considered secondary diagnoses.  
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                  
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                  
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                  
                                 For further information see FORDS page 75B.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 8th pre-existing condition and/or complication using ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
+              EXPLANATION:      Record the patient's 8th pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
 
 160,25.8      COMORBIDITY/COMPLICATION #9 0;30 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      DEC 21, 2005 
               DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer.  Both are considered secondary diagnoses.  
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                  
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                  
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                  
                                 For further information see FORDS page 75C.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 9th pre-existing condition and/or complication using ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
+              EXPLANATION:      Record the patient's 9th pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
 
 160,25.9      COMORBIDITY/COMPLICATION #10 0;31 POINTER TO ICD DIAGNOSIS FILE (#80)
 
-              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-              OUTPUT TRANSFORM: I Y'="" N ONCICD,CODE,SPACE S ONCICD=$$ICDDX^ICDCODE(Y) S:(ONCICD=-1) Y=-1 S:(Y'=-1) CODE=$P(ONCICD,U,2),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P(ONCICD,U,4)
-              LAST EDITED:      JUN 08, 2012 
+              INPUT TRANSFORM:  S DIC("S")="D CC^ONCFUNC" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              OUTPUT TRANSFORM: I Y'="" S CODE=$P($G(^ICD9(Y,0)),U,1),SPACE=$S($L(CODE)=4:"   ",$L(CODE)=5:"  ",1:" "),Y=CODE_SPACE_$P($G(^ICD9(Y,0)),U,3)
+              LAST EDITED:      DEC 21, 2005 
               DESCRIPTION:       Records the patient's preexisting medical conditions, factors influencing health status, and/or complications during the patient's hospital stay for the treatment of this cancer.  Both are considered secondary diagnoses.  
                                  
-                                DO NOT record any neoplasms (ICD-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
+                                DO NOT record any neoplasms (ICD-9-CM codes 140-239.9) listed as secondary diagnoses for this data item.  
                                  
-                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
+                                DO NOT record causes of injury and poisoning unrelated to the patient's medical care (ICD-9-CM codes E800-E869.9, E880-E929.9, or E950-E999).  
                                  
-                                DO NOT record the following factors influencing health status and contact with health services (ICD-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
+                                DO NOT record the following factors influencing health status and contact with health services (ICD-9-CM codes V01-V07.1, V07.4-V09.91, V16-V21.9, V23.2-V25.3, V25.5-V43.89, V46-V50.4, or V50.8-V83.89).  
                                  
                                 For further information see FORDS page 75D.  
 
               SCREEN:           S DIC("S")="D CC^ONCFUNC"
-              EXPLANATION:      Record the patient's 10th pre-existing condition and/or complication using ICD-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
+              EXPLANATION:      Record the patient's 10th pre-existing condition and/or complication using ICD-9-CM codes.  If no comorbid conditions or complications were documented, leave this item blank.
 
 160,27        DUE FOLLOW-UP          1;2 DATE
 
@@ -883,22 +881,20 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
 
-160,33.1      SUSPENSE ADMIT DATE     ;  COMPUTED
+160,33.1      SUSPENSE ADMIT DATE     ;  COMPUTED DATE
 
               MUMPS CODE:       D SAD^ONCOCON
               ALGORITHM:        D SAD^ONCOCON
-              LAST EDITED:      AUG 26, 2009 
               DESCRIPTION:
-                                This field displays the patient's admission date.  
+                                THIS RECORDS THE DATE THE PATIENT IS ADMITTED 
 
 
-160,33.2      SUSPENSE DISCHARGE DATE  ;  COMPUTED
+160,33.2      SUSPENSE DISCHARGE DATE  ;  COMPUTED DATE
 
               MUMPS CODE:       D SDD^ONCOCON
               ALGORITHM:        D SDD^ONCOCON
-              LAST EDITED:      APR 17, 2009 
               DESCRIPTION:
-                                This field displays the patient's discharge date.  
+                                THIS RECORDS THE DATE THE PATIENT IS DISCHARGED.  
 
 
 160,33.3      SUSPENSE EPISODE OF CARE  ;  COMPUTED
@@ -926,22 +922,20 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                 This field records the last episode of care.  
 
 
-160,34.1      LAST ADMIT DATE         ;  COMPUTED
+160,34.1      LAST ADMIT DATE         ;  COMPUTED DATE
 
               MUMPS CODE:       D LAD^ONCOCON
               ALGORITHM:        D LAD^ONCOCON
-              LAST EDITED:      FEB 26, 2010 
               DESCRIPTION:
-                                Computes last admission date.  
+                                COMPUTED DATE FOR LAST ADMISSION.  
 
 
-160,34.2      LAST DISCHARGE DATE     ;  COMPUTED
+160,34.2      LAST DISCHARGE DATE     ;  COMPUTED DATE
 
               MUMPS CODE:       D LDD^ONCOCON
               ALGORITHM:        D LDD^ONCOCON
-              LAST EDITED:      FEB 26, 2010 
               DESCRIPTION:
-                                Computes last discharge date.  
+                                COMPUTED FIELD FOR LAST DATE PATIENT WAS DISCHARGED.  
 
 
 160,36        LOST TO FOLLOWUP        ;  BOOLEAN COMPUTED
@@ -1104,20 +1098,20 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
 
 
 
-160,42        OCCUPATION             7;0 Multiple #160.042 (Add New Entry without Asking)
+160,42        OCCUPATION             7;0 POINTER Multiple #160.042 (Add New Entry without Asking)
 
               DESCRIPTION:
-                                 Information about the patient's usual occupation, also known as usual type of job or work.  
+                                RECORDS THAT PATIENTS JOB/OCCUPATION.  
 
 
-160.042,.01     USUAL OCCUPATION       0;1 FREE TEXT (Multiply asked)
+160.042,.01     USUAL OCCUPATION       0;1 POINTER TO OCCUPATION FIELD FILE (#61.6) (Multiply asked)
 
-                INPUT TRANSFORM:  K:$L(X)>100!($L(X)<1) X
-                LAST EDITED:      JUL 23, 2010 
-                HELP-PROMPT:      Answer must be 1-100 characters in length. 
+                LAST EDITED:      MAR 21, 2002 
+                HELP-PROMPT:      Record the patient's usual occupation.  Do not record "retired". 
                 DESCRIPTION:       Record the patient's usual occupation (that is, the kind of work performed during most of the patient's working life before diagnosis of this tumor).  Do NOT record "retired".  
                                    
                                   If usual occupation is not available or is unknown, record the patient's current or most recent occupation or any known occupation.  
+                                   
 
                 CROSS-REFERENCE:  160.042^B 
                                   1)= S ^ONCO(160,DA(1),7,"B",$E(X,1,30),DA)=""
@@ -1239,8 +1233,8 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                 'Y' FOR Yes; 
                                 'N' FOR No; 
                                 'U' FOR Unknown; 
+              9.1 =             D AO^ONCOES
               LAST EDITED:      JUL 01, 1998 
-              HELP-PROMPT:      Record if the patient was exposed to Agent Orange. 
               DESCRIPTION:       Record if the patient was exposed to Agent Orange.  
                                  
 
@@ -1259,8 +1253,8 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                 'Y' FOR Yes; 
                                 'N' FOR No; 
                                 'U' FOR Unknown; 
+              9.1 =             D IR^ONCOES
               LAST EDITED:      JUL 01, 1998 
-              HELP-PROMPT:      Record if the patient was exposed to Ionizing Radiation. 
               DESCRIPTION:       Record if the patient was exposed to Ionizing Radiation.  
                                  
 
@@ -1270,10 +1264,10 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                 'Y' FOR Yes; 
                                 'N' FOR No; 
                                 'U' FOR Unknown; 
-              LAST EDITED:      NOV 24, 2008 
-              HELP-PROMPT:      Record if the patient served in the Persian Gulf. 
-              DESCRIPTION:
-                                Record if the patient served in the Persian Gulf.  
+              9.1 =             D PGS^ONCOES
+              LAST EDITED:      JUL 01, 1998 
+              DESCRIPTION:       Record if the patient served in the Persian Gulf War.  
+                                 
 
 
 160,52        CHEMICAL EXPOSURE      0;13 SET
@@ -1303,15 +1297,14 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                 PRINTS A REPORT OF CASES FOUND THRU THE AUTOMATIC CASEFINDING OPTION FOR THE MAS PATIENT TREATMENT FILE (PTF).  
 
 
-160,55        LEBANON SERVICE        0;25 SET
+160,55        MIDDLE EAST SERVICE    0;25 SET
 
                                 'Y' FOR Yes; 
                                 'N' FOR No; 
                                 'U' FOR Unknown; 
-              LAST EDITED:      MAR 04, 2009 
-              HELP-PROMPT:      Record if the patient served in Lebanon 
+              LAST EDITED:      JUL 18, 2002 
               DESCRIPTION:
-                                Record if the patient served in Lebanon.  
+                                Record if the patient served in the Middle East.  
 
 
 160,56        SOMALIA SERVICE        0;26 SET
@@ -1361,109 +1354,6 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                  
 
 
-160,62        VIETNAM SERVICE        0;32 SET
-
-                                'Y' FOR Yes; 
-                                'N' FOR No; 
-                                'U' FOR Unknown; 
-              LAST EDITED:      NOV 24, 2008 
-              HELP-PROMPT:      Record if the patient served in Vietnam. 
-              DESCRIPTION:
-                                Record if the patient served in Vietnam.  
-
-
-160,63        GRENADA SERVICE        0;33 SET
-
-                                'Y' FOR Yes; 
-                                'N' FOR No; 
-                                'U' FOR Unknown; 
-              LAST EDITED:      NOV 24, 2008 
-              HELP-PROMPT:      Record if the patient served in Grenada. 
-              DESCRIPTION:
-                                Record if the patient served in Grenada.  
-
-
-160,64        PANAMA SERVICE         0;34 SET
-
-                                'Y' FOR Yes; 
-                                'N' FOR No; 
-                                'U' FOR Unknown; 
-              LAST EDITED:      NOV 24, 2008 
-              HELP-PROMPT:      Record if the patient served in Panama. 
-              DESCRIPTION:
-                                Record if the patient served in Panama.  
-
-
-160,65        YUGOSLAVIA SERVICE     0;35 SET
-
-                                'Y' FOR Yes; 
-                                'N' FOR No; 
-                                'U' FOR Unknown; 
-              LAST EDITED:      NOV 24, 2008 
-              HELP-PROMPT:      Record if the patient served in Yugoslavia. 
-              DESCRIPTION:
-                                Record if the patient served in Yugoslavia.  
-
-
-160,66        IRAQ (OIF) SERVICE     0;36 SET
-
-                                'Y' FOR Yes; 
-                                'N' FOR No; 
-                                'U' FOR Unknown; 
-              LAST EDITED:      APR 09, 2009 
-              HELP-PROMPT:      Record if the patient served in Iraq (OIF). 
-              DESCRIPTION:
-                                Record if the patient served in Iraq (OIF).  
-
-              TECHNICAL DESCR:  If the patient had OIF service, a default value of "Yes" will be provided.  
-                                 
-                                This default value is derived in the following way: 
-                                 
-                                1) A call is made to SVC^VADPT.  2) If VASV(11) is > 0, the variable OIF is set to "Yes".  3) The variable OIF is then used as a default in a ^DIE call from ^ONCPAT.  
-
-
-160,67        AFGHANISTAN (OEF) SERVICE 0;37 SET
-
-                                'Y' FOR Yes; 
-                                'N' FOR No; 
-                                'U' FOR Unknown; 
-              LAST EDITED:      APR 09, 2009 
-              HELP-PROMPT:      Record if the patient served in Afghanistan (OEF). 
-              DESCRIPTION:
-                                Record if the patient served in Afghanistan (OEF).  
-
-              TECHNICAL DESCR:  If the patient had OEF service, a default value of "Yes" will be provided.  
-                                 
-                                This default value is derived in the following way: 
-                                 
-                                1) A call is made to SVC^VADPT.  2) If VASV(12) is > 0, the variable OEF is set to "Yes".  3) The variable OEF is then used as a default in a ^DIE call from ^ONCPAT.  
-
-
-160,68        BRANCH OF SERVICE       ;  COMPUTED
-
-              MUMPS CODE:       D BS^ONCOES
-              ALGORITHM:        D BS^ONCOES
-              LAST EDITED:      MAY 15, 2009 
-              DESCRIPTION:
-                                Computes the SERVICE BRANCH [LAST] (#2,.325) value for this patient.  
-
-
-160,69        CLASS CATEGORY          ;  COMPUTED
-
-              MUMPS CODE:       D CC^ONCOCOM
-              ALGORITHM:        D CC^ONCOCOM
-              LAST EDITED:      JUN 28, 2011 
-              DESCRIPTION:      This field will compute a value of either 0 or 1.  
-                                 
-                                0 = All ONCOLOGY PRIMARY (#165.5) records for this patient have a CLASS 
-                                    CATEGORY (#165.5,.042) value of 0 (NONANALYTIC).  
-                                 
-                                1 = At least one ONCOLOGY PRIMARY (#165.5) record for this patient has a 
-                                    CLASS CATEGORY (#165.5,.042) value of 1 (ANALYTIC).  
-                                 
-                                The default value is 0.  
-
-
 160,70        MULTIPLE TUMOR STATUS (DEATH)  ;  COMPUTED
 
               MUMPS CODE:       S X="" D MTS^ONCOCOF
@@ -1483,11 +1373,9 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
 160.075,.01     SUSPENSE DATE          0;1 DATE
 
                 INPUT TRANSFORM:  S %DT="EX",%DT(0)="-NOW" D ^%DT S X=Y K:Y<1 X K %DT(0)
-                OUTPUT TRANSFORM: N XD S XD=Y D DD^ONCOCON S Y=XD
-                LAST EDITED:      AUG 27, 2009 
-                HELP-PROMPT:      Enter the date the patient was entered into the SUSPENSE sub-file. 
-                DESCRIPTION:
-                                   Identifies the date the patient was entered as a potential 'case' to be registered in the Tumor Registry.  
+                LAST EDITED:      AUG 10, 2000 
+                DESCRIPTION:       SUSPENSE DATE is the date the patient is entered into the system or identified as a possible 'case' to be registered in the Tumor Registry.  
+                                   
 
                 NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
@@ -1532,11 +1420,9 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                   'PT' FOR PTF FILE; 
                                   'RA' FOR RADIOLOGY; 
                                   'SE' FOR MANUAL ENTRY; 
-                                  'DI' FOR DISEASE INDEX; 
-                LAST EDITED:      APR 07, 2010 
-                HELP-PROMPT:      Enter the source from which the suspense entry has been derived. 
+                LAST EDITED:      MAY 18, 2000 
                 DESCRIPTION:
-                                   Records the source or origin of the suspense entry.  
+                                  Record the SOURCE of the suspense entry.  
 
                 CROSS-REFERENCE:  160^D 
                                   1)= S ^ONCO(160,"D",$E(X,1,30),DA(1),DA)=""
@@ -1719,10 +1605,9 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
 
 160.04,.01      DATE OF LAST CONTACT OR DEATH 0;1 DATE
 
-                INPUT TRANSFORM:  S %DT="E",%DT(0)="-NOW" D ^%DT S X=Y K:Y<1 X K %DT(0) I $D(X) D DX^ONCOFTS
+                INPUT TRANSFORM:  S %DT="E",%DT(0)="-NOW" D ^%DT S X=Y K:Y<1 X K %DT(0) I $D(X) S XX=$O(^ONCO(160,DA(1),"F","B",X,0)) K:XX X K XX D:$D(X) DX^ONCOFTS
                 OUTPUT TRANSFORM: S X=Y D DATEOT^ONCOES
-                LAST EDITED:      MAR 02, 2007 
-                HELP-PROMPT:      Record the last date on which the patient was known to be alive or the date of death. 
+                LAST EDITED:      OCT 26, 2005 
                 DESCRIPTION:       Records the date of last contact with the patient or the date of death.  
                                    
                                   For further information see FORDS page 199.  
@@ -1739,7 +1624,7 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                 CROSS-REFERENCE:  160.04^B 
                                   1)= S ^ONCO(160,DA(1),"F","B",$E(X,1,30),DA)=""
                                   2)= K ^ONCO(160,DA(1),"F","B",$E(X,1,30),DA)
-                                  Regular B cross-reference.  
+                                  Refular B cross-reference.  
 
 
                 CROSS-REFERENCE:  160.04^AE^MUMPS 
@@ -1968,11 +1853,14 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
 
 160.06,6        LETTER TYPE            0;7 POINTER TO FOLLOW-UP FORM LETTER FILE (#165.1)
 
-                LAST EDITED:      FEB 05, 2009 
-                HELP-PROMPT:      Enter the appropriate LETTER TYPE for this contact. 
+                INPUT TRANSFORM:  D S^ONCOFUP D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+                LAST EDITED:      MAY 04, 1992 
+                HELP-PROMPT:      Specifiy Dot Matix/Laser Format 
                 DESCRIPTION:
-                                  Records the type of follow-up letter to be generated.  
+                                  This is the type of follow-up letter to be generated.  
 
+                SCREEN:           D S^ONCOFUP
+                EXPLANATION:      Appropriate letter for Contact
 
 
 
@@ -2133,97 +2021,6 @@ REFERENCED BY: CONTACT NAME(AACP), CONTACT NAME(AAPC), LAST FOLLOW-UP CONTACT(AC
                                 converted.  
 
 
-160,1006      SOURCE COMORBIDITY     10;2 SET
-
-                                '0' FOR NA; 
-                                '1' FOR Facility face sheet; 
-                                '2' FOR Linkage to facility/hosp discharge data set; 
-                                '3' FOR Linkage to Medicare/Medicaid data set; 
-                                '4' FOR Linkage with another claims data set; 
-                                '5' FOR Combination of two or more sources above; 
-                                '9' FOR Other source; 
-              LAST EDITED:      OCT 07, 2011 
-              HELP-PROMPT:      Enter the data source from which comorbidities/complications were collected. 
-              DESCRIPTION:
-                                This data item is the record of the data source from which comorbidities/complications were collected.  It refers back to standard NAACCR data item # 3110, 3120, 3130, 3140, 3150, 3160, 3161, 3162, 3163, and 3164.  
-
-
-160,1007      TOBACCO USE CIGARETTE  8;9 SET
-
-                                '0' FOR Never used; 
-                                '1' FOR Current user; 
-                                '2' FOR Former user, quit within 1 year of DATE DX; 
-                                '3' FOR Former user, quit > 1 year prior to DATE DX; 
-                                '4' FOR Former user, unknown when quit; 
-                                '9' FOR Unknown/not stated/no smoking specifics; 
-              LAST EDITED:      OCT 07, 2011 
-              HELP-PROMPT:      Enter the patient's past or current use of cigarettes. 
-              DESCRIPTION:
-                                 Records the patient's past or current use of cigarettes.  
-
-
-160,1008      TOBACCO USE OTHER SMOKE 8;10 SET
-
-                                '0' FOR Never used; 
-                                '1' FOR Current user; 
-                                '2' FOR Former user, quit within 1 year of DATE DX; 
-                                '3' FOR Former user, quit > 1 year prior to DATE DX; 
-                                '4' FOR Former user, unknown when quit; 
-                                '9' FOR Unknown/not stated/no smoking specifics; 
-              LAST EDITED:      OCT 07, 2011 
-              HELP-PROMPT:      Enter the patient's past or current use of smoking tobacco products other than cigarettes. 
-              DESCRIPTION:       Records the patient's past or current use of smoking tobacco products other than cigarettes (e.g. pipes, cigars, kreteks).  
-                                 
-                                NOTE: For recording smokeless tobacco product use, see 
-                                      TOBACCO USE SMOKELESS.  
-
-
-160,1009      TOBACCO USE SMOKELESS  8;11 SET
-
-                                '0' FOR Never used; 
-                                '1' FOR Current user; 
-                                '2' FOR Former user, quit within 1 year of DATE DX; 
-                                '3' FOR Former user, quit > 1 year prior to DATE DX; 
-                                '4' FOR Former user, unknown when quit; 
-                                '9' FOR Unknown/not stated/no smoking specifics; 
-              LAST EDITED:      OCT 07, 2011 
-              HELP-PROMPT:      Enter the patient's past or current use of smokeless tobacco products. 
-              DESCRIPTION:
-                                 Records the patient's past or current use of smokeless tobacco products (e.g. chewing tobacco, snuff, etc.).  
-
-
-160,1010      TOBACCO USE, NOS       8;12 SET
-
-                                '0' FOR Never used; 
-                                '1' FOR Current user; 
-                                '2' FOR Former user, quit within 1 year of DATE DX; 
-                                '3' FOR Former user, quit > 1 year prior to DATE DX; 
-                                '4' FOR Former user, unknown when quit; 
-                                '9' FOR Unknown/not stated/no smoking specifics; 
-              LAST EDITED:      OCT 07, 2011 
-              HELP-PROMPT:      Enter the patient's past or current use of tobacco, NOS. 
-              DESCRIPTION:
-                                 Records the patient's past or current use of tobacco, NOS (not otherwise specified).  
-
-
-160,1011      HEIGHT                  ;  COMPUTED
-
-              MUMPS CODE:       D HEIGHT^ONCHTWT
-              ALGORITHM:        D HEIGHT^ONCHTWT
-              LAST EDITED:      OCT 12, 2011 
-              DESCRIPTION:
-                                Computes patient's height value from the GMRV VITAL MEASUREMENT (#120.5) file via the supported IA #1120 GMRVUTL.  
-
-
-160,1012      WEIGHT                  ;  COMPUTED
-
-              MUMPS CODE:       D WEIGHT^ONCHTWT
-              ALGORITHM:        D WEIGHT^ONCHTWT
-              LAST EDITED:      OCT 20, 2011 
-              DESCRIPTION:
-                                Computes patient's weight value from the GMRV VITAL MEASUREMENT (#120.5) file via the supported IA #1120 GMRVUTL.  
-
-
 
       FILES POINTED TO                      FIELDS
 
@@ -2261,6 +2058,8 @@ MORPHOLOGY FIELD (#61.1)          SUSPENSE:LAB MORPHOLOGY (#4)
 
 NEW PERSON (#200)                 FOLLOW-UP:REGISTRAR (#11)
 
+OCCUPATION FIELD (#61.6)          OCCUPATION:USUAL OCCUPATION (#.01)
+
 ONCOLOGY CONTACT (#165)           LAST FOLLOW-UP CONTACT (#15.1)
                                   FOLLOW-UP CONTACT:CONTACT NAME (#1)
                                   FOLLOW-UP ATTEMPTS:THE CONTACT (#2)
@@ -2282,7 +2081,7 @@ TOPOGRAPHY FIELD (#61)            SUSPENSE:ORGAN/TISSUE (#5)
 
 
 INPUT TEMPLATE(S):
-ONCO DEATH                    MAR 11, 2011@08:39  USER #0    
+ONCO DEATH                    SEP 28, 1999@15:39  USER #0    
      Template specific to death information only; input when date of death
      of patient has been ascertained - final follow-up for patient.
 ONCO FOLL ATTEMPT             FEB 26, 1992@14:45  USER #0    
@@ -2292,7 +2091,7 @@ ONCO FOLL-ADD CONTACT         MAR 07, 2006@12:10  USER #0
      Allows for the addition a contact for a patient creating a relationship
      between the patient and the contact file. Contacts are deleted at time
      of death by separate option.
-ONCO FOLLOWUP                 JUL 23, 2010@09:32  USER #0    
+ONCO FOLLOWUP                 JUL 22, 2003@14:18  USER #0    
      Template used to post a follow-up for a patient and record status.
       
      DEVELOPERS NOTE:  For consistent functionality, line FOLDR^ONCOFUL must
@@ -2301,14 +2100,13 @@ ONCO FOLLOWUP                 JUL 23, 2010@09:32  USER #0
 PRINT TEMPLATE(S):
 ONCO CASEFINDING REPORT       MAY 24, 1992@22:42  USER #0                                                                                                                                                                               [ONCO CASEFINDING-HDR]
 ONCO CASEFINDING-HDR          DEC 22, 1999@15:51  USER #0                                                                                                                                                                                                    @
-ONCO DELINQUENT(LTF) LIST     OCT 05, 2011@09:30  USER #0                                                                                                                                                                      [ONCO DELINQUENT(LTF) LIST HDR]
-ONCO DELINQUENT(LTF) LIST HDR OCT 05, 2011@09:32  USER #0                                                                                                                                                                                                    @
-ONCO DELINQUENT(LTF) LIST2    MAY 02, 2011@09:16  USER #0                                                                                                                                                                     [ONCO DELINQUENT(LTF) LIST2 HDR]
-ONCO DELINQUENT(LTF) LIST2 HDRMAY 02, 2011@09:10  USER #0                                                                                                                                                                                                    @
-ONCO DUE FOLLOWUP             OCT 05, 2011@08:46  USER #0                                                                                                                                                                              [ONCO DUE FOLLOWUP-HDR]
-ONCO DUE FOLLOWUP-HDR         OCT 05, 2011@08:48  USER #0                                                                                                                                                                                                    @
-ONCO DUE FOLLOWUP2            APR 29, 2011@13:06  USER #0                                                                                                                                                                             [ONCO DUE FOLLOWUP2-HDR]
-ONCO DUE FOLLOWUP2-HDR        APR 29, 2011@13:25  USER #0                                                                                                                                                                                                    @
+ONCO DELINQUENT(LTF) LIST     MAR 30, 2006@10:05  USER #0                                                                                                                                                                       ONCOLOGY DELINQUENT (LTF) LIST
+ONCO DUE FOLLOWUP             MAR 30, 2006@10:06  USER #0                                                                                                                                                                              [ONCO DUE FOLLOWUP-HDR]
+ONCO DUE FOLLOWUP-ADM/DIS     MAR 17, 1998@09:47  USER #0                                                                                                                                                                      [ONCO DUE FOLLOWUP-ADM/DIS-HDR]
+ONCO DUE FOLLOWUP-ADM/DIS-HDR MAR 17, 1998@09:51  USER #0                                                                                                                                                                                                    @
+ONCO DUE FOLLOWUP-HDR         APR 04, 2000@11:22  USER #0                                                                                                                                                                                                    @
+ONCO DUE FOLLOWUP/TERMDIG     MAR 17, 1998@09:54  USER #0                                                                                                                                                                      [ONCO DUE FOLLOWUP/TERMDIG-HDR]
+ONCO DUE FOLLOWUP/TERMDIG-HDR MAR 17, 1998@09:56  USER #0                                                                                                                                                                                                    @
 ONCO F/U HISTORY (NEW)        OCT 27, 1993@13:59  USER #0                                                                                                                                                                          [ONCO FOLLOWUP HISTORY-HDR]
 ONCO FOLLOW-UP STATUS LIST    MAR 17, 1998@10:07  USER #0                                                                                                                                                                       ONCOLOGY FOLLOW-UP STATUS LIST
 ONCO FOLLOWUP HISTORY         FEB 03, 2000@15:55  USER #0                                                                                                                                                                          [ONCO FOLLOWUP HISTORY-HDR]
@@ -2323,7 +2121,7 @@ ONCO PATIENT INDX-ACOS-HDR    JUN 21, 2005@11:58  USER #0                       
      HEADER TEMPLATE for ACOS Patient Index in 132 column format.
 ONCO PATIENT INDX-EOVA132     APR 17, 2000@09:37  USER #0                                                                                                                                                                                ONCOLOGY PATIENT LIST
 ONCO PATIENT INDX80           SEP 09, 1999@11:19  USER #0                                                                                                                                                                                ONCOLOGY PATIENT LIST
-ONCO PATIENT ONLY             FEB 18, 2010@09:54  USER #0                                                                                                                                                                              [ONCO PATIENT ONLY-HDR]
+ONCO PATIENT ONLY             MAY 25, 2000@09:36  USER #0                                                                                                                                                                              [ONCO PATIENT ONLY-HDR]
      Oncology Patient listing with Last Admit and Discharge dates.
 ONCO PATIENT ONLY-HDR         NOV 01, 1999@09:30  USER #0                                                                                                                                                                                                    @
      HEADER FOR Oncology patient list with Last Admit and Last Discharge date.
@@ -2332,10 +2130,10 @@ ONCO PTF-CASEFINDING-HDR      JUN 17, 2005@14:55  USER #0                       
 ONCO RAD-CASEFINDING RPT      FEB 04, 1992@21:02  USER #0                                                                                                                                                                           [ONCO RAD-CASEFINDING-HDR]
 ONCO RAD-CASEFINDING-HDR      OCT 11, 2006@11:16  USER #0                                                                                                                                                                                                    @
      Header for Radiology Casefinding Search.
-ONCO SUSPENSE                 MAY 07, 2009@12:29  USER #0                                                                                                                                                                                  [ONCO SUSPENSE-HDR]
-ONCO SUSPENSE-HDR             MAY 02, 2012@09:19  USER #0                                                                                                                                                                                                    @
-ONCO XCONTACT LIST            AUG 31, 2010@10:11  USER #0    ^ONCOXCL                                                                                                                                                                                        @
-ONCO XDEATH INFO              MAR 11, 2011@08:43  USER #0    ^ONCOXDI                                                                                                                                                                                        @
+ONCO SUSPENSE                 FEB 03, 2003@10:55  USER #0                                                                                                                                                                                  [ONCO SUSPENSE-HDR]
+ONCO SUSPENSE-HDR             OCT 29, 1999@16:10  USER #0                                                                                                                                                                                                    @
+ONCO XCONTACT LIST            FEB 26, 1992@14:30  USER #0    ^ONCOXCL                                                                                                                                                                                        @
+ONCO XDEATH INFO              FEB 16, 2005@13:03  USER #0    ^ONCOXDI                                                                                                                                                                                        @
 ONCO XPATIENT CONTACTS        MAY 06, 1992@17:11  USER #0    ^ONCOXPC                                                                                                                                                                    ONCOLOGY PATIENT LIST
 ONCO XPATIENT DATA            JUL 01, 1998@13:22  USER #0    ^ONCOXP1                                                                                                                                                                                        @
 ONCO XPATIENT INFO            NOV 08, 2000@14:23  USER #0    ^ONCOXPI                                                                                                                                                                    ONCOLOGY PATIENT LIST
@@ -2347,15 +2145,22 @@ SORT BY: +SOURCE//     From 'L'  To 'LZ'
   WITHIN SOURCE, SORT BY: @SUSPENSE DATE//    (User is asked range)
     WITHIN SUSPENSE DATE, SORT BY: @NAME//
 
-ONCO DELINQUENT(LTF) LIST     JUN 28, 2011@10:36  USER #0                                                                                                                                                                        '' Print Template always used
-SORT BY: @'CLASS CATEGORY// (CLASS CATEGORY equals 1)
-  WITHIN CLASS CATEGORY, SORT BY: @'BLOST TO FOLLOWUP;L1// (LOST TO FOLLOWUP)
-    WITHIN LOST TO FOLLOWUP, SORT BY: DUE FOLLOW-UP;C35;S1// (DUE FOLLOW-UP not null)
-      WITHIN DUE FOLLOW-UP, SORT BY: NAME// (NAME not null)
+ONCO DELINQUENT(LTF) LIST     JUL 30, 1990@16:45  USER #0                                                                                                                                               'ONCO DELINQUENT(LTF) LIST' Print Template always used
+SORT BY: @'LOST TO FOLLOWUP// (LOST TO FOLLOWUP)
+  WITHIN LOST TO FOLLOWUP, SORT BY: DUE FOLLOW-UP;C35;S1// (DUE FOLLOW-UP not null)
+    WITHIN DUE FOLLOW-UP, SORT BY: NAME// (NAME not null)
 
 ONCO DUE FOLLOWUP             DEC 14, 1990@14:24  USER #0                                                                                                                                                                        '' Print Template always used
 SORT BY: DUE FOLLOW-UP;C30;S1//    (User is asked range)
   WITHIN DUE FOLLOW-UP, SORT BY: NAME// (NAME not null)
+
+ONCO DUE FOLLOWUP-ADM/DIS     AUG 20, 1990@14:02  USER #0                                                                                                                                               'ONCO DUE FOLLOWUP-ADM/DIS' Print Template always used
+SORT BY: #DUE FOLLOW-UP;S1;C30//    (User is asked range)
+  WITHIN DUE FOLLOW-UP, SORT BY: NAME// (NAME not null)
+
+ONCO DUE FOLLOWUP/TERMDIG     SEP 12, 1990@11:35  USER #0                                                                                                                                               'ONCO DUE FOLLOWUP/TERMDIG' Print Template always used
+SORT BY: #+DUE FOLLOW-UP;S2//    (User is asked range)
+  WITHIN DUE FOLLOW-UP, SORT BY: @TERMINAL DIGIT;S1// (TERMINAL DIGIT not null)
 
 ONCO FOLLOWUP HISTORY         AUG 11, 1990@19:05  USER #0                                                                                                                                                   'ONCO FOLLOWUP HISTORY' Print Template always used
 

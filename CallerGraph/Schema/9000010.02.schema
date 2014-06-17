@@ -1,0 +1,335 @@
+STANDARD DATA DICTIONARY #9000010.02 -- V HOSPITALIZATION FILE                                                                                                                                                                    JUN 17,2014@15:24:35  PAGE 1
+STORED IN ^AUPNVINP(  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                                       
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains administrative information for each  inpatient admission at an IHS facility or CHS facility.  This record will be generated automatically at time of discharge for those facilities running the Admission, Discharge and Transfer (ADT)
+system.  It contains a backward pointer to the visit file, and the IHS Patient file.  Data must be in both of those files for this visit before data can be entered here.  
+
+
+
+CROSS
+REFERENCED BY: PATIENT NAME(AA), DATE OF DISCHARGE(AATOO), CODING COMPLETE(ABAM), PATIENT NAME(AC), VISIT(AD), CODING COMPLETE(AQAJ1), VISIT(AV10), DATE OF DISCHARGE(AZ9), DATE OF DISCHARGE(B)
+
+9000010.02,.01DATE OF DISCHARGE      0;1 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="ETX" D ^%DT S X=Y K:DT_".9999"<X!(2600000>X) X
+              LAST EDITED:      APR 05, 1988 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1960 AND TODAY 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDDSCH") 
+
+              CROSS-REFERENCE:  9000010.02^B 
+                                1)= S ^AUPNVINP("B",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVINP("B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000010.02^AZ9^MUMPS 
+                                1)= S:$D(APCDLOOK) DIC("DR")=""
+                                2)= Q
+
+              CROSS-REFERENCE:  9000010.02^AATOO^MUMPS 
+                                1)= I $P(^AUPNVINP(DA,0),U,2)]"" S ^AUPNVINP("AA",$P(^AUPNVINP(DA,0),U,2),(9999999-$P(X,".",1)),DA)=""
+                                2)= I $P(^AUPNVINP(DA,0),U,2)]"" K ^AUPNVINP("AA",$P(^AUPNVINP(DA,0),U,2),(9999999-$P(X,".",1)),DA)
+
+
+9000010.02,.019LENGTH OF STAY         ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(9000010.02,.019,9.2) S X1=Y(9000010.02,.019,1) S:X1>X X=X1
+                                9.2 = S Y(9000010.02,.019,3)=$S($D(^AUPNVINP(D0,0)):^(0),1:"") S X=1,Y(9000010.02,.019,1)=X,Y(9000010.02,.019,2)=X S X=$P(Y(9000010.02,.019,3),U,1),X1=X,X2=$S('$D(^AUPNVSIT(+$P(Y(9000010.02,.019,3),U,3),0)):"",1:$P(^(0),U,
+                                1)),X="" D:X2 ^%DTC:X1 S X=X
+              ALGORITHM:        MAX(1,(#.01-#.03))
+              LAST EDITED:      OCT 18, 1995 
+
+9000010.02,.02PATIENT NAME           0;2 POINTER TO PATIENT/IHS FILE (#9000001) (Required)
+
+              LAST EDITED:      DEC 08, 1994 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDPAT") 
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.02^AC 
+                                1)= S ^AUPNVINP("AC",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVINP("AC",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000010.02^AA^MUMPS 
+                                1)= S ^AUPNVINP("AA",X,(9999999-$P(+^AUPNVINP(DA,0),".",1)),DA)=""
+                                2)= K ^AUPNVINP("AA",X,(9999999-$P(+^AUPNVINP(DA,0),".",1)),DA)
+
+
+9000010.02,.03VISIT                  0;3 POINTER TO VISIT FILE (#9000010) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVINP(DA,0),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      APR 12, 1988 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDVSIT") 
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVINP(DA,0),U,2)"
+              EXPLANATION:      VISIT MUST BE FOR CURRENT PATIENT"
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.02^AD 
+                                1)= S ^AUPNVINP("AD",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVINP("AD",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000010.02^AV10^MUMPS 
+                                1)= D ADD^AUPNVSIT
+                                2)= D SUB^AUPNVSIT
+
+
+9000010.02,.04ADMITTING SERVICE      0;4 POINTER TO FACILITY TREATING SPECIALTY FILE (#45.7) (Required)
+
+              LAST EDITED:      FEB 02, 1987 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTADS") 
+
+
+9000010.02,.05DISCHARGE SERVICE      0;5 POINTER TO FACILITY TREATING SPECIALTY FILE (#45.7) (Required)
+
+              LAST EDITED:      FEB 02, 1987 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTDCS") 
+
+
+9000010.02,.06DISCHARGE TYPE         0;6 POINTER TO FACILITY MOVEMENT TYPE FILE (#405.1) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)=3,+$G(^(""IHS""))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JUL 11, 2001 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTDT") 
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,2)=3,+$G(^(""IHS""))"
+              EXPLANATION:      Enter Discharge Movement
+              CROSS-REFERENCE:  ^^TRIGGER^9000010.02^.09 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X I "DISCHARGE TYPE"'="TRANSFERRED" I X S X=DIV S Y(1)=$S($D(^AUPNVINP(D0,0)):^(0),1:"") S X=$P(Y(1),U,9),X=X S DIU=X K Y S X="" X ^DD(9000010.02,.06,1,1,1.4)
+                                1.4)= S DIH=$G(^AUPNVINP(DIV(0),0)),DIV=X S $P(^(0),U,9)=DIV,DIH=9000010.02,DIG=.09 D ^DICR
+                                2)= Q
+                                CREATE CONDITION)= I "DISCHARGE TYPE"'="TRANSFERRED"
+                                CREATE VALUE)= @
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= TRANSFERRED TO
+
+
+9000010.02,.07ADMISSION TYPE         0;7 POINTER TO FACILITY MOVEMENT TYPE FILE (#405.1) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,2)=1,+$G(^(""IHS""))" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      JAN 07, 1994 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTAT") 
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,2)=1,+$G(^(""IHS""))"
+              EXPLANATION:      Enter Admission Movement
+
+9000010.02,.08NUMBER OF CONSULTS     0;8 NUMBER
+
+              INPUT TRANSFORM:  K:+X'=X!(X>99)!(X<0)!(X?.E1"."1N.N) X
+              LAST EDITED:      JUL 15, 1986 
+              HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 0 AND 99 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTNC") 
+
+
+9000010.02,.09TRANSFERRED TO         0;9 POINTER TO TRANSFER FACILITY FILE (#9999999.91)
+
+              LAST EDITED:      JUL 11, 2001 
+              HELP-PROMPT:      Enter the facility to which the patient was transferred. 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTTT") 
+
+              NOTES:            TRIGGERED by the DISCHARGE TYPE field of the V HOSPITALIZATION File 
+
+
+9000010.02,.11MEDICARE RELEASE       0;11 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      JUL 15, 1986 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTMCR") 
+
+
+9000010.02,.12ADMITTING DX           0;12 POINTER TO ICD DIAGNOSIS FILE (#80) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="D ^AUPNSICD" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      DEC 13, 1988 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTADX") 
+
+              SCREEN:           S DIC("S")="D ^AUPNSICD"
+              EXPLANATION:      DX Cannot be an E code or an inactive code, and it must be appropriate for the Patent's age and sex.
+
+9000010.02,.13ASSIGNMENT OF BENEFITS 0;13 SET
+
+                                'Y' FOR YES; 
+                                'N' FOR NO; 
+              LAST EDITED:      SEP 03, 1986 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTAOB") 
+
+
+9000010.02,.14OVERRIDE/ACCEPT IHS INPT EDIT 0;14 POINTER TO NEW PERSON FILE (#200)
+
+              LAST EDITED:      JUL 07, 1992 
+
+9000010.02,.15CODING COMPLETE        0;15 SET
+
+                                '1' FOR NO; 
+              LAST EDITED:      SEP 22, 2002 
+              CROSS-REFERENCE:  9000010.02^AQAJ1^MUMPS 
+                                1)= Q
+                                2)= I '$D(DIU(0)) S AQAJSAV=$G(X),X="AQAJUPD" X ^%ZOSF("TEST") S X=AQAJSAV K AQAJSAV I $T D UPDATE^AQAJUPD($P(^AUPNVINP(DA,0),U,3)) D KILLNM^AQAJUTIL
+                                3)= UPDATES QI JCAHO IMS FILE
+                                 If a facility is running the QI LINKAGES-JCAHO package, this xref will update the QI JCAHO IMS file for this hospitalization as it is completed.  This update may include additional clarification questions needed by JCAHO 
+                                software.  
+
+
+              CROSS-REFERENCE:  9000010.02^ABAM^MUMPS 
+                                1)= Q
+                                2)= I '$D(DIU(0)) I $T(UPDATE^BAMUPD)]"" D UPDATE^BAMUPD($P(^AUPNVINP(DA,0),U,3))
+                                3)= Used to Trigger Oryx Data
+                                IHS/ANMC/LJF 9/19/02:  Added cross-reference to trigger ORYX update when inpatient visit has been coded.  
+
+
+
+9000010.02,5101CERTIFIED PERIOD      51;0 DATE Multiple #9000010.0251
+
+
+9000010.0251,.01BEGIN DATE             0;1 DATE
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:DT<X!(2840000>X) X S:$D(X) DINUM=X
+                LAST EDITED:      MAY 02, 1986 
+                HELP-PROMPT:      TYPE A DATE BETWEEN 1984 AND TODAY 
+                NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+
+9000010.0251,.02END DATE               0;2 DATE (Required)
+
+                INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:DT<X!(2840000>X) X
+                LAST EDITED:      AUG 05, 1985 
+                HELP-PROMPT:      TYPE A DATE BETWEEN 1984 AND TODAY 
+
+
+
+9000010.02,5301U/R ACUTE CARE PERIOD(S) 53;0 DATE Multiple #9000010.0253
+
+
+9000010.0253,.01U/R ACUTE CARE BEGIN DATE 0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 03, 1986 
+                HELP-PROMPT:      TYPE A WHOLE NUMBER BETWEEN 1 AND 99 
+                CROSS-REFERENCE:  9000010.0253^B 
+                                  1)= S ^AUPNVINP(DA(1),53,"B",$E(X,1,30),DA)=""
+                                  2)= K ^AUPNVINP(DA(1),53,"B",$E(X,1,30),DA)
+
+
+9000010.0253,.02U/R ACUTE CARE END DATE 0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 05, 1986 
+                HELP-PROMPT:      TYPE A DATE BETWEEN 1984 AND TODAY 
+
+
+
+9000010.02,5401U/R NON-ACUTE CARE PERIOD(S) 54;0 DATE Multiple #9000010.0254
+
+
+9000010.0254,.01U/R NON-ACUTE CARE BEGIN DATE 0;1 DATE (Multiply asked)
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 02, 1986 
+
+9000010.0254,.02U/R NON-ACUTE CARE END DATE 0;2 DATE
+
+                INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+                LAST EDITED:      JUL 02, 1986 
+
+9000010.0254,.03U/R DENIAL REASON      0;3 POINTER ** TO AN UNDEFINED FILE **  (Required)
+
+                LAST EDITED:      JUL 14, 1986 
+                HELP-PROMPT:      ENTER DENIAL CODE/REASON FROM U/R DENIAL REASON FILE 
+
+
+
+9000010.02,5501DISCHARGE PLAN INITIATION DATE 55;1 DATE
+
+              INPUT TRANSFORM:  S %DT="E" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      JUL 03, 1986 
+
+9000010.02,6101ADMISSION TYPE-UB92   61;1 SET
+
+                                '1' FOR EMERGENCY; 
+                                '2' FOR URGENT; 
+                                '3' FOR ELECTIVE; 
+                                '4' FOR NEWBORN; 
+                                '9' FOR INFO NOT AVAILABLE; 
+              LAST EDITED:      SEP 22, 2002 
+
+9000010.02,6102ADMISSION SOURCE-UB92 61;2 POINTER TO ADMISSION SOURCE FILE (#9999999.53)
+
+              LAST EDITED:      JUL 28, 1999 
+
+9000010.02,6103DISCHARGE STATUS-UB92 61;3 SET
+
+                                '1' FOR HOME; 
+                                '2' FOR OTHER HOSP; 
+                                '3' FOR SNF; 
+                                '4' FOR INTER. CARE FAC; 
+                                '5' FOR OTHER TYPE FAC; 
+                                '6' FOR HOME UNDER HMO; 
+                                '7' FOR LEFT AGAINST MEDICAL ADVICE; 
+                                '10' FOR MENTAL HEALTH FAC; 
+                                '20' FOR EXPIRED; 
+                                '30' FOR STILL PATIENT; 
+              LAST EDITED:      SEP 02, 1999 
+
+9000010.02,6104BILLING RELEASE FLAG  61;4 SET
+
+                                'Y' FOR YES; 
+              LAST EDITED:      JUL 07, 1986 
+
+9000010.02,6105PRO APPROVAL CODE     61;5 SET
+
+                                '1' FOR ALL DAYS/SERVICES APPROVED; 
+                                '3' FOR PARTIAL APPROVAL/DENIAL PRIOR TO PAYMENT; 
+                                '4' FOR ADMISSION DENIED; 
+                                '5' FOR REVIEW ON POST-PAYMENT BASIS; 
+                                '6' FOR PRE-ADMISSION APPROVAL/MEDICAL RECORD NOT REVIEWED; 
+              LAST EDITED:      AUG 06, 1986 
+
+9000010.02,6106PRO AUTHORIZATION NUMBER 61;6 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<6) X
+              LAST EDITED:      AUG 06, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 6-15 CHARACTERS IN LENGTH 
+
+
+      FILES POINTED TO                      FIELDS
+
+ADMISSION SOURCE (#9999999.53)    ADMISSION SOURCE-UB92 (#6102)
+
+FACILITY MOVEMENT TYPE (#405.1)   DISCHARGE TYPE (#.06)
+                                  ADMISSION TYPE (#.07)
+
+FACILITY TREATING SPECIALTY 
+                   (#45.7)        ADMITTING SERVICE (#.04)
+                                  DISCHARGE SERVICE (#.05)
+
+ICD DIAGNOSIS (#80)               ADMITTING DX (#.12)
+
+NEW PERSON (#200)                 OVERRIDE/ACCEPT IHS INPT EDIT (#.14)
+
+PATIENT/IHS (#9000001)            PATIENT NAME (#.02)
+
+TRANSFER FACILITY (#9999999.91)   TRANSFERRED TO (#.09)
+
+VISIT (#9000010)                  VISIT (#.03)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):

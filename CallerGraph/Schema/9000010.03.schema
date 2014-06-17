@@ -1,0 +1,202 @@
+STANDARD DATA DICTIONARY #9000010.03 -- V CHS FILE                                                                                                                                                                                JUN 17,2014@15:24:35  PAGE 1
+STORED IN ^AUPNVCHS(  *** NO DATA STORED YET ***   SITE: VXVISTA.ORG   UCI: VXVISTA,V13                                                                                                                                                                       
+
+DATA          NAME                  GLOBAL        DATA
+ELEMENT       TITLE                 LOCATION      TYPE
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+This file contains contract health care information for each CHS inpatient visit for each patient.  The VISIT field of this file (.03) is a backward pointer to the VISIT file.  The current thinking is this field will not be duplicated but the dictionary
+does not prohibit duplication.  The PATIENT NAME field of this file (.02) is a backward pointer to the IHS PATIENT file.  Eventually the facility CHS/MIS will generate this record automatically from the CHS/MIS at time of discharge, but currently this is
+not being done.  
+
+
+
+CROSS
+REFERENCED BY: VISIT(AA), PATIENT NAME(AATOO), PATIENT NAME(AC), VISIT(AD), AUTHORIZATION NO.(AUTHNO), VISIT(AV10), AUTHORIZING FACILITY(AV9), AUTHORIZING FACILITY(B)
+
+9000010.03,.01AUTHORIZING FACILITY   0;1 POINTER TO LOCATION FILE (#9999999.06) (Required)
+
+              LAST EDITED:      MAR 18, 1991 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTFAC") 
+
+              CROSS-REFERENCE:  9000010.03^B 
+                                1)= S ^AUPNVCHS("B",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVCHS("B",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000010.03^AV9^MUMPS 
+                                1)= S:$D(APCDLOOK) DIC("DR")=""
+                                2)= Q
+
+
+9000010.03,.02PATIENT NAME           0;2 POINTER TO PATIENT/IHS FILE (#9000001) (Required)
+
+              LAST EDITED:      APR 17, 1986 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDPAT") 
+
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.03^AC 
+                                1)= S ^AUPNVCHS("AC",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVCHS("AC",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000010.03^AATOO^MUMPS 
+                                1)= I $P(^AUPNVCHS(DA,0),U,3)]"" S ^AUPNVCHS("AA",X,(9999999-$P(+^AUPNVSIT($P(^AUPNVCHS(DA,0),U,3),0),".",1)),DA)=""
+                                2)= I $P(^AUPNVCHS(DA,0),U,3)]"" K ^AUPNVCHS("AA",X,(9999999-$P(+^AUPNVSIT($P(^AUPNVCHS(DA,0),U,3),0),".",1)),DA)
+
+
+9000010.03,.03VISIT                  0;3 POINTER TO VISIT FILE (#9000010) (Required)
+
+              INPUT TRANSFORM:  S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVCHS(DA,0),U,2)" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      NOV 11, 1986 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDVSIT") 
+
+              SCREEN:           S DIC("S")="I $P(^(0),U,5)=$P(^AUPNVCHS(DA,0),U,2)"
+              EXPLANATION:      VISIT MUST BE FOR CURRENT PATIENT
+                                UNEDITABLE
+              CROSS-REFERENCE:  9000010.03^AD 
+                                1)= S ^AUPNVCHS("AD",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVCHS("AD",$E(X,1,30),DA)
+
+              CROSS-REFERENCE:  9000010.03^AV10^MUMPS 
+                                1)= D ADD^AUPNVSIT
+                                2)= D SUB^AUPNVSIT
+
+              CROSS-REFERENCE:  9000010.03^AA^MUMPS 
+                                1)= Q:$P(^AUPNVCHS(DA,0),U,2)=""  S ^AUPNVCHS("AA",$P(^AUPNVCHS(DA,0),U,2),(9999999-$P(+^AUPNVSIT(X,0),".",1)),DA)=""
+                                2)= Q:$P(^AUPNVCHS(DA,0),U,2)=""  K ^AUPNVCHS("AA",$P(^AUPNVCHS(DA,0),U,2),(9999999-$P(+^AUPNVSIT(X,0),".",1)),DA)
+
+
+9000010.03,.04AUTHORIZATION NO.      0;4 FREE TEXT (Required)
+
+              INPUT TRANSFORM:  K:$L(X)>10!($L(X)<10)!'(X?2N3AN5N) X I $D(X),$D(^AUPNVCHS("AUTHNO",X)),'$D(^(X,DA)) W:'$D(ZTQUEUED) "  Duplicate ",$C(7) K X
+              LAST EDITED:      DEC 23, 1991 
+              HELP-PROMPT:      Enter a two digit fiscal year followed by three digit location code followed by five digit number.  Entry must be 10 characters.  No hyphens required. 
+              DESCRIPTION:
+                                Enter two digit fiscal year followed by three digit location code followed by five digit number.  Entry must be 10 characters in length.  No hyphens required..  
+
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTAUT") 
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+
+              CROSS-REFERENCE:  9000010.03^AUTHNO 
+                                1)= S ^AUPNVCHS("AUTHNO",$E(X,1,30),DA)=""
+                                2)= K ^AUPNVCHS("AUTHNO",$E(X,1,30),DA)
+
+
+9000010.03,.05PAY STATUS             0;5 SET (Required)
+
+                                'F' FOR FULL PAY; 
+                                'P' FOR PARTIAL PAY; 
+              LAST EDITED:      SEP 28, 1987 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTPAY") 
+
+
+9000010.03,.06TOTAL CHARGES          0;6 NUMBER (Required)
+
+              INPUT TRANSFORM:  S:X["$" X=$P(X,"$",2) K:X'?.N.1".".2N!(X>999999.99)!(X<0) X
+              LAST EDITED:      SEP 28, 1987 
+              HELP-PROMPT:      Type a Dollar Amount between 0 and 999999.99, 2 Decimal Digits 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTTC") 
+
+
+9000010.03,.07DATE OF DISCHARGE      0;7 DATE (Required)
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:DT<X!(2600000>X) X
+              LAST EDITED:      JAN 21, 1987 
+              HELP-PROMPT:      TYPE A DATE BETWEEN 1960 AND DT 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTDD") 
+
+
+9000010.03,.0791COMP LOS              ;  COMPUTED
+
+              MUMPS CODE:       S Y(9000010.03,.0791,1)=$S($D(^AUPNVCHS(D0,0)):^(0),1:"") S X=$P(Y(9000010.03,.0791,1),U,7),X1=X,X2=$S('$D(^AUPNVSIT(+$P(Y(9000010.03,.0791,1),U,3),0)):"",1:$P(^(0),U,1)),X="" D:X2 ^%DTC:X1 S X=$J(X,0,0)
+              ALGORITHM:        DATE OF DISCHARGE-VISIT  (ALWAYS 0 DECIMAL DIGITS)
+
+9000010.03,.0792LENGTH OF STAY        ;  COMPUTED
+
+              MUMPS CODE:       X ^DD(9000010.03,.0792,9.3) S X=$S(Y(9000010.03,.0792,2):Y(9000010.03,.0792,3),Y(9000010.03,.0792,4):X) S X=$J(X,0,0)
+                                9.2 = X $P(^DD(9000010.03,.0791,0),U,5,99) S Y(9000010.03,.0792,1)=X S X=Y(9000010.03,.0792,1)=0,Y(9000010.03,.0792,2)=X S X=Y(9000010.03,.0792,1)+1
+                                9.3 = X ^DD(9000010.03,.0792,9.2) S Y(9000010.03,.0792,3)=X S X=1,Y(9000010.03,.0792,4)=X S X=Y(9000010.03,.0792,1)
+              ALGORITHM:        $S(COMP LOS=0:COMP LOS+1,1:COMP LOS)  (ALWAYS 0 DECIMAL DIGITS)
+
+9000010.03,.08DISCHARGE TYPE         0;8 SET (Required)
+
+                                '1' FOR DISCHARGED; 
+                                '2' FOR IRREGULAR DISCHARGE; 
+                                '3' FOR DIED WITHIN 48 HOURS; 
+                                '4' FOR DIED AFTER 48 HOURS; 
+                                '5' FOR TRANSFERRED; 
+              LAST EDITED:      SEP 28, 1987 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTDT") 
+
+
+9000010.03,.09NEWBORN DX             0;9 POINTER TO ICD DIAGNOSIS FILE (#80)
+
+              INPUT TRANSFORM:  S DIC("S")="D ^AUPNSICD" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X
+              LAST EDITED:      DEC 13, 1988 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTND") 
+
+              SCREEN:           S DIC("S")="D ^AUPNSICD"
+              EXPLANATION:      Newborn DX cannot be an E code or an inactive code.  It must also be appropriate for the Patient's age and sex.
+
+9000010.03,.11STILLBORN              0;11 SET
+
+                                '1' FOR NB DEATH; 
+                                '2' FOR STILLBORN; 
+              LAST EDITED:      JUL 15, 1986 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTSB") 
+
+
+9000010.03,.12NO OF VISITS           0;12 NUMBER (Required)
+
+              INPUT TRANSFORM:  K:+X'=X!(X>999999)!(X<1)!(X?.E1"."1N.N) X
+              LAST EDITED:      MAY 01, 1997 
+              HELP-PROMPT:      Type a Number between 1 and 999999, 0 Decimal Digits 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTNV") 
+
+
+9000010.03,.13HOSPITAL VOUCHER NO.   0;13 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>15!($L(X)<10) X
+              LAST EDITED:      JUL 15, 1986 
+              HELP-PROMPT:      ANSWER MUST BE 10-15 CHARACTERS IN LENGTH 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTHV") 
+
+
+9000010.03,.14VENDOR                 0;14 POINTER ** TO AN UNDEFINED FILE **  (Required)
+
+              LAST EDITED:      MAR 10, 1988 
+              TECHNICAL DESCR:
+                                APCDALVR Variable = APCDALVR("APCDTVDR") 
+
+
+
+      FILES POINTED TO                      FIELDS
+
+ICD DIAGNOSIS (#80)               NEWBORN DX (#.09)
+
+LOCATION (#9999999.06)            AUTHORIZING FACILITY (#.01)
+
+PATIENT/IHS (#9000001)            PATIENT NAME (#.02)
+
+VISIT (#9000010)                  VISIT (#.03)
+
+
+
+INPUT TEMPLATE(S):
+
+PRINT TEMPLATE(S):
+
+SORT TEMPLATE(S):
+
+FORM(S)/BLOCK(S):
