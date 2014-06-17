@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #355.3 -- GROUP INSURANCE PLAN FILE                                                                                                                                                                       APR 3,2014@10:27:26  PAGE 1
-STORED IN ^IBA(355.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                            (VERSION 2.0)   
+STANDARD DATA DICTIONARY #355.3 -- GROUP INSURANCE PLAN FILE                                                                                                                                                                      JUL 23,2014@23:15:02  PAGE 1
+STORED IN ^IBA(355.3,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                          (VERSION 2.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -16,7 +16,7 @@ Per VHA Directive 10-93-142, this file definition should not be modified.
              DEL ACCESS: @
            LAYGO ACCESS: @
            AUDIT ACCESS: @
-IDENTIFIED BY: IS THIS A GROUP POLICY? (#.02), GROUP NAME (#.03), GROUP NUMBER (#.04)
+IDENTIFIED BY: IS THIS A GROUP POLICY? (#.02), *GROUP NAME (#.03), *GROUP NUMBER (#.04)
 
 POINTED TO BY: GROUP PLAN field (#.18) of the INSURANCE TYPE sub-field (#2.312) of the PATIENT File (#2) 
                PLAN field (#.01) of the PLAN COVERAGE LIMITATIONS File (#355.32) 
@@ -32,8 +32,8 @@ POINTED TO BY: GROUP PLAN field (#.18) of the INSURANCE TYPE sub-field (#2.312) 
                
 
 CROSS
-REFERENCED BY: GROUP NAME(ACCP), GROUP NUMBER(ACCP1), INSURANCE COMPANY(ACCP2), INSURANCE COMPANY(ACCP3), GROUP NUMBER(AENR04), GROUP NAME(AGNA), INSURANCE COMPANY(AGNA1), GROUP NUMBER(AGNU), INSURANCE COMPANY(AGNU1), INSURANCE COMPANY(B), 
-               GROUP NAME(D), GROUP NUMBER(E)
+REFERENCED BY: *GROUP NAME(ACCP), *GROUP NUMBER(ACCP1), INSURANCE COMPANY(ACCP2), INSURANCE COMPANY(ACCP3), *GROUP NUMBER(AENR04), *GROUP NAME(AGNA), INSURANCE COMPANY(AGNA1), *GROUP NUMBER(AGNU), INSURANCE COMPANY(AGNU1), INSURANCE COMPANY(B), 
+               *GROUP NAME(D), *GROUP NUMBER(E)
 
 355.3,.01     INSURANCE COMPANY      0;1 POINTER TO INSURANCE COMPANY FILE (#36) (Required)
 
@@ -111,13 +111,17 @@ REFERENCED BY: GROUP NAME(ACCP), GROUP NUMBER(ACCP1), INSURANCE COMPANY(ACCP2), 
                                 policy.  If this is an individual plan then answer 'NO' and only this patient can be associated with this policy.  
 
 
-355.3,.03     GROUP NAME             0;3 FREE TEXT
+355.3,.03     *GROUP NAME            0;3 FREE TEXT
 
               INPUT TRANSFORM:  K:X[""""!($A(X)=45) X I $D(X) K:$L(X)>20!($L(X)<2) X
-              LAST EDITED:      DEC 13, 1994 
+              LAST EDITED:      NOV 20, 2013 
               HELP-PROMPT:      Answer must be 2-20 characters in length. 
               DESCRIPTION:      If this is a group policy, enter the name of the group that this policy is associated with.  This is the name that the insurance company uses to identify the plan.  This will appear on the health claims forms in the
                                 appropriate blocks.  It will also be used to help identify this policy so that other patients with the same plan can be associated with it.  
+                                 
+                                This field is scheduled for deletion in May 2015.  
+
+              NOTES:            TRIGGERED by the GROUP NAME field of the GROUP INSURANCE PLAN File 
 
               CROSS-REFERENCE:  355.3^D 
                                 1)= S ^IBA(355.3,"D",$E(X,1,30),DA)=""
@@ -135,16 +139,32 @@ REFERENCED BY: GROUP NAME(ACCP), GROUP NUMBER(ACCP1), INSURANCE COMPANY(ACCP2), 
                                 Compresses entries by eliminating punctuation marks and leading zeroes, and converting lowercase to uppercase.  
 
 
+              CROSS-REFERENCE:  ^^TRIGGER^355.3^2.01 
+                                1)= X ^DD(355.3,.03,1,4,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.3,D0,2)):^(2),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X=DIV S X=$P(^IBA(355.3,DA,0),U,3) X ^DD(355.3,.03,1,4,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.3,DA,0),U,3)'=$E($P($G(^IBA(355.3,DA,2)),U),1,20))
+                                1.4)= S DIH=$G(^IBA(355.3,DIV(0),2)),DIV=X S $P(^(2),U,1)=DIV,DIH=355.3,DIG=2.01 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.3,DA,0),U,3)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.3,D0,2)):^(2),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X="" X ^DD(355.3,.03,1,4,2.4)
+                                2.4)= S DIH=$G(^IBA(355.3,DIV(0),2)),DIV=X S $P(^(2),U,1)=DIV,DIH=355.3,DIG=2.01 D ^DICR
+                                CREATE CONDITION)= S X=($P(^IBA(355.3,DA,0),U,3)'=$E($P($G(^IBA(355.3,DA,2)),U),1,20))
+                                CREATE VALUE)= S X=$P(^IBA(355.3,DA,0),U,3)
+                                DELETE CONDITION)= S X=($P(^IBA(355.3,DA,0),U,3)="")
+                                DELETE VALUE)= @
+                                FIELD)= GROUP NAME
+                                Triggers field 2.01 if first 20 chars of its value differ from the value in this field. Deletes field 2.01 if field .03 is deleted.  
 
-355.3,.04     GROUP NUMBER           0;4 FREE TEXT
+
+
+355.3,.04     *GROUP NUMBER          0;4 FREE TEXT
 
               INPUT TRANSFORM:  I $D(X) K:$L(X)>17!($L(X)<2) X
-              LAST EDITED:      SEP 25, 2007 
+              LAST EDITED:      NOV 20, 2013 
               HELP-PROMPT:      Answer must be 2-17 characters in length. 
-              DESCRIPTION:
-                                If this is a group policy enter the number which identifies this policy, i.e. group number/code that the insurance company uses to identify this plan.  Answer must be between 1 and 17 characters.  
+              DESCRIPTION:      If this is a group policy enter the number which identifies this policy, i.e. group number/code that the insurance company uses to identify this plan.  
+                                 
+                                This field is scheduled for deletion in May 2015.  
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the GROUP NUMBER field of the GROUP INSURANCE PLAN File 
 
               CROSS-REFERENCE:  355.3^E 
                                 1)= S ^IBA(355.3,"E",$E(X,1,30),DA)=""
@@ -167,6 +187,20 @@ REFERENCED BY: GROUP NAME(ACCP), GROUP NUMBER(ACCP1), INSURANCE COMPANY(ACCP2), 
                                 2)= D EVENT^IVMPLOG($P($G(^IBA(355.3,DA,0)),U,10))
                                 3)=  DO NOT DELETE
                                 This cross-reference is used to notify HEC of changes that may affect enrollment.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.3^2.02 
+                                1)= X ^DD(355.3,.04,1,5,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.3,D0,2)):^(2),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=$P(^IBA(355.3,DA,0),U,4) X ^DD(355.3,.04,1,5,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.3,DA,0),U,4)'=$E($P($G(^IBA(355.3,DA,2)),U,2),1,17))
+                                1.4)= S DIH=$G(^IBA(355.3,DIV(0),2)),DIV=X S $P(^(2),U,2)=DIV,DIH=355.3,DIG=2.02 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.3,DA,0),U,4)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.3,D0,2)):^(2),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X="" X ^DD(355.3,.04,1,5,2.4)
+                                2.4)= S DIH=$G(^IBA(355.3,DIV(0),2)),DIV=X S $P(^(2),U,2)=DIV,DIH=355.3,DIG=2.02 D ^DICR
+                                CREATE CONDITION)= S X=($P(^IBA(355.3,DA,0),U,4)'=$E($P($G(^IBA(355.3,DA,2)),U,2),1,17))
+                                CREATE VALUE)= S X=$P(^IBA(355.3,DA,0),U,4)
+                                DELETE CONDITION)= S X=($P(^IBA(355.3,DA,0),U,4)="")
+                                DELETE VALUE)= @
+                                FIELD)= GROUP NUMBER
+                                Triggers field 2.02 if first 17 chars of its value differ from the value in this field. Deletes field 2.02 if field .04 is deleted.  
 
 
 
@@ -400,6 +434,64 @@ REFERENCED BY: GROUP NAME(ACCP), GROUP NUMBER(ACCP1), INSURANCE COMPANY(ACCP2), 
               LAST EDITED:      JUN 03, 1993 
               DESCRIPTION:
                                 This is the user who last edited this policy.  It is automatically updated everytime a policy is edited using one of the options.  
+
+
+355.3,2.01    GROUP NAME             2;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<2)!'$$LENCHK^IBCNEUT1(X,20,0) X
+              LAST EDITED:      NOV 20, 2013 
+              HELP-PROMPT:      Answer must be 2-20 characters in length. 
+              DESCRIPTION:      If this is a group policy, enter the name of the group that this policy is associated with. This is the name that the insurance company uses to identify the plan. This will appear on the health claims forms in the 
+                                appropriate blocks. It will also be used to help identify this policy so that other patients with the same plan can be associated with it.  
+
+              TECHNICAL DESCR:
+                                Replaces field .03. Length of this field is temporarily limited to 20 characters.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the *GROUP NAME field of the GROUP INSURANCE PLAN File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.3^.03 
+                                1)= X ^DD(355.3,2.01,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.3,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=$E($P(^IBA(355.3,DA,2),U),1,20) X ^DD(355.3,2.01,1,1,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.3,DA,0),U,3)'=$E($P(^IBA(355.3,DA,2),U),1,20))
+                                1.4)= S DIH=$G(^IBA(355.3,DIV(0),0)),DIV=X S $P(^(0),U,3)=DIV,DIH=355.3,DIG=.03 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.3,DA,2),U)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.3,D0,0)):^(0),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(355.3,2.01,1,1,2.4)
+                                2.4)= S DIH=$G(^IBA(355.3,DIV(0),0)),DIV=X S $P(^(0),U,3)=DIV,DIH=355.3,DIG=.03 D ^DICR
+                                CREATE CONDITION)= S X=($P(^IBA(355.3,DA,0),U,3)'=$E($P(^IBA(355.3,DA,2),U),1,20))
+                                CREATE VALUE)= S X=$E($P(^IBA(355.3,DA,2),U),1,20)
+                                DELETE CONDITION)= S X=($P(^IBA(355.3,DA,2),U)="")
+                                DELETE VALUE)= @
+                                FIELD)= *GROUP NAME
+                                Triggers field .03 if its value differs from first 20 chars of the value in this field. Deletes field .03 if field 2.01 is deleted.  
+
+
+
+355.3,2.02    GROUP NUMBER           2;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>55!($L(X)<2)!'$$LENCHK^IBCNEUT1(X,17,0) X
+              LAST EDITED:      NOV 20, 2013 
+              HELP-PROMPT:      Answer must be 2-17 characters in length. 
+              DESCRIPTION:
+                                If this is a group policy enter the number which identifies this policy, i.e. group number/code that the insurance company uses to identify this plan.  
+
+              TECHNICAL DESCR:
+                                Replaces field .04. Length of this field is temporarily limited to 17 characters.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the *GROUP NUMBER field of the GROUP INSURANCE PLAN File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.3^.04 
+                                1)= X ^DD(355.3,2.02,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.3,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X=$E($P(^IBA(355.3,DA,2),U,2),1,17) X ^DD(355.3,2.02,1,1,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.3,DA,0),U,4)'=$E($P(^IBA(355.3,DA,2),U,2),1,17))
+                                1.4)= S DIH=$G(^IBA(355.3,DIV(0),0)),DIV=X S $P(^(0),U,4)=DIV,DIH=355.3,DIG=.04 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.3,DA,2),U,2)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.3,D0,0)):^(0),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(355.3,2.02,1,1,2.4)
+                                2.4)= S DIH=$G(^IBA(355.3,DIV(0),0)),DIV=X S $P(^(0),U,4)=DIV,DIH=355.3,DIG=.04 D ^DICR
+                                CREATE CONDITION)= S X=($P(^IBA(355.3,DA,0),U,4)'=$E($P(^IBA(355.3,DA,2),U,2),1,17))
+                                CREATE VALUE)= S X=$E($P(^IBA(355.3,DA,2),U,2),1,17)
+                                DELETE CONDITION)= S X=($P(^IBA(355.3,DA,2),U,2)="")
+                                DELETE VALUE)= @
+                                FIELD)= *GROUP NUMBER
+                                Triggers field .04 if its value differs from first 17 chars of the value in this field. Deletes field .04 if field 2.02 is deleted.  
+
 
 
 355.3,6.01    PLAN ID                6;1 POINTER TO PLAN FILE (#366.03)

@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #53.1 -- NON-VERIFIED ORDERS FILE                                                                                                                                                                         APR 3,2014@10:27:01  PAGE 1
-STORED IN ^PS(53.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                              (VERSION 5.0)   
+STANDARD DATA DICTIONARY #53.1 -- NON-VERIFIED ORDERS FILE                                                                                                                                                                        JUL 23,2014@23:14:39  PAGE 1
+STORED IN ^PS(53.1,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                            (VERSION 5.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -18,13 +18,13 @@ POINTED TO BY: LAST N-V ORDER CONVERTED TO V4 field (#20.14) of the PHARMACY SYS
 CROSS
 REFERENCED BY: ADMIN TIMES(AAT), ORDERS FILE PARENT ORDER(ACX), ADMIN TIMES(ADM), PATIENT NAME(AP), *PRIMARY DRUG(APD), PROVIDER(APR), STATUS(AS), VERIFYING NURSE(AV), ORDER NUMBER(B)
 
-INDEXED BY:    CLINIC & PATIENT NAME (AD)
+INDEXED BY:    CLINIC & PATIENT NAME (AD), PATIENT NAME & CLINIC (CIMO)
 
 
 53.1,.01      ORDER NUMBER           0;1 NUMBER (Required)
 
               INPUT TRANSFORM:  K:+X'=X!(X>1000000000)!(X<1)!(X?.E1"."1N.N) X
-              LAST EDITED:      AUG 16, 1985 
+              LAST EDITED:      JUN 25, 2013 
               HELP-PROMPT:      Type a whole number between 1 and 1000000000. 
               DESCRIPTION:
                                   This is a reference number for this order.  
@@ -61,7 +61,7 @@ INDEXED BY:    CLINIC & PATIENT NAME (AD)
 
 53.1,.5       PATIENT NAME           0;15 POINTER TO PATIENT FILE (#2) (Required)
 
-              LAST EDITED:      MAY 01, 2004 
+              LAST EDITED:      JUN 25, 2013 
               DESCRIPTION:
                                   This is the patient for which the medication has been ordered.  
 
@@ -81,7 +81,7 @@ INDEXED BY:    CLINIC & PATIENT NAME (AD)
                                   The AV x-ref is only set if the order has a pending status and was acknowledged by a nurse.  
 
 
-              RECORD INDEXES:   AD (#502)
+              RECORD INDEXES:   AD (#502), CIMO (#808)
 
 53.1,1        PROVIDER               0;2 POINTER TO NEW PERSON FILE (#200) (Required)
 
@@ -1201,12 +1201,12 @@ INDEXED BY:    CLINIC & PATIENT NAME (AD)
 
 53.1,113      CLINIC                 DSS;1 POINTER TO HOSPITAL LOCATION FILE (#44)
 
-              LAST EDITED:      MAY 01, 2004 
+              LAST EDITED:      JUN 25, 2013 
               HELP-PROMPT:      Enter the name of the clinic where the patient was seen. 
               DESCRIPTION:
                                 Entry must be a clinic.  Depending on the condition, INACTIVATE and REACTIVATE dates may exist.  
 
-              RECORD INDEXES:   AD (#502)
+              RECORD INDEXES:   AD (#502), CIMO (#808)
 
 53.1,114      LAST RENEW             14;0 DATE Multiple #53.1114
 
@@ -1572,6 +1572,21 @@ File #53.1
        Whole Kill:  K ^PS(53.1,"AD")
              X(1):  CLINIC  (53.1,113)  (Subscr 1)  (Len 20)  (forwards)
              X(2):  PATIENT NAME  (53.1,.5)  (Subscr 2)  (Len 20)  (forwards)
+
+  CIMO (#808)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  CIMO - PS(53.1,"CIMO",PATIENT,CLINIC,ORDER)
+      Description:  This cross reference is used during enhanced order checks for quick access to clinic order information for Unit Dose and IV orders by PATIENT, CLINIC and ORDER NUMBER.  
+                     
+                    The set condition checks to see if the clinic is defined with YES answered for the ADMINISTER INPATIENT MEDS parameter under the SET UP A CLINIC [SDBUILD] option and if the order has an appointment date/time defined.  If both are
+                    true, the cross reference is defined.  
+                     
+                    Using the same criteria, this cross reference will be defined if a clinic is added or edited using the CLINIC DEFINITION [PSJ CD] option.  
+        Set Logic:  S ^PS(53.1,"CIMO",X(1),X(2),DA)=""
+         Set Cond:  S X=$$CHECK3^PSJIMO1() I X
+       Kill Logic:  K ^PS(53.1,"CIMO",X(1),X(2),DA)
+       Whole Kill:  K ^PS(53.1,"CIMO")
+             X(1):  PATIENT NAME  (53.1,.5)  (Subscr 1)  (forwards)
+             X(2):  CLINIC  (53.1,113)  (Subscr 2)  (forwards)
 
 
 INPUT TEMPLATE(S):

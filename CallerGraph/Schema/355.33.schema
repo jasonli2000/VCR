@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #355.33 -- INSURANCE BUFFER FILE                                                                                                                                                                          APR 3,2014@10:27:27  PAGE 1
-STORED IN ^IBA(355.33,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                           (VERSION 2.0)   
+STANDARD DATA DICTIONARY #355.33 -- INSURANCE BUFFER FILE                                                                                                                                                                         JUL 23,2014@23:15:03  PAGE 1
+STORED IN ^IBA(355.33,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                         (VERSION 2.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -285,12 +285,15 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
 
               SOURCE OF DATA:   SET BY THE REAL TIME VERIFICATION PROCESS
               NOTES:            TRIGGERED by the INSURANCE COMPANY NAME field of the INSURANCE BUFFER File 
-                                TRIGGERED by the GROUP NAME field of the INSURANCE BUFFER File 
-                                TRIGGERED by the GROUP NUMBER field of the INSURANCE BUFFER File 
+                                TRIGGERED by the *GROUP NAME field of the INSURANCE BUFFER File 
+                                TRIGGERED by the *GROUP NUMBER field of the INSURANCE BUFFER File 
                                 TRIGGERED by the PATIENT NAME field of the INSURANCE BUFFER File 
-                                TRIGGERED by the SUBSCRIBER ID field of the INSURANCE BUFFER File 
+                                TRIGGERED by the *SUBSCRIBER ID field of the INSURANCE BUFFER File 
                                 TRIGGERED by the INSURED'S DOB field of the INSURANCE BUFFER File 
                                 TRIGGERED by the PATIENT ID field of the INSURANCE BUFFER File 
+                                TRIGGERED by the GROUP NAME field of the INSURANCE BUFFER File 
+                                TRIGGERED by the GROUP NUMBER field of the INSURANCE BUFFER File 
+                                TRIGGERED by the SUBSCRIBER ID field of the INSURANCE BUFFER File 
 
 
 355.33,.17    BPS RESPONSE           0;17 POINTER TO BPS RESPONSES FILE (#9002313.03)
@@ -306,6 +309,15 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
               CROSS-REFERENCE:  355.33^E 
                                 1)= S ^IBA(355.33,"E",$E(X,1,30),DA)=""
                                 2)= K ^IBA(355.33,"E",$E(X,1,30),DA)
+
+
+355.33,.18    SERVICE DATE           0;18 DATE
+
+              INPUT TRANSFORM:  S %DT="EX" D ^%DT S X=Y K:Y<1 X
+              LAST EDITED:      MAY 07, 2013 
+              HELP-PROMPT:      Enter the service date to be included in eIV inquiry. 
+              DESCRIPTION:
+                                Service date to be included in eIV inquiry.  
 
 
 355.33,20.01  INSURANCE COMPANY NAME 20;1 FREE TEXT
@@ -442,13 +454,16 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
                                 Some policies are individual policies and are specific to a patient.  Many policies are group plans that cover many patients.  
 
 
-355.33,40.02  GROUP NAME             40;2 FREE TEXT
+355.33,40.02  *GROUP NAME            40;2 FREE TEXT
 
               INPUT TRANSFORM:  K:$L(X)>20!($L(X)<2) X
-              LAST EDITED:      SEP 02, 2010 
+              LAST EDITED:      DEC 03, 2013 
               HELP-PROMPT:      Enter the name of the group this policy is associated with.  Answer must be 2-20 characters in length. 
-              DESCRIPTION:
-                                This is the name that the insurance company uses to identify this plan.  
+              DESCRIPTION:      This is the name that the insurance company uses to identify this plan.  
+                                 
+                                This field is scheduled for deletion in May 2015.  
+
+              NOTES:            TRIGGERED by the GROUP NAME field of the INSURANCE BUFFER File 
 
               CROSS-REFERENCE:  ^^TRIGGER^355.33^.16 
                                 1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.33,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y S X=DIV S X=$$TRIG^IBCNERTQ(DA) S DIH=$G(^IBA(355.33,DIV(0),0)),DIV=X S $P(^(0),U,16)=DIV,DIH=355.33,DIG=.16 D 
@@ -462,14 +477,31 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
                                 Sets the  REAL TIME VERIFICATION (#.16) field to 1 when this record has been queued for real time verification.  
 
 
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^90.01 
+                                1)= X ^DD(355.33,40.02,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,90)):^(90),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X=DIV S X=$P(^IBA(355.33,DA,40),U,2) X ^DD(355.33,40.02,1,2,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,40),U,2)'=$E($P($G(^IBA(355.33,DA,90)),U),1,20))
+                                1.4)= S DIH=$G(^IBA(355.33,DIV(0),90)),DIV=X S $P(^(90),U,1)=DIV,DIH=355.33,DIG=90.01 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,40),U,2)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,90)):^(90),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X="" X ^DD(355.33,40.02,1,2,2.4)
+                                2.4)= S DIH=$G(^IBA(355.33,DIV(0),90)),DIV=X S $P(^(90),U,1)=DIV,DIH=355.33,DIG=90.01 D ^DICR
+                                CREATE CONDITION)= S X=($P(^IBA(355.33,DA,40),U,2)'=$E($P($G(^IBA(355.33,DA,90)),U),1,20))
+                                CREATE VALUE)= S X=$P(^IBA(355.33,DA,40),U,2)
+                                DELETE CONDITION)= S X=($P(^IBA(355.33,DA,40),U,2)="")
+                                DELETE VALUE)= @
+                                FIELD)= GROUP NAME
+                                Triggers field 90.01 if first 20 chars of its value differ from the value in this field. Deletes field 90.01 if field 40.02 is deleted.  
 
-355.33,40.03  GROUP NUMBER           40;3 FREE TEXT
+
+
+355.33,40.03  *GROUP NUMBER          40;3 FREE TEXT
 
               INPUT TRANSFORM:  K:$L(X)>17!($L(X)<2) X
-              LAST EDITED:      SEP 02, 2010 
+              LAST EDITED:      DEC 03, 2013 
               HELP-PROMPT:      Enter the number that identifies this group/plan.  Answer must be 2-17 characters in length. 
-              DESCRIPTION:
-                                This is the number or code which the insurance company uses to identify this plan.  
+              DESCRIPTION:      This is the number or code which the insurance company uses to identify this plan.  
+                                 
+                                This field is scheduled for deletion in May 2015.  
+
+              NOTES:            TRIGGERED by the GROUP NUMBER field of the INSURANCE BUFFER File 
 
               CROSS-REFERENCE:  ^^TRIGGER^355.33^.16 
                                 1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.33,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y S X=DIV S X=$$TRIG^IBCNERTQ(DA) S DIH=$G(^IBA(355.33,DIV(0),0)),DIV=X S $P(^(0),U,16)=DIV,DIH=355.33,DIG=.16 D 
@@ -481,6 +513,20 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
                                 DELETE VALUE)= NO EFFECT
                                 FIELD)= REAL TIME
                                 Sets the  REAL TIME VERIFICATION (#.16) field to 1 when this record has been queued for real time verification.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^90.02 
+                                1)= X ^DD(355.33,40.03,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,90)):^(90),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=$P(^IBA(355.33,DA,40),U,3) X ^DD(355.33,40.03,1,2,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,40),U,3)'=$E($P($G(^IBA(355.33,DA,90)),U,2),1,17))
+                                1.4)= S DIH=$G(^IBA(355.33,DIV(0),90)),DIV=X S $P(^(90),U,2)=DIV,DIH=355.33,DIG=90.02 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,40),U,3)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,90)):^(90),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X="" X ^DD(355.33,40.03,1,2,2.4)
+                                2.4)= S DIH=$G(^IBA(355.33,DIV(0),90)),DIV=X S $P(^(90),U,2)=DIV,DIH=355.33,DIG=90.02 D ^DICR
+                                CREATE CONDITION)= S X=($P(^IBA(355.33,DA,40),U,3)'=$E($P($G(^IBA(355.33,DA,90)),U,2),1,17))
+                                CREATE VALUE)= S X=$P(^IBA(355.33,DA,40),U,3)
+                                DELETE CONDITION)= S X=($P(^IBA(355.33,DA,40),U,3)="")
+                                DELETE VALUE)= @
+                                FIELD)= GROUP NUMBER
+                                Triggers field 90.02 if first 17 chars of its value differ from the value in this field. Deletes field 90.02 if field 40.03 is deleted.  
 
 
 
@@ -617,16 +663,18 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
 
 
-355.33,60.04  SUBSCRIBER ID          60;4 FREE TEXT
+355.33,60.04  *SUBSCRIBER ID         60;4 FREE TEXT
 
               SUBSCRIBER PRIMARY ID                                                                                            
               INPUT TRANSFORM:  K:$L(X)>20!($L(X)<3) X
-              LAST EDITED:      SEP 02, 2010 
-              HELP-PROMPT:      Answer must be 3-20 characters in length 
-              DESCRIPTION:
-                                Enter the Subscriber's Primary ID number.  This number is assigned by the payer and can be found on the subscriber's insurance card.  
+              LAST EDITED:      DEC 03, 2013 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:      Enter the Subscriber's Primary ID number.  This number is assigned by the payer and can be found on the subscriber's insurance card.  
+                                 
+                                This field is scheduled for deletion in May 2015.  
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the SUBSCRIBER ID field of the INSURANCE BUFFER File 
 
               CROSS-REFERENCE:  ^^TRIGGER^355.33^.16 
                                 1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.33,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y S X=DIV S X=$$TRIG^IBCNERTQ(DA) S DIH=$G(^IBA(355.33,DIV(0),0)),DIV=X S $P(^(0),U,16)=DIV,DIH=355.33,DIG=.16 D 
@@ -638,6 +686,20 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
                                 DELETE VALUE)= NO EFFECT
                                 FIELD)= REAL TIME
                                 Sets the  REAL TIME VERIFICATION (#.16) field to 1 when this record has been queued for real time verification.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^90.03 
+                                1)= X ^DD(355.33,60.04,1,2,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,90)):^(90),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=$P(^IBA(355.33,DA,60),U,4) X ^DD(355.33,60.04,1,2,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,60),U,4)'=$E($P($G(^IBA(355.33,DA,90)),U,3),1,20))
+                                1.4)= S DIH=$G(^IBA(355.33,DIV(0),90)),DIV=X S $P(^(90),U,3)=DIV,DIH=355.33,DIG=90.03 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,60),U,4)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,90)):^(90),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(355.33,60.04,1,2,2.4)
+                                2.4)= S DIH=$G(^IBA(355.33,DIV(0),90)),DIV=X S $P(^(90),U,3)=DIV,DIH=355.33,DIG=90.03 D ^DICR
+                                CREATE CONDITION)= S X=($P(^IBA(355.33,DA,60),U,4)'=$E($P($G(^IBA(355.33,DA,90)),U,3),1,20))
+                                CREATE VALUE)= S X=$P(^IBA(355.33,DA,60),U,4)
+                                DELETE CONDITION)= S X=($P(^IBA(355.33,DA,60),U,4)="")
+                                DELETE VALUE)= @
+                                FIELD)= SUBSCRIBER ID
+                                Triggers field 90.03 if first 20 chars of its value differ from the value in this field. Deletes field 90.03 if field 60.04 is deleted.  
 
 
 
@@ -713,15 +775,31 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
 
 
 
-355.33,60.07  NAME OF INSURED        60;7 FREE TEXT
+355.33,60.07  *NAME OF INSURED       60;7 FREE TEXT
 
-              INPUT TRANSFORM:  N Z1 S Z1=$G(^IBA(355.33,DA,60)) S:$P(Z1,U,6)="01" X=$P($G(^DPT(+Z1,0)),U,1) K:$L(X)>30!($L(X)<2) X
-              LAST EDITED:      FEB 10, 1998 
+              INPUT TRANSFORM:  N Z1 S Z1=$G(^IBA(355.33,DA,60)) S:$P(Z1,U,6)="01"&X X=$P($G(^DPT(+Z1,0)),U,1) K:$L(X)>30!($L(X)<2) X
+              LAST EDITED:      NOV 20, 2013 
               HELP-PROMPT:      Enter the name of the person who holds the policy.  Answer must be 2-30 characters in length. 
-              DESCRIPTION:
-                                Enter the name of the individual for which this policy was issued.  If the Patients Relationship to the Insured is 'Patient' then this name will default to the patients name.  
+              DESCRIPTION:      Enter the name of the individual for which this policy was issued.  If the Patients Relationship to the Insured is 'Patient' then this name will default to the patients name via input transform.  
+                                 
+                                This field is scheduled for deletion in May 2015.  
 
               NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the NAME OF INSURED field of the INSURANCE BUFFER File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^91.01 
+                                1)= X ^DD(355.33,60.07,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,91)):^(91),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X=DIV S X=$P(^IBA(355.33,DA,60),U,7) X ^DD(355.33,60.07,1,1,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,60),U,7)'=$E($P($G(^IBA(355.33,DA,91)),U),1,30))
+                                1.4)= S DIH=$G(^IBA(355.33,DIV(0),91)),DIV=X S $P(^(91),U,1)=DIV,DIH=355.33,DIG=91.01 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,60),U,7)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,91)):^(91),1:"") S X=$P(Y(1),U,1),X=X S DIU=X K Y S X="" X ^DD(355.33,60.07,1,1,2.4)
+                                2.4)= S DIH=$G(^IBA(355.33,DIV(0),91)),DIV=X S $P(^(91),U,1)=DIV,DIH=355.33,DIG=91.01 D ^DICR
+                                CREATE CONDITION)= S X=($P(^IBA(355.33,DA,60),U,7)'=$E($P($G(^IBA(355.33,DA,91)),U),1,30))
+                                CREATE VALUE)= S X=$P(^IBA(355.33,DA,60),U,7)
+                                DELETE CONDITION)= S X=($P(^IBA(355.33,DA,60),U,7)="")
+                                DELETE VALUE)= @
+                                FIELD)= NAME OF INSURED
+                                Triggers field 91.01 if first 30 chars of its value differ from the value in this field. Deletes field 91.01 if field 60.07 is deleted.  
+
 
 
 355.33,60.08  INSURED'S DOB          60;8 DATE
@@ -800,6 +878,7 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
 
 355.33,60.14  PT. RELATIONSHIP - HIPAA 60;14 SET
 
+              PT. RELATIONSHIP TO INSURED                                                                                      
                                 '01' FOR SPOUSE; 
                                 '18' FOR SELF; 
                                 '19' FOR CHILD; 
@@ -811,7 +890,7 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
                                 '41' FOR INJURED PLAINTIFF; 
                                 '53' FOR LIFE PARTNER; 
                                 'G8' FOR OTHER RELATIONSHIP; 
-              LAST EDITED:      FEB 04, 2008 
+              LAST EDITED:      MAY 13, 2013 
               HELP-PROMPT:      Enter the HIPAA code which indicates the patient's relationship to the injured party. 
               DESCRIPTION:      Select the HIPAA relationship code that describes the relationship this patient has to the holder of this insurance policy. If the policy belongs to the patient enter '18' for SELF. If the policy belongs to the spouse
                                 enter '01' for SPOUSE, etc.  
@@ -1233,6 +1312,158 @@ REFERENCED BY: DATE ENTERED(AEST), STATUS(AEST1), DATE ENTERED(AFST), DATE PROCE
               HELP-PROMPT:      Enter service type code to be sent with eIV insurance inquiry. 
               DESCRIPTION:
                                 Twentieth Service Type Code to be sent with eIV Insurance Inquiry.  
+
+
+355.33,90.01  GROUP NAME             90;1 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<2)!'$$LENCHK^IBCNEUT1(X,20,0) X
+              LAST EDITED:      DEC 03, 2013 
+              HELP-PROMPT:      Answer must be 2-20 characters in length. 
+              DESCRIPTION:
+                                This is the name that the insurance company uses to identify this plan.  
+
+              TECHNICAL DESCR:
+                                Replaces field 40.02. Length of this field is temporarily limited to 20 characters.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the *GROUP NAME field of the INSURANCE BUFFER File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^40.02 
+                                1)= X ^DD(355.33,90.01,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,40)):^(40),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X=DIV S X=$E($P(^IBA(355.33,DA,90),U),1,20) X ^DD(355.33,90.01,1,1,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P($G(^IBA(355.33,DA,40)),U,2)'=$E($P(^IBA(355.33,DA,90),U),1,20))
+                                1.4)= S DIH=$G(^IBA(355.33,DIV(0),40)),DIV=X S $P(^(40),U,2)=DIV,DIH=355.33,DIG=40.02 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,90),U)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,40)):^(40),1:"") S X=$P(Y(1),U,2),X=X S DIU=X K Y S X="" X ^DD(355.33,90.01,1,1,2.4)
+                                2.4)= S DIH=$G(^IBA(355.33,DIV(0),40)),DIV=X S $P(^(40),U,2)=DIV,DIH=355.33,DIG=40.02 D ^DICR
+                                CREATE CONDITION)= S X=($P($G(^IBA(355.33,DA,40)),U,2)'=$E($P(^IBA(355.33,DA,90),U),1,20))
+                                CREATE VALUE)= S X=$E($P(^IBA(355.33,DA,90),U),1,20)
+                                DELETE CONDITION)= S X=($P(^IBA(355.33,DA,90),U)="")
+                                DELETE VALUE)= @
+                                FIELD)= *GROUP NAME
+                                Triggers field 40.02 if its value differs from first 20 chars of the value in this field. Deletes field 40.02 if field 90.01 is deleted.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^.16 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.33,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y S X=DIV S X=$$TRIG^IBCNERTQ(DA) S DIH=$G(^IBA(355.33,DIV(0),0)),DIV=X S $P(^(0),U,16)=DIV,DIH=355.33,DIG=.16 D 
+                                ^DICR
+
+                                2)= Q
+
+                                CREATE VALUE)= S X=$$TRIG^IBCNERTQ(DA)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= REAL TIME
+                                Sets the  REAL TIME VERIFICATION (#.16) field to 1 when this record has been queued for real time verification.  
+
+
+
+355.33,90.02  GROUP NUMBER           90;2 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>55!($L(X)<2)!'$$LENCHK^IBCNEUT1(X,17,0) X
+              LAST EDITED:      DEC 03, 2013 
+              HELP-PROMPT:      Answer must be 2-17 characters in length. 
+              DESCRIPTION:
+                                This is the number or code which the insurance company uses to identify this plan.  
+
+              TECHNICAL DESCR:
+                                Replaces field 40.03. Length of this field is temporarily limited to 17 characters.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the *GROUP NUMBER field of the INSURANCE BUFFER File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^40.03 
+                                1)= X ^DD(355.33,90.02,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,40)):^(40),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X=DIV S X=$E($P(^IBA(355.33,DA,90),U,2),1,17) X ^DD(355.33,90.02,1,1,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P($G(^IBA(355.33,DA,40)),U,3)'=$E($P(^IBA(355.33,DA,90),U,2),1,17))
+                                1.4)= S DIH=$G(^IBA(355.33,DIV(0),40)),DIV=X S $P(^(40),U,3)=DIV,DIH=355.33,DIG=40.03 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,90),U,2)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,40)):^(40),1:"") S X=$P(Y(1),U,3),X=X S DIU=X K Y S X="" X ^DD(355.33,90.02,1,1,2.4)
+                                2.4)= S DIH=$G(^IBA(355.33,DIV(0),40)),DIV=X S $P(^(40),U,3)=DIV,DIH=355.33,DIG=40.03 D ^DICR
+                                CREATE CONDITION)= S X=($P($G(^IBA(355.33,DA,40)),U,3)'=$E($P(^IBA(355.33,DA,90),U,2),1,17))
+                                CREATE VALUE)= S X=$E($P(^IBA(355.33,DA,90),U,2),1,17)
+                                DELETE CONDITION)= S X=($P(^IBA(355.33,DA,90),U,2)="")
+                                DELETE VALUE)= @
+                                FIELD)= *GROUP NUMBER
+                                Triggers field 40.03 if its value differs from first 17 chars of the value in this field. Deletes field 40.03 if field 90.02 is deleted.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^.16 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.33,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y S X=DIV S X=$$TRIG^IBCNERTQ(DA) S DIH=$G(^IBA(355.33,DIV(0),0)),DIV=X S $P(^(0),U,16)=DIV,DIH=355.33,DIG=.16 D 
+                                ^DICR
+
+                                2)= Q
+
+                                CREATE VALUE)= S X=$$TRIG^IBCNERTQ(DA)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= REAL TIME
+                                Sets the  REAL TIME VERIFICATION (#.16) field to 1 when this record has been queued for real time verification.  
+
+
+
+355.33,90.03  SUBSCRIBER ID          90;3 FREE TEXT
+
+              INPUT TRANSFORM:  K:$L(X)>80!($L(X)<3)!'$$LENCHK^IBCNEUT1(X,20,0) X
+              LAST EDITED:      DEC 03, 2013 
+              HELP-PROMPT:      Answer must be 3-20 characters in length. 
+              DESCRIPTION:
+                                Enter the Subscriber's Primary ID number. This number is assigned by the payer and can be found on the subscriber's insurance card.  
+
+              TECHNICAL DESCR:
+                                Replaces field 60.04. Length of this field is temporarily limited to 20 characters.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the *SUBSCRIBER ID field of the INSURANCE BUFFER File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^60.04 
+                                1)= X ^DD(355.33,90.03,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,60)):^(60),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X=DIV S X=$E($P(^IBA(355.33,DA,90),U,3),1,20) X ^DD(355.33,90.03,1,1,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P($G(^IBA(355.33,DA,60)),U,4)'=$E($P(^IBA(355.33,DA,90),U,3),1,20))
+                                1.4)= S DIH=$G(^IBA(355.33,DIV(0),60)),DIV=X S $P(^(60),U,4)=DIV,DIH=355.33,DIG=60.04 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,90),U,3)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,60)):^(60),1:"") S X=$P(Y(1),U,4),X=X S DIU=X K Y S X="" X ^DD(355.33,90.03,1,1,2.4)
+                                2.4)= S DIH=$G(^IBA(355.33,DIV(0),60)),DIV=X S $P(^(60),U,4)=DIV,DIH=355.33,DIG=60.04 D ^DICR
+                                CREATE CONDITION)= S X=($P($G(^IBA(355.33,DA,60)),U,4)'=$E($P(^IBA(355.33,DA,90),U,3),1,20))
+                                CREATE VALUE)= S X=$E($P(^IBA(355.33,DA,90),U,3),1,20)
+                                DELETE CONDITION)= S X=($P(^IBA(355.33,DA,90),U,3)="")
+                                DELETE VALUE)= @
+                                FIELD)= *SUBSCRIBER ID
+                                Triggers field 60.04 if its value differs from first 20 chars of the value in this field. Deletes field 60.04 if field 90.03 is deleted.  
+
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^.16 
+                                1)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(1)=$S($D(^IBA(355.33,D0,0)):^(0),1:"") S X=$P(Y(1),U,16),X=X S DIU=X K Y S X=DIV S X=$$TRIG^IBCNERTQ(DA) S DIH=$G(^IBA(355.33,DIV(0),0)),DIV=X S $P(^(0),U,16)=DIV,DIH=355.33,DIG=.16 D 
+                                ^DICR
+
+                                2)= Q
+
+                                CREATE VALUE)= S X=$$TRIG^IBCNERTQ(DA)
+                                DELETE VALUE)= NO EFFECT
+                                FIELD)= REAL TIME
+                                Sets the  REAL TIME VERIFICATION (#.16) field to 1 when this record has been queued for real time verification.  
+
+
+
+355.33,91.01  NAME OF INSURED        91;1 FREE TEXT
+
+              INPUT TRANSFORM:  N Z1 S Z1=$G(^IBA(355.33,DA,60)) S:$P(Z1,U,6)="01"&X X=$P($G(^DPT(+Z1,0)),U,1) K:$L(X)>130!($L(X)<2)!'$$LENCHK^IBCNEUT1(X,30,0) X
+              LAST EDITED:      NOV 20, 2013 
+              HELP-PROMPT:      Enter the name of the person who holds the policy. Answer must be 2-30 characters in length. 
+              DESCRIPTION:
+                                This is the name of the individual for which this policy was issued. If the Patient Relationship to the Insured is 'Patient' then this name will default to the patient name via input transform.  
+
+              TECHNICAL DESCR:
+                                Replaces field 60.07. Length of this field is temporarily limited to 30 characters.  
+
+              NOTES:            XXXX--CAN'T BE ALTERED EXCEPT BY PROGRAMMER
+                                TRIGGERED by the *NAME OF INSURED field of the INSURANCE BUFFER File 
+
+              CROSS-REFERENCE:  ^^TRIGGER^355.33^60.07 
+                                1)= X ^DD(355.33,91.01,1,1,1.3) I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,60)):^(60),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X=DIV S X=$E($P(^IBA(355.33,DA,91),U),1,30) X ^DD(355.33,91.01,1,1,1.4)
+                                1.3)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P($G(^IBA(355.33,DA,60)),U,7)'=$E($P(^IBA(355.33,DA,91),U),1,30))
+                                1.4)= S DIH=$G(^IBA(355.33,DIV(0),60)),DIV=X S $P(^(60),U,7)=DIV,DIH=355.33,DIG=60.07 D ^DICR
+                                2)= K DIV S DIV=X,D0=DA,DIV(0)=D0 S Y(0)=X S X=($P(^IBA(355.33,DA,91),U)="") I X S X=DIV S Y(1)=$S($D(^IBA(355.33,D0,60)):^(60),1:"") S X=$P(Y(1),U,7),X=X S DIU=X K Y S X="" X ^DD(355.33,91.01,1,1,2.4)
+                                2.4)= S DIH=$G(^IBA(355.33,DIV(0),60)),DIV=X S $P(^(60),U,7)=DIV,DIH=355.33,DIG=60.07 D ^DICR
+                                CREATE CONDITION)= S X=($P($G(^IBA(355.33,DA,60)),U,7)'=$E($P(^IBA(355.33,DA,91),U),1,30))
+                                CREATE VALUE)= S X=$E($P(^IBA(355.33,DA,91),U),1,30)
+                                DELETE CONDITION)= S X=($P(^IBA(355.33,DA,91),U)="")
+                                DELETE VALUE)= @
+                                FIELD)= *NAME OF INSURED
+                                Triggers field 60.07 if its value differs from first 30 chars of the value in this field. Deletes field 60.07 if field 91.01 is deleted.  
+
 
 
 

@@ -1,5 +1,5 @@
-STANDARD DATA DICTIONARY #55 -- PHARMACY PATIENT FILE                                                                                                                                                                              APR 3,2014@10:32:13  PAGE 1
-STORED IN ^PS(55,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,PLA                                                                                                                                                (VERSION 1.0)   
+STANDARD DATA DICTIONARY #55 -- PHARMACY PATIENT FILE                                                                                                                                                                             JUL 23,2014@23:19:31  PAGE 1
+STORED IN ^PS(55,  *** NO DATA STORED YET ***   SITE: PLA.ISC-WASH.DOMAIN.EXT   UCI: VISTA,VISTA                                                                                                                                              (VERSION 1.0)   
 
 DATA          NAME                  GLOBAL        DATA
 ELEMENT       TITLE                 LOCATION      TYPE
@@ -22,7 +22,7 @@ REFERENCED BY: STATUS(ADC), DOCUMENTED DATE(ADCDT), DIALYSIS PATIENT(ADIA), STOP
                ORDER NUMBER(APV2), PV FLAG(AQ), CLOZAPINE REGISTRATION NUMBER(ASAND), CLOZAPINE REGISTRATION NUMBER(ASAND1), STOP DATE/TIME(AUD), NAME(AUDAPM), NAME(AUDDD), PURGE FLAG(AUDDD), START DATE/TIME(AUDS), ORDER NUMBER(AUE), NAME(B)
 
 INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUMENTED DATE & START DATE & DISCONTINUED DATE (ACRNVA), START DATE/TIME & STOP DATE/TIME (ACRUD), ORDERS FILE PARENT ORDER & ORDERS FILE ENTRY (ACX), ORDERS FILE PARENT ORDER & 
-               ORDERS FILE ENTRY (ACX1), FIRST SERVICE DATE (AFSD), STOP DATE/TIME & CLINIC (AIVC), STOP DATE/TIME & CLINIC (AUDC)
+               ORDERS FILE ENTRY (ACX1), FIRST SERVICE DATE (AFSD), STOP DATE/TIME & CLINIC (AIVC), STOP DATE/TIME & CLINIC (AUDC), CLINIC (CIMOCLI), CLINIC (CIMOCLU), PATIENT NAME & CLINIC & STOP DATE/TIME (CIMOU)
 
 
 55,.001       NUMBER                     NUMBER
@@ -563,7 +563,7 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
 55.06,.01       ORDER NUMBER           0;1 NUMBER (Required)
 
                 INPUT TRANSFORM:  K:+X'=X!(X>1000000000)!(X<1)!(X?.E1"."1N.N) X
-                LAST EDITED:      SEP 18, 1996 
+                LAST EDITED:      JUN 25, 2013 
                 HELP-PROMPT:      Type a whole number between 1 and 1000000000. 
                 DESCRIPTION:
                                     This is the record number of the order.  
@@ -637,7 +637,7 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
 
 55.06,.5        PATIENT NAME           0;15 POINTER TO PATIENT FILE (#2)
 
-                LAST EDITED:      MAR 13, 1985 
+                LAST EDITED:      JUN 25, 2013 
                 DESCRIPTION:
                                     This is the patient for which the medication has been ordered.  
 
@@ -649,6 +649,7 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
                                   Used by Unit Dose to log any changes made to this field.  
 
 
+                RECORD INDEXES:   CIMOU (#1121) (WHOLE FILE #55)
 
 55.06,1         PROVIDER               0;2 POINTER TO NEW PERSON FILE (#200) (Required)
 
@@ -1611,7 +1612,7 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
 55.06,34        STOP DATE/TIME         2;4 DATE (Required)
 
                     INPUT TRANSFORM:X:X=+X&X&$D(^PS(55,DA(1),5,DA,2)) "S PSGDL=X D EN2^PSSDDUT3" S %DT="ERTX" D ^%DT S X=+Y K:Y'>0 X
-                    LAST EDITED:  JUL 29, 2004 
+                    LAST EDITED:  JUN 25, 2013 
                     HELP-PROMPT:  Enter the date and time that the last dose is to be given (and the order will expire). 
                     DESCRIPTION:
                                     This is the date and time the order will automatically expire.  This package initially calculates a default stop date, depending on the SITE PARAMETERS.  
@@ -1642,7 +1643,7 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
                                   Identifies verified Unit Dose orders by the order's stop date/time.  
 
 
-                    RECORD INDEXES: ACRUD (#465) (WHOLE FILE #55), AUDC (#499) (WHOLE FILE #55), AUN (#501)
+                    RECORD INDEXES: ACRUD (#465) (WHOLE FILE #55), AUDC (#499) (WHOLE FILE #55), AUN (#501), CIMOU (#1121) (WHOLE FILE #55)
 
 55.06,35        *TOTAL RETURNS         5;4 NUMBER
 
@@ -2790,14 +2791,29 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
 55.06,130       CLINIC                     8;1 POINTER TO HOSPITAL LOCATION FILE (#44)
 
                         INPUT TRANSFORM:S DIC("S")="D PSS13^PSSDDUT" D ^DIC K DIC S DIC=DIE,X=+Y K:Y<0 X D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-                        LAST EDITED:  JUL 29, 2004 
+                        LAST EDITED:  JUN 26, 2013 
                         HELP-PROMPT:  Entry must be a clinic location and should be a clinic that allows administration of Inpatient Meds. 
                         DESCRIPTION:
                                       This is the clinic location if this order is for an Outpatient.  
 
                         SCREEN:       S DIC("S")="D PSS13^PSSDDUT"
                         EXPLANATION:  Must be a clinic location. For Unit Dose, should allow IPM.
-                        RECORD INDEXES: AUDC (#499) (WHOLE FILE #55), AUN (#501)
+                        FIELD INDEX:  CIMOCLU (#1120)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#55)
+                        Short Descr:  CIMOCLU - PS(55,CLINIC,PATIENT)
+                        Description:  This cross reference will be defined during order entry if the clinic is defined with YES answered for the ADMINISTER INPATIENT MEDS parameter under the SET UP A CLINIC [SDBUILD] option.  These parameters identify 
+                                      the clinic as an IMO clinic. If at the time of order entry the clinic was not defined as an IMO clinic, it is not stored in the either the CIMOU or CIMOCLU cross reference.  
+                                       
+                                      When a new IMO clinic is added or an existing clinic is edited using the CLINIC DEFINTION [PSJ CD] option and it is marked as an IMO clinic, the IMO^PSJIMO1(.CLINICS) API will be called passing by references the 
+                                      array of clinics added/edited. This API will add/update the CIMOU and CIMOCLU cross references with the newly added IMO clinic(s).  
+                                       
+                                      Additionally, CIMOCLU will be used during order entry to verify whether the clinic is an IMO clinic.  
+                          Set Logic:  S ^PS(55,"CIMOCLU",X,DA(1),DA)=""
+                           Set Cond:  S X=$$GET1^DIQ(44,X2(1),2802,"I") I X
+                         Kill Logic:  K ^PS(55,"CIMOCLU",X,DA(1),DA)
+                         Whole Kill:  K ^PS(55,"CIMOCLU")
+                               X(1):  CLINIC  (55.06,130)  (Subscr 1)  (forwards)
+
+                        RECORD INDEXES: AUDC (#499) (WHOLE FILE #55), AUN (#501), CIMOU (#1121) (WHOLE FILE #55)
 
 55.06,131       APPOINTMENT DATE/TIME      8;2 DATE
 
@@ -3006,12 +3022,12 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
 
               GROUP:            PSJI
 
-              INDEXED BY:       STOP DATE/TIME & CLINIC (AIN)
+              INDEXED BY:       STOP DATE/TIME & CLINIC (AIN), CLINIC & STOP DATE/TIME (CIMOI)
 
 55.01,.01       ORDER NUMBER           0;1 NUMBER (Required) (Multiply asked)
 
                 INPUT TRANSFORM:  K:+X'=X!(X>9999999)!(X<1)!(X?.E1"."1N.N) X S:$D(X) DINUM=X
-                LAST EDITED:      JUL 29, 1986 
+                LAST EDITED:      JUN 25, 2013 
                 HELP-PROMPT:      Type a whole number between 1 and 9999999. 
                 DESCRIPTION:
                                   Order Number for IV drugs administered to this patient.  
@@ -3053,7 +3069,7 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
 55.01,.03       STOP DATE/TIME         0;3 DATE (Required)
 
                 INPUT TRANSFORM:  S %DT="ETX" D:X'=+X ^%DT D:X=+X ENDL^PSSDDUT3 S X=Y K:Y<1!(Y'[".") X
-                LAST EDITED:      JUL 29, 2004 
+                LAST EDITED:      JUN 25, 2013 
                 DESCRIPTION:
                                     This is the date and time the order is to end.  
 
@@ -3085,7 +3101,7 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
                                     These are used primarily by the Med Due Worksheet and MAR.  
 
 
-                RECORD INDEXES:   ACRIV (#466) (WHOLE FILE #55), AIN (#500), AIVC (#498) (WHOLE FILE #55)
+                RECORD INDEXES:   ACRIV (#466) (WHOLE FILE #55), AIN (#500), AIVC (#498) (WHOLE FILE #55), CIMOI (#1122)
 
 55.01,.04       TYPE                   0;4 SET (Required)
 
@@ -4042,10 +4058,25 @@ INDEXED BY:    START DATE/TIME & STOP DATE/TIME (ACRIV), ORDERABLE ITEM & DOCUME
 55.01,136       CLINIC                           DSS;1 POINTER TO HOSPITAL LOCATION FILE (#44)
 
                           INPUT TRANSFORM:  S DIC("S")="D PSS13^PSSDDUT" D ^DIC K DIC S DIC=$G(DIE),X=+Y K:Y<0 X
-                          LAST EDITED:      JUL 29, 2004 
+                          LAST EDITED:      JUN 27, 2013 
                           SCREEN:           S DIC("S")="D PSS13^PSSDDUT"
                           EXPLANATION:      Entry must be a clinic.  Depending on the condition, INACTIVATE and REACTIVATE dates may exist.
-                          RECORD INDEXES:   AIN (#500), AIVC (#498) (WHOLE FILE #55)
+                          FIELD INDEX:      CIMOCLI (#809)    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#55)
+                              Short Descr:  CIMOCLI - PS(55,CLINIC,PATIENT) 
+                              Description:  This cross reference will be defined during order entry if the clinic is defined with YES answered for the ADMINISTER INPATIENT MEDS parameter under the SET UP A CLINIC [SDBUILD] option.  These parameters
+                                            identify the clinic as an IMO clinic. If at the time of order entry the clinic was not defined as an IMO clinic, it is not stored in the either the CIMOI or CIMOCLI cross reference.  
+                                             
+                                            When a new IMO clinic is added or an existing clinic is edited using the CLINIC DEFINTION [PSJ CD] option and it is marked as an IMO clinic, the IMO^PSJIMO1(.CLINICS) API will be called passing by references
+                                            the array of clinics added/edited. This API will add/update the CIMOI and CIMOCLI cross references with any newly added IMO clinic(s). 
+                                             
+                                            Additionally, CIMOCLI will be used during order entry to verify whether the clinic is an IMO clinic. 
+                                Set Logic:  S ^PS(55,"CIMOCLI",X,DA(1),DA)=""
+                                 Set Cond:  S X=$$CHECK2^PSJIMO1() I X
+                               Kill Logic:  K ^PS(55,"CIMOCLI",X,DA(1),DA)
+                               Whole Kill:  K ^PS(55,"CIMOCLI")
+                                     X(1):  CLINIC  (55.01,136)  (Subscr 1)  (forwards)
+
+                          RECORD INDEXES:   AIN (#500), AIVC (#498) (WHOLE FILE #55), CIMOI (#1122)
 
 55.01,137       NATURE OF ORDER                  .2;5 SET
 
@@ -4814,6 +4845,20 @@ Subfile #55.01
              X(1):  STOP DATE/TIME  (55.01,.03)  (Subscr 1)  (Len 20)  (forwards)
              X(2):  CLINIC  (55.01,136)  (Subscr 2)  (Len 20)  (forwards)
 
+  CIMOI (#1122)    RECORD    REGULAR    IR    LOOKUP & SORTING
+      Short Descr:  CIMOI - PS(55,PATIENT,"IV","CIMOI",CLINIC,STOP DATE/TIME,ORDER)
+      Description:  This cross reference is used during enhanced order checks for quick access to clinic order information for IV orders.  IV sub-file cross referenced by CLINIC, STOP DATE/TIME and ORDER NUMBER.  
+                     
+                    As orders are placed, this cross reference will be defined when YES is answered for the ADMINISTER INPATIENT MEDS parameter under the SET UP A CLINIC [SDBUILD] option and appointment date/time is defined.  
+                     
+                    Using the same criteria, this cross reference will be defined if a clinic is added or edited using the CLINIC DEFINITION [PSJ CD] option.  
+        Set Logic:  S ^PS(55,DA(1),"IV","CIMOI",X(1),X(2),DA)=""
+         Set Cond:  S X=$$CHECK2^PSJIMO1() I X
+       Kill Logic:  K ^PS(55,DA(1),"IV","CIMOI",X(1),X(2),DA)
+       Whole Kill:  K ^PS(55,DA(1),"IV","CIMOI")
+             X(1):  CLINIC  (55.01,136)  (Subscr 1)  (forwards)
+             X(2):  STOP DATE/TIME  (55.01,.03)  (Subscr 2)  (forwards)
+
 Subfile #55.0105
 
   Record Indexes:
@@ -4889,6 +4934,22 @@ Subfile #55.06
        Whole Kill:  K ^PS(55,DA(1),5,"AUN")
              X(1):  STOP DATE/TIME  (55.06,34)  (Subscr 1)  (forwards)
              X(2):  CLINIC  (55.06,130)  (Subscr 2)  (forwards)
+
+  CIMOU (#1121)    RECORD    REGULAR    IR    LOOKUP & SORTING    WHOLE FILE (#55)
+      Short Descr:  CIMOU - PS(55,"CIMOU",PATIENT,CLINIC,STOP DATE/TIME,PATIENT,ORDER)
+      Description:  This cross reference is used during enhanced order checks for quick access to clinic order information for unit dose orders by PATIENT, CLINIC, STOP DATE/TIME and ORDER NUMBER.  
+                     
+                    The set condition checks to see if the clinic is defined with YES answered for the ADMINISTER INPATIENT MEDS parameter under the SET UP A CLINIC [SDBUILD] option and if the order has an appointment date/time defined.  If both are
+                    true, the cross reference is defined.  
+                     
+                    Using the same criteria, this cross reference will be defined if a clinic is added or edited using the CLINIC DEFINITION [PSJ CD] option.  
+        Set Logic:  S ^PS(55,"CIMOU",X(1),X(2),X(3),DA(1),DA)=""
+         Set Cond:  S X=$$CHECK^PSJIMO1() I X
+       Kill Logic:  K ^PS(55,"CIMOU",X(1),X(2),X(3),DA(1),DA)
+       Whole Kill:  K ^PS(55,"CIMOU")
+             X(1):  PATIENT NAME  (55.06,.5)  (Subscr 1)  (forwards)
+             X(2):  CLINIC  (55.06,130)  (Subscr 2)  (forwards)
+             X(3):  STOP DATE/TIME  (55.06,34)  (Subscr 3)  (forwards)
 
 
 INPUT TEMPLATE(S):
